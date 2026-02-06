@@ -60,7 +60,7 @@ export function KennionLogo({ size = "md", linkTo = "/" }: KennionLogoProps) {
     <div className="flex items-center gap-2 cursor-pointer" data-testid="logo-kennion">
       <PeopleGroupIcon className={`${iconSizes[size]} text-primary`} />
       <span className={`font-semibold tracking-tight ${textSizes[size]}`}>
-        Kennion <span className="font-normal text-muted-foreground">Benefit Advisors</span>
+        Kennion Benefit Advisors
       </span>
     </div>
   );
