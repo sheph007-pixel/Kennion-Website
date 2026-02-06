@@ -50,12 +50,19 @@ function getBaseUrl(req: Request): string {
   if (process.env.REPLIT_DEPLOYMENT_URL) {
     return `https://${process.env.REPLIT_DEPLOYMENT_URL}`;
   }
+  const forwardedHost = req.headers["x-forwarded-host"] as string | undefined;
+  if (forwardedHost) {
+    const proto = req.headers["x-forwarded-proto"] || "https";
+    return `${proto}://${forwardedHost}`;
+  }
+  const host = req.headers.host;
+  if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
+    return `https://${host}`;
+  }
   if (process.env.REPLIT_DEV_DOMAIN) {
     return `https://${process.env.REPLIT_DEV_DOMAIN}`;
   }
-  const proto = req.headers["x-forwarded-proto"] || req.protocol;
-  const host = req.headers["x-forwarded-host"] || req.headers.host;
-  return `${proto}://${host}`;
+  return `${req.protocol}://${host}`;
 }
 
 export async function registerRoutes(
