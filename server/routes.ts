@@ -10,6 +10,7 @@ import {
   magicLinkRequestSchema,
   magicLinkVerifySchema,
   loginSchema,
+  registerSchema,
   updateGroupStatusSchema,
 } from "@shared/schema";
 import ConnectPgSimple from "connect-pg-simple";
@@ -315,6 +316,41 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/auth/register", async (req: Request, res: Response) => {
+    try {
+      const data = registerSchema.parse(req.body);
+      const fullName = `${data.firstName} ${data.lastName}`;
+
+      const existing = await storage.getUserByEmail(data.email);
+      if (existing) {
+        return res.status(400).json({ message: "An account with this email already exists. Please sign in instead." });
+      }
+
+      const token = generateMagicToken();
+      const expiry = new Date(Date.now() + 15 * 60 * 1000);
+
+      const user = await storage.createUser({
+        fullName,
+        email: data.email,
+        companyName: data.companyName,
+        phone: data.phone,
+        password: null,
+        magicToken: token,
+        magicTokenExpiry: expiry,
+      });
+
+      const baseUrl = getBaseUrl(req);
+      const magicLinkUrl = `${baseUrl}/auth/verify?token=${token}`;
+
+      await sendMagicLinkEmail(data.email, magicLinkUrl, fullName);
+
+      res.json({ message: "Sign-in link sent to your email", email: data.email });
+    } catch (err: any) {
+      log(`Registration error: ${err.message}`);
+      res.status(400).json({ message: err.message || "Registration failed" });
+    }
+  });
+
   app.post("/api/auth/verify-magic-link", async (req: Request, res: Response) => {
     try {
       const data = magicLinkVerifySchema.parse(req.body);
@@ -391,6 +427,7 @@ export async function registerRoutes(
       email: user.email,
       role: user.role,
       companyName: user.companyName,
+      phone: user.phone,
       verified: user.verified,
       createdAt: user.createdAt,
     });
@@ -724,6 +761,24 @@ export async function registerRoutes(
     }
     const census = await storage.getCensusByGroupId(id);
     res.json(census);
+  });
+
+  app.delete("/api/groups/:id", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const group = await storage.getGroup(id);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      if (group.userId !== req.session.userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      await storage.deleteCensusByGroupId(id);
+      await storage.deleteGroup(id);
+      res.json({ message: "Census deleted successfully" });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Delete failed" });
+    }
   });
 
   app.get("/api/admin/groups", requireAdmin, async (_req: Request, res: Response) => {

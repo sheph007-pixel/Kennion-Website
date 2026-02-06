@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import {
@@ -26,6 +26,11 @@ import {
   UserCheck,
   Heart,
   Baby,
+  Trash2,
+  FileText,
+  Shield,
+  Brain,
+  Sparkles,
 } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
@@ -34,20 +39,22 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { Group } from "@shared/schema";
-
-const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
-  pending_review: { label: "Pending Review", icon: Clock, color: "text-yellow-600 dark:text-yellow-400" },
-  under_review: { label: "Under Review", icon: AlertCircle, color: "text-blue-600 dark:text-blue-400" },
-  analyzing: { label: "Analyzing", icon: Activity, color: "text-purple-600 dark:text-purple-400" },
-  qualified: { label: "Qualified", icon: CheckCircle2, color: "text-green-600 dark:text-green-400" },
-  not_qualified: { label: "Not Qualified", icon: XCircle, color: "text-red-600 dark:text-red-400" },
-  rates_available: { label: "Rates Available", icon: TrendingUp, color: "text-green-600 dark:text-green-400" },
-};
 
 const TIER_CONFIG: Record<string, { label: string; color: string }> = {
   preferred: { label: "Preferred Risk", color: "text-green-600 dark:text-green-400" },
@@ -80,6 +87,150 @@ function DashboardNav() {
   );
 }
 
+function StepIndicator({ currentStep }: { currentStep: number }) {
+  const steps = [
+    { num: 1, label: "Upload Census", icon: Upload },
+    { num: 2, label: "View Risk Score", icon: BarChart3 },
+    { num: 3, label: "Review Proposal", icon: FileText },
+  ];
+
+  return (
+    <div className="flex items-center gap-2 mb-8">
+      {steps.map((step, i) => {
+        const StepIcon = step.icon;
+        const isActive = currentStep === step.num;
+        const isComplete = currentStep > step.num;
+
+        return (
+          <div key={step.num} className="flex items-center gap-2 flex-1">
+            <div className="flex items-center gap-2 flex-1">
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full flex-shrink-0 ${
+                isComplete ? "bg-primary text-primary-foreground" :
+                isActive ? "bg-primary text-primary-foreground" :
+                "bg-muted text-muted-foreground"
+              }`}>
+                {isComplete ? <Check className="h-4 w-4" /> : <span className="text-xs font-bold">{step.num}</span>}
+              </div>
+              <div className="hidden sm:block">
+                <p className={`text-xs font-medium ${isActive || isComplete ? "text-foreground" : "text-muted-foreground"}`}>
+                  Step {step.num}
+                </p>
+                <p className={`text-xs ${isActive || isComplete ? "text-muted-foreground" : "text-muted-foreground/60"}`}>
+                  {step.label}
+                </p>
+              </div>
+            </div>
+            {i < steps.length - 1 && (
+              <div className={`h-px flex-1 mx-2 ${isComplete ? "bg-primary" : "bg-border"}`} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const ANALYSIS_MESSAGES = [
+  { text: "Parsing census data...", pct: 5 },
+  { text: "Validating employee records...", pct: 12 },
+  { text: "Analyzing age distribution...", pct: 20 },
+  { text: "Evaluating demographic risk factors...", pct: 28 },
+  { text: "Computing gender ratio impact...", pct: 35 },
+  { text: "Assessing group size factor...", pct: 42 },
+  { text: "Running actuarial models...", pct: 50 },
+  { text: "Calculating dependency ratios...", pct: 58 },
+  { text: "Cross-referencing regional data...", pct: 65 },
+  { text: "Applying underwriting criteria...", pct: 72 },
+  { text: "Generating risk profile...", pct: 80 },
+  { text: "Determining qualification tier...", pct: 88 },
+  { text: "Finalizing Kennion Score...", pct: 95 },
+  { text: "Analysis complete!", pct: 100 },
+];
+
+function AnalysisAnimation({ onComplete, group }: { onComplete: () => void; group: Group | null }) {
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const totalDuration = 60000;
+    const intervalTime = totalDuration / ANALYSIS_MESSAGES.length;
+    let idx = 0;
+
+    const smoothInterval = setInterval(() => {
+      idx++;
+      if (idx >= ANALYSIS_MESSAGES.length) {
+        clearInterval(smoothInterval);
+        setTimeout(onComplete, 800);
+        return;
+      }
+      setMessageIndex(idx);
+      setProgress(ANALYSIS_MESSAGES[idx].pct);
+    }, intervalTime);
+
+    const progressSmooth = setInterval(() => {
+      setProgress(prev => {
+        const target = ANALYSIS_MESSAGES[idx]?.pct || 100;
+        if (prev < target) return Math.min(prev + 0.5, target);
+        return prev;
+      });
+    }, 200);
+
+    return () => {
+      clearInterval(smoothInterval);
+      clearInterval(progressSmooth);
+    };
+  }, [onComplete]);
+
+  const currentMessage = ANALYSIS_MESSAGES[messageIndex];
+
+  return (
+    <Card className="p-8">
+      <div className="text-center space-y-6">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mx-auto animate-pulse">
+          <Brain className="h-8 w-8 text-primary" />
+        </div>
+
+        <div>
+          <h2 className="text-xl font-bold tracking-tight" data-testid="text-analyzing-title">
+            Analyzing Your Census
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Our AI underwriting engine is evaluating your group's risk profile
+          </p>
+        </div>
+
+        <div className="max-w-md mx-auto space-y-3">
+          <Progress value={progress} className="h-3" data-testid="progress-analysis" />
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
+              <span className="text-muted-foreground font-medium" data-testid="text-analysis-status">
+                {currentMessage.text}
+              </span>
+            </div>
+            <span className="font-mono text-muted-foreground">{Math.round(progress)}%</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 max-w-sm mx-auto pt-4">
+          <div className="text-center">
+            <div className="text-xs text-muted-foreground">Records</div>
+            <div className="text-lg font-bold">{group?.totalLives || "..."}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-muted-foreground">Employees</div>
+            <div className="text-lg font-bold">{group?.employeeCount || "..."}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-muted-foreground">Variables</div>
+            <div className="text-lg font-bold">50+</div>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 interface ParseResult {
   headers: string[];
   totalRows: number;
@@ -88,7 +239,7 @@ interface ParseResult {
   requiredFields: { key: string; label: string }[];
 }
 
-function CensusUploadWizard({ onComplete }: { onComplete: () => void }) {
+function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void }) {
   const { toast } = useToast();
   const [step, setStep] = useState<"upload" | "mapping" | "confirming">("upload");
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
@@ -153,9 +304,9 @@ function CensusUploadWizard({ onComplete }: { onComplete: () => void }) {
     try {
       const res = await apiRequest("POST", "/api/groups/confirm", { mappings });
       const data = await res.json();
-      toast({ title: "Census uploaded", description: "Your census has been analyzed successfully." });
+      toast({ title: "Census uploaded", description: "Starting risk analysis..." });
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
-      onComplete();
+      onComplete(data.group);
     } catch (err: any) {
       const msg = err.message || "Upload failed";
       if (msg.includes("pending") || msg.includes("upload a file")) {
@@ -176,9 +327,9 @@ function CensusUploadWizard({ onComplete }: { onComplete: () => void }) {
       <Card className="p-6">
         <div className="mb-4 flex items-center justify-between gap-2 flex-wrap">
           <div>
-            <h2 className="font-semibold">Upload Employee Census</h2>
+            <h2 className="font-semibold" data-testid="text-upload-heading">Upload Employee Census</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Submit your census data to begin the qualification process.
+              Submit your employee census data to begin the qualification process.
             </p>
           </div>
           <Button variant="outline" size="sm" asChild>
@@ -293,7 +444,7 @@ function CensusUploadWizard({ onComplete }: { onComplete: () => void }) {
                           {previewValues.map((v, i) => (
                             <div key={i} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                               <span className="text-muted-foreground/60">{i + 1}</span>
-                              <span>{v || "—"}</span>
+                              <span>{v || "\u2014"}</span>
                             </div>
                           ))}
                         </div>
@@ -383,11 +534,11 @@ function CensusUploadWizard({ onComplete }: { onComplete: () => void }) {
             {isConfirming ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Analyzing...
+                Submitting...
               </>
             ) : (
               <>
-                Continue <ArrowRight className="ml-1.5 h-4 w-4" />
+                Submit Census <ArrowRight className="ml-1.5 h-4 w-4" />
               </>
             )}
           </Button>
@@ -399,41 +550,62 @@ function CensusUploadWizard({ onComplete }: { onComplete: () => void }) {
   return null;
 }
 
-function GroupCard({ group, onClick }: { group: Group; onClick: () => void }) {
-  const status = STATUS_CONFIG[group.status] || STATUS_CONFIG.pending_review;
-  const StatusIcon = status.icon;
+function GroupCard({ group, index, onClick, onDelete }: { group: Group; index: number; onClick: () => void; onDelete: () => void }) {
   const tier = group.riskTier ? TIER_CONFIG[group.riskTier] || { label: group.riskTier, color: "text-muted-foreground" } : null;
+  const censusNumber = `KBA-${group.id.substring(0, 8).toUpperCase()}`;
+  const isQualified = group.riskTier === "preferred" || group.riskTier === "standard";
 
   return (
     <Card
-      className="p-6 cursor-pointer hover-elevate transition-colors"
-      onClick={onClick}
+      className="p-6 hover-elevate transition-colors"
       data-testid={`card-group-${group.id}`}
     >
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 cursor-pointer" onClick={onClick}>
           <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 dark:bg-primary/20">
             <Building2 className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h3 className="font-semibold" data-testid="text-group-company">{group.companyName}</h3>
-            <p className="text-xs text-muted-foreground">
-              Submitted {new Date(group.submittedAt).toLocaleDateString()}
+            <p className="text-xs text-muted-foreground" data-testid="text-census-number">
+              Census #{censusNumber}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5">
-            <StatusIcon className={`h-4 w-4 ${status.color}`} />
-            <span className={`text-sm font-medium ${status.color}`} data-testid="text-group-status">
-              {status.label}
-            </span>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          {isQualified && (
+            <Badge variant="secondary" className="text-xs text-green-600 dark:text-green-400">
+              <CheckCircle2 className="h-3 w-3 mr-1" /> Qualified
+            </Badge>
+          )}
+          {group.riskTier === "high" && (
+            <Badge variant="secondary" className="text-xs text-red-600 dark:text-red-400">
+              <XCircle className="h-3 w-3 mr-1" /> High Risk
+            </Badge>
+          )}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" data-testid={`button-delete-${group.id}`} onClick={(e) => e.stopPropagation()}>
+                <Trash2 className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Census</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete census #{censusNumber}? This will permanently remove the census data and risk analysis. You can re-upload a new census afterwards.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={onDelete} data-testid="button-confirm-delete">Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-4 gap-4">
+      <div className="mt-4 grid grid-cols-4 gap-4 cursor-pointer" onClick={onClick}>
         <div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <UserCheck className="h-3 w-3" /> Employees
@@ -461,24 +633,36 @@ function GroupCard({ group, onClick }: { group: Group; onClick: () => void }) {
       </div>
 
       {group.riskScore != null && (
-        <div className="mt-4 pt-4 border-t flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div>
-              <div className="text-xs text-muted-foreground">Kennion Score</div>
-              <div className="text-xl font-bold text-primary" data-testid="text-risk-score">
-                {group.riskScore.toFixed(2)}
+        <div className="mt-4 pt-4 border-t cursor-pointer" onClick={onClick}>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div>
+                <div className="text-xs text-muted-foreground">Kennion Score</div>
+                <div className="text-xl font-bold text-primary" data-testid="text-risk-score">
+                  {group.riskScore.toFixed(2)}
+                </div>
               </div>
+              {tier && (
+                <Badge variant="outline" className={`text-xs ${tier.color}`} data-testid="text-risk-tier">
+                  {tier.label}
+                </Badge>
+              )}
             </div>
-            {tier && (
-              <Badge variant="outline" className={`text-xs ${tier.color}`} data-testid="text-risk-tier">
-                {tier.label}
-              </Badge>
-            )}
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" data-testid={`button-view-report-${group.id}`}>
+                View Report <ChevronRight className="ml-1 h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
-          {group.score != null && (
-            <div className="text-right">
-              <div className="text-xs text-muted-foreground">Qualification</div>
-              <div className="text-sm font-semibold" data-testid="text-score">{group.score}/100</div>
+
+          {isQualified && (
+            <div className="mt-3 rounded-md border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 p-3">
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <span className="text-xs font-medium text-green-700 dark:text-green-400">
+                  Your group qualifies for our exclusive benefits program. A proposal will be available for review soon.
+                </span>
+              </div>
             </div>
           )}
         </div>
@@ -489,9 +673,20 @@ function GroupCard({ group, onClick }: { group: Group; onClick: () => void }) {
 
 function GroupsList() {
   const [, navigate] = useLocation();
+  const { toast } = useToast();
   const { data: groups, isLoading } = useQuery<Group[]>({
     queryKey: ["/api/groups"],
   });
+
+  const handleDelete = async (groupId: string) => {
+    try {
+      await apiRequest("DELETE", `/api/groups/${groupId}`);
+      toast({ title: "Census deleted", description: "You can upload a new census at any time." });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+    } catch (err: any) {
+      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -529,35 +724,90 @@ function GroupsList() {
         <h2 className="font-semibold">Your Census Submissions</h2>
         <Badge variant="secondary">{groups.length} submission{groups.length !== 1 ? "s" : ""}</Badge>
       </div>
-      {groups.map((g) => (
-        <GroupCard key={g.id} group={g} onClick={() => navigate(`/report/${g.id}`)} />
+      {groups.map((g, i) => (
+        <GroupCard
+          key={g.id}
+          group={g}
+          index={i}
+          onClick={() => navigate(`/report/${g.id}`)}
+          onDelete={() => handleDelete(g.id)}
+        />
       ))}
     </div>
   );
 }
 
 export default function DashboardPage() {
-  const [showUpload, setShowUpload] = useState(true);
+  const { user } = useAuth();
+  const [, navigate] = useLocation();
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [analyzingGroup, setAnalyzingGroup] = useState<Group | null>(null);
+
+  const { data: groups } = useQuery<Group[]>({
+    queryKey: ["/api/groups"],
+  });
+
+  const hasGroups = groups && groups.length > 0;
+  const hasQualified = groups?.some(g => g.riskTier === "preferred" || g.riskTier === "standard");
+
+  const currentStep = !hasGroups ? 1 : hasQualified ? 3 : 2;
+
+  const firstName = user?.fullName?.split(" ")[0] || "there";
+
+  const handleUploadComplete = (group: Group) => {
+    setAnalyzingGroup(group);
+    setShowAnalysis(true);
+  };
+
+  const handleAnalysisComplete = () => {
+    setShowAnalysis(false);
+    setAnalyzingGroup(null);
+    queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <DashboardNav />
       <div className="mx-auto max-w-4xl px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight" data-testid="text-dashboard-title">
-            Benefits Portal
+        <div className="mb-2">
+          <h1 className="text-2xl font-bold tracking-tight" data-testid="text-welcome-message">
+            Welcome, {firstName}!
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Upload your employee census data and track your qualification status.
+            {user?.companyName ? `${user.companyName} \u2022 ` : ""}Benefits Qualification Portal
           </p>
         </div>
 
-        <div className="space-y-6">
-          <CensusUploadWizard onComplete={() => {
-            queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
-          }} />
-          <GroupsList />
-        </div>
+        <StepIndicator currentStep={currentStep} />
+
+        {showAnalysis ? (
+          <AnalysisAnimation onComplete={handleAnalysisComplete} group={analyzingGroup} />
+        ) : (
+          <div className="space-y-6">
+            <CensusUploadWizard onComplete={handleUploadComplete} />
+            <GroupsList />
+
+            {hasQualified && (
+              <Card className="p-6 border-primary/30">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 dark:bg-primary/20 flex-shrink-0">
+                    <FileText className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold" data-testid="text-proposal-heading">Step 3: Review Your Proposal</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Your group has qualified for our exclusive benefits program. Our team is preparing a customized proposal for you. You'll be notified by email when it's ready for review.
+                    </p>
+                    <div className="mt-3 flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Proposal preparation in progress</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

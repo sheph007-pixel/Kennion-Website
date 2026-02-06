@@ -9,6 +9,7 @@ interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
   requestMagicLink: (data: { email: string; fullName?: string; companyName?: string }) => Promise<{ message: string; email?: string; needsSignup?: boolean }>;
+  register: (data: { firstName: string; lastName: string; email: string; phone: string; companyName: string }) => Promise<{ message: string; email: string }>;
   verifyMagicLink: (token: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -38,6 +39,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return await res.json();
   }, []);
 
+  const register = useCallback(async (data: { firstName: string; lastName: string; email: string; phone: string; companyName: string }) => {
+    const res = await apiRequest("POST", "/api/auth/register", data);
+    return await res.json();
+  }, []);
+
   const verifyMagicLink = useCallback(async (token: string) => {
     await apiRequest("POST", "/api/auth/verify-magic-link", { token });
     await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
@@ -55,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user: user ?? null, isLoading, requestMagicLink, verifyMagicLink, login, logout }}>
+    <AuthContext.Provider value={{ user: user ?? null, isLoading, requestMagicLink, register, verifyMagicLink, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -27,6 +27,8 @@ export interface IStorage {
 
   getCensusByGroupId(groupId: string): Promise<CensusEntry[]>;
   createCensusEntries(entries: InsertCensusEntry[]): Promise<CensusEntry[]>;
+  deleteGroup(id: string): Promise<void>;
+  deleteCensusByGroupId(groupId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -89,6 +91,14 @@ export class DatabaseStorage implements IStorage {
   async createCensusEntries(entries: InsertCensusEntry[]): Promise<CensusEntry[]> {
     if (entries.length === 0) return [];
     return db.insert(censusEntries).values(entries).returning();
+  }
+
+  async deleteGroup(id: string): Promise<void> {
+    await db.delete(groups).where(eq(groups.id, id));
+  }
+
+  async deleteCensusByGroupId(groupId: string): Promise<void> {
+    await db.delete(censusEntries).where(eq(censusEntries.groupId, groupId));
   }
 }
 

@@ -64,6 +64,15 @@ export const magicLinkRequestSchema = z.object({
   email: z.string().email("Valid email required"),
   fullName: z.string().min(2, "Full name is required").optional(),
   companyName: z.string().optional(),
+  phone: z.string().optional(),
+});
+
+export const registerSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Valid email required"),
+  phone: z.string().min(7, "Valid phone number required"),
+  companyName: z.string().min(1, "Company name is required"),
 });
 
 export const magicLinkVerifySchema = z.object({

@@ -32,10 +32,10 @@ function Navbar() {
           <ThemeToggle />
           <Link href="/login">
             <Button variant="ghost" size="sm" data-testid="link-login">
-              Sign In
+              Log In
             </Button>
           </Link>
-          <Link href="/login">
+          <Link href="/register">
             <Button size="sm" data-testid="link-register">
               Get Started <ArrowRight className="ml-1 h-3.5 w-3.5" />
             </Button>

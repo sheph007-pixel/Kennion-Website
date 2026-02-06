@@ -12,12 +12,9 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { magicLinkRequestSchema } from "@shared/schema";
 
 const signInSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
-  fullName: z.string().optional(),
-  companyName: z.string().optional(),
 });
 
 const adminLoginSchema = z.object({
@@ -29,7 +26,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [sentToEmail, setSentToEmail] = useState("");
-  const [needsName, setNeedsName] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const { requestMagicLink, login } = useAuth();
   const { toast } = useToast();
@@ -37,7 +33,7 @@ export default function LoginPage() {
 
   const form = useForm<z.infer<typeof signInSchema>>({
     resolver: zodResolver(signInSchema),
-    defaultValues: { email: "", fullName: "", companyName: "" },
+    defaultValues: { email: "" },
   });
 
   const adminForm = useForm<z.infer<typeof adminLoginSchema>>({
@@ -48,18 +44,15 @@ export default function LoginPage() {
   async function onSubmit(data: z.infer<typeof signInSchema>) {
     setIsLoading(true);
     try {
-      const payload: any = { email: data.email };
-      if (data.fullName) payload.fullName = data.fullName;
-      if (data.companyName) payload.companyName = data.companyName;
-
-      const result = await requestMagicLink(payload);
+      const result = await requestMagicLink({ email: data.email });
 
       if (result.needsSignup) {
-        setNeedsName(true);
         toast({
-          title: "Welcome! We need a few details",
-          description: "Please enter your name to create your account.",
+          title: "Account not found",
+          description: "No account found with that email. Please register first.",
+          variant: "destructive",
         });
+        navigate("/register");
       } else {
         setEmailSent(true);
         setSentToEmail(data.email);
@@ -100,7 +93,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <div className="flex items-center justify-between px-6 py-3 border-b">
-        <KennionLogo size="md" />
+        <Link href="/">
+          <KennionLogo size="md" />
+        </Link>
         <ThemeToggle />
       </div>
 
@@ -150,7 +145,7 @@ export default function LoginPage() {
                   className="text-sm text-muted-foreground"
                   data-testid="button-back-to-magic-link"
                 >
-                  Back to magic link sign in
+                  Back to sign in
                 </button>
               </div>
             </>
@@ -169,7 +164,7 @@ export default function LoginPage() {
               </Card>
               <Button
                 variant="outline"
-                onClick={() => { setEmailSent(false); setNeedsName(false); }}
+                onClick={() => { setEmailSent(false); }}
                 data-testid="button-try-different-email"
               >
                 Try a different email
@@ -203,29 +198,6 @@ export default function LoginPage() {
                     )}
                   </div>
 
-                  {needsName && (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="fullName">Full Name</Label>
-                        <Input
-                          id="fullName"
-                          placeholder="Jane Smith"
-                          {...form.register("fullName")}
-                          data-testid="input-full-name"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="companyName">Company Name</Label>
-                        <Input
-                          id="companyName"
-                          placeholder="Acme Corp"
-                          {...form.register("companyName")}
-                          data-testid="input-company-name"
-                        />
-                      </div>
-                    </>
-                  )}
-
                   <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-send-link">
                     {isLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -236,9 +208,15 @@ export default function LoginPage() {
                 </form>
               </Card>
 
-              <div className="text-center mt-6">
+              <div className="text-center mt-6 space-y-2">
                 <p className="text-xs text-muted-foreground">
                   No password needed. We'll email you a secure link to sign in.
+                </p>
+                <p className="text-sm">
+                  Don't have an account?{" "}
+                  <Link href="/register" className="font-medium text-primary" data-testid="link-register">
+                    Get Started
+                  </Link>
                 </p>
               </div>
 

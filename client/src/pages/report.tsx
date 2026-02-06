@@ -235,7 +235,7 @@ export default function ReportPage() {
               <p class="subtitle">Group Risk Analysis Report</p>
 
               <h2>${group.companyName}</h2>
-              <p class="subtitle">Submitted ${new Date(group.submittedAt).toLocaleDateString()} | Census #${group.id.substring(0, 8).toUpperCase()}</p>
+              <p class="subtitle">Submitted ${new Date(group.submittedAt).toLocaleDateString()} | Census #KBA-${group.id.substring(0, 8).toUpperCase()}</p>
 
               <div class="grid">
                 <div class="stat"><div class="stat-label">Employees (EE)</div><div class="stat-value">${group.employeeCount}</div></div>
@@ -297,8 +297,8 @@ export default function ReportPage() {
                 {group.companyName}
               </h1>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Census #{group.id.substring(0, 8).toUpperCase()} | Submitted {new Date(group.submittedAt).toLocaleDateString()}
+            <p className="text-sm text-muted-foreground" data-testid="text-census-number">
+              Census #KBA-{group.id.substring(0, 8).toUpperCase()} | Submitted {new Date(group.submittedAt).toLocaleDateString()}
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={handleDownloadPdf} data-testid="button-download-report">
