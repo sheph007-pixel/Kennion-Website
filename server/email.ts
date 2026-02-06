@@ -1,42 +1,14 @@
 import { Resend } from "resend";
 import { log } from "./index";
 
-async function getResendClient() {
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-  const xReplitToken = process.env.REPL_IDENTITY
-    ? "repl " + process.env.REPL_IDENTITY
-    : process.env.WEB_REPL_RENEWAL
-    ? "depl " + process.env.WEB_REPL_RENEWAL
-    : null;
+const FROM_EMAIL = "Kennion Benefit Advisors <onboarding@resend.dev>";
 
-  if (!xReplitToken) {
-    throw new Error("X_REPLIT_TOKEN not found for repl/depl");
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY not configured");
   }
-
-  const connectionSettings = await fetch(
-    "https://" + hostname + "/api/v2/connection?include_secrets=true&connector_names=resend",
-    {
-      headers: {
-        Accept: "application/json",
-        X_REPLIT_TOKEN: xReplitToken,
-      },
-    }
-  )
-    .then((res) => res.json())
-    .then((data) => data.items?.[0]);
-
-  if (!connectionSettings || !connectionSettings.settings.api_key) {
-    log(`Resend connector response: ${JSON.stringify(connectionSettings)}`);
-    throw new Error("Resend not connected");
-  }
-
-  const apiKey = connectionSettings.settings.api_key;
-  log(`Resend API key prefix: ${apiKey.substring(0, 8)}...`);
-
-  return {
-    client: new Resend(apiKey),
-    fromEmail: connectionSettings.settings.from_email,
-  };
+  return new Resend(apiKey);
 }
 
 export async function sendMagicLinkEmail(
@@ -45,14 +17,13 @@ export async function sendMagicLinkEmail(
   fullName?: string
 ) {
   try {
-    const { client, fromEmail } = await getResendClient();
-
+    const client = getResendClient();
     const greeting = fullName ? `Hi ${fullName},` : "Hi,";
 
-    log(`Sending email from: ${fromEmail} to: ${toEmail}`);
+    log(`Sending email from: ${FROM_EMAIL} to: ${toEmail}`);
 
     const result = await client.emails.send({
-      from: fromEmail,
+      from: FROM_EMAIL,
       to: toEmail,
       subject: "Sign in to Kennion Benefit Advisors",
       html: `
