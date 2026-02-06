@@ -3,16 +3,18 @@ import { createServer, type Server } from "http";
 import session from "express-session";
 import multer from "multer";
 import Papa from "papaparse";
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { storage } from "./storage";
 import {
-  registerSchema,
+  magicLinkRequestSchema,
+  magicLinkVerifySchema,
   loginSchema,
-  verifyEmailSchema,
   updateGroupStatusSchema,
 } from "@shared/schema";
 import ConnectPgSimple from "connect-pg-simple";
 import { log } from "./index";
+import { sendMagicLinkEmail } from "./email";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
@@ -22,8 +24,8 @@ declare module "express-session" {
   }
 }
 
-function generateCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+function generateMagicToken(): string {
+  return crypto.randomBytes(32).toString("hex");
 }
 
 function requireAuth(req: Request, res: Response, next: Function) {
@@ -42,6 +44,12 @@ async function requireAdmin(req: Request, res: Response, next: Function) {
     return res.status(403).json({ message: "Admin access required" });
   }
   next();
+}
+
+function getBaseUrl(req: Request): string {
+  const proto = req.headers["x-forwarded-proto"] || req.protocol;
+  const host = req.headers["x-forwarded-host"] || req.headers.host;
+  return `${proto}://${host}`;
 }
 
 export async function registerRoutes(
@@ -68,71 +76,76 @@ export async function registerRoutes(
     })
   );
 
-  // Auth routes
-  app.post("/api/auth/register", async (req: Request, res: Response) => {
+  app.post("/api/auth/magic-link", async (req: Request, res: Response) => {
     try {
-      const data = registerSchema.parse(req.body);
+      const data = magicLinkRequestSchema.parse(req.body);
+      const token = generateMagicToken();
+      const expiry = new Date(Date.now() + 15 * 60 * 1000);
 
-      const existing = await storage.getUserByEmail(data.email);
-      if (existing) {
-        return res.status(400).json({ message: "An account with this email already exists" });
+      let user = await storage.getUserByEmail(data.email);
+
+      if (user) {
+        await storage.updateUser(user.id, {
+          magicToken: token,
+          magicTokenExpiry: expiry,
+          ...(data.fullName && { fullName: data.fullName }),
+          ...(data.companyName && { companyName: data.companyName }),
+        });
+      } else {
+        if (!data.fullName) {
+          return res.json({ message: "Please provide your details", needsSignup: true });
+        }
+        user = await storage.createUser({
+          fullName: data.fullName,
+          email: data.email,
+          companyName: data.companyName || null,
+          phone: null,
+          password: null,
+          magicToken: token,
+          magicTokenExpiry: expiry,
+        });
       }
 
-      const hashedPassword = await bcrypt.hash(data.password, 10);
-      const code = generateCode();
-      const expiry = new Date(Date.now() + 30 * 60 * 1000);
+      const baseUrl = getBaseUrl(req);
+      const magicLinkUrl = `${baseUrl}/auth/verify?token=${token}`;
 
-      await storage.createUser({
-        fullName: data.fullName,
-        email: data.email,
-        password: hashedPassword,
-        companyName: data.companyName || null,
-        phone: null,
-        verificationCode: code,
-        verificationExpiry: expiry,
-      });
+      await sendMagicLinkEmail(data.email, magicLinkUrl, user.fullName);
 
-      log(`Verification code for ${data.email}: ${code}`);
-
-      res.json({
-        requiresVerification: true,
-        email: data.email,
-        _devCode: code,
-      });
+      res.json({ message: "Sign-in link sent to your email", email: data.email });
     } catch (err: any) {
-      res.status(400).json({ message: err.message || "Registration failed" });
+      log(`Magic link error: ${err.message}`);
+      res.status(400).json({ message: err.message || "Failed to send sign-in link" });
     }
   });
 
-  app.post("/api/auth/verify", async (req: Request, res: Response) => {
+  app.post("/api/auth/verify-magic-link", async (req: Request, res: Response) => {
     try {
-      const data = verifyEmailSchema.parse(req.body);
-      const user = await storage.getUserByEmail(data.email);
+      const data = magicLinkVerifySchema.parse(req.body);
+      const user = await storage.getUserByMagicToken(data.token);
 
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(400).json({ message: "Invalid or expired link" });
       }
 
-      if (user.verified) {
-        return res.status(400).json({ message: "Email already verified" });
-      }
-
-      if (
-        user.verificationCode !== data.code ||
-        !user.verificationExpiry ||
-        new Date() > user.verificationExpiry
-      ) {
-        return res.status(400).json({ message: "Invalid or expired verification code" });
+      if (!user.magicTokenExpiry || new Date() > user.magicTokenExpiry) {
+        await storage.updateUser(user.id, { magicToken: null, magicTokenExpiry: null });
+        return res.status(400).json({ message: "This link has expired. Please request a new one." });
       }
 
       await storage.updateUser(user.id, {
         verified: true,
-        verificationCode: null,
-        verificationExpiry: null,
+        magicToken: null,
+        magicTokenExpiry: null,
       });
 
       req.session.userId = user.id;
-      res.json({ message: "Email verified successfully" });
+      res.json({
+        id: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        companyName: user.companyName,
+      });
     } catch (err: any) {
       res.status(400).json({ message: err.message || "Verification failed" });
     }
@@ -143,17 +156,13 @@ export async function registerRoutes(
       const data = loginSchema.parse(req.body);
       const user = await storage.getUserByEmail(data.email);
 
-      if (!user) {
+      if (!user || !user.password) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
       const valid = await bcrypt.compare(data.password, user.password);
       if (!valid) {
         return res.status(401).json({ message: "Invalid email or password" });
-      }
-
-      if (!user.verified) {
-        return res.status(403).json({ message: "Please verify your email first" });
       }
 
       req.session.userId = user.id;
@@ -196,7 +205,6 @@ export async function registerRoutes(
     });
   });
 
-  // CSV Template
   app.get("/api/groups/template", (_req: Request, res: Response) => {
     const csv = "First Name,Last Name,Date of Birth,Gender,Zip Code,Relationship\nJohn,Smith,1985-03-15,Male,30301,Employee\nJane,Smith,1987-08-22,Female,30301,Spouse\nTommy,Smith,2015-01-10,Male,30301,Dependent\n";
     res.setHeader("Content-Type", "text/csv");
@@ -204,7 +212,6 @@ export async function registerRoutes(
     res.send(csv);
   });
 
-  // Group upload (client)
   app.post("/api/groups/upload", requireAuth, upload.single("file"), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
@@ -300,13 +307,11 @@ export async function registerRoutes(
     }
   });
 
-  // Client groups
   app.get("/api/groups", requireAuth, async (req: Request, res: Response) => {
     const userGroups = await storage.getGroupsByUserId(req.session.userId!);
     res.json(userGroups);
   });
 
-  // Admin routes
   app.get("/api/admin/groups", requireAdmin, async (_req: Request, res: Response) => {
     const allGroups = await storage.getAllGroups();
     res.json(allGroups);

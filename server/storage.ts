@@ -15,7 +15,8 @@ import { eq, desc } from "drizzle-orm";
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser & { verificationCode?: string; verificationExpiry?: Date }): Promise<User>;
+  getUserByMagicToken(token: string): Promise<User | undefined>;
+  createUser(user: Partial<InsertUser> & { fullName: string; email: string; magicToken?: string; magicTokenExpiry?: Date }): Promise<User>;
   updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
 
   getGroupsByUserId(userId: string): Promise<Group[]>;
@@ -39,7 +40,12 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createUser(user: InsertUser & { verificationCode?: string; verificationExpiry?: Date }): Promise<User> {
+  async getUserByMagicToken(token: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.magicToken, token));
+    return user;
+  }
+
+  async createUser(user: Partial<InsertUser> & { fullName: string; email: string; magicToken?: string; magicTokenExpiry?: Date }): Promise<User> {
     const [created] = await db.insert(users).values(user).returning();
     return created;
   }

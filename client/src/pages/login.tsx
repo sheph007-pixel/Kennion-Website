@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, Mail, Lock } from "lucide-react";
 import kennionLogo from "@assets/qt=q_95_1770371575379.webp";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,25 +11,81 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { loginSchema } from "@shared/schema";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { magicLinkRequestSchema } from "@shared/schema";
+
+const signInSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  fullName: z.string().optional(),
+  companyName: z.string().optional(),
+});
+
+const adminLoginSchema = z.object({
+  email: z.string().email("Valid email required"),
+  password: z.string().min(1, "Password is required"),
+});
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const [emailSent, setEmailSent] = useState(false);
+  const [sentToEmail, setSentToEmail] = useState("");
+  const [needsName, setNeedsName] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const { requestMagicLink, login } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
-  const form = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<z.infer<typeof signInSchema>>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: { email: "", fullName: "", companyName: "" },
+  });
+
+  const adminForm = useForm<z.infer<typeof adminLoginSchema>>({
+    resolver: zodResolver(adminLoginSchema),
     defaultValues: { email: "", password: "" },
   });
 
-  async function onSubmit(data: z.infer<typeof loginSchema>) {
+  async function onSubmit(data: z.infer<typeof signInSchema>) {
+    setIsLoading(true);
+    try {
+      const payload: any = { email: data.email };
+      if (data.fullName) payload.fullName = data.fullName;
+      if (data.companyName) payload.companyName = data.companyName;
+
+      const result = await requestMagicLink(payload);
+
+      if (result.needsSignup) {
+        setNeedsName(true);
+        toast({
+          title: "Welcome! We need a few details",
+          description: "Please enter your name to create your account.",
+        });
+      } else {
+        setEmailSent(true);
+        setSentToEmail(data.email);
+        toast({
+          title: "Check your email",
+          description: "We sent you a secure sign-in link.",
+        });
+      }
+    } catch (err: any) {
+      const errMsg = err.message || "";
+      const cleanMessage = errMsg.replace(/^\d+:\s*/, "").replace(/[{}"]|message:/g, "").trim() || "Please try again.";
+      toast({
+        title: "Something went wrong",
+        description: cleanMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function onAdminLogin(data: z.infer<typeof adminLoginSchema>) {
     setIsLoading(true);
     try {
       await login(data.email, data.password);
-      navigate("/dashboard");
+      navigate("/admin");
     } catch (err: any) {
       toast({
         title: "Login failed",
@@ -54,56 +110,153 @@ export default function LoginPage() {
 
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold tracking-tight">Welcome Back</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Sign in to access your benefits portal.
-            </p>
-          </div>
-
-          <Card className="p-6">
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="john@company.com"
-                  data-testid="input-login-email"
-                  {...form.register("email")}
-                />
-                {form.formState.errors.email && (
-                  <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
-                )}
+          {showAdminLogin ? (
+            <>
+              <div className="text-center mb-8">
+                <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary mx-auto mb-4">
+                  <Lock className="h-6 w-6 text-primary-foreground" />
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight" data-testid="text-admin-login-title">Admin Login</h1>
+                <p className="text-muted-foreground mt-2">Sign in with admin credentials</p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  data-testid="input-login-password"
-                  {...form.register("password")}
-                />
-                {form.formState.errors.password && (
-                  <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>
-                )}
-              </div>
+              <Card className="p-6">
+                <form onSubmit={adminForm.handleSubmit(onAdminLogin)} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-email">Email</Label>
+                    <Input
+                      id="admin-email"
+                      type="email"
+                      placeholder="admin@kennion.com"
+                      {...adminForm.register("email")}
+                      data-testid="input-admin-email"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-password">Password</Label>
+                    <Input
+                      id="admin-password"
+                      type="password"
+                      placeholder="Enter password"
+                      {...adminForm.register("password")}
+                      data-testid="input-admin-password"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-admin-login">
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
+                  </Button>
+                </form>
+              </Card>
 
-              <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-login">
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Sign In <ArrowRight className="ml-1 h-4 w-4" />
+              <div className="text-center mt-4">
+                <button
+                  onClick={() => setShowAdminLogin(false)}
+                  className="text-sm text-muted-foreground"
+                  data-testid="button-back-to-magic-link"
+                >
+                  Back to magic link sign in
+                </button>
+              </div>
+            </>
+          ) : emailSent ? (
+            <div className="text-center space-y-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mx-auto">
+                <Mail className="h-8 w-8 text-primary" />
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-check-email-title">Check your email</h1>
+              <p className="text-muted-foreground">
+                We sent a sign-in link to <span className="font-medium text-foreground" data-testid="text-sent-email">{sentToEmail}</span>
+              </p>
+              <Card className="p-6 text-left space-y-3">
+                <p className="text-sm text-muted-foreground">Click the link in the email to sign in securely. The link expires in 15 minutes.</p>
+                <p className="text-sm text-muted-foreground">Didn't get the email? Check your spam folder or try again.</p>
+              </Card>
+              <Button
+                variant="outline"
+                onClick={() => { setEmailSent(false); setNeedsName(false); }}
+                data-testid="button-try-different-email"
+              >
+                Try a different email
               </Button>
-            </form>
-          </Card>
+            </div>
+          ) : (
+            <>
+              <div className="text-center mb-8">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mx-auto mb-4">
+                  <Mail className="h-6 w-6 text-primary" />
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight" data-testid="text-sign-in-title">Sign In</h1>
+                <p className="text-muted-foreground mt-2">
+                  Enter your email and we'll send you a secure sign-in link
+                </p>
+              </div>
 
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link href="/register">
-              <span className="text-primary font-medium cursor-pointer">Register here</span>
-            </Link>
-          </p>
+              <Card className="p-6">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Business Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@company.com"
+                      {...form.register("email")}
+                      data-testid="input-email"
+                    />
+                    {form.formState.errors.email && (
+                      <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
+                    )}
+                  </div>
+
+                  {needsName && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName">Full Name</Label>
+                        <Input
+                          id="fullName"
+                          placeholder="Jane Smith"
+                          {...form.register("fullName")}
+                          data-testid="input-full-name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="companyName">Company Name</Label>
+                        <Input
+                          id="companyName"
+                          placeholder="Acme Corp"
+                          {...form.register("companyName")}
+                          data-testid="input-company-name"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-send-link">
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>Send Sign-In Link <ArrowRight className="ml-1 h-4 w-4" /></>
+                    )}
+                  </Button>
+                </form>
+              </Card>
+
+              <div className="text-center mt-6">
+                <p className="text-xs text-muted-foreground">
+                  No password needed. We'll email you a secure link to sign in.
+                </p>
+              </div>
+
+              <div className="text-center mt-4">
+                <button
+                  onClick={() => setShowAdminLogin(true)}
+                  className="text-xs text-muted-foreground"
+                  data-testid="button-admin-login-toggle"
+                >
+                  Admin login
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

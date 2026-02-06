@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import LandingPage from "@/pages/landing";
 import RegisterPage from "@/pages/register";
 import LoginPage from "@/pages/login";
+import AuthVerifyPage from "@/pages/auth-verify";
 import DashboardPage from "@/pages/dashboard";
 import AdminPage from "@/pages/admin";
 import NotFound from "@/pages/not-found";
@@ -64,6 +65,7 @@ function Router() {
       <Route path="/login">
         <PublicRoute component={LoginPage} />
       </Route>
+      <Route path="/auth/verify" component={AuthVerifyPage} />
       <Route path="/dashboard">
         <ProtectedRoute component={DashboardPage} />
       </Route>

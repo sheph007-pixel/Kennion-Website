@@ -39,7 +39,7 @@ function Navbar() {
               Sign In
             </Button>
           </Link>
-          <Link href="/register">
+          <Link href="/login">
             <Button size="sm" data-testid="link-register">
               Get Started <ArrowRight className="ml-1 h-3.5 w-3.5" />
             </Button>

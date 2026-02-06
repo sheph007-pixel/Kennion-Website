@@ -13,8 +13,6 @@ export async function seedDatabase() {
         password: hashedPassword,
         companyName: "Kennion Benefit Advisors",
         phone: null,
-        verificationCode: undefined,
-        verificationExpiry: undefined,
       });
 
       const admin = await storage.getUserByEmail("admin@kennion.com");

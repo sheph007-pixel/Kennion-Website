@@ -1,16 +1,16 @@
-import { createContext, useContext, useCallback, useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { createContext, useContext, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "./queryClient";
 import type { User } from "@shared/schema";
 
-type AuthUser = Omit<User, "password" | "verificationCode" | "verificationExpiry">;
+type AuthUser = Pick<User, "id" | "fullName" | "email" | "role" | "companyName" | "verified" | "createdAt">;
 
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
+  requestMagicLink: (data: { email: string; fullName?: string; companyName?: string }) => Promise<{ message: string; email?: string; needsSignup?: boolean }>;
+  verifyMagicLink: (token: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  register: (data: { fullName: string; email: string; password: string; companyName?: string }) => Promise<{ requiresVerification: boolean; email: string }>;
-  verifyEmail: (email: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -33,19 +33,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     retry: false,
   });
 
-  const login = useCallback(async (email: string, password: string) => {
-    await apiRequest("POST", "/api/auth/login", { email, password });
+  const requestMagicLink = useCallback(async (data: { email: string; fullName?: string; companyName?: string }) => {
+    const res = await apiRequest("POST", "/api/auth/magic-link", data);
+    return await res.json();
+  }, []);
+
+  const verifyMagicLink = useCallback(async (token: string) => {
+    await apiRequest("POST", "/api/auth/verify-magic-link", { token });
     await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
   }, []);
 
-  const register = useCallback(async (data: { fullName: string; email: string; password: string; companyName?: string }) => {
-    const res = await apiRequest("POST", "/api/auth/register", data);
-    const result = await res.json();
-    return result;
-  }, []);
-
-  const verifyEmail = useCallback(async (email: string, code: string) => {
-    await apiRequest("POST", "/api/auth/verify", { email, code });
+  const login = useCallback(async (email: string, password: string) => {
+    await apiRequest("POST", "/api/auth/login", { email, password });
     await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
   }, []);
 
@@ -56,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user: user ?? null, isLoading, login, register, verifyEmail, logout }}>
+    <AuthContext.Provider value={{ user: user ?? null, isLoading, requestMagicLink, verifyMagicLink, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
