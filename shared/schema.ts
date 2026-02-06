@@ -7,12 +7,12 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   fullName: text("full_name").notNull(),
   email: text("email").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"),
   companyName: text("company_name"),
   phone: text("phone"),
   verified: boolean("verified").default(false).notNull(),
-  verificationCode: text("verification_code"),
-  verificationExpiry: timestamp("verification_expiry"),
+  magicToken: text("magic_token"),
+  magicTokenExpiry: timestamp("magic_token_expiry"),
   role: text("role").default("client").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -48,27 +48,25 @@ export const censusEntries = pgTable("census_entries", {
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   verified: true,
-  verificationCode: true,
-  verificationExpiry: true,
+  magicToken: true,
+  magicTokenExpiry: true,
   role: true,
   createdAt: true,
 });
 
-export const registerSchema = z.object({
-  fullName: z.string().min(2, "Full name is required"),
-  email: z.string().email("Valid business email required"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+export const magicLinkRequestSchema = z.object({
+  email: z.string().email("Valid email required"),
+  fullName: z.string().min(2, "Full name is required").optional(),
   companyName: z.string().optional(),
+});
+
+export const magicLinkVerifySchema = z.object({
+  token: z.string().min(1, "Token is required"),
 });
 
 export const loginSchema = z.object({
   email: z.string().email("Valid email required"),
   password: z.string().min(1, "Password is required"),
-});
-
-export const verifyEmailSchema = z.object({
-  email: z.string().email(),
-  code: z.string().length(6, "Code must be 6 digits"),
 });
 
 export const insertGroupSchema = createInsertSchema(groups).omit({
