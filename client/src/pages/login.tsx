@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
 import { ArrowRight, Loader2, Mail, Lock } from "lucide-react";
-import kennionLogo from "@assets/qt=q_95_1770371575379.webp";
+import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -100,11 +100,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <div className="flex items-center justify-between px-6 py-3 border-b">
-        <Link href="/">
-          <div className="flex items-center cursor-pointer">
-            <img src={kennionLogo} alt="Kennion Benefit Advisors" className="h-8 w-auto" />
-          </div>
-        </Link>
+        <KennionLogo size="md" />
         <ThemeToggle />
       </div>
 

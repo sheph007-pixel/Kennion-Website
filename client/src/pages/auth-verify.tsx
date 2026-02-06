@@ -4,7 +4,7 @@ import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth";
-import kennionLogo from "@assets/qt=q_95_1770371575379.webp";
+import { KennionLogo } from "@/components/kennion-logo";
 
 export default function AuthVerifyPage() {
   const { verifyMagicLink } = useAuth();
@@ -36,9 +36,7 @@ export default function AuthVerifyPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <div className="flex items-center justify-between px-6 py-3 border-b">
-        <div className="flex items-center cursor-pointer" onClick={() => navigate("/")}>
-          <img src={kennionLogo} alt="Kennion Benefit Advisors" className="h-8 w-auto" />
-        </div>
+        <KennionLogo size="md" />
       </div>
 
       <div className="flex-1 flex items-center justify-center px-6 py-12">

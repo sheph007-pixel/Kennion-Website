@@ -16,17 +16,13 @@ import {
   Activity,
   Shield,
 } from "lucide-react";
-import kennionLogo from "@assets/qt=q_95_1770371575379.webp";
+import { KennionLogo } from "@/components/kennion-logo";
 
 function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
-        <Link href="/">
-          <div className="flex items-center cursor-pointer">
-            <img src={kennionLogo} alt="Kennion Benefit Advisors" className="h-9 w-auto" />
-          </div>
-        </Link>
+        <KennionLogo size="md" />
         <div className="hidden md:flex items-center gap-6">
           <a href="#how-it-works" className="text-sm text-muted-foreground transition-colors" data-testid="link-how-it-works">How It Works</a>
           <a href="#features" className="text-sm text-muted-foreground transition-colors" data-testid="link-features">Platform</a>
@@ -342,9 +338,7 @@ function Footer() {
     <footer className="border-t py-10">
       <div className="mx-auto max-w-7xl px-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center">
-            <img src={kennionLogo} alt="Kennion Benefit Advisors" className="h-7 w-auto" />
-          </div>
+          <KennionLogo size="sm" />
           <p className="text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} Kennion Benefit Advisors. All rights reserved.
           </p>
