@@ -42,7 +42,7 @@ export const groups = pgTable("groups", {
 
 export const censusEntries = pgTable("census_entries", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  groupId: varchar("group_id").notNull().references(() => groups.id),
+  groupId: varchar("group_id").notNull().references(() => groups.id, { onDelete: "cascade" }),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   dateOfBirth: text("date_of_birth").notNull(),
