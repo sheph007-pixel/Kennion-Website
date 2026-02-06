@@ -1,9 +1,7 @@
 import { Resend } from "resend";
 import { log } from "./index";
 
-let connectionSettings: any;
-
-async function getCredentials() {
+async function getResendClient() {
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? "repl " + process.env.REPL_IDENTITY
@@ -15,7 +13,7 @@ async function getCredentials() {
     throw new Error("X_REPLIT_TOKEN not found for repl/depl");
   }
 
-  connectionSettings = await fetch(
+  const connectionSettings = await fetch(
     "https://" + hostname + "/api/v2/connection?include_secrets=true&connector_names=resend",
     {
       headers: {
@@ -32,15 +30,7 @@ async function getCredentials() {
   }
 
   return {
-    apiKey: connectionSettings.settings.api_key,
-    fromEmail: connectionSettings.settings.from_email,
-  };
-}
-
-async function getResendClient() {
-  const { apiKey } = await getCredentials();
-  return {
-    client: new Resend(apiKey),
+    client: new Resend(connectionSettings.settings.api_key),
     fromEmail: connectionSettings.settings.from_email,
   };
 }
@@ -55,7 +45,9 @@ export async function sendMagicLinkEmail(
 
     const greeting = fullName ? `Hi ${fullName},` : "Hi,";
 
-    await client.emails.send({
+    log(`Sending email from: ${fromEmail} to: ${toEmail}`);
+
+    const result = await client.emails.send({
       from: fromEmail,
       to: toEmail,
       subject: "Sign in to Kennion Benefit Advisors",
@@ -77,7 +69,12 @@ export async function sendMagicLinkEmail(
       `,
     });
 
-    log(`Magic link email sent to ${toEmail}`);
+    if (result.error) {
+      log(`Resend API error: ${JSON.stringify(result.error)}`);
+      throw new Error(`Email delivery failed: ${result.error.message}`);
+    }
+
+    log(`Magic link email sent to ${toEmail} (id: ${result.data?.id})`);
     return true;
   } catch (err: any) {
     log(`Failed to send magic link email to ${toEmail}: ${err.message}`);
