@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
-  Shield,
   TrendingDown,
   Users,
   BarChart3,
@@ -15,21 +14,17 @@ import {
   Zap,
   ChevronRight,
   Activity,
+  Shield,
 } from "lucide-react";
+import kennionLogo from "@assets/qt=q_95_1770371575379.webp";
 
 function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
         <Link href="/">
-          <div className="flex items-center gap-2 cursor-pointer">
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary">
-              <Shield className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-bold tracking-tight leading-tight">KENNION</span>
-              <span className="text-[10px] text-muted-foreground leading-tight tracking-widest uppercase">Benefit Advisors</span>
-            </div>
+          <div className="flex items-center cursor-pointer">
+            <img src={kennionLogo} alt="Kennion Benefit Advisors" className="h-9 w-auto" />
           </div>
         </Link>
         <div className="hidden md:flex items-center gap-6">
@@ -347,12 +342,8 @@ function Footer() {
     <footer className="border-t py-10">
       <div className="mx-auto max-w-7xl px-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
-              <Shield className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="text-sm font-bold">KENNION</span>
-            <span className="text-xs text-muted-foreground">Benefit Advisors</span>
+          <div className="flex items-center">
+            <img src={kennionLogo} alt="Kennion Benefit Advisors" className="h-7 w-auto" />
           </div>
           <p className="text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} Kennion Benefit Advisors. All rights reserved.

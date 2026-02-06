@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
-import { Shield, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
+import kennionLogo from "@assets/qt=q_95_1770371575379.webp";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,11 +45,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <div className="flex items-center justify-between px-6 py-3 border-b">
         <Link href="/">
-          <div className="flex items-center gap-2 cursor-pointer">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
-              <Shield className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="text-sm font-bold">KENNION</span>
+          <div className="flex items-center cursor-pointer">
+            <img src={kennionLogo} alt="Kennion Benefit Advisors" className="h-8 w-auto" />
           </div>
         </Link>
         <ThemeToggle />

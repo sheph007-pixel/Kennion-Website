@@ -2,7 +2,6 @@ import { useState, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import {
-  Shield,
   Upload,
   FileSpreadsheet,
   BarChart3,
@@ -19,6 +18,7 @@ import {
   TrendingUp,
   ChevronRight,
 } from "lucide-react";
+import kennionLogo from "@assets/qt=q_95_1770371575379.webp";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -58,14 +58,8 @@ function DashboardNav() {
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
-            <Shield className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-bold leading-tight">KENNION</span>
-            <span className="text-[10px] text-muted-foreground leading-tight">Portal</span>
-          </div>
+        <div className="flex items-center">
+          <img src={kennionLogo} alt="Kennion Benefit Advisors" className="h-8 w-auto" />
         </div>
         <div className="flex items-center gap-3">
           <span className="hidden sm:inline text-sm text-muted-foreground">{user?.fullName}</span>
