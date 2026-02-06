@@ -1,18 +1,100 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
+  fullName: text("full_name").notNull(),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  companyName: text("company_name"),
+  phone: text("phone"),
+  verified: boolean("verified").default(false).notNull(),
+  verificationCode: text("verification_code"),
+  verificationExpiry: timestamp("verification_expiry"),
+  role: text("role").default("client").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const groups = pgTable("groups", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  companyName: text("company_name").notNull(),
+  contactName: text("contact_name").notNull(),
+  contactEmail: text("contact_email").notNull(),
+  employeeCount: integer("employee_count").default(0),
+  dependentCount: integer("dependent_count").default(0),
+  totalLives: integer("total_lives").default(0),
+  status: text("status").default("pending_review").notNull(),
+  score: integer("score"),
+  riskTier: text("risk_tier"),
+  adminNotes: text("admin_notes"),
+  submittedAt: timestamp("submitted_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const censusEntries = pgTable("census_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  groupId: varchar("group_id").notNull().references(() => groups.id),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  dateOfBirth: text("date_of_birth").notNull(),
+  gender: text("gender").notNull(),
+  zipCode: text("zip_code").notNull(),
+  relationship: text("relationship").default("employee").notNull(),
+});
+
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  verified: true,
+  verificationCode: true,
+  verificationExpiry: true,
+  role: true,
+  createdAt: true,
+});
+
+export const registerSchema = z.object({
+  fullName: z.string().min(2, "Full name is required"),
+  email: z.string().email("Valid business email required"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  companyName: z.string().optional(),
+});
+
+export const loginSchema = z.object({
+  email: z.string().email("Valid email required"),
+  password: z.string().min(1, "Password is required"),
+});
+
+export const verifyEmailSchema = z.object({
+  email: z.string().email(),
+  code: z.string().length(6, "Code must be 6 digits"),
+});
+
+export const insertGroupSchema = createInsertSchema(groups).omit({
+  id: true,
+  status: true,
+  score: true,
+  riskTier: true,
+  adminNotes: true,
+  submittedAt: true,
+  updatedAt: true,
+});
+
+export const insertCensusEntrySchema = createInsertSchema(censusEntries).omit({
+  id: true,
+});
+
+export const updateGroupStatusSchema = z.object({
+  status: z.enum(["pending_review", "under_review", "analyzing", "qualified", "not_qualified", "rates_available"]),
+  score: z.number().min(0).max(100).optional(),
+  riskTier: z.enum(["low", "moderate", "high", "preferred"]).optional(),
+  adminNotes: z.string().optional(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type Group = typeof groups.$inferSelect;
+export type InsertGroup = z.infer<typeof insertGroupSchema>;
+export type CensusEntry = typeof censusEntries.$inferSelect;
+export type InsertCensusEntry = z.infer<typeof insertCensusEntrySchema>;
