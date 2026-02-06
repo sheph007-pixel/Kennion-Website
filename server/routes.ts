@@ -21,6 +21,11 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 declare module "express-session" {
   interface SessionData {
     userId?: string;
+    pendingCensus?: {
+      headers: string[];
+      rows: any[];
+      fileName: string;
+    };
   }
 }
 
@@ -63,6 +68,185 @@ function getBaseUrl(req: Request): string {
     return `https://${process.env.REPLIT_DEV_DOMAIN}`;
   }
   return `${req.protocol}://${host}`;
+}
+
+const REQUIRED_FIELDS = [
+  { key: "first_name", label: "First Name", aliases: ["first name", "firstname", "first", "fname", "given name", "given_name"] },
+  { key: "last_name", label: "Last Name", aliases: ["last name", "lastname", "last", "lname", "surname", "family name", "family_name"] },
+  { key: "type", label: "Type (EE/SP/DEP)", aliases: ["type", "relationship", "relation", "member type", "member_type", "coverage type", "coverage_type", "ee/sp/dep", "enrollment type", "enrollment_type", "subscriber type", "subscriber_type", "dependent type", "dependent_type"] },
+  { key: "date_of_birth", label: "Date of Birth", aliases: ["date of birth", "dob", "dateofbirth", "birth date", "birthdate", "birth_date", "birthday", "date_of_birth", "d.o.b.", "d.o.b"] },
+  { key: "gender", label: "Gender", aliases: ["gender", "sex", "m/f", "male/female"] },
+  { key: "zip_code", label: "Zip Code", aliases: ["zip code", "zipcode", "zip", "zip_code", "postal code", "postal_code", "postalcode"] },
+];
+
+function smartMatchHeaders(csvHeaders: string[]): Record<string, string | null> {
+  const mappings: Record<string, string | null> = {};
+
+  for (const field of REQUIRED_FIELDS) {
+    let bestMatch: string | null = null;
+    let bestScore = 0;
+
+    for (const csvHeader of csvHeaders) {
+      const normalized = csvHeader.trim().toLowerCase().replace(/[_\-\.]/g, " ").replace(/\s+/g, " ");
+
+      if (normalized === field.key.replace(/_/g, " ")) {
+        bestMatch = csvHeader;
+        bestScore = 100;
+        break;
+      }
+
+      for (const alias of field.aliases) {
+        if (normalized === alias) {
+          bestMatch = csvHeader;
+          bestScore = 100;
+          break;
+        }
+        if (normalized.includes(alias) || alias.includes(normalized)) {
+          const score = Math.max(normalized.length, alias.length) > 0
+            ? (Math.min(normalized.length, alias.length) / Math.max(normalized.length, alias.length)) * 80
+            : 0;
+          if (score > bestScore) {
+            bestScore = score;
+            bestMatch = csvHeader;
+          }
+        }
+      }
+      if (bestScore === 100) break;
+    }
+
+    mappings[field.key] = bestScore >= 50 ? bestMatch : null;
+  }
+
+  return mappings;
+}
+
+function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relationship: string }[]): {
+  riskScore: number;
+  riskTier: string;
+  averageAge: number;
+  maleCount: number;
+  femaleCount: number;
+  characteristics: any;
+} {
+  const now = new Date();
+  const ages: number[] = [];
+  let maleCount = 0;
+  let femaleCount = 0;
+  const eeAges: number[] = [];
+
+  for (const entry of entries) {
+    let dob: Date | null = null;
+    const dobStr = entry.dateOfBirth.trim();
+    
+    const formats = [
+      /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
+      /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
+    ];
+
+    for (const fmt of formats) {
+      const m = dobStr.match(fmt);
+      if (m) {
+        if (fmt === formats[0]) {
+          dob = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+        } else {
+          dob = new Date(parseInt(m[3]), parseInt(m[1]) - 1, parseInt(m[2]));
+        }
+        break;
+      }
+    }
+
+    if (!dob || isNaN(dob.getTime())) {
+      dob = new Date(dobStr);
+    }
+
+    if (dob && !isNaN(dob.getTime())) {
+      const age = Math.floor((now.getTime() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+      if (age > 0 && age < 120) {
+        ages.push(age);
+        const rel = entry.relationship.toUpperCase();
+        if (rel === "EE" || rel === "EMPLOYEE") {
+          eeAges.push(age);
+        }
+      }
+    }
+
+    const g = entry.gender.toLowerCase();
+    if (g === "male" || g === "m") maleCount++;
+    else if (g === "female" || g === "f") femaleCount++;
+  }
+
+  const avgAge = ages.length > 0 ? ages.reduce((a, b) => a + b, 0) / ages.length : 35;
+  const avgEeAge = eeAges.length > 0 ? eeAges.reduce((a, b) => a + b, 0) / eeAges.length : avgAge;
+
+  let riskScore = 1.0;
+
+  if (avgEeAge < 30) riskScore -= 0.15;
+  else if (avgEeAge < 35) riskScore -= 0.08;
+  else if (avgEeAge < 40) riskScore += 0.0;
+  else if (avgEeAge < 45) riskScore += 0.08;
+  else if (avgEeAge < 50) riskScore += 0.15;
+  else if (avgEeAge < 55) riskScore += 0.22;
+  else riskScore += 0.30;
+
+  const femaleRatio = entries.length > 0 ? femaleCount / entries.length : 0.5;
+  if (femaleRatio > 0.65) riskScore += 0.05;
+  else if (femaleRatio < 0.35) riskScore -= 0.03;
+
+  const eeCount = entries.filter(e => {
+    const r = e.relationship.toUpperCase();
+    return r === "EE" || r === "EMPLOYEE";
+  }).length;
+  if (eeCount < 10) riskScore += 0.08;
+  else if (eeCount < 25) riskScore += 0.03;
+  else if (eeCount > 100) riskScore -= 0.05;
+
+  const olderEes = eeAges.filter(a => a > 55).length;
+  const olderRatio = eeAges.length > 0 ? olderEes / eeAges.length : 0;
+  if (olderRatio > 0.3) riskScore += 0.10;
+  else if (olderRatio > 0.15) riskScore += 0.05;
+
+  riskScore = Math.max(0.40, Math.min(2.0, Math.round(riskScore * 100) / 100));
+
+  let riskTier = "standard";
+  if (riskScore < 0.85) riskTier = "preferred";
+  else if (riskScore > 1.15) riskTier = "high";
+
+  const ageRanges = {
+    "18-29": ages.filter(a => a >= 18 && a < 30).length,
+    "30-39": ages.filter(a => a >= 30 && a < 40).length,
+    "40-49": ages.filter(a => a >= 40 && a < 50).length,
+    "50-59": ages.filter(a => a >= 50 && a < 60).length,
+    "60+": ages.filter(a => a >= 60).length,
+    "Under 18": ages.filter(a => a < 18).length,
+  };
+
+  const characteristics = {
+    ageDistribution: ageRanges,
+    averageEmployeeAge: Math.round(avgEeAge * 10) / 10,
+    dependencyRatio: eeCount > 0 ? Math.round(((entries.length - eeCount) / eeCount) * 100) / 100 : 0,
+    groupSizeCategory: eeCount < 10 ? "Micro" : eeCount < 25 ? "Small" : eeCount < 50 ? "Mid-Size" : eeCount < 100 ? "Large" : "Enterprise",
+    factors: [] as string[],
+  };
+
+  if (avgEeAge < 35) characteristics.factors.push("Young workforce (favorable)");
+  if (avgEeAge > 50) characteristics.factors.push("Mature workforce (higher utilization expected)");
+  if (eeCount >= 50) characteristics.factors.push("Large group size (favorable for risk pooling)");
+  if (eeCount < 10) characteristics.factors.push("Small group (limited risk pooling)");
+  if (olderRatio > 0.3) characteristics.factors.push("High concentration of members 55+");
+  if (characteristics.dependencyRatio > 1.5) characteristics.factors.push("High dependency ratio");
+  if (femaleRatio > 0.65) characteristics.factors.push("Female-dominant workforce");
+
+  const qualScore = Math.round(Math.max(0, Math.min(100, (2.0 - riskScore) / 1.6 * 100)));
+
+  return {
+    riskScore,
+    riskTier,
+    averageAge: Math.round(avgAge * 10) / 10,
+    maleCount,
+    femaleCount,
+    characteristics: { ...characteristics, qualificationScore: qualScore },
+  };
 }
 
 export async function registerRoutes(
@@ -219,10 +403,177 @@ export async function registerRoutes(
   });
 
   app.get("/api/groups/template", (_req: Request, res: Response) => {
-    const csv = "First Name,Last Name,Date of Birth,Gender,Zip Code,Relationship\nJohn,Smith,1985-03-15,Male,30301,Employee\nJane,Smith,1987-08-22,Female,30301,Spouse\nTommy,Smith,2015-01-10,Male,30301,Dependent\n";
+    const csv = "First Name,Last Name,Type,Date of Birth,Gender,Zip Code\nJohn,Smith,EE,1985-03-15,Male,30301\nJane,Smith,SP,1987-08-22,Female,30301\nTommy,Smith,DEP,2015-01-10,Male,30301\nSarah,Johnson,EE,1990-06-12,Female,30301\nMike,Williams,EE,1978-11-03,Male,30302\n";
     res.setHeader("Content-Type", "text/csv");
     res.setHeader("Content-Disposition", "attachment; filename=census_template.csv");
     res.send(csv);
+  });
+
+  app.get("/api/groups/sample", (_req: Request, res: Response) => {
+    const sampleData = [
+      { "First Name": "John", "Last Name": "Smith", "Type": "EE", "Date of Birth": "1985-03-15", "Gender": "Male", "Zip Code": "30301" },
+      { "First Name": "Jane", "Last Name": "Smith", "Type": "SP", "Date of Birth": "1987-08-22", "Gender": "Female", "Zip Code": "30301" },
+      { "First Name": "Tommy", "Last Name": "Smith", "Type": "DEP", "Date of Birth": "2015-01-10", "Gender": "Male", "Zip Code": "30301" },
+      { "First Name": "Sarah", "Last Name": "Johnson", "Type": "EE", "Date of Birth": "1990-06-12", "Gender": "Female", "Zip Code": "30301" },
+      { "First Name": "Mike", "Last Name": "Williams", "Type": "EE", "Date of Birth": "1978-11-03", "Gender": "Male", "Zip Code": "30302" },
+    ];
+    res.json(sampleData);
+  });
+
+  app.post("/api/groups/parse", requireAuth, upload.single("file"), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const csvText = req.file.buffer.toString("utf-8");
+      const parsed = Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+      });
+
+      if (parsed.errors.length > 0 && parsed.data.length === 0) {
+        return res.status(400).json({
+          message: "CSV parsing error: " + parsed.errors[0].message,
+        });
+      }
+
+      const rows = parsed.data as any[];
+      if (rows.length === 0) {
+        return res.status(400).json({ message: "CSV file is empty" });
+      }
+
+      const headers = Object.keys(rows[0]).filter(h => h.trim() !== "");
+      const suggestedMappings = smartMatchHeaders(headers);
+
+      const previewRows = rows.slice(0, 5).map(row => {
+        const preview: Record<string, string> = {};
+        for (const h of headers) {
+          preview[h] = String(row[h] || "").substring(0, 50);
+        }
+        return preview;
+      });
+
+      req.session.pendingCensus = {
+        headers,
+        rows,
+        fileName: req.file.originalname || "census.csv",
+      };
+
+      res.json({
+        headers,
+        totalRows: rows.length,
+        suggestedMappings,
+        previewRows,
+        requiredFields: REQUIRED_FIELDS.map(f => ({ key: f.key, label: f.label })),
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Parse failed" });
+    }
+  });
+
+  app.post("/api/groups/confirm", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { mappings } = req.body;
+
+      if (!mappings) {
+        return res.status(400).json({ message: "Column mappings are required" });
+      }
+
+      const missingFields = REQUIRED_FIELDS.filter(f => !mappings[f.key]);
+      if (missingFields.length > 0) {
+        return res.status(400).json({
+          message: `Missing mappings for: ${missingFields.map(f => f.label).join(", ")}`,
+        });
+      }
+
+      const pendingCensus = req.session.pendingCensus;
+      if (!pendingCensus || !pendingCensus.rows || pendingCensus.rows.length === 0) {
+        return res.status(400).json({ message: "No pending census data. Please upload a file first." });
+      }
+
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      const entries = pendingCensus.rows.map((row: any) => {
+        const rel = (String(row[mappings.type] || "EE")).trim().toUpperCase();
+        let relationship = "EE";
+        if (["SP", "SPOUSE"].includes(rel)) relationship = "SP";
+        else if (["DEP", "DEPENDENT", "CHILD"].includes(rel)) relationship = "DEP";
+        else if (["EE", "EMPLOYEE"].includes(rel)) relationship = "EE";
+
+        return {
+          firstName: String(row[mappings.first_name] || "").trim(),
+          lastName: String(row[mappings.last_name] || "").trim(),
+          dateOfBirth: String(row[mappings.date_of_birth] || "").trim(),
+          gender: String(row[mappings.gender] || "").trim(),
+          zipCode: String(row[mappings.zip_code] || "").trim(),
+          relationship,
+        };
+      });
+
+      const invalid = entries.filter(
+        (e) => !e.firstName || !e.lastName || !e.dateOfBirth || !e.gender || !e.zipCode
+      );
+      if (invalid.length > 0) {
+        return res.status(400).json({
+          message: `${invalid.length} row(s) have missing required fields. Please ensure all rows have First Name, Last Name, DOB, Gender, and Zip Code.`,
+        });
+      }
+
+      const employeeCount = entries.filter(e => e.relationship === "EE").length;
+      const spouseCount = entries.filter(e => e.relationship === "SP").length;
+      const dependentCount = entries.filter(e => e.relationship === "DEP" || e.relationship === "SP").length;
+
+      const analysis = analyzeGroupRisk(entries);
+
+      const group = await storage.createGroup({
+        userId: user.id,
+        companyName: user.companyName || "Unnamed Company",
+        contactName: user.fullName,
+        contactEmail: user.email,
+        employeeCount,
+        dependentCount,
+        spouseCount,
+        totalLives: entries.length,
+      });
+
+      await storage.updateGroup(group.id, {
+        riskScore: analysis.riskScore,
+        riskTier: analysis.riskTier,
+        averageAge: analysis.averageAge,
+        maleCount: analysis.maleCount,
+        femaleCount: analysis.femaleCount,
+        groupCharacteristics: analysis.characteristics,
+        score: analysis.characteristics.qualificationScore,
+        status: "analyzing",
+      });
+
+      await storage.createCensusEntries(
+        entries.map((e) => ({
+          groupId: group.id,
+          firstName: e.firstName,
+          lastName: e.lastName,
+          dateOfBirth: e.dateOfBirth,
+          gender: e.gender,
+          zipCode: e.zipCode,
+          relationship: e.relationship,
+        }))
+      );
+
+      delete req.session.pendingCensus;
+
+      const updatedGroup = await storage.getGroup(group.id);
+
+      res.json({
+        message: "Census uploaded and analyzed successfully",
+        group: updatedGroup,
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Upload failed" });
+    }
   });
 
   app.post("/api/groups/upload", requireAuth, upload.single("file"), async (req: Request, res: Response) => {
@@ -263,26 +614,36 @@ export async function registerRoutes(
         });
       }
 
-      const entries = rows.map((row: any) => ({
-        firstName: (row.first_name || "").trim(),
-        lastName: (row.last_name || "").trim(),
-        dateOfBirth: (row.date_of_birth || "").trim(),
-        gender: (row.gender || "").trim().toLowerCase(),
-        zipCode: (row.zip_code || "").trim(),
-        relationship: (row.relationship || "employee").trim().toLowerCase(),
-      }));
+      const entries = rows.map((row: any) => {
+        const rel = (row.type || row.relationship || "EE").trim().toUpperCase();
+        let relationship = "EE";
+        if (["SP", "SPOUSE"].includes(rel)) relationship = "SP";
+        else if (["DEP", "DEPENDENT", "CHILD"].includes(rel)) relationship = "DEP";
+
+        return {
+          firstName: (row.first_name || "").trim(),
+          lastName: (row.last_name || "").trim(),
+          dateOfBirth: (row.date_of_birth || "").trim(),
+          gender: (row.gender || "").trim(),
+          zipCode: (row.zip_code || "").trim(),
+          relationship,
+        };
+      });
 
       const invalid = entries.filter(
         (e) => !e.firstName || !e.lastName || !e.dateOfBirth || !e.gender || !e.zipCode
       );
       if (invalid.length > 0) {
         return res.status(400).json({
-          message: `${invalid.length} row(s) have missing required fields. Please ensure all rows have First Name, Last Name, DOB, Gender, and Zip Code.`,
+          message: `${invalid.length} row(s) have missing required fields.`,
         });
       }
 
-      const employeeCount = entries.filter((e) => e.relationship === "employee").length;
-      const dependentCount = entries.filter((e) => e.relationship !== "employee").length;
+      const employeeCount = entries.filter(e => e.relationship === "EE").length;
+      const spouseCount = entries.filter(e => e.relationship === "SP").length;
+      const dependentCount = entries.filter(e => e.relationship === "DEP" || e.relationship === "SP").length;
+
+      const analysis = analyzeGroupRisk(entries);
 
       const group = await storage.createGroup({
         userId: user.id,
@@ -291,7 +652,19 @@ export async function registerRoutes(
         contactEmail: user.email,
         employeeCount,
         dependentCount,
+        spouseCount,
         totalLives: entries.length,
+      });
+
+      await storage.updateGroup(group.id, {
+        riskScore: analysis.riskScore,
+        riskTier: analysis.riskTier,
+        averageAge: analysis.averageAge,
+        maleCount: analysis.maleCount,
+        femaleCount: analysis.femaleCount,
+        groupCharacteristics: analysis.characteristics,
+        score: analysis.characteristics.qualificationScore,
+        status: "analyzing",
       });
 
       await storage.createCensusEntries(
@@ -306,14 +679,11 @@ export async function registerRoutes(
         }))
       );
 
+      const updatedGroup = await storage.getGroup(group.id);
+
       res.json({
         message: "Census uploaded successfully",
-        group: {
-          id: group.id,
-          employeeCount,
-          dependentCount,
-          totalLives: entries.length,
-        },
+        group: updatedGroup,
       });
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Upload failed" });
@@ -325,20 +695,53 @@ export async function registerRoutes(
     res.json(userGroups);
   });
 
+  app.get("/api/groups/:id", requireAuth, async (req: Request, res: Response) => {
+    const id = req.params.id as string;
+    const group = await storage.getGroup(id);
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+    if (group.userId !== req.session.userId) {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+    }
+    res.json(group);
+  });
+
+  app.get("/api/groups/:id/census", requireAuth, async (req: Request, res: Response) => {
+    const id = req.params.id as string;
+    const group = await storage.getGroup(id);
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+    if (group.userId !== req.session.userId) {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+    }
+    const census = await storage.getCensusByGroupId(id);
+    res.json(census);
+  });
+
   app.get("/api/admin/groups", requireAdmin, async (_req: Request, res: Response) => {
     const allGroups = await storage.getAllGroups();
     res.json(allGroups);
   });
 
   app.get("/api/admin/groups/:id/census", requireAdmin, async (req: Request, res: Response) => {
-    const census = await storage.getCensusByGroupId(req.params.id);
+    const id = req.params.id as string;
+    const census = await storage.getCensusByGroupId(id);
     res.json(census);
   });
 
   app.patch("/api/admin/groups/:id", requireAdmin, async (req: Request, res: Response) => {
     try {
+      const id = req.params.id as string;
       const data = updateGroupStatusSchema.parse(req.body);
-      const updated = await storage.updateGroup(req.params.id, data);
+      const updated = await storage.updateGroup(id, data);
       if (!updated) {
         return res.status(404).json({ message: "Group not found" });
       }

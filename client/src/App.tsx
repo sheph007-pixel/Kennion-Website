@@ -11,6 +11,7 @@ import LoginPage from "@/pages/login";
 import AuthVerifyPage from "@/pages/auth-verify";
 import DashboardPage from "@/pages/dashboard";
 import AdminPage from "@/pages/admin";
+import ReportPage from "@/pages/report";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
 import { useLocation, Redirect } from "wouter";
@@ -71,6 +72,9 @@ function Router() {
       </Route>
       <Route path="/admin">
         <ProtectedRoute component={AdminPage} adminOnly />
+      </Route>
+      <Route path="/report/:id">
+        <ProtectedRoute component={ReportPage} />
       </Route>
       <Route component={NotFound} />
     </Switch>

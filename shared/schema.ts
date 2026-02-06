@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, jsonb, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -25,10 +25,16 @@ export const groups = pgTable("groups", {
   contactEmail: text("contact_email").notNull(),
   employeeCount: integer("employee_count").default(0),
   dependentCount: integer("dependent_count").default(0),
+  spouseCount: integer("spouse_count").default(0),
   totalLives: integer("total_lives").default(0),
   status: text("status").default("pending_review").notNull(),
   score: integer("score"),
+  riskScore: real("risk_score"),
   riskTier: text("risk_tier"),
+  averageAge: real("average_age"),
+  maleCount: integer("male_count").default(0),
+  femaleCount: integer("female_count").default(0),
+  groupCharacteristics: jsonb("group_characteristics"),
   adminNotes: text("admin_notes"),
   submittedAt: timestamp("submitted_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -42,7 +48,7 @@ export const censusEntries = pgTable("census_entries", {
   dateOfBirth: text("date_of_birth").notNull(),
   gender: text("gender").notNull(),
   zipCode: text("zip_code").notNull(),
-  relationship: text("relationship").default("employee").notNull(),
+  relationship: text("relationship").default("EE").notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -73,7 +79,12 @@ export const insertGroupSchema = createInsertSchema(groups).omit({
   id: true,
   status: true,
   score: true,
+  riskScore: true,
   riskTier: true,
+  averageAge: true,
+  maleCount: true,
+  femaleCount: true,
+  groupCharacteristics: true,
   adminNotes: true,
   submittedAt: true,
   updatedAt: true,
@@ -86,7 +97,8 @@ export const insertCensusEntrySchema = createInsertSchema(censusEntries).omit({
 export const updateGroupStatusSchema = z.object({
   status: z.enum(["pending_review", "under_review", "analyzing", "qualified", "not_qualified", "rates_available"]),
   score: z.number().min(0).max(100).optional(),
-  riskTier: z.enum(["low", "moderate", "high", "preferred"]).optional(),
+  riskScore: z.number().optional(),
+  riskTier: z.enum(["preferred", "standard", "high"]).optional(),
   adminNotes: z.string().optional(),
 });
 

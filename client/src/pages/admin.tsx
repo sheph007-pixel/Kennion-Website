@@ -245,9 +245,8 @@ function GroupDetailDialog({
                     <SelectValue placeholder="Select tier" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="preferred">Preferred</SelectItem>
-                    <SelectItem value="low">Low Risk</SelectItem>
-                    <SelectItem value="moderate">Moderate Risk</SelectItem>
+                    <SelectItem value="preferred">Preferred Risk</SelectItem>
+                    <SelectItem value="standard">Standard Risk</SelectItem>
                     <SelectItem value="high">High Risk</SelectItem>
                   </SelectContent>
                 </Select>
