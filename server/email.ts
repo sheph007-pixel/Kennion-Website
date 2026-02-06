@@ -26,11 +26,15 @@ async function getResendClient() {
     .then((data) => data.items?.[0]);
 
   if (!connectionSettings || !connectionSettings.settings.api_key) {
+    log(`Resend connector response: ${JSON.stringify(connectionSettings)}`);
     throw new Error("Resend not connected");
   }
 
+  const apiKey = connectionSettings.settings.api_key;
+  log(`Resend API key prefix: ${apiKey.substring(0, 8)}...`);
+
   return {
-    client: new Resend(connectionSettings.settings.api_key),
+    client: new Resend(apiKey),
     fromEmail: connectionSettings.settings.from_email,
   };
 }
