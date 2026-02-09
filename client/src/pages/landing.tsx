@@ -69,7 +69,7 @@ function HeroSection() {
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link href="/register">
               <Button size="lg" data-testid="button-hero-cta">
-                Check If You Qualify <ChevronRight className="ml-1 h-4 w-4" />
+                Submit Your Group <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </Link>
             <a href="#how-it-works">
