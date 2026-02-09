@@ -288,20 +288,20 @@ function BenefitsSection() {
               <div className="h-px bg-border" />
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-xl font-bold">500+</div>
-                  <div className="text-sm text-muted-foreground">Health</div>
+                  <div className="text-xl font-bold">Health</div>
+                  <div className="text-sm text-muted-foreground">15+ Plans</div>
                 </div>
                 <div>
-                  <div className="text-xl font-bold">45K</div>
-                  <div className="text-sm text-muted-foreground">Dental</div>
+                  <div className="text-xl font-bold">Dental</div>
+                  <div className="text-sm text-muted-foreground">6+ Plans</div>
                 </div>
                 <div>
-                  <div className="text-xl font-bold">15+</div>
-                  <div className="text-sm text-muted-foreground">Vision</div>
+                  <div className="text-xl font-bold">Vision</div>
+                  <div className="text-sm text-muted-foreground">3+ Plans</div>
                 </div>
                 <div>
-                  <div className="text-xl font-bold">50</div>
-                  <div className="text-sm text-muted-foreground">Supplemental</div>
+                  <div className="text-xl font-bold">Supplemental</div>
+                  <div className="text-sm text-muted-foreground">10+ Plans</div>
                 </div>
               </div>
             </div>
