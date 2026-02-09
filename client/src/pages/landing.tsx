@@ -281,27 +281,27 @@ function BenefitsSection() {
                   <Shield className="h-6 w-6 text-primary-foreground" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-primary">A+ Rated</div>
-                  <div className="text-sm text-muted-foreground">Carrier Partners</div>
+                  <div className="text-2xl font-bold text-primary">Benefits Program</div>
+                  <div className="text-sm text-muted-foreground">Group Health, Dental, Vision & More</div>
                 </div>
               </div>
               <div className="h-px bg-border" />
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-xl font-bold">500+</div>
-                  <div className="text-sm text-muted-foreground">Active Groups</div>
+                  <div className="text-sm text-muted-foreground">Health</div>
                 </div>
                 <div>
-                  <div className="text-xl font-bold">45K+</div>
-                  <div className="text-sm text-muted-foreground">Lives Covered</div>
+                  <div className="text-xl font-bold">45K</div>
+                  <div className="text-sm text-muted-foreground">Dental</div>
                 </div>
                 <div>
                   <div className="text-xl font-bold">15+</div>
-                  <div className="text-sm text-muted-foreground">Years Experience</div>
+                  <div className="text-sm text-muted-foreground">Vision</div>
                 </div>
                 <div>
                   <div className="text-xl font-bold">50</div>
-                  <div className="text-sm text-muted-foreground">States Served</div>
+                  <div className="text-sm text-muted-foreground">Supplemental</div>
                 </div>
               </div>
             </div>
