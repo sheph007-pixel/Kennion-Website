@@ -197,7 +197,7 @@ function FeaturesSection() {
     {
       icon: Building2,
       title: "Built for SMBs",
-      desc: "Purpose-built for small to mid-sized businesses with 10-500 employees seeking premium benefits.",
+      desc: "Purpose-built for small to mid-sized businesses with 2-500 employees seeking premium benefits.",
     },
     {
       icon: BarChart3,
