@@ -53,8 +53,8 @@ async function requireAdmin(req: Request, res: Response, next: Function) {
 }
 
 function getBaseUrl(req: Request): string {
-  if (process.env.REPLIT_DEPLOYMENT_URL) {
-    return `https://${process.env.REPLIT_DEPLOYMENT_URL}`;
+  if (process.env.APP_URL) {
+    return process.env.APP_URL.replace(/\/$/, "");
   }
   const forwardedHost = req.headers["x-forwarded-host"] as string | undefined;
   if (forwardedHost) {
@@ -64,9 +64,6 @@ function getBaseUrl(req: Request): string {
   const host = req.headers.host;
   if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
     return `https://${host}`;
-  }
-  if (process.env.REPLIT_DEV_DOMAIN) {
-    return `https://${process.env.REPLIT_DEV_DOMAIN}`;
   }
   return `${req.protocol}://${host}`;
 }
