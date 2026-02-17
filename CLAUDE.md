@@ -1,6 +1,7 @@
 # Claude Code Instructions
 
 ## Deployment
-- All changes should be pushed live immediately after being made.
-- Railway deploys from `main` branch.
-- After committing to the feature branch, always merge into `main` and push to deploy.
+- All changes must be pushed live immediately after being made.
+- Railway is configured to deploy from branch: `claude/migrate-from-replit-bmaFc`
+- Always commit and push to `claude/migrate-from-replit-bmaFc` — this is the live deployment branch.
+- Do NOT push to `main` (no push permission).
