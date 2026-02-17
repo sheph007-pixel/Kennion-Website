@@ -73,6 +73,7 @@ export const registerSchema = z.object({
   email: z.string().email("Valid email required"),
   phone: z.string().min(7, "Valid phone number required"),
   companyName: z.string().min(1, "Company name is required"),
+  accessCode: z.string().min(1, "Access code is required"),
 });
 
 export const magicLinkVerifySchema = z.object({

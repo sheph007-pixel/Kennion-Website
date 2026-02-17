@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
-import { ArrowRight, Loader2, UserPlus, Mail, Building2, Phone, User } from "lucide-react";
+import { ArrowRight, Loader2, UserPlus, Mail, Building2, Phone, User, KeyRound } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,6 +19,7 @@ const registerFormSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(7, "Please enter a valid phone number"),
   companyName: z.string().min(1, "Company name is required"),
+  accessCode: z.string().min(1, "Access code is required"),
 });
 
 export default function RegisterPage() {
@@ -30,7 +31,7 @@ export default function RegisterPage() {
 
   const form = useForm<z.infer<typeof registerFormSchema>>({
     resolver: zodResolver(registerFormSchema),
-    defaultValues: { firstName: "", lastName: "", email: "", phone: "", companyName: "" },
+    defaultValues: { firstName: "", lastName: "", email: "", phone: "", companyName: "", accessCode: "" },
   });
 
   async function onSubmit(data: z.infer<typeof registerFormSchema>) {
@@ -184,6 +185,27 @@ export default function RegisterPage() {
                     {form.formState.errors.companyName && (
                       <p className="text-xs text-destructive">{form.formState.errors.companyName.message}</p>
                     )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="accessCode">Access Code</Label>
+                    <div className="relative">
+                      <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="accessCode"
+                        placeholder="Enter your access code"
+                        className="pl-9"
+                        {...form.register("accessCode")}
+                        data-testid="input-access-code"
+                      />
+                    </div>
+                    {form.formState.errors.accessCode && (
+                      <p className="text-xs text-destructive">{form.formState.errors.accessCode.message}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Don't have an access code? Call Hunter Shepherd at{" "}
+                      <a href="tel:2056410469" className="text-primary font-medium">205-641-0469</a>
+                    </p>
                   </div>
 
                   <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-register">
