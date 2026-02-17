@@ -100,7 +100,7 @@ function HeroSection() {
 
 function StatsBar() {
   const stats = [
-    { value: "2,400+", label: "Groups Analyzed" },
+    { value: "2,415+", label: "Groups Analyzed" },
     { value: "18%", label: "Avg. Rate Reduction" },
     { value: "$12M+", label: "Client Savings" },
     { value: "97%", label: "Retention Rate" },
