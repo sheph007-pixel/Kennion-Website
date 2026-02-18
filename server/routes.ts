@@ -262,11 +262,12 @@ export async function registerRoutes(
       secret: process.env.SESSION_SECRET || "kennion-secret-key",
       resave: false,
       saveUninitialized: false,
+      proxy: true,
       cookie: {
         maxAge: 7 * 24 * 60 * 60 * 1000,
         httpOnly: true,
         sameSite: "lax",
-        secure: false,
+        secure: process.env.NODE_ENV === "production",
       },
     })
   );
@@ -375,12 +376,18 @@ export async function registerRoutes(
       });
 
       req.session.userId = user.id;
-      res.json({
-        id: user.id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-        companyName: user.companyName,
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          log(`Session save error: ${saveErr.message}`);
+          return res.status(500).json({ message: "Failed to create session. Please try again." });
+        }
+        res.json({
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+          companyName: user.companyName,
+        });
       });
     } catch (err: any) {
       res.status(400).json({ message: err.message || "Verification failed" });
