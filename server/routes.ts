@@ -379,8 +379,8 @@ export async function registerRoutes(
       req.session.userId = user.id;
       req.session.save((saveErr) => {
         if (saveErr) {
-          log(`Session save error: ${saveErr.message}`);
-          return res.status(500).json({ message: "Failed to create session. Please try again." });
+          log(`Session save error: ${saveErr.message} | stack: ${saveErr.stack}`);
+          return res.status(500).json({ message: `Session error: ${saveErr.message}` });
         }
         res.json({
           id: user.id,
