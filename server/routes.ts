@@ -16,6 +16,7 @@ import {
 import ConnectPgSimple from "connect-pg-simple";
 import { log } from "./index";
 import { sendMagicLinkEmail } from "./email";
+import { pool } from "./db";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
@@ -256,7 +257,7 @@ export async function registerRoutes(
   app.use(
     session({
       store: new PgStore({
-        conString: process.env.DATABASE_URL,
+        pool,
         createTableIfMissing: true,
       }),
       secret: process.env.SESSION_SECRET || "kennion-secret-key",
