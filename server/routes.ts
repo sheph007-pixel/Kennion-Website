@@ -252,13 +252,24 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Create session table manually (connect-pg-simple's createTableIfMissing
+  // reads a bundled .sql file that doesn't survive the Railway build).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS "session" (
+      "sid" varchar NOT NULL COLLATE "default",
+      "sess" json NOT NULL,
+      "expire" timestamp(6) NOT NULL,
+      CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE
+    ) WITH (OIDS=FALSE);
+    CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+  `);
+
   const PgStore = ConnectPgSimple(session);
 
   app.use(
     session({
       store: new PgStore({
         pool,
-        createTableIfMissing: true,
       }),
       secret: process.env.SESSION_SECRET || "kennion-secret-key",
       resave: false,
@@ -379,8 +390,8 @@ export async function registerRoutes(
       req.session.userId = user.id;
       req.session.save((saveErr) => {
         if (saveErr) {
-          log(`Session save error: ${saveErr.message} | stack: ${saveErr.stack}`);
-          return res.status(500).json({ message: `Session error: ${saveErr.message}` });
+          log(`Session save error: ${saveErr.message}`);
+          return res.status(500).json({ message: "Failed to create session. Please try again." });
         }
         res.json({
           id: user.id,
