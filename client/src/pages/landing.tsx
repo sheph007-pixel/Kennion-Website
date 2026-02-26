@@ -64,7 +64,7 @@ function HeroSection() {
           </h1>
           <p className="mt-6 text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
             Our proprietary underwriting platform analyzes your group's risk profile to unlock exclusive
-            employee benefits programs that deliver premium coverage at significantly reduced costs.
+            benefits programs that deliver premium coverage at significantly lower costs.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link href="/register">
