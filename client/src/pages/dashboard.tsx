@@ -87,46 +87,23 @@ function DashboardNav() {
   );
 }
 
-function StepIndicator({ currentStep }: { currentStep: number }) {
-  const steps = [
-    { num: 1, label: "Upload Census", icon: Upload },
-    { num: 2, label: "View Risk Score", icon: BarChart3 },
-    { num: 3, label: "Review Proposal", icon: FileText },
-  ];
+function SimpleHeader({ hasGroups }: { hasGroups: boolean }) {
+  if (hasGroups) return null;
 
   return (
-    <div className="flex items-center gap-2 mb-8">
-      {steps.map((step, i) => {
-        const StepIcon = step.icon;
-        const isActive = currentStep === step.num;
-        const isComplete = currentStep > step.num;
-
-        return (
-          <div key={step.num} className="flex items-center gap-2 flex-1">
-            <div className="flex items-center gap-2 flex-1">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-full flex-shrink-0 ${
-                isComplete ? "bg-primary text-primary-foreground" :
-                isActive ? "bg-primary text-primary-foreground" :
-                "bg-muted text-muted-foreground"
-              }`}>
-                {isComplete ? <Check className="h-4 w-4" /> : <span className="text-xs font-bold">{step.num}</span>}
-              </div>
-              <div className="hidden sm:block">
-                <p className={`text-xs font-medium ${isActive || isComplete ? "text-foreground" : "text-muted-foreground"}`}>
-                  Step {step.num}
-                </p>
-                <p className={`text-xs ${isActive || isComplete ? "text-muted-foreground" : "text-muted-foreground/60"}`}>
-                  {step.label}
-                </p>
-              </div>
-            </div>
-            {i < steps.length - 1 && (
-              <div className={`h-px flex-1 mx-2 ${isComplete ? "bg-primary" : "bg-border"}`} />
-            )}
-          </div>
-        );
-      })}
-    </div>
+    <Card className="p-6 mb-6 bg-primary/5 border-primary/20">
+      <div className="flex items-start gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 flex-shrink-0">
+          <Upload className="h-6 w-6 text-primary" />
+        </div>
+        <div className="flex-1">
+          <h2 className="font-semibold text-lg mb-1">Get Your Benefits Analysis</h2>
+          <p className="text-sm text-muted-foreground">
+            Upload your employee census below to receive an instant risk analysis. Hunter Shepherd will contact you with a customized proposal.
+          </p>
+        </div>
+      </div>
+    </Card>
   );
 }
 
@@ -405,27 +382,43 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
   }
 
   if (step === "mapping" && parseResult) {
+    const allFieldsMapped = parseResult.requiredFields.every(f => mappings[f.key]);
+
     return (
       <Card className="p-6">
         <div className="mb-6">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-2">
             <Button variant="ghost" size="icon" onClick={() => setStep("upload")} data-testid="button-back-upload">
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h2 className="font-semibold">Map Your Columns</h2>
+            <h2 className="font-semibold text-lg">Verify Column Mapping</h2>
           </div>
           <p className="text-sm text-muted-foreground ml-10">
-            We found {parseResult.totalRows} rows. Verify the auto-matched columns below.
+            We found <strong>{parseResult.totalRows} rows</strong> and auto-matched your columns. Review and submit below.
           </p>
         </div>
 
-        <div className="flex items-center gap-4 mb-6 text-xs text-muted-foreground">
-          <span className="font-medium">Column from your CSV</span>
-          <ArrowRight className="h-3 w-3 flex-shrink-0" />
-          <span className="font-medium">Match to Kennion field</span>
-        </div>
+        {allFieldsMapped ? (
+          <div className="mb-4 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <span className="text-sm font-medium text-green-700 dark:text-green-400">
+                All required fields matched successfully
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-4 rounded-md bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 p-3">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+              <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
+                Some fields need to be mapped before submitting
+              </span>
+            </div>
+          </div>
+        )}
 
-        <div className="space-y-4">
+        <div className="space-y-3 mb-6">
           {parseResult.requiredFields.map((field) => {
             const mapped = mappings[field.key];
             const isEditing = editingField === field.key;
@@ -434,115 +427,84 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
               : [];
 
             return (
-              <div key={field.key} className="rounded-md border p-4">
-                <div className="flex flex-wrap items-start gap-4">
-                  <div className="min-w-[140px]">
-                    {mapped && !isEditing ? (
-                      <div>
-                        <Badge variant="secondary" className="text-xs mb-2">{mapped}</Badge>
-                        <div className="space-y-0.5">
-                          {previewValues.map((v, i) => (
-                            <div key={i} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <span className="text-muted-foreground/60">{i + 1}</span>
-                              <span>{v || "\u2014"}</span>
-                            </div>
-                          ))}
+              <div key={field.key} className={`rounded-md border p-3 ${mapped ? 'bg-background' : 'bg-yellow-50/50 dark:bg-yellow-950/10 border-yellow-300 dark:border-yellow-800'}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {mapped ? (
+                      <>
+                        <Check className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium">{field.label}</span>
+                            <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                            <Badge variant="secondary" className="text-xs">{mapped}</Badge>
+                          </div>
+                          <div className="flex gap-2 text-xs text-muted-foreground overflow-x-auto">
+                            {previewValues.slice(0, 3).map((v, i) => (
+                              <span key={i} className="whitespace-nowrap">{v || "—"}</span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      </>
                     ) : (
-                      <Badge variant="outline" className="text-xs">Not matched</Badge>
+                      <>
+                        <X className="h-4 w-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+                        <span className="text-sm font-medium">{field.label}</span>
+                        <span className="text-xs text-muted-foreground">Not matched</span>
+                      </>
                     )}
                   </div>
-
-                  <ArrowRight className="h-4 w-4 mt-1 flex-shrink-0 text-muted-foreground" />
-
-                  <div className="flex-1 min-w-[180px]">
-                    {isEditing ? (
-                      <Select
-                        value={mapped || ""}
-                        onValueChange={(val) => {
-                          setMappings({ ...mappings, [field.key]: val || null });
-                          setEditingField(null);
-                        }}
-                      >
-                        <SelectTrigger data-testid={`select-mapping-${field.key}`}>
-                          <SelectValue placeholder="Choose column" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {parseResult.headers.map((h) => (
-                            <SelectItem key={h} value={h}>{h}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className="text-xs font-medium">{field.label}</Badge>
-                        {mapped ? (
-                          <div className="flex items-center gap-1.5">
-                            <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                            <span className="text-xs text-green-600 dark:text-green-400">
-                              Auto-matched to <strong>{mapped}</strong>
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5">
-                            <X className="h-3.5 w-3.5 text-red-500" />
-                            <span className="text-xs text-red-500">Not matched</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    {!isEditing && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditingField(field.key)}
-                        data-testid={`button-edit-${field.key}`}
-                      >
-                        <Edit2 className="h-3 w-3 mr-1" /> Edit
-                      </Button>
-                    )}
-                    {mapped && !isEditing && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setMappings({ ...mappings, [field.key]: null })}
-                        data-testid={`button-ignore-${field.key}`}
-                      >
-                        Ignore
-                      </Button>
-                    )}
-                  </div>
+                  {!isEditing ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingField(field.key)}
+                      data-testid={`button-edit-${field.key}`}
+                    >
+                      {mapped ? "Change" : "Select"}
+                    </Button>
+                  ) : (
+                    <Select
+                      value={mapped || ""}
+                      onValueChange={(val) => {
+                        setMappings({ ...mappings, [field.key]: val || null });
+                        setEditingField(null);
+                      }}
+                    >
+                      <SelectTrigger className="w-[200px]" data-testid={`select-mapping-${field.key}`}>
+                        <SelectValue placeholder="Choose column" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {parseResult.headers.map((h) => (
+                          <SelectItem key={h} value={h}>{h}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
 
-        <div className="mt-6 flex items-center justify-between gap-2 flex-wrap">
-          <div className="text-sm text-muted-foreground">
-            {parseResult.requiredFields.filter(f => mappings[f.key]).length} / {parseResult.requiredFields.length} fields mapped
-          </div>
-          <Button
-            onClick={handleConfirm}
-            disabled={!allMapped || isConfirming}
-            data-testid="button-confirm-mapping"
-          >
-            {isConfirming ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              <>
-                Submit Census <ArrowRight className="ml-1.5 h-4 w-4" />
-              </>
-            )}
-          </Button>
-        </div>
+        <Button
+          onClick={handleConfirm}
+          disabled={!allMapped || isConfirming}
+          className="w-full"
+          size="lg"
+          data-testid="button-confirm-mapping"
+        >
+          {isConfirming ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing Census...
+            </>
+          ) : (
+            <>
+              Submit Census & Get Risk Analysis <ArrowRight className="ml-2 h-4 w-4" />
+            </>
+          )}
+        </Button>
       </Card>
     );
   }
@@ -657,11 +619,16 @@ function GroupCard({ group, index, onClick, onDelete }: { group: Group; index: n
 
           {isQualified && (
             <div className="mt-3 rounded-md border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 p-3">
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-green-600 dark:text-green-400" />
-                <span className="text-xs font-medium text-green-700 dark:text-green-400">
-                  Your group qualifies for our exclusive benefits program. A proposal will be available for review soon.
-                </span>
+              <div className="flex items-start gap-3">
+                <Shield className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                    ✓ Qualified for Benefits Program
+                  </p>
+                  <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-1">
+                    Hunter Shepherd will contact you with a customized proposal
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -748,9 +715,6 @@ export default function DashboardPage() {
   });
 
   const hasGroups = groups && groups.length > 0;
-  const hasQualified = groups?.some(g => g.riskTier === "preferred" || g.riskTier === "standard");
-
-  const currentStep = !hasGroups ? 1 : hasQualified ? 3 : 2;
 
   const firstName = user?.fullName?.split(" ")[0] || "there";
 
@@ -778,7 +742,7 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <StepIndicator currentStep={currentStep} />
+        <SimpleHeader hasGroups={hasGroups} />
 
         {showAnalysis ? (
           <AnalysisAnimation onComplete={handleAnalysisComplete} group={analyzingGroup} />
@@ -786,26 +750,6 @@ export default function DashboardPage() {
           <div className="space-y-6">
             <CensusUploadWizard onComplete={handleUploadComplete} />
             <GroupsList />
-
-            {hasQualified && (
-              <Card className="p-6 border-primary/30">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 dark:bg-primary/20 flex-shrink-0">
-                    <FileText className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold" data-testid="text-proposal-heading">Step 3: Review Your Proposal</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Your group has qualified for our exclusive benefits program. Our team is preparing a customized proposal for you. You'll be notified by email when it's ready for review.
-                    </p>
-                    <div className="mt-3 flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Proposal preparation in progress</span>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            )}
           </div>
         )}
       </div>
