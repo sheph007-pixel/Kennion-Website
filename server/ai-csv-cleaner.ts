@@ -1,8 +1,13 @@
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAIClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY environment variable is not set");
+  }
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 interface CleanedRow {
   firstName: string;
@@ -67,6 +72,7 @@ Return a JSON object with this structure:
 
 Only return valid JSON, no explanation.`;
 
+  const openai = getOpenAIClient();
   const completion = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
