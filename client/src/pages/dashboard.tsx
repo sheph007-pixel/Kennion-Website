@@ -669,7 +669,7 @@ export default function DashboardPage() {
     queryKey: ["/api/groups"],
   });
 
-  const hasGroups = groups && groups.length > 0;
+  const hasGroups = Boolean(groups && groups.length > 0);
 
   const firstName = user?.fullName?.split(" ")[0] || "there";
 

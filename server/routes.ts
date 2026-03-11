@@ -623,7 +623,16 @@ export async function registerRoutes(
       const aiCleaned = pendingCensus.aiCleaned;
 
       // Convert AI-cleaned data to storage format
-      const entries = aiCleaned.cleanedData.map((cleaned: any) => {
+      interface CensusEntry {
+        firstName: string;
+        lastName: string;
+        dateOfBirth: string;
+        gender: string;
+        zipCode: string;
+        relationship: string;
+      }
+
+      const entries: CensusEntry[] = aiCleaned.cleanedData.map((cleaned: any) => {
         // Map relationship to storage format
         let relationship = "EE";
         if (cleaned.relationship === "Spouse") relationship = "SP";
@@ -641,7 +650,7 @@ export async function registerRoutes(
       });
 
       const invalid = entries.filter(
-        (e) => !e.firstName || !e.lastName || !e.dateOfBirth || !e.gender || !e.zipCode
+        (e: CensusEntry) => !e.firstName || !e.lastName || !e.dateOfBirth || !e.gender || !e.zipCode
       );
       if (invalid.length > 0) {
         log(`Validation failed: ${invalid.length} invalid rows after AI cleaning`);
@@ -650,9 +659,9 @@ export async function registerRoutes(
         });
       }
 
-      const employeeCount = entries.filter(e => e.relationship === "EE").length;
-      const spouseCount = entries.filter(e => e.relationship === "SP").length;
-      const dependentCount = entries.filter(e => e.relationship === "DEP" || e.relationship === "SP").length;
+      const employeeCount = entries.filter((e: CensusEntry) => e.relationship === "EE").length;
+      const spouseCount = entries.filter((e: CensusEntry) => e.relationship === "SP").length;
+      const dependentCount = entries.filter((e: CensusEntry) => e.relationship === "DEP" || e.relationship === "SP").length;
 
       const analysis = analyzeGroupRisk(entries);
 
@@ -679,7 +688,7 @@ export async function registerRoutes(
       });
 
       await storage.createCensusEntries(
-        entries.map((e) => ({
+        entries.map((e: any) => ({
           groupId: group.id,
           firstName: e.firstName,
           lastName: e.lastName,
@@ -795,7 +804,7 @@ export async function registerRoutes(
       });
 
       await storage.createCensusEntries(
-        entries.map((e) => ({
+        entries.map((e: any) => ({
           groupId: group.id,
           firstName: e.firstName,
           lastName: e.lastName,
