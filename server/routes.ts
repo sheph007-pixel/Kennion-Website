@@ -17,6 +17,7 @@ import ConnectPgSimple from "connect-pg-simple";
 import { log } from "./index";
 import { sendMagicLinkEmail } from "./email";
 import { pool } from "./db";
+import { cleanCSVWithAI } from "./ai-csv-cleaner";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
@@ -27,6 +28,7 @@ declare module "express-session" {
       headers: string[];
       rows: any[];
       fileName: string;
+      aiCleaned?: any;
     };
   }
 }
@@ -570,28 +572,36 @@ export async function registerRoutes(
       }
 
       const headers = Object.keys(rows[0]).filter(h => h.trim() !== "");
-      const suggestedMappings = smartMatchHeaders(headers);
 
-      const previewRows = rows.slice(0, 5).map(row => {
-        const preview: Record<string, string> = {};
-        for (const h of headers) {
-          preview[h] = String(row[h] || "").substring(0, 50);
-        }
-        return preview;
-      });
+      // Use AI to automatically clean and map the CSV
+      log("Using AI to clean and map CSV data...");
+      const aiResult = await cleanCSVWithAI(headers, rows);
+
+      // Convert cleaned data to preview format
+      const previewRows = aiResult.cleanedData.slice(0, 10).map(cleaned => ({
+        firstName: cleaned.firstName,
+        lastName: cleaned.lastName,
+        relationship: cleaned.relationship,
+        dob: cleaned.dob,
+        gender: cleaned.gender,
+        zip: cleaned.zip,
+        issues: cleaned.issues
+      }));
 
       req.session.pendingCensus = {
         headers,
         rows,
         fileName: req.file.originalname || "census.csv",
+        aiCleaned: aiResult
       };
 
       res.json({
-        headers,
         totalRows: rows.length,
-        suggestedMappings,
+        cleanedRows: aiResult.cleanedData.length,
         previewRows,
-        requiredFields: REQUIRED_FIELDS.map(f => ({ key: f.key, label: f.label })),
+        summary: aiResult.summary,
+        warnings: aiResult.warnings,
+        confidence: aiResult.confidence
       });
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Parse failed" });
@@ -600,21 +610,8 @@ export async function registerRoutes(
 
   app.post("/api/groups/confirm", requireAuth, async (req: Request, res: Response) => {
     try {
-      const { mappings } = req.body;
-
-      if (!mappings) {
-        return res.status(400).json({ message: "Column mappings are required" });
-      }
-
-      const missingFields = REQUIRED_FIELDS.filter(f => !mappings[f.key]);
-      if (missingFields.length > 0) {
-        return res.status(400).json({
-          message: `Missing mappings for: ${missingFields.map(f => f.label).join(", ")}`,
-        });
-      }
-
       const pendingCensus = req.session.pendingCensus;
-      if (!pendingCensus || !pendingCensus.rows || pendingCensus.rows.length === 0) {
+      if (!pendingCensus || !pendingCensus.aiCleaned) {
         return res.status(400).json({ message: "No pending census data. Please upload a file first." });
       }
 
@@ -623,19 +620,22 @@ export async function registerRoutes(
         return res.status(401).json({ message: "User not found" });
       }
 
-      const entries = pendingCensus.rows.map((row: any) => {
-        const rel = (String(row[mappings.type] || "EE")).trim().toUpperCase();
+      const aiCleaned = pendingCensus.aiCleaned;
+
+      // Convert AI-cleaned data to storage format
+      const entries = aiCleaned.cleanedData.map((cleaned: any) => {
+        // Map relationship to storage format
         let relationship = "EE";
-        if (["SP", "SPOUSE"].includes(rel)) relationship = "SP";
-        else if (["DEP", "DEPENDENT", "CHILD"].includes(rel)) relationship = "DEP";
-        else if (["EE", "EMPLOYEE"].includes(rel)) relationship = "EE";
+        if (cleaned.relationship === "Spouse") relationship = "SP";
+        else if (cleaned.relationship === "Dependent") relationship = "DEP";
+        else if (cleaned.relationship === "Employee") relationship = "EE";
 
         return {
-          firstName: String(row[mappings.first_name] || "").trim(),
-          lastName: String(row[mappings.last_name] || "").trim(),
-          dateOfBirth: String(row[mappings.date_of_birth] || "").trim(),
-          gender: String(row[mappings.gender] || "").trim(),
-          zipCode: String(row[mappings.zip_code] || "").trim(),
+          firstName: cleaned.firstName,
+          lastName: cleaned.lastName,
+          dateOfBirth: cleaned.dob,
+          gender: cleaned.gender,
+          zipCode: cleaned.zip,
           relationship,
         };
       });
@@ -644,22 +644,9 @@ export async function registerRoutes(
         (e) => !e.firstName || !e.lastName || !e.dateOfBirth || !e.gender || !e.zipCode
       );
       if (invalid.length > 0) {
-        // Debug: log the first invalid entry to see what's missing
-        const firstInvalid = invalid[0];
-        const missingFieldsList = [];
-        if (!firstInvalid.firstName) missingFieldsList.push("First Name");
-        if (!firstInvalid.lastName) missingFieldsList.push("Last Name");
-        if (!firstInvalid.dateOfBirth) missingFieldsList.push("DOB");
-        if (!firstInvalid.gender) missingFieldsList.push("Gender");
-        if (!firstInvalid.zipCode) missingFieldsList.push("Zip Code");
-
-        log(`Validation failed: ${invalid.length} invalid rows. First invalid row missing: ${missingFieldsList.join(", ")}`);
-        log(`Mappings: ${JSON.stringify(mappings)}`);
-        log(`Sample row data: ${JSON.stringify(pendingCensus.rows[0])}`);
-        log(`Extracted first entry: ${JSON.stringify(entries[0])}`);
-
+        log(`Validation failed: ${invalid.length} invalid rows after AI cleaning`);
         return res.status(400).json({
-          message: `${invalid.length} row(s) have missing required fields (${missingFieldsList.join(", ")}). Please ensure all rows have First Name, Last Name, DOB, Gender, and Zip Code.`,
+          message: `${invalid.length} row(s) have missing required fields after AI processing. Please check your CSV file.`,
         });
       }
 

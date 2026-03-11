@@ -208,22 +208,31 @@ function AnalysisAnimation({ onComplete, group }: { onComplete: () => void; grou
   );
 }
 
+interface CleanedRow {
+  firstName: string;
+  lastName: string;
+  relationship: string;
+  dob: string;
+  gender: string;
+  zip: string;
+  issues?: string[];
+}
+
 interface ParseResult {
-  headers: string[];
   totalRows: number;
-  suggestedMappings: Record<string, string | null>;
-  previewRows: Record<string, string>[];
-  requiredFields: { key: string; label: string }[];
+  cleanedRows: number;
+  previewRows: CleanedRow[];
+  summary: string;
+  warnings: string[];
+  confidence: "high" | "medium" | "low";
 }
 
 function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void }) {
   const { toast } = useToast();
-  const [step, setStep] = useState<"upload" | "mapping" | "confirming">("upload");
+  const [step, setStep] = useState<"upload" | "confirm">("upload");
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
-  const [mappings, setMappings] = useState<Record<string, string | null>>({});
   const [isUploading, setIsUploading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
-  const [editingField, setEditingField] = useState<string | null>(null);
 
   const handleFile = useCallback(async (file: File) => {
     if (!file.name.endsWith(".csv")) {
@@ -249,8 +258,11 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
 
       const result: ParseResult = await res.json();
       setParseResult(result);
-      setMappings(result.suggestedMappings);
-      setStep("mapping");
+      setStep("confirm");
+      toast({
+        title: "AI Processing Complete",
+        description: result.summary,
+      });
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     } finally {
@@ -269,17 +281,10 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
     if (file) handleFile(file);
   }, [handleFile]);
 
-  const allMapped = parseResult?.requiredFields.every(f => mappings[f.key]) ?? false;
-
   const handleConfirm = async () => {
-    if (!allMapped) {
-      toast({ title: "Missing mappings", description: "Please map all required fields before continuing.", variant: "destructive" });
-      return;
-    }
-
     setIsConfirming(true);
     try {
-      const res = await apiRequest("POST", "/api/groups/confirm", { mappings });
+      const res = await apiRequest("POST", "/api/groups/confirm", {});
       const data = await res.json();
       toast({ title: "Census uploaded", description: "Starting risk analysis..." });
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
@@ -290,7 +295,6 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
         toast({ title: "Session expired", description: "Please re-upload your CSV file.", variant: "destructive" });
         setStep("upload");
         setParseResult(null);
-        setMappings({});
       } else {
         toast({ title: "Upload failed", description: msg, variant: "destructive" });
       }
@@ -351,38 +355,16 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
             ))}
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            EE = Employee, SP = Spouse, DEP = Dependent. We'll auto-detect your column headers.
+            AI will automatically detect and standardize your data (M→Male, EE→Employee, etc.)
           </p>
-        </div>
-
-        <div className="mt-4 rounded-md bg-card p-3 border">
-          <p className="text-xs font-medium mb-2">Sample Data:</p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-1 pr-3 font-medium text-muted-foreground">First Name</th>
-                  <th className="text-left py-1 pr-3 font-medium text-muted-foreground">Last Name</th>
-                  <th className="text-left py-1 pr-3 font-medium text-muted-foreground">Type</th>
-                  <th className="text-left py-1 pr-3 font-medium text-muted-foreground">Date of Birth</th>
-                  <th className="text-left py-1 pr-3 font-medium text-muted-foreground">Gender</th>
-                  <th className="text-left py-1 font-medium text-muted-foreground">Zip Code</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-border/50"><td className="py-1 pr-3">John</td><td className="py-1 pr-3">Smith</td><td className="py-1 pr-3">EE</td><td className="py-1 pr-3">1985-03-15</td><td className="py-1 pr-3">Male</td><td className="py-1">30301</td></tr>
-                <tr className="border-b border-border/50"><td className="py-1 pr-3">Jane</td><td className="py-1 pr-3">Smith</td><td className="py-1 pr-3">SP</td><td className="py-1 pr-3">1987-08-22</td><td className="py-1 pr-3">Female</td><td className="py-1">30301</td></tr>
-                <tr><td className="py-1 pr-3">Tommy</td><td className="py-1 pr-3">Smith</td><td className="py-1 pr-3">DEP</td><td className="py-1 pr-3">2015-01-10</td><td className="py-1 pr-3">Male</td><td className="py-1">30301</td></tr>
-              </tbody>
-            </table>
-          </div>
         </div>
       </Card>
     );
   }
 
-  if (step === "mapping" && parseResult) {
-    const allFieldsMapped = parseResult.requiredFields.every(f => mappings[f.key]);
+  if (step === "confirm" && parseResult) {
+    const hasWarnings = parseResult.warnings.length > 0;
+    const rowsWithIssues = parseResult.previewRows.filter(r => r.issues && r.issues.length > 0);
 
     return (
       <Card className="p-6">
@@ -391,105 +373,78 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
             <Button variant="ghost" size="icon" onClick={() => setStep("upload")} data-testid="button-back-upload">
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h2 className="font-semibold text-lg">Verify Column Mapping</h2>
+            <h2 className="font-semibold text-lg">✓ AI Cleaned Your Data</h2>
           </div>
-          <p className="text-sm text-muted-foreground ml-10">
-            We found <strong>{parseResult.totalRows} rows</strong> and auto-matched your columns. Review and submit below.
-          </p>
+          <p className="text-sm text-muted-foreground ml-10">{parseResult.summary}</p>
         </div>
 
-        {allFieldsMapped ? (
-          <div className="mb-4 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-3">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <span className="text-sm font-medium text-green-700 dark:text-green-400">
-                All required fields matched successfully
-              </span>
-            </div>
+        <div className="mb-4 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-3">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <span className="text-sm font-medium text-green-700 dark:text-green-400">
+              {parseResult.cleanedRows} rows processed successfully
+            </span>
           </div>
-        ) : (
+        </div>
+
+        {hasWarnings && (
           <div className="mb-4 rounded-md bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 p-3">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-              <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
-                Some fields need to be mapped before submitting
-              </span>
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+              <div className="flex-1">
+                <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400 block mb-1">
+                  Data Quality Warnings
+                </span>
+                <ul className="text-xs text-yellow-600/80 dark:text-yellow-400/80 space-y-0.5">
+                  {parseResult.warnings.slice(0, 5).map((w, i) => (
+                    <li key={i}>• {w}</li>
+                  ))}
+                  {parseResult.warnings.length > 5 && (
+                    <li className="italic">...and {parseResult.warnings.length - 5} more</li>
+                  )}
+                </ul>
+              </div>
             </div>
           </div>
         )}
 
-        <div className="space-y-3 mb-6">
-          {parseResult.requiredFields.map((field) => {
-            const mapped = mappings[field.key];
-            const isEditing = editingField === field.key;
-            const previewValues = mapped && parseResult.previewRows
-              ? parseResult.previewRows.slice(0, 3).map(r => r[mapped] || "")
-              : [];
-
-            return (
-              <div key={field.key} className={`rounded-md border p-3 ${mapped ? 'bg-background' : 'bg-yellow-50/50 dark:bg-yellow-950/10 border-yellow-300 dark:border-yellow-800'}`}>
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    {mapped ? (
-                      <>
-                        <Check className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium">{field.label}</span>
-                            <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                            <Badge variant="secondary" className="text-xs">{mapped}</Badge>
-                          </div>
-                          <div className="flex gap-2 text-xs text-muted-foreground overflow-x-auto">
-                            {previewValues.slice(0, 3).map((v, i) => (
-                              <span key={i} className="whitespace-nowrap">{v || "—"}</span>
-                            ))}
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <X className="h-4 w-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
-                        <span className="text-sm font-medium">{field.label}</span>
-                        <span className="text-xs text-muted-foreground">Not matched</span>
-                      </>
-                    )}
-                  </div>
-                  {!isEditing ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEditingField(field.key)}
-                      data-testid={`button-edit-${field.key}`}
-                    >
-                      {mapped ? "Change" : "Select"}
-                    </Button>
-                  ) : (
-                    <Select
-                      value={mapped || ""}
-                      onValueChange={(val) => {
-                        setMappings({ ...mappings, [field.key]: val || null });
-                        setEditingField(null);
-                      }}
-                    >
-                      <SelectTrigger className="w-[200px]" data-testid={`select-mapping-${field.key}`}>
-                        <SelectValue placeholder="Choose column" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {parseResult.headers.map((h) => (
-                          <SelectItem key={h} value={h}>{h}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+        <div className="mb-6 rounded-md border">
+          <div className="p-3 border-b bg-muted/30">
+            <h3 className="text-sm font-medium">Preview (first 10 rows)</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b bg-muted/20">
+                  <th className="text-left py-2 px-3 font-medium">First</th>
+                  <th className="text-left py-2 px-3 font-medium">Last</th>
+                  <th className="text-left py-2 px-3 font-medium">Type</th>
+                  <th className="text-left py-2 px-3 font-medium">DOB</th>
+                  <th className="text-left py-2 px-3 font-medium">Gender</th>
+                  <th className="text-left py-2 px-3 font-medium">Zip</th>
+                </tr>
+              </thead>
+              <tbody>
+                {parseResult.previewRows.map((row, i) => (
+                  <tr key={i} className={`border-b ${row.issues ? 'bg-yellow-50/50 dark:bg-yellow-950/10' : ''}`}>
+                    <td className="py-2 px-3">{row.firstName || <span className="text-muted-foreground">—</span>}</td>
+                    <td className="py-2 px-3">{row.lastName || <span className="text-muted-foreground">—</span>}</td>
+                    <td className="py-2 px-3">
+                      <Badge variant="outline" className="text-xs">{row.relationship}</Badge>
+                    </td>
+                    <td className="py-2 px-3">{row.dob || <span className="text-muted-foreground">—</span>}</td>
+                    <td className="py-2 px-3">{row.gender}</td>
+                    <td className="py-2 px-3">{row.zip || <span className="text-muted-foreground">—</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <Button
           onClick={handleConfirm}
-          disabled={!allMapped || isConfirming}
+          disabled={isConfirming}
           className="w-full"
           size="lg"
           data-testid="button-confirm-mapping"
@@ -501,7 +456,7 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
             </>
           ) : (
             <>
-              Submit Census & Get Risk Analysis <ArrowRight className="ml-2 h-4 w-4" />
+              Looks Good - Submit & Get Risk Analysis <ArrowRight className="ml-2 h-4 w-4" />
             </>
           )}
         </Button>
