@@ -119,6 +119,56 @@ function smartMatchHeaders(csvHeaders: string[]): Record<string, string | null> 
   return mappings;
 }
 
+// Demographic Risk Analysis lookup table based on age band and gender
+const DEMOGRAPHIC_RISK_TABLE: Record<string, { female: number; male: number }> = {
+  "0-4": { female: 0.35, male: 0.40 },
+  "5-9": { female: 0.30, male: 0.55 },
+  "10-14": { female: 0.37, male: 0.46 },
+  "15-19": { female: 0.62, male: 0.46 },
+  "20-24": { female: 0.80, male: 0.46 },
+  "25-29": { female: 0.92, male: 0.46 },
+  "30-34": { female: 0.88, male: 0.45 },
+  "35-39": { female: 0.81, male: 0.52 },
+  "40-44": { female: 1.18, male: 0.77 },
+  "45-49": { female: 1.03, male: 0.67 },
+  "50-54": { female: 1.43, male: 1.20 },
+  "55-59": { female: 1.22, male: 1.52 },
+  "60-64": { female: 1.49, male: 1.99 },
+  "65-69": { female: 3.81, male: 1.64 },
+  "70-Above": { female: 10.36, male: 2.78 },
+};
+
+function getAgeBand(age: number): string {
+  if (age < 5) return "0-4";
+  if (age < 10) return "5-9";
+  if (age < 15) return "10-14";
+  if (age < 20) return "15-19";
+  if (age < 25) return "20-24";
+  if (age < 30) return "25-29";
+  if (age < 35) return "30-34";
+  if (age < 40) return "35-39";
+  if (age < 45) return "40-44";
+  if (age < 50) return "45-49";
+  if (age < 55) return "50-54";
+  if (age < 60) return "55-59";
+  if (age < 65) return "60-64";
+  if (age < 70) return "65-69";
+  return "70-Above";
+}
+
+function getRiskScoreForPerson(age: number, gender: string): number {
+  const ageBand = getAgeBand(age);
+  const riskData = DEMOGRAPHIC_RISK_TABLE[ageBand];
+
+  if (!riskData) {
+    // Fallback to default average if age band not found
+    return gender.toLowerCase() === "female" || gender.toLowerCase() === "f" ? 0.97 : 0.80;
+  }
+
+  const isFemale = gender.toLowerCase() === "female" || gender.toLowerCase() === "f";
+  return isFemale ? riskData.female : riskData.male;
+}
+
 function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relationship: string }[]): {
   riskScore: number;
   riskTier: string;
@@ -132,11 +182,16 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
   let maleCount = 0;
   let femaleCount = 0;
   const eeAges: number[] = [];
+  let totalRiskScore = 0;
+  let validEntries = 0;
+
+  // Count by age band and gender for detailed distribution
+  const ageBandDistribution: Record<string, { female: number; male: number }> = {};
 
   for (const entry of entries) {
     let dob: Date | null = null;
     const dobStr = entry.dateOfBirth.trim();
-    
+
     const formats = [
       /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
       /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
@@ -167,6 +222,23 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
         if (rel === "EE" || rel === "EMPLOYEE") {
           eeAges.push(age);
         }
+
+        // Calculate risk score for this person using the lookup table
+        const personRiskScore = getRiskScoreForPerson(age, entry.gender);
+        totalRiskScore += personRiskScore;
+        validEntries++;
+
+        // Track age band distribution
+        const ageBand = getAgeBand(age);
+        if (!ageBandDistribution[ageBand]) {
+          ageBandDistribution[ageBand] = { female: 0, male: 0 };
+        }
+        const isFemale = entry.gender.toLowerCase() === "female" || entry.gender.toLowerCase() === "f";
+        if (isFemale) {
+          ageBandDistribution[ageBand].female++;
+        } else {
+          ageBandDistribution[ageBand].male++;
+        }
       }
     }
 
@@ -178,50 +250,47 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
   const avgAge = ages.length > 0 ? ages.reduce((a, b) => a + b, 0) / ages.length : 35;
   const avgEeAge = eeAges.length > 0 ? eeAges.reduce((a, b) => a + b, 0) / eeAges.length : avgAge;
 
-  let riskScore = 1.0;
+  // Calculate weighted average risk score based on the demographic lookup table
+  let riskScore = validEntries > 0 ? totalRiskScore / validEntries : 1.0;
 
-  if (avgEeAge < 30) riskScore -= 0.15;
-  else if (avgEeAge < 35) riskScore -= 0.08;
-  else if (avgEeAge < 40) riskScore += 0.0;
-  else if (avgEeAge < 45) riskScore += 0.08;
-  else if (avgEeAge < 50) riskScore += 0.15;
-  else if (avgEeAge < 55) riskScore += 0.22;
-  else riskScore += 0.30;
+  // Round to 2 decimal places
+  riskScore = Math.round(riskScore * 100) / 100;
 
-  const femaleRatio = entries.length > 0 ? femaleCount / entries.length : 0.5;
-  if (femaleRatio > 0.65) riskScore += 0.05;
-  else if (femaleRatio < 0.35) riskScore -= 0.03;
+  // Determine risk tier based on the specified thresholds
+  let riskTier = "standard"; // 1.0 - 1.5
+  if (riskScore < 1.0) riskTier = "preferred"; // Below 1.0
+  else if (riskScore >= 1.5) riskTier = "high"; // 1.5+
 
   const eeCount = entries.filter(e => {
     const r = e.relationship.toUpperCase();
     return r === "EE" || r === "EMPLOYEE";
   }).length;
-  if (eeCount < 10) riskScore += 0.08;
-  else if (eeCount < 25) riskScore += 0.03;
-  else if (eeCount > 100) riskScore -= 0.05;
-
-  const olderEes = eeAges.filter(a => a > 55).length;
-  const olderRatio = eeAges.length > 0 ? olderEes / eeAges.length : 0;
-  if (olderRatio > 0.3) riskScore += 0.10;
-  else if (olderRatio > 0.15) riskScore += 0.05;
-
-  riskScore = Math.max(0.40, Math.min(2.0, Math.round(riskScore * 100) / 100));
-
-  let riskTier = "standard";
-  if (riskScore < 0.85) riskTier = "preferred";
-  else if (riskScore > 1.15) riskTier = "high";
 
   const ageRanges = {
-    "18-29": ages.filter(a => a >= 18 && a < 30).length,
-    "30-39": ages.filter(a => a >= 30 && a < 40).length,
-    "40-49": ages.filter(a => a >= 40 && a < 50).length,
-    "50-59": ages.filter(a => a >= 50 && a < 60).length,
-    "60+": ages.filter(a => a >= 60).length,
-    "Under 18": ages.filter(a => a < 18).length,
+    "0-4": ages.filter(a => a < 5).length,
+    "5-9": ages.filter(a => a >= 5 && a < 10).length,
+    "10-14": ages.filter(a => a >= 10 && a < 15).length,
+    "15-19": ages.filter(a => a >= 15 && a < 20).length,
+    "20-24": ages.filter(a => a >= 20 && a < 25).length,
+    "25-29": ages.filter(a => a >= 25 && a < 30).length,
+    "30-34": ages.filter(a => a >= 30 && a < 35).length,
+    "35-39": ages.filter(a => a >= 35 && a < 40).length,
+    "40-44": ages.filter(a => a >= 40 && a < 45).length,
+    "45-49": ages.filter(a => a >= 45 && a < 50).length,
+    "50-54": ages.filter(a => a >= 50 && a < 55).length,
+    "55-59": ages.filter(a => a >= 55 && a < 60).length,
+    "60-64": ages.filter(a => a >= 60 && a < 65).length,
+    "65-69": ages.filter(a => a >= 65 && a < 70).length,
+    "70+": ages.filter(a => a >= 70).length,
   };
+
+  const femaleRatio = entries.length > 0 ? femaleCount / entries.length : 0.5;
+  const olderEes = eeAges.filter(a => a > 55).length;
+  const olderRatio = eeAges.length > 0 ? olderEes / eeAges.length : 0;
 
   const characteristics = {
     ageDistribution: ageRanges,
+    ageBandDistribution,
     averageEmployeeAge: Math.round(avgEeAge * 10) / 10,
     dependencyRatio: eeCount > 0 ? Math.round(((entries.length - eeCount) / eeCount) * 100) / 100 : 0,
     groupSizeCategory: eeCount < 10 ? "Micro" : eeCount < 25 ? "Small" : eeCount < 50 ? "Mid-Size" : eeCount < 100 ? "Large" : "Enterprise",
@@ -236,7 +305,8 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
   if (characteristics.dependencyRatio > 1.5) characteristics.factors.push("High dependency ratio");
   if (femaleRatio > 0.65) characteristics.factors.push("Female-dominant workforce");
 
-  const qualScore = Math.round(Math.max(0, Math.min(100, (2.0 - riskScore) / 1.6 * 100)));
+  // Calculate qualification score: lower risk = higher qualification score
+  const qualScore = Math.round(Math.max(0, Math.min(100, (2.0 - riskScore) / 2.0 * 100)));
 
   return {
     riskScore,
