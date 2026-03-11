@@ -644,8 +644,22 @@ export async function registerRoutes(
         (e) => !e.firstName || !e.lastName || !e.dateOfBirth || !e.gender || !e.zipCode
       );
       if (invalid.length > 0) {
+        // Debug: log the first invalid entry to see what's missing
+        const firstInvalid = invalid[0];
+        const missingFieldsList = [];
+        if (!firstInvalid.firstName) missingFieldsList.push("First Name");
+        if (!firstInvalid.lastName) missingFieldsList.push("Last Name");
+        if (!firstInvalid.dateOfBirth) missingFieldsList.push("DOB");
+        if (!firstInvalid.gender) missingFieldsList.push("Gender");
+        if (!firstInvalid.zipCode) missingFieldsList.push("Zip Code");
+
+        log(`Validation failed: ${invalid.length} invalid rows. First invalid row missing: ${missingFieldsList.join(", ")}`);
+        log(`Mappings: ${JSON.stringify(mappings)}`);
+        log(`Sample row data: ${JSON.stringify(pendingCensus.rows[0])}`);
+        log(`Extracted first entry: ${JSON.stringify(entries[0])}`);
+
         return res.status(400).json({
-          message: `${invalid.length} row(s) have missing required fields. Please ensure all rows have First Name, Last Name, DOB, Gender, and Zip Code.`,
+          message: `${invalid.length} row(s) have missing required fields (${missingFieldsList.join(", ")}). Please ensure all rows have First Name, Last Name, DOB, Gender, and Zip Code.`,
         });
       }
 
