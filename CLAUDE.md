@@ -7,6 +7,7 @@
 - Do NOT push to `main` (no push permission).
 
 ## Environment Variables
-- **ANTHROPIC_API_KEY** - Required for AI-powered CSV cleaning and data standardization
+- **OPENAI_API_KEY** - Required for AI-powered CSV cleaning and data standardization
   - Add this to Railway environment variables
-  - Get API key from https://console.anthropic.com/
+  - Get API key from https://platform.openai.com/api-keys
+  - Click "Create new secret key" and copy the key

@@ -1,7 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 interface CleanedRow {
@@ -67,19 +67,23 @@ Return a JSON object with this structure:
 
 Only return valid JSON, no explanation.`;
 
-  const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 4096,
-    messages: [{
-      role: "user",
-      content: prompt
-    }]
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      {
+        role: "system",
+        content: "You are a data cleaning assistant. Always return valid JSON only, no explanations."
+      },
+      {
+        role: "user",
+        content: prompt
+      }
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.1
   });
 
-  const responseText = message.content[0].type === 'text'
-    ? message.content[0].text
-    : '';
-
+  const responseText = completion.choices[0].message.content || "{}";
   const aiResult = JSON.parse(responseText);
 
   // Apply AI mappings and standardization to all rows
