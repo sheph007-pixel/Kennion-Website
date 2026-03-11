@@ -402,11 +402,6 @@ export async function registerRoutes(
     try {
       const data = registerSchema.parse(req.body);
 
-      const validCode = process.env.ACCESS_CODE || "8787";
-      if (data.accessCode !== validCode) {
-        return res.status(400).json({ message: "Invalid access code. Contact Hunter Shepherd at 205-641-0469 to get your access code." });
-      }
-
       const fullName = `${data.firstName} ${data.lastName}`;
 
       const existing = await storage.getUserByEmail(data.email);
