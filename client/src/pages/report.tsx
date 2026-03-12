@@ -678,33 +678,6 @@ export default function ReportPage() {
           )}
         </Card>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          <Card className="p-4">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-              <UserCheck className="h-3.5 w-3.5" /> Employees
-            </div>
-            <div className="text-2xl font-bold" data-testid="text-report-ee">{group.employeeCount}</div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-              <Heart className="h-3.5 w-3.5" /> Spouses
-            </div>
-            <div className="text-2xl font-bold" data-testid="text-report-sp">{group.spouseCount || 0}</div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-              <Baby className="h-3.5 w-3.5" /> Dependents
-            </div>
-            <div className="text-2xl font-bold" data-testid="text-report-dep">{group.dependentCount}</div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-              <Users className="h-3.5 w-3.5" /> Total Lives
-            </div>
-            <div className="text-2xl font-bold" data-testid="text-report-total">{group.totalLives}</div>
-          </Card>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <Card className="p-6">
             <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
@@ -714,16 +687,32 @@ export default function ReportPage() {
 
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-green-600 dark:text-green-400">Low Risk</span>
-                <span className="text-lg font-bold">{chars.riskSegments?.lowRisk || 0} ({chars.riskSegments?.lowRiskPct || 0}%)</span>
+                <div className="flex items-center gap-2">
+                  <UserCheck className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Employees</span>
+                </div>
+                <span className="text-lg font-bold" data-testid="text-report-ee">{group.employeeCount}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-yellow-600 dark:text-yellow-400">Avg Risk</span>
-                <span className="text-lg font-bold">{chars.riskSegments?.avgRisk || 0} ({chars.riskSegments?.avgRiskPct || 0}%)</span>
+                <div className="flex items-center gap-2">
+                  <Heart className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Spouses</span>
+                </div>
+                <span className="text-lg font-bold" data-testid="text-report-sp">{group.spouseCount || 0}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-red-600 dark:text-red-400">High Risk</span>
-                <span className="text-lg font-bold">{chars.riskSegments?.highRisk || 0} ({chars.riskSegments?.highRiskPct || 0}%)</span>
+                <div className="flex items-center gap-2">
+                  <Baby className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Dependents</span>
+                </div>
+                <span className="text-lg font-bold" data-testid="text-report-dep">{group.dependentCount}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Total Lives</span>
+                </div>
+                <span className="text-lg font-bold" data-testid="text-report-total">{group.totalLives}</span>
               </div>
             </div>
           </Card>
