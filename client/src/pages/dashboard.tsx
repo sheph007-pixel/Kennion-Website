@@ -410,16 +410,21 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
           </div>
         )}
 
-        <div className="mt-4 rounded-md bg-red-50 dark:bg-red-950/20 p-3 border-2 border-red-200 dark:border-red-800">
-          <p className="text-xs font-semibold mb-2 text-red-900 dark:text-red-100">Required CSV Columns:</p>
-          <div className="flex flex-wrap gap-1.5">
-            {["First Name", "Last Name", "Type (EE/SP/CH)", "Date of Birth", "Gender", "Zip Code"].map((col) => (
-              <Badge key={col} variant="secondary" className="text-xs">{col}</Badge>
-            ))}
+        <div className="mt-4 rounded-md bg-blue-50 dark:bg-blue-950/20 p-3 border-2 border-blue-200 dark:border-blue-800">
+          <div className="flex items-start gap-2">
+            <div className="rounded-full bg-blue-500 text-white px-2 py-0.5 text-[10px] font-bold mt-0.5">AI</div>
+            <div className="flex-1">
+              <p className="text-xs font-semibold mb-2 text-blue-900 dark:text-blue-100">Required Data Fields:</p>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {["First Name", "Last Name", "Type (EE/SP/CH)", "Date of Birth", "Gender", "Zip Code"].map((col) => (
+                  <Badge key={col} variant="secondary" className="text-xs">{col}</Badge>
+                ))}
+              </div>
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                ✨ AI automatically detects your column names and standardizes values (FirstName→First Name, M→Male, EE→Employee, etc.)
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-red-700 dark:text-red-300 mt-2">
-            Exact column names required. Values will be auto-standardized (M→Male, EE→Employee, etc.)
-          </p>
         </div>
       </Card>
     );

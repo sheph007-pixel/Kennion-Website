@@ -722,17 +722,7 @@ export async function registerRoutes(
 
       const headers = Object.keys(rows[0]).filter(h => h.trim() !== "");
 
-      // CRITICAL: Validate exact column names (no AI mapping)
-      const columnError = validateColumns(headers);
-      if (columnError) {
-        log(`Column validation failed: ${columnError}`);
-        return res.status(400).json({
-          message: columnError,
-          hint: "Download our template to get the correct format. The template has the exact column names required.",
-        });
-      }
-
-      log(`Column validation passed: Found all 6 required columns`);
+      log(`Found ${headers.length} columns: ${headers.join(", ")}`);
 
       // Filter out completely empty rows (rows where all values are empty/null)
       const nonEmptyRows = rows.filter(row => {

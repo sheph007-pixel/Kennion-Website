@@ -34,17 +34,17 @@ function standardizeRelationship(value: string): "Employee" | "Spouse" | "Child"
   const normalized = value.trim().toUpperCase();
 
   // Employee patterns
-  if (["EE", "E", "EMP", "EMPLOYEE"].includes(normalized)) {
+  if (["EE", "E", "EMP", "EMPLOYEE", "STAFF", "WORKER", "MEMBER"].includes(normalized)) {
     return "Employee";
   }
 
   // Spouse patterns
-  if (["SP", "S", "SPOUSE"].includes(normalized)) {
+  if (["SP", "S", "SPOUSE", "PARTNER", "WIFE", "HUSBAND"].includes(normalized)) {
     return "Spouse";
   }
 
   // Child patterns
-  if (["CH", "C", "CHILD", "CHILDREN", "DEP", "DEPENDENT"].includes(normalized)) {
+  if (["CH", "C", "CHILD", "CHILDREN", "DEP", "DEPENDENT", "KID", "SON", "DAUGHTER"].includes(normalized)) {
     return "Child";
   }
 
@@ -58,11 +58,13 @@ function standardizeRelationship(value: string): "Employee" | "Spouse" | "Child"
 function standardizeGender(value: string): "Male" | "Female" {
   const normalized = value.trim().toUpperCase();
 
-  if (["F", "FEMALE"].includes(normalized)) {
+  // Female patterns
+  if (["F", "FEMALE", "WOMAN", "W", "GIRL"].includes(normalized)) {
     return "Female";
   }
 
-  if (["M", "MALE"].includes(normalized)) {
+  // Male patterns
+  if (["M", "MALE", "MAN", "BOY"].includes(normalized)) {
     return "Male";
   }
 
@@ -71,8 +73,68 @@ function standardizeGender(value: string): "Male" | "Female" {
 }
 
 /**
- * Clean CSV data using exact column names (no AI mapping needed)
- * Columns are pre-validated, so we just standardize values
+ * Intelligently maps CSV columns using AI
+ * Detects column purposes even if names don't match exactly
+ */
+async function mapColumnsWithAI(headers: string[]): Promise<Record<string, string>> {
+  const prompt = `You are a data mapping expert. Analyze these CSV column headers and map them to our required fields.
+
+CSV Headers: ${headers.join(", ")}
+
+Required Fields:
+- First Name (person's first/given name)
+- Last Name (person's last/family/surname)
+- Type (relationship: Employee/EE/Spouse/SP/Child/CH/Dependent)
+- Date of Birth (DOB, birthday, birth date)
+- Gender (sex, M/F/Male/Female)
+- Zip Code (postal code, zip)
+
+Return ONLY a JSON object mapping each header to ONE of these fields. If a header doesn't match any field, map it to "ignore".
+Format: {"Header Name": "First Name", "Another Header": "Last Name", ...}
+
+Be flexible - match variations like "FirstName", "first_name", "fname", "DOB", "BirthDate", etc.`;
+
+  try {
+    const openai = getOpenAIClient();
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "You are a data mapping expert. Return ONLY valid JSON, no explanations."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.1,
+      max_tokens: 500,
+      response_format: { type: "json_object" }
+    });
+
+    const mapping = JSON.parse(completion.choices[0].message.content || "{}");
+    return mapping;
+  } catch (error) {
+    // Fallback: try simple fuzzy matching
+    const mapping: Record<string, string> = {};
+    for (const header of headers) {
+      const lower = header.toLowerCase().replace(/[_\s-]/g, "");
+      if (lower.includes("first") || lower.includes("fname")) mapping[header] = "First Name";
+      else if (lower.includes("last") || lower.includes("lname") || lower.includes("surname")) mapping[header] = "Last Name";
+      else if (lower.includes("type") || lower.includes("relation")) mapping[header] = "Type";
+      else if (lower.includes("dob") || lower.includes("birth") || lower.includes("bday")) mapping[header] = "Date of Birth";
+      else if (lower.includes("gender") || lower.includes("sex")) mapping[header] = "Gender";
+      else if (lower.includes("zip") || lower.includes("postal")) mapping[header] = "Zip Code";
+      else mapping[header] = "ignore";
+    }
+    return mapping;
+  }
+}
+
+/**
+ * Clean CSV data using intelligent AI-powered column mapping
+ * Automatically detects columns and standardizes values
  */
 export async function cleanCSVWithAI(
   headers: string[],
@@ -81,27 +143,45 @@ export async function cleanCSVWithAI(
   const cleanedData: CleanedRow[] = [];
   const warnings: string[] = [];
 
-  // Known column names (already validated)
-  const COLUMNS = {
-    firstName: "First Name",
-    lastName: "Last Name",
-    type: "Type",
-    dob: "Date of Birth",
-    gender: "Gender",
-    zip: "Zip Code"
+  // Use AI to intelligently map columns
+  const columnMapping = await mapColumnsWithAI(headers);
+
+  // Reverse mapping: Required Field -> CSV Header
+  const fieldToHeader: Record<string, string | null> = {
+    "First Name": null,
+    "Last Name": null,
+    "Type": null,
+    "Date of Birth": null,
+    "Gender": null,
+    "Zip Code": null
   };
+
+  for (const [header, field] of Object.entries(columnMapping)) {
+    if (field !== "ignore") {
+      fieldToHeader[field] = header;
+    }
+  }
+
+  // Check for missing required fields
+  const missingFields = Object.entries(fieldToHeader)
+    .filter(([_, header]) => !header)
+    .map(([field, _]) => field);
+
+  if (missingFields.length > 0) {
+    throw new Error(`Could not detect required columns: ${missingFields.join(", ")}. Please ensure your CSV contains columns for first name, last name, relationship type, date of birth, gender, and zip code.`);
+  }
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
 
     try {
-      // Extract values using exact column names
-      const firstName = row[COLUMNS.firstName]?.toString().trim() || "";
-      const lastName = row[COLUMNS.lastName]?.toString().trim() || "";
-      const rawType = row[COLUMNS.type]?.toString().trim() || "";
-      const dob = row[COLUMNS.dob]?.toString().trim() || "";
-      const rawGender = row[COLUMNS.gender]?.toString().trim() || "";
-      const zip = row[COLUMNS.zip]?.toString().trim() || "";
+      // Extract values using mapped column names
+      const firstName = row[fieldToHeader["First Name"]!]?.toString().trim() || "";
+      const lastName = row[fieldToHeader["Last Name"]!]?.toString().trim() || "";
+      const rawType = row[fieldToHeader["Type"]!]?.toString().trim() || "";
+      const dob = row[fieldToHeader["Date of Birth"]!]?.toString().trim() || "";
+      const rawGender = row[fieldToHeader["Gender"]!]?.toString().trim() || "";
+      const zip = row[fieldToHeader["Zip Code"]!]?.toString().trim() || "";
 
       // Standardize using simple rules
       const relationship = standardizeRelationship(rawType);
@@ -134,8 +214,8 @@ export async function cleanCSVWithAI(
 
   return {
     cleanedData,
-    confidence: "high", // Always high since we're using exact columns
-    summary: `Processed ${cleanedData.length} rows. Standardized relationship and gender values.`,
+    confidence: "high",
+    summary: `AI detected and mapped ${headers.length} columns. Processed ${cleanedData.length} rows with auto-standardized values.`,
     warnings
   };
 }
