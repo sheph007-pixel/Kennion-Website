@@ -410,7 +410,7 @@ function WizardProgress({ step }: { step: "upload" | "map-columns" | "confirm" }
   const currentStepIndex = steps.findIndex(s => s.id === step);
 
   return (
-    <div className="flex gap-1 -mb-px">
+    <div className="flex gap-2">
       {steps.map((s, idx) => {
         const isActive = idx === currentStepIndex;
         const isCompleted = idx < currentStepIndex;
@@ -418,14 +418,13 @@ function WizardProgress({ step }: { step: "upload" | "map-columns" | "confirm" }
         return (
           <div
             key={s.id}
-            className={`flex items-center gap-2 px-6 py-3 rounded-t-lg font-bold text-sm transition-all ${
+            className={`flex items-center gap-2 px-6 py-3 rounded-t-lg font-bold text-sm transition-all border-4 ${
               isActive
-                ? 'bg-white dark:bg-gray-900 text-black dark:text-white border-t-4 border-x-4 border-black dark:border-white shadow-lg -mb-px'
+                ? 'bg-white dark:bg-gray-900 text-black dark:text-white border-black dark:border-white border-b-white dark:border-b-gray-900 -mb-1 z-10'
                 : isCompleted
-                ? 'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
+                ? 'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-400 dark:border-gray-600'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700'
             }`}
-            style={isActive ? { borderBottom: '4px solid var(--background)' } : {}}
           >
             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
               isActive
@@ -597,7 +596,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
           </AlertDialogContent>
         </AlertDialog>
 
-        <Card className="p-6 border-4 border-primary/30 shadow-lg rounded-tl-none">
+        <Card className="p-6 border-4 border-black dark:border-white shadow-lg rounded-tl-none">
           <div className="mb-4">
             <h2 className="font-bold text-2xl text-primary" data-testid="text-upload-heading">Upload Your Employee Census</h2>
             <p className="text-sm text-muted-foreground mt-1">
@@ -692,7 +691,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
           </AlertDialogContent>
         </AlertDialog>
 
-        <Card className="p-4 rounded-tl-none">
+        <Card className="p-4 border-4 border-black dark:border-white rounded-tl-none">
         <div className="mb-3">
           <div className="flex items-start justify-between gap-4 mb-3">
             <Button variant="outline" size="sm" onClick={() => setStep("upload")}>
@@ -834,7 +833,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
       <>
         <SimpleHeader hasGroups={hasGroups} step={step} />
         <WizardProgress step={step} />
-        <Card className="p-6 rounded-tl-none">
+        <Card className="p-6 border-4 border-black dark:border-white rounded-tl-none">
         <div className="mb-6">
           <Button variant="outline" size="sm" onClick={() => setStep("map-columns")} data-testid="button-back-mapping" className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
