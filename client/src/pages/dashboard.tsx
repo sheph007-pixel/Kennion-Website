@@ -33,6 +33,7 @@ import {
   Shield,
   Brain,
   Sparkles,
+  Printer,
 } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
@@ -97,7 +98,90 @@ function DashboardNav() {
   );
 }
 
+function PrintInstructions() {
+  return (
+    <div className="hidden print:block p-8 max-w-2xl mx-auto bg-white text-black">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold mb-2">Group Health Benefits Portal</h1>
+        <p className="text-lg text-gray-600">Simple Instructions for Getting Your Proposal</p>
+      </div>
+
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4 border-b-2 border-gray-300 pb-2">What You'll Get:</h2>
+        <p className="mb-2 text-gray-700">Group Health + Dental + Vision + Supplemental benefits proposal</p>
+      </div>
+
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4 border-b-2 border-gray-300 pb-2">How It Works (3 Easy Steps):</h2>
+        <ol className="space-y-4">
+          <li className="flex gap-3">
+            <span className="font-bold text-xl">1.</span>
+            <div>
+              <p className="font-semibold">Upload Your Employee Census</p>
+              <p className="text-gray-700">Provide a list with all employees and family members (spouses, children) who will be covered.</p>
+            </div>
+          </li>
+          <li className="flex gap-3">
+            <span className="font-bold text-xl">2.</span>
+            <div>
+              <p className="font-semibold">We Underwrite & Approve</p>
+              <p className="text-gray-700">Our system analyzes your group and determines eligibility.</p>
+            </div>
+          </li>
+          <li className="flex gap-3">
+            <span className="font-bold text-xl">3.</span>
+            <div>
+              <p className="font-semibold">Receive Your Benefits Proposal</p>
+              <p className="text-gray-700">Get a customized proposal with rates and coverage options.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+
+      <div className="mb-8 bg-gray-100 p-4 rounded">
+        <h2 className="text-xl font-semibold mb-3">Required Information (6 fields):</h2>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div>• First Name</div>
+          <div>• Last Name</div>
+          <div>• Type (EE/SP/CH)</div>
+          <div>• Date of Birth</div>
+          <div>• Gender</div>
+          <div>• Zip Code</div>
+        </div>
+        <p className="text-xs text-gray-600 mt-3">* AI automatically detects and maps your columns - any format works!</p>
+      </div>
+
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-3 border-b-2 border-gray-300 pb-2">Contact Information:</h2>
+        <div className="space-y-2">
+          <p className="font-semibold text-lg">Hunter Shepherd</p>
+          <p>Phone/Text: <span className="font-semibold text-blue-600">205-641-0469</span></p>
+        </div>
+      </div>
+
+      <div className="border-t-2 border-gray-300 pt-6 mt-8 text-center">
+        <p className="mb-4 font-semibold">Access the portal online:</p>
+        <div className="flex items-center justify-center gap-6">
+          <img
+            src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://www.kennion.com"
+            alt="QR Code to Kennion.com"
+            className="border-2 border-gray-300"
+          />
+          <div className="text-left">
+            <p className="text-lg font-bold">www.Kennion.com</p>
+            <p className="text-sm text-gray-600">Scan QR code or visit website</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SimpleHeader({ hasGroups, step }: { hasGroups: boolean; step: string }) {
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (hasGroups) return null;
 
   // Minimized version for non-upload steps
@@ -116,38 +200,52 @@ function SimpleHeader({ hasGroups, step }: { hasGroups: boolean; step: string })
 
   // Full version for upload step
   return (
-    <Card className="p-5 mb-6 bg-primary/5 border-primary/20">
-      <div className="space-y-3">
-        <div>
-          <h3 className="text-base font-semibold mb-2">Group Health + Dental + Vision + Supplemental</h3>
-          <p className="text-sm text-muted-foreground mb-3">
-            To calculate your rates, we need to know who you're covering. It takes about 2 minutes.
-          </p>
+    <>
+      <PrintInstructions />
+      <Card className="p-5 mb-6 bg-primary/5 border-primary/20 print:hidden">
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="text-base font-semibold mb-2">Group Health + Dental + Vision + Supplemental</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                To calculate your rates, we need to know who you're covering. It takes about 2 minutes.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              className="flex items-center gap-2 print:hidden"
+            >
+              <Printer className="h-4 w-4" />
+              Print Instructions
+            </Button>
+          </div>
+          <div className="space-y-2 text-sm">
+            <p className="font-medium text-foreground">Here's how it works:</p>
+            <ul className="space-y-1.5 text-muted-foreground">
+              <li className="flex items-start gap-2.5">
+                <span className="text-primary font-semibold min-w-[1.25rem]">1.</span>
+                <span>Upload your employee/family member list (names, birthdays, zip codes).</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="text-primary font-semibold min-w-[1.25rem]">2.</span>
+                <span>We underwrite and approve your group.</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="text-primary font-semibold min-w-[1.25rem]">3.</span>
+                <span>We provide you with a benefits proposal.</span>
+              </li>
+            </ul>
+          </div>
+          <div className="pt-3 border-t">
+            <p className="text-sm font-medium text-foreground">
+              Questions? Text/Call Hunter Shepherd: <a href="tel:+12056410469" className="font-semibold text-primary hover:underline">205-641-0469</a>
+            </p>
+          </div>
         </div>
-        <div className="space-y-2 text-sm">
-          <p className="font-medium text-foreground">Here's how it works:</p>
-          <ul className="space-y-1.5 text-muted-foreground">
-            <li className="flex items-start gap-2.5">
-              <span className="text-primary font-semibold min-w-[1.25rem]">1.</span>
-              <span>Upload your employee/family member list (names, birthdays, zip codes).</span>
-            </li>
-            <li className="flex items-start gap-2.5">
-              <span className="text-primary font-semibold min-w-[1.25rem]">2.</span>
-              <span>We underwrite and approve your group.</span>
-            </li>
-            <li className="flex items-start gap-2.5">
-              <span className="text-primary font-semibold min-w-[1.25rem]">3.</span>
-              <span>We provide you with a benefits proposal.</span>
-            </li>
-          </ul>
-        </div>
-        <div className="pt-3 border-t">
-          <p className="text-sm font-medium text-foreground">
-            Questions? Text/Call Hunter Shepherd: <a href="tel:+12056410469" className="font-semibold text-primary hover:underline">205-641-0469</a>
-          </p>
-        </div>
-      </div>
-    </Card>
+      </Card>
+    </>
   );
 }
 
