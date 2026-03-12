@@ -496,13 +496,13 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
     return (
       <>
         <SimpleHeader hasGroups={hasGroups} step={step} />
-        <Card className="p-6">
-        <div className="mb-6">
-          <Button variant="outline" size="sm" onClick={() => setStep("upload")} className="mb-4">
+        <Card className="p-4">
+        <div className="mb-4">
+          <Button variant="outline" size="sm" onClick={() => setStep("upload")} className="mb-3">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Upload
           </Button>
-          <h2 className="font-semibold text-lg mb-2">Confirm Column Mapping</h2>
+          <h2 className="font-semibold text-lg mb-1">Confirm Column Mapping</h2>
           <p className="text-sm text-muted-foreground">
             AI detected your columns. Verify they match correctly or adjust if needed.
           </p>
@@ -511,14 +511,14 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
         <div className="space-y-4">
           {/* Column Mapping Table */}
           <div className="rounded-md border">
-            <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 font-medium text-sm border-b">
+            <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 font-medium text-sm border-b">
               <div>Required Field</div>
               <div>Your CSV Column</div>
             </div>
             {REQUIRED_FIELDS.map((field) => {
               const mappedColumn = Object.keys(columnMapping).find(k => columnMapping[k] === field) || "";
               return (
-                <div key={field} className="grid grid-cols-2 gap-4 p-4 border-b last:border-b-0 items-center">
+                <div key={field} className="grid grid-cols-2 gap-4 p-3 border-b last:border-b-0 items-center">
                   <div className="font-medium text-sm">{FIELD_LABELS[field]}</div>
                   <Select
                     value={mappedColumn}
@@ -557,8 +557,8 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
             }).filter(col => col !== "");
 
             return (
-              <div className="rounded-md border p-4 bg-muted/20">
-                <h3 className="text-sm font-medium mb-3">Sample Data Preview (first 3 rows - mapped columns only)</h3>
+              <div className="rounded-md border p-2 bg-muted/20">
+                <h3 className="text-xs font-medium mb-2 px-1">Sample Data Preview (first 3 rows)</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
@@ -566,9 +566,9 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
                         {REQUIRED_FIELDS.map((field) => {
                           const csvColumn = Object.keys(columnMapping).find(k => columnMapping[k] === field);
                           return csvColumn ? (
-                            <th key={field} className="text-left p-2 font-medium">
+                            <th key={field} className="text-left p-1 font-medium text-[11px]">
                               {field}
-                              <div className="text-[10px] text-muted-foreground font-normal">({csvColumn})</div>
+                              <div className="text-[9px] text-muted-foreground font-normal">({csvColumn})</div>
                             </th>
                           ) : null;
                         })}
@@ -580,7 +580,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
                           {REQUIRED_FIELDS.map((field) => {
                             const csvColumn = Object.keys(columnMapping).find(k => columnMapping[k] === field);
                             return csvColumn ? (
-                              <td key={field} className="p-2">{row[csvColumn] || "-"}</td>
+                              <td key={field} className="p-1 text-[11px]">{row[csvColumn] || "-"}</td>
                             ) : null;
                           })}
                         </tr>
@@ -593,13 +593,14 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
           })()}
 
           <Button
-            className="w-full"
+            className="w-full text-base font-semibold shadow-lg"
+            size="lg"
             onClick={handleApplyMapping}
             disabled={isApplyingMapping}
           >
             {isApplyingMapping ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Processing...
               </>
             ) : (
