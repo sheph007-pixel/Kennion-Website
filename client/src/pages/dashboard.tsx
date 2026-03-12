@@ -211,18 +211,22 @@ function AnalysisAnimation({ onComplete, group }: { onComplete: () => void; grou
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 max-w-sm mx-auto pt-4">
-          <div className="text-center">
-            <div className="text-xs text-muted-foreground">Records</div>
-            <div className="text-lg font-bold">{group?.totalLives || "..."}</div>
-          </div>
+        <div className="grid grid-cols-4 gap-3 max-w-lg mx-auto pt-4">
           <div className="text-center">
             <div className="text-xs text-muted-foreground">Employees</div>
             <div className="text-lg font-bold">{group?.employeeCount || "..."}</div>
           </div>
           <div className="text-center">
-            <div className="text-xs text-muted-foreground">Variables</div>
-            <div className="text-lg font-bold">50+</div>
+            <div className="text-xs text-muted-foreground">Spouses</div>
+            <div className="text-lg font-bold">{group?.spouseCount || "..."}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-muted-foreground">Dependents</div>
+            <div className="text-lg font-bold">{group?.dependentCount || "..."}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-muted-foreground">Total</div>
+            <div className="text-lg font-bold">{group?.totalLives || "..."}</div>
           </div>
         </div>
       </div>
