@@ -286,89 +286,337 @@ export default function ReportPage() {
   const genderComp = getComparison(femalePercentage, BENCHMARKS.femalePercentage);
 
   const handleDownloadPdf = () => {
-    const printContent = document.getElementById("report-content");
-    if (printContent) {
-      const win = window.open("", "_blank");
-      if (win) {
-        win.document.write(`
-          <html>
-            <head>
-              <title>Kennion Risk Report - ${group.companyName}</title>
-              <style>
-                body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #1a1a1a; max-width: 800px; margin: 0 auto; }
-                h1 { font-size: 24px; margin-bottom: 4px; }
-                h2 { font-size: 18px; margin-top: 32px; margin-bottom: 12px; border-bottom: 1px solid #e5e5e5; padding-bottom: 8px; }
-                .subtitle { color: #666; font-size: 14px; margin-bottom: 24px; }
-                .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
-                .stat { background: #f9f9f9; padding: 12px; border-radius: 6px; }
-                .stat-label { font-size: 12px; color: #666; }
-                .stat-value { font-size: 20px; font-weight: 700; }
-                .score-box { text-align: center; padding: 24px; background: #f0f7ff; border-radius: 8px; margin: 16px 0; }
-                .score-value { font-size: 48px; font-weight: 800; }
-                .score-label { font-size: 14px; color: #666; }
-                .tier-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
-                .tier-preferred { background: #dcfce7; color: #166534; }
-                .tier-standard { background: #fef9c3; color: #854d0e; }
-                .tier-high { background: #fecaca; color: #991b1b; }
-                .factor { padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
-                .explanation { background: #f9fafb; padding: 16px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
-                .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e5e5; font-size: 12px; color: #999; }
-              </style>
-            </head>
-            <body>
-              <h1>Kennion Benefit Advisors</h1>
-              <p class="subtitle">Group Risk Analysis Report</p>
+    const win = window.open("", "_blank");
+    if (win) {
+      const tierColor = group.riskTier === 'preferred' ? '#16a34a' : group.riskTier === 'standard' ? '#ca8a04' : '#dc2626';
+      const tierBg = group.riskTier === 'preferred' ? '#dcfce7' : group.riskTier === 'standard' ? '#fef9c3' : '#fee2e2';
 
-              <h2>${group.companyName}</h2>
-              <p class="subtitle">Submitted ${new Date(group.submittedAt).toLocaleDateString()} | Census #KBA-${group.id.substring(0, 8).toUpperCase()}</p>
+      win.document.write(`
+        <html>
+          <head>
+            <title>Kennion Risk Report - ${group.companyName}</title>
+            <style>
+              @page { size: letter; margin: 0; }
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body {
+                font-family: 'Inter', -apple-system, system-ui, sans-serif;
+                width: 8.5in;
+                height: 11in;
+                padding: 0.5in;
+                color: #1a1a1a;
+                background: white;
+              }
 
-              <div class="grid">
-                <div class="stat"><div class="stat-label">Employees (EE)</div><div class="stat-value">${group.employeeCount}</div></div>
-                <div class="stat"><div class="stat-label">Spouses (SP)</div><div class="stat-value">${group.spouseCount || 0}</div></div>
-                <div class="stat"><div class="stat-label">Dependents (DEP)</div><div class="stat-value">${group.dependentCount}</div></div>
-                <div class="stat"><div class="stat-label">Total Lives</div><div class="stat-value">${group.totalLives}</div></div>
+              .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 24px;
+                padding-bottom: 16px;
+                border-bottom: 3px solid ${tierColor};
+              }
+
+              .logo {
+                font-size: 28px;
+                font-weight: 800;
+                color: #2563eb;
+              }
+
+              .report-date {
+                text-align: right;
+                font-size: 11px;
+                color: #666;
+              }
+
+              .company-section {
+                background: linear-gradient(135deg, ${tierBg} 0%, white 100%);
+                padding: 24px;
+                border-radius: 12px;
+                margin-bottom: 20px;
+                border-left: 6px solid ${tierColor};
+              }
+
+              .company-name {
+                font-size: 28px;
+                font-weight: 700;
+                color: #1a1a1a;
+                margin-bottom: 6px;
+              }
+
+              .census-id {
+                font-size: 12px;
+                color: #666;
+              }
+
+              .risk-tier-banner {
+                background: ${tierColor};
+                color: white;
+                padding: 16px 24px;
+                border-radius: 12px;
+                text-align: center;
+                margin-bottom: 20px;
+              }
+
+              .tier-label {
+                font-size: 14px;
+                font-weight: 500;
+                opacity: 0.9;
+                margin-bottom: 4px;
+              }
+
+              .tier-value {
+                font-size: 32px;
+                font-weight: 800;
+              }
+
+              .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
+                margin-bottom: 20px;
+              }
+
+              .stat-card {
+                background: #f8fafc;
+                border: 2px solid #e2e8f0;
+                border-radius: 10px;
+                padding: 16px;
+                text-align: center;
+              }
+
+              .stat-label {
+                font-size: 11px;
+                color: #64748b;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 6px;
+              }
+
+              .stat-value {
+                font-size: 32px;
+                font-weight: 800;
+                color: #1a1a1a;
+              }
+
+              .score-section {
+                display: grid;
+                grid-template-columns: 1fr 2fr;
+                gap: 20px;
+                margin-bottom: 20px;
+              }
+
+              .score-card {
+                background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+                border: 2px solid #bae6fd;
+                border-radius: 12px;
+                padding: 20px;
+                text-align: center;
+              }
+
+              .score-number {
+                font-size: 56px;
+                font-weight: 900;
+                color: ${tierColor};
+                line-height: 1;
+                margin-bottom: 8px;
+              }
+
+              .score-label-text {
+                font-size: 13px;
+                color: #0369a1;
+                font-weight: 600;
+              }
+
+              .demographics-card {
+                background: white;
+                border: 2px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 20px;
+              }
+
+              .demo-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 16px;
+              }
+
+              .demo-item {
+                text-align: center;
+              }
+
+              .demo-label {
+                font-size: 10px;
+                color: #64748b;
+                font-weight: 600;
+                text-transform: uppercase;
+                margin-bottom: 4px;
+              }
+
+              .demo-value {
+                font-size: 22px;
+                font-weight: 700;
+                color: #1a1a1a;
+              }
+
+              .risk-segments {
+                background: #fafafa;
+                border: 2px solid #e5e5e5;
+                border-radius: 10px;
+                padding: 16px;
+                margin-bottom: 16px;
+              }
+
+              .segments-title {
+                font-size: 12px;
+                font-weight: 700;
+                color: #1a1a1a;
+                margin-bottom: 12px;
+                text-align: center;
+              }
+
+              .segment-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 6px 0;
+              }
+
+              .segment-label {
+                font-size: 11px;
+                font-weight: 600;
+              }
+
+              .segment-value {
+                font-size: 13px;
+                font-weight: 700;
+              }
+
+              .low-risk { color: #16a34a; }
+              .avg-risk { color: #ca8a04; }
+              .high-risk { color: #dc2626; }
+
+              .footer {
+                position: absolute;
+                bottom: 0.5in;
+                left: 0.5in;
+                right: 0.5in;
+                padding-top: 16px;
+                border-top: 2px solid #e5e5e5;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 10px;
+                color: #666;
+              }
+
+              .contact-info {
+                font-weight: 600;
+                color: #2563eb;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div class="logo">KENNION</div>
+              <div class="report-date">
+                Group Risk Analysis<br>
+                Generated ${new Date().toLocaleDateString()}
+              </div>
+            </div>
+
+            <div class="company-section">
+              <div class="company-name">${group.companyName}</div>
+              <div class="census-id">Census #KBA-${group.id.substring(0, 8).toUpperCase()} · Submitted ${new Date(group.submittedAt).toLocaleDateString()}</div>
+            </div>
+
+            <div class="risk-tier-banner">
+              <div class="tier-label">Risk Classification</div>
+              <div class="tier-value">${tierConfig?.label || 'Standard Risk'}</div>
+            </div>
+
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-label">Employees</div>
+                <div class="stat-value">${group.employeeCount}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Spouses</div>
+                <div class="stat-value">${group.spouseCount || 0}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Dependents</div>
+                <div class="stat-value">${group.dependentCount || 0}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Total Lives</div>
+                <div class="stat-value">${group.totalLives}</div>
+              </div>
+            </div>
+
+            <div class="score-section">
+              <div class="score-card">
+                <div class="score-number">${group.riskScore?.toFixed(2) || 'N/A'}</div>
+                <div class="score-label-text">Risk Score</div>
               </div>
 
-              <div class="score-box">
-                <div class="score-value" style="color: ${group.riskScore && group.riskScore < 0.85 ? '#16a34a' : group.riskScore && group.riskScore <= 1.15 ? '#ca8a04' : '#dc2626'}">${group.riskScore?.toFixed(2) || 'N/A'}</div>
-                <div class="score-label">Kennion Risk Score</div>
-                <div style="margin-top: 8px;">
-                  <span class="tier-badge tier-${group.riskTier || 'standard'}">${tierConfig?.label || 'Standard Risk'}</span>
+              <div class="demographics-card">
+                <div class="demo-grid">
+                  <div class="demo-item">
+                    <div class="demo-label">Median Age</div>
+                    <div class="demo-value">${Math.round(medianAge)}</div>
+                  </div>
+                  <div class="demo-item">
+                    <div class="demo-label">Employee Age</div>
+                    <div class="demo-value">${Math.round(employeeAge)}</div>
+                  </div>
+                  <div class="demo-item">
+                    <div class="demo-label">Family Size</div>
+                    <div class="demo-value">${avgFamilySize.toFixed(2)}</div>
+                  </div>
+                  <div class="demo-item">
+                    <div class="demo-label">Male</div>
+                    <div class="demo-value">${maleCount}</div>
+                  </div>
+                  <div class="demo-item">
+                    <div class="demo-label">Female</div>
+                    <div class="demo-value">${femaleCount}</div>
+                  </div>
+                  <div class="demo-item">
+                    <div class="demo-label">Group Size</div>
+                    <div class="demo-value" style="font-size: 16px;">${groupCategory}</div>
+                  </div>
                 </div>
               </div>
+            </div>
 
-              <div class="grid">
-                <div class="stat"><div class="stat-label">Average Age</div><div class="stat-value">${group.averageAge?.toFixed(1) || 'N/A'}</div></div>
-                <div class="stat"><div class="stat-label">Avg Employee Age</div><div class="stat-value">${chars.averageEmployeeAge || 'N/A'}</div></div>
-                <div class="stat"><div class="stat-label">Gender (M/F)</div><div class="stat-value">${group.maleCount || 0} / ${group.femaleCount || 0}</div></div>
-                <div class="stat"><div class="stat-label">Group Size</div><div class="stat-value">${chars.groupSizeCategory || 'N/A'}</div></div>
+            ${chars.riskSegments ? `
+              <div class="risk-segments">
+                <div class="segments-title">Member Risk Distribution</div>
+                <div class="segment-row">
+                  <span class="segment-label low-risk">● Low Risk (&lt;0.85)</span>
+                  <span class="segment-value low-risk">${chars.riskSegments.lowRisk} (${chars.riskSegments.lowRiskPct}%)</span>
+                </div>
+                <div class="segment-row">
+                  <span class="segment-label avg-risk">● Average Risk (0.85-1.15)</span>
+                  <span class="segment-value avg-risk">${chars.riskSegments.avgRisk} (${chars.riskSegments.avgRiskPct}%)</span>
+                </div>
+                <div class="segment-row">
+                  <span class="segment-label high-risk">● High Risk (&gt;1.15)</span>
+                  <span class="segment-value high-risk">${chars.riskSegments.highRisk} (${chars.riskSegments.highRiskPct}%)</span>
+                </div>
               </div>
+            ` : ''}
 
-              ${chars.factors && chars.factors.length > 0 ? `
-                <h2>Risk Factors</h2>
-                ${chars.factors.map((f: string) => `<div class="factor">${f}</div>`).join('')}
-              ` : ''}
-
-              <h2>Score Explanation</h2>
-              <div class="explanation">
-                <p>The Kennion Score of 1.0 represents the average baseline for a group with average expected healthcare costs.</p>
-                <p style="margin-top: 8px;"><strong>Under 1.0:</strong> Lower expected costs. These groups are classified as Preferred Risk.</p>
-                <p style="margin-top: 8px;"><strong>1.0 to 1.5:</strong> Moderate expected costs. These groups are classified as Standard Risk and qualify for our program.</p>
-                <p style="margin-top: 8px;"><strong>Above 1.5:</strong> Higher expected costs. These groups are classified as High Risk and typically require fully-insured plans.</p>
-                <p style="margin-top: 12px;"><strong>Risk Tiers:</strong> Preferred (Under 1.0) | Standard (1.0-1.5) | High (Above 1.5)</p>
-                <p style="margin-top: 8px; font-size: 12px; color: #666;">We only accept Preferred and Standard risk groups into the Kennion level-funded program.</p>
-              </div>
-
-              <div class="footer">
-                <p>Generated by Kennion Benefit Advisors | ${new Date().toLocaleDateString()}</p>
-                <p>This report is for informational purposes only. Actual rates and coverage may vary.</p>
-              </div>
-            </body>
-          </html>
-        `);
-        win.document.close();
-        win.print();
-      }
+            <div class="footer">
+              <div>© ${new Date().getFullYear()} Kennion Benefit Advisors · Level-Funded Health Plans</div>
+              <div class="contact-info">Hunter Shepherd · 205-641-0469</div>
+            </div>
+          </body>
+        </html>
+      `);
+      win.document.close();
+      win.print();
     }
   };
 
