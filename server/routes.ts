@@ -210,8 +210,8 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
   riskScore = Math.max(0.40, Math.min(2.0, Math.round(riskScore * 100) / 100));
 
   let riskTier = "standard";
-  if (riskScore < 0.85) riskTier = "preferred";
-  else if (riskScore > 1.15) riskTier = "high";
+  if (riskScore < 1.0) riskTier = "preferred";
+  else if (riskScore >= 1.5) riskTier = "high";
 
   const ageRanges = {
     "18-29": ages.filter(a => a >= 18 && a < 30).length,
@@ -240,6 +240,9 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
 
   const qualScore = Math.round(Math.max(0, Math.min(100, (2.0 - riskScore) / 1.6 * 100)));
 
+  // AI verification: always re-derive tier from score to ensure consistency
+  riskTier = verifyRiskTier(riskScore);
+
   return {
     riskScore,
     riskTier,
@@ -248,6 +251,17 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
     femaleCount,
     characteristics: { ...characteristics, qualificationScore: qualScore },
   };
+}
+
+/**
+ * Verifies and returns the correct risk tier for a given score.
+ * Thresholds: Preferred (<1.0), Standard (1.0-1.5), High (1.5+)
+ * This is the single source of truth for tier classification.
+ */
+function verifyRiskTier(riskScore: number): string {
+  if (riskScore < 1.0) return "preferred";
+  if (riskScore >= 1.5) return "high";
+  return "standard";
 }
 
 export async function registerRoutes(
@@ -796,6 +810,10 @@ export async function registerRoutes(
     try {
       const id = req.params.id as string;
       const data = updateGroupStatusSchema.parse(req.body);
+      // Verify tier matches score when score is present
+      if (data.riskScore != null) {
+        data.riskTier = verifyRiskTier(data.riskScore);
+      }
       const updated = await storage.updateGroup(id, data);
       if (!updated) {
         return res.status(404).json({ message: "Group not found" });

@@ -29,10 +29,10 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import type { Group, CensusEntry } from "@shared/schema";
 import { LogOut } from "lucide-react";
 
-const TIER_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: any; ringColor: string }> = {
-  preferred: { label: "Preferred Risk", color: "text-green-700 dark:text-green-400", bgColor: "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800", icon: CheckCircle2, ringColor: "text-green-500" },
-  standard: { label: "Standard Risk", color: "text-blue-700 dark:text-blue-400", bgColor: "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800", icon: Activity, ringColor: "text-blue-500" },
-  high: { label: "High Risk", color: "text-red-700 dark:text-red-400", bgColor: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800", icon: AlertTriangle, ringColor: "text-red-500" },
+const TIER_CONFIG: Record<string, { label: string; color: string; bgColor: string; borderColor: string; icon: any }> = {
+  preferred: { label: "Preferred", color: "text-green-700 dark:text-green-400", bgColor: "bg-green-50 dark:bg-green-950/30", borderColor: "border-green-300 dark:border-green-700", icon: CheckCircle2 },
+  standard: { label: "Standard", color: "text-blue-700 dark:text-blue-400", bgColor: "bg-blue-50 dark:bg-blue-950/30", borderColor: "border-blue-300 dark:border-blue-700", icon: Activity },
+  high: { label: "High", color: "text-red-700 dark:text-red-400", bgColor: "bg-red-50 dark:bg-red-950/30", borderColor: "border-red-300 dark:border-red-700", icon: AlertTriangle },
 };
 
 function ReportNav() {
@@ -60,36 +60,10 @@ function ReportNav() {
   );
 }
 
-function ScoreGauge({ score, label }: { score: number; label: string }) {
-  const percentage = Math.min(100, Math.max(0, ((2.0 - score) / 1.6) * 100));
-  const getColor = () => {
-    if (score < 0.85) return "text-green-600 dark:text-green-400";
-    if (score <= 1.15) return "text-blue-600 dark:text-blue-400";
-    return "text-red-600 dark:text-red-400";
-  };
-
-  return (
-    <div className="text-center">
-      <div className="relative inline-flex items-center justify-center">
-        <svg className="w-24 h-24 -rotate-90" viewBox="0 0 120 120">
-          <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="8" className="text-border" />
-          <circle
-            cx="60" cy="60" r="50" fill="none" strokeWidth="8"
-            className={getColor()}
-            stroke="currentColor"
-            strokeDasharray={`${percentage * 3.14} ${314 - percentage * 3.14}`}
-            strokeLinecap="round"
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-2xl font-bold ${getColor()}`} data-testid="text-gauge-score">
-            {score.toFixed(2)}
-          </span>
-        </div>
-      </div>
-      <p className="text-sm font-medium mt-2">{label}</p>
-    </div>
-  );
+function getTierColor(score: number) {
+  if (score < 1.0) return "text-green-600 dark:text-green-400";
+  if (score < 1.5) return "text-blue-600 dark:text-blue-400";
+  return "text-red-600 dark:text-red-400";
 }
 
 function AgeDistributionChart({ distribution }: { distribution: Record<string, number> }) {
@@ -198,7 +172,6 @@ export default function ReportPage() {
 
   const chars = (group.groupCharacteristics || {}) as any;
   const tierConfig = group.riskTier ? TIER_CONFIG[group.riskTier] : null;
-  const TierIcon = tierConfig?.icon || Activity;
 
   const handleDownloadPdf = () => {
     const printContent = document.getElementById("report-content");
@@ -245,10 +218,10 @@ export default function ReportPage() {
               </div>
 
               <div class="score-box">
-                <div class="score-value" style="color: ${group.riskScore && group.riskScore < 0.85 ? '#16a34a' : group.riskScore && group.riskScore <= 1.15 ? '#2563eb' : '#dc2626'}">${group.riskScore?.toFixed(2) || 'N/A'}</div>
+                <div class="score-value" style="color: ${group.riskScore && group.riskScore < 1.0 ? '#16a34a' : group.riskScore && group.riskScore < 1.5 ? '#2563eb' : '#dc2626'}">${group.riskScore?.toFixed(2) || 'N/A'}</div>
                 <div class="score-label">Kennion Risk Score</div>
                 <div style="margin-top: 8px;">
-                  <span class="tier-badge tier-${group.riskTier || 'standard'}">${tierConfig?.label || 'Standard Risk'}</span>
+                  <span class="tier-badge tier-${group.riskTier || 'standard'}">${tierConfig?.label || 'Standard'} Risk</span>
                 </div>
               </div>
 
@@ -267,9 +240,9 @@ export default function ReportPage() {
               <h2>Score Explanation</h2>
               <div class="explanation">
                 <p>The Kennion Score of 1.0 represents the average baseline for a group with average expected healthcare costs.</p>
-                <p style="margin-top: 8px;"><strong>Below 1.0:</strong> Lower expected costs. A score of 0.50 means expected costs are 50% of the average group.</p>
-                <p style="margin-top: 8px;"><strong>Above 1.0:</strong> Higher expected costs. A score of 1.30 means expected costs are 30% higher than average.</p>
-                <p style="margin-top: 8px;"><strong>Risk Tiers:</strong> Preferred (&lt;0.85) | Standard (0.85-1.15) | High (&gt;1.15)</p>
+                <p style="margin-top: 8px;"><strong>Below 1.0:</strong> Lower expected costs — classified as <strong>Preferred Risk</strong>.</p>
+                <p style="margin-top: 8px;"><strong>1.0 – 1.5:</strong> Average expected costs — classified as <strong>Standard Risk</strong>.</p>
+                <p style="margin-top: 8px;"><strong>1.5+:</strong> Higher expected costs — classified as <strong>High Risk</strong>.</p>
               </div>
 
               <div class="footer">
@@ -289,7 +262,8 @@ export default function ReportPage() {
     <div className="min-h-screen bg-background">
       <ReportNav />
       <div className="mx-auto max-w-5xl px-6 py-8" id="report-content">
-        <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Building2 className="h-5 w-5 text-primary" />
@@ -306,7 +280,60 @@ export default function ReportPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        {/* Risk Tier Section */}
+        {group.riskScore != null ? (
+          <Card className="p-6 mb-6 border-2">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+              {/* Tier Indicators */}
+              <div className="flex items-center gap-3">
+                {(["preferred", "standard", "high"] as const).map((key) => {
+                  const cfg = TIER_CONFIG[key];
+                  const TIcon = cfg.icon;
+                  const isActive = group.riskTier === key;
+                  return (
+                    <div
+                      key={key}
+                      className={`flex flex-col items-center gap-1.5 px-5 py-3 rounded-lg border-2 transition-all ${
+                        isActive
+                          ? `${cfg.bgColor} ${cfg.borderColor}`
+                          : "border-transparent opacity-40"
+                      }`}
+                    >
+                      <TIcon className={`h-4 w-4 ${isActive ? cfg.color : "text-muted-foreground"}`} />
+                      <span className={`text-sm font-semibold ${isActive ? cfg.color : "text-muted-foreground"}`}>
+                        {cfg.label}
+                      </span>
+                      {isActive && (
+                        <span className={`text-2xl font-bold ${cfg.color}`} data-testid="text-gauge-score">
+                          {group.riskScore.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Score Summary */}
+              <div className="text-center sm:text-right">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Risk Classification</p>
+                <p className={`text-xl font-bold ${tierConfig?.color || "text-foreground"}`} data-testid="text-report-tier">
+                  {tierConfig?.label || "Standard"} Risk
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Score: {group.riskScore.toFixed(2)} / 2.00
+                </p>
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <Card className="p-6 mb-6 text-center">
+            <Clock className="mx-auto h-8 w-8 mb-2 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Analysis pending</p>
+          </Card>
+        )}
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           <Card className="p-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <UserCheck className="h-3.5 w-3.5" /> Employees
@@ -333,91 +360,34 @@ export default function ReportPage() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card className="p-5 border-2">
-            <h2 className="font-semibold mb-3 flex items-center gap-2 text-sm">
-              <Shield className="h-4 w-4 text-primary" />
-              Kennion Risk Score
-            </h2>
+        {/* Demographics */}
+        <Card className="p-6 mb-6">
+          <h2 className="font-semibold mb-4 flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-primary" />
+            Group Demographics
+          </h2>
 
-            {group.riskScore != null ? (
-              <div className="flex flex-col items-center gap-3">
-                {tierConfig && (
-                  <h3 className={`text-lg font-bold ${tierConfig.color}`} data-testid="text-report-tier">
-                    {tierConfig.label}
-                  </h3>
-                )}
-
-                <div className="flex items-center gap-2">
-                  {(["preferred", "standard", "high"] as const).map((key) => {
-                    const cfg = TIER_CONFIG[key];
-                    const TIcon = cfg.icon;
-                    const isActive = group.riskTier === key;
-                    return (
-                      <div
-                        key={key}
-                        className={`flex flex-col items-center gap-1 px-4 py-2 rounded-md border text-xs transition-all ${
-                          isActive
-                            ? `${cfg.bgColor} ${cfg.color} font-bold border-2`
-                            : "border-border text-muted-foreground/50"
-                        }`}
-                      >
-                        <TIcon className={`h-3.5 w-3.5 ${isActive ? cfg.color : "text-muted-foreground/40"}`} />
-                        <span>{cfg.label.split(" ")[0]}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <ScoreGauge score={group.riskScore} label="Risk Score" />
-
-                {group.score != null && (
-                  <div className="text-center">
-                    <div className="text-xs text-muted-foreground">Qualification Score</div>
-                    <div className="text-base font-bold">{group.score}/100</div>
-                  </div>
-                )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+            <div>
+              <div className="flex items-center justify-between text-sm mb-1">
+                <span className="text-muted-foreground">Average Age</span>
+                <span className="font-semibold" data-testid="text-report-avg-age">{group.averageAge?.toFixed(1) || "N/A"}</span>
               </div>
-            ) : (
-              <div className="text-center py-6 text-muted-foreground">
-                <Clock className="mx-auto h-8 w-8 mb-2" />
-                <p className="text-sm">Analysis pending</p>
-              </div>
-            )}
-          </Card>
-
-          <Card className="p-6">
-            <h2 className="font-semibold mb-4 flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" />
-              Group Demographics
-            </h2>
-
-            <div className="space-y-5">
-              <div>
-                <div className="flex items-center justify-between text-sm mb-1">
-                  <span className="text-muted-foreground">Average Age</span>
-                  <span className="font-semibold" data-testid="text-report-avg-age">{group.averageAge?.toFixed(1) || "N/A"}</span>
-                </div>
-                {chars.averageEmployeeAge && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Avg Employee Age</span>
-                    <span className="font-semibold">{chars.averageEmployeeAge}</span>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">Gender Distribution</p>
-                <GenderChart male={group.maleCount || 0} female={group.femaleCount || 0} />
-              </div>
-
-              {chars.groupSizeCategory && (
+              {chars.averageEmployeeAge && (
                 <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Avg Employee Age</span>
+                  <span className="font-semibold">{chars.averageEmployeeAge}</span>
+                </div>
+              )}
+            </div>
+
+            <div>
+              {chars.groupSizeCategory && (
+                <div className="flex items-center justify-between text-sm mb-1">
                   <span className="text-muted-foreground">Group Category</span>
                   <Badge variant="secondary">{chars.groupSizeCategory}</Badge>
                 </div>
               )}
-
               {chars.dependencyRatio != null && (
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Dependency Ratio</span>
@@ -425,11 +395,17 @@ export default function ReportPage() {
                 </div>
               )}
             </div>
-          </Card>
-        </div>
 
+            <div className="sm:col-span-2">
+              <p className="text-sm text-muted-foreground mb-2">Gender Distribution</p>
+              <GenderChart male={group.maleCount || 0} female={group.femaleCount || 0} />
+            </div>
+          </div>
+        </Card>
+
+        {/* Age Distribution */}
         {chars.ageDistribution && (
-          <Card className="p-6 mb-8">
+          <Card className="p-6 mb-6">
             <h2 className="font-semibold mb-4 flex items-center gap-2">
               <Activity className="h-4 w-4 text-primary" />
               Age Distribution
@@ -438,15 +414,16 @@ export default function ReportPage() {
           </Card>
         )}
 
+        {/* Risk Factors */}
         {chars.factors && chars.factors.length > 0 && (
-          <Card className="p-6 mb-8">
+          <Card className="p-6 mb-6">
             <h2 className="font-semibold mb-4 flex items-center gap-2">
-              {group.riskScore && group.riskScore <= 1.0 ? (
+              {group.riskScore && group.riskScore < 1.0 ? (
                 <TrendingDown className="h-4 w-4 text-green-600 dark:text-green-400" />
               ) : (
-                <TrendingUp className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               )}
-              Group Risk Characteristics
+              Risk Factors
             </h2>
             <div className="space-y-2">
               {chars.factors.map((factor: string, i: number) => (
@@ -459,54 +436,40 @@ export default function ReportPage() {
           </Card>
         )}
 
-        <Card className="p-6 mb-8">
-          <h2 className="font-semibold mb-4">Understanding the Kennion Score</h2>
-          <div className="space-y-4 text-sm text-muted-foreground">
-            <p>
-              The Kennion Score of <strong className="text-foreground">1.0</strong> represents the average baseline score for a group
-              with average expected healthcare costs.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="rounded-md border p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingDown className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  <span className="font-medium text-foreground">Score below 1.0</span>
-                </div>
-                <p className="text-xs">
-                  Lower risk. A score of <strong>0.50</strong> means expected costs are 50% of
-                  the average group. Groups below 0.85 are classified as <strong>Preferred Risk</strong>.
-                </p>
+        {/* Score Explanation */}
+        <Card className="p-6 mb-6">
+          <h2 className="font-semibold mb-3">Understanding the Kennion Score</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            A score of <strong className="text-foreground">1.0</strong> represents average expected healthcare costs.
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-md border p-3 bg-green-50/50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+              <div className="flex items-center gap-1.5 mb-1">
+                <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                <span className="text-xs font-semibold text-green-700 dark:text-green-400">Preferred</span>
               </div>
-              <div className="rounded-md border p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="h-4 w-4 text-red-600 dark:text-red-400" />
-                  <span className="font-medium text-foreground">Score above 1.0</span>
-                </div>
-                <p className="text-xs">
-                  Higher risk. A score of <strong>1.30</strong> means expected costs are 30% higher
-                  than average. Groups above 1.15 are classified as <strong>High Risk</strong>.
-                </p>
-              </div>
+              <p className="text-xs text-muted-foreground">Below 1.0</p>
             </div>
-            <div className="flex flex-wrap gap-3 pt-2">
-              <div className="flex items-center gap-1.5">
-                <div className="h-3 w-3 rounded-full bg-green-500" />
-                <span className="text-xs">Preferred (&lt; 0.85)</span>
+            <div className="rounded-md border p-3 bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+              <div className="flex items-center gap-1.5 mb-1">
+                <div className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+                <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">Standard</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="h-3 w-3 rounded-full bg-blue-500" />
-                <span className="text-xs">Standard (0.85 - 1.15)</span>
+              <p className="text-xs text-muted-foreground">1.0 – 1.5</p>
+            </div>
+            <div className="rounded-md border p-3 bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-800">
+              <div className="flex items-center gap-1.5 mb-1">
+                <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                <span className="text-xs font-semibold text-red-700 dark:text-red-400">High</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="h-3 w-3 rounded-full bg-red-500" />
-                <span className="text-xs">High (&gt; 1.15)</span>
-              </div>
+              <p className="text-xs text-muted-foreground">1.5 and above</p>
             </div>
           </div>
         </Card>
 
+        {/* Admin Notes */}
         {group.adminNotes && (
-          <Card className="p-6 mb-8">
+          <Card className="p-6 mb-6">
             <h2 className="font-semibold mb-2">Notes from Kennion</h2>
             <p className="text-sm text-muted-foreground" data-testid="text-admin-notes">{group.adminNotes}</p>
           </Card>
