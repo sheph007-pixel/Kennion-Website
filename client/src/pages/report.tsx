@@ -29,10 +29,10 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import type { Group, CensusEntry } from "@shared/schema";
 import { LogOut } from "lucide-react";
 
-const TIER_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
-  preferred: { label: "Preferred Risk", color: "text-green-700 dark:text-green-400", bgColor: "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800", icon: CheckCircle2 },
-  standard: { label: "Standard Risk", color: "text-yellow-700 dark:text-yellow-400", bgColor: "bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800", icon: Activity },
-  high: { label: "High Risk", color: "text-red-700 dark:text-red-400", bgColor: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800", icon: AlertTriangle },
+const TIER_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: any; ringColor: string }> = {
+  preferred: { label: "Preferred Risk", color: "text-green-700 dark:text-green-400", bgColor: "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800", icon: CheckCircle2, ringColor: "text-green-500" },
+  standard: { label: "Standard Risk", color: "text-blue-700 dark:text-blue-400", bgColor: "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800", icon: Activity, ringColor: "text-blue-500" },
+  high: { label: "High Risk", color: "text-red-700 dark:text-red-400", bgColor: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800", icon: AlertTriangle, ringColor: "text-red-500" },
 };
 
 function ReportNav() {
@@ -64,14 +64,14 @@ function ScoreGauge({ score, label }: { score: number; label: string }) {
   const percentage = Math.min(100, Math.max(0, ((2.0 - score) / 1.6) * 100));
   const getColor = () => {
     if (score < 0.85) return "text-green-600 dark:text-green-400";
-    if (score <= 1.15) return "text-yellow-600 dark:text-yellow-400";
+    if (score <= 1.15) return "text-blue-600 dark:text-blue-400";
     return "text-red-600 dark:text-red-400";
   };
 
   return (
     <div className="text-center">
       <div className="relative inline-flex items-center justify-center">
-        <svg className="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
+        <svg className="w-24 h-24 -rotate-90" viewBox="0 0 120 120">
           <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="8" className="text-border" />
           <circle
             cx="60" cy="60" r="50" fill="none" strokeWidth="8"
@@ -82,7 +82,7 @@ function ScoreGauge({ score, label }: { score: number; label: string }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-3xl font-bold ${getColor()}`} data-testid="text-gauge-score">
+          <span className={`text-2xl font-bold ${getColor()}`} data-testid="text-gauge-score">
             {score.toFixed(2)}
           </span>
         </div>
@@ -223,7 +223,7 @@ export default function ReportPage() {
                 .score-label { font-size: 14px; color: #666; }
                 .tier-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
                 .tier-preferred { background: #dcfce7; color: #166534; }
-                .tier-standard { background: #fef9c3; color: #854d0e; }
+                .tier-standard { background: #dbeafe; color: #1e40af; }
                 .tier-high { background: #fecaca; color: #991b1b; }
                 .factor { padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
                 .explanation { background: #f9fafb; padding: 16px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
@@ -245,7 +245,7 @@ export default function ReportPage() {
               </div>
 
               <div class="score-box">
-                <div class="score-value" style="color: ${group.riskScore && group.riskScore < 0.85 ? '#16a34a' : group.riskScore && group.riskScore <= 1.15 ? '#ca8a04' : '#dc2626'}">${group.riskScore?.toFixed(2) || 'N/A'}</div>
+                <div class="score-value" style="color: ${group.riskScore && group.riskScore < 0.85 ? '#16a34a' : group.riskScore && group.riskScore <= 1.15 ? '#2563eb' : '#dc2626'}">${group.riskScore?.toFixed(2) || 'N/A'}</div>
                 <div class="score-label">Kennion Risk Score</div>
                 <div style="margin-top: 8px;">
                   <span class="tier-badge tier-${group.riskTier || 'standard'}">${tierConfig?.label || 'Standard Risk'}</span>
@@ -334,34 +334,52 @@ export default function ReportPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card className="p-6">
-            <h2 className="font-semibold mb-4 flex items-center gap-2">
+          <Card className="p-5 border-2">
+            <h2 className="font-semibold mb-3 flex items-center gap-2 text-sm">
               <Shield className="h-4 w-4 text-primary" />
               Kennion Risk Score
             </h2>
 
             {group.riskScore != null ? (
-              <div className="flex flex-col items-center">
-                <ScoreGauge score={group.riskScore} label="Risk Score" />
-
+              <div className="flex flex-col items-center gap-3">
                 {tierConfig && (
-                  <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-md border ${tierConfig.bgColor}`}>
-                    <TierIcon className={`h-4 w-4 ${tierConfig.color}`} />
-                    <span className={`font-semibold text-sm ${tierConfig.color}`} data-testid="text-report-tier">
-                      {tierConfig.label}
-                    </span>
-                  </div>
+                  <h3 className={`text-lg font-bold ${tierConfig.color}`} data-testid="text-report-tier">
+                    {tierConfig.label}
+                  </h3>
                 )}
 
+                <div className="flex items-center gap-2">
+                  {(["preferred", "standard", "high"] as const).map((key) => {
+                    const cfg = TIER_CONFIG[key];
+                    const TIcon = cfg.icon;
+                    const isActive = group.riskTier === key;
+                    return (
+                      <div
+                        key={key}
+                        className={`flex flex-col items-center gap-1 px-4 py-2 rounded-md border text-xs transition-all ${
+                          isActive
+                            ? `${cfg.bgColor} ${cfg.color} font-bold border-2`
+                            : "border-border text-muted-foreground/50"
+                        }`}
+                      >
+                        <TIcon className={`h-3.5 w-3.5 ${isActive ? cfg.color : "text-muted-foreground/40"}`} />
+                        <span>{cfg.label.split(" ")[0]}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <ScoreGauge score={group.riskScore} label="Risk Score" />
+
                 {group.score != null && (
-                  <div className="mt-4 text-center">
+                  <div className="text-center">
                     <div className="text-xs text-muted-foreground">Qualification Score</div>
-                    <div className="text-lg font-bold">{group.score}/100</div>
+                    <div className="text-base font-bold">{group.score}/100</div>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-6 text-muted-foreground">
                 <Clock className="mx-auto h-8 w-8 mb-2" />
                 <p className="text-sm">Analysis pending</p>
               </div>
@@ -476,7 +494,7 @@ export default function ReportPage() {
                 <span className="text-xs">Preferred (&lt; 0.85)</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="h-3 w-3 rounded-full bg-yellow-500" />
+                <div className="h-3 w-3 rounded-full bg-blue-500" />
                 <span className="text-xs">Standard (0.85 - 1.15)</span>
               </div>
               <div className="flex items-center gap-1.5">

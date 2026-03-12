@@ -58,7 +58,7 @@ import type { Group } from "@shared/schema";
 
 const TIER_CONFIG: Record<string, { label: string; color: string }> = {
   preferred: { label: "Preferred Risk", color: "text-green-600 dark:text-green-400" },
-  standard: { label: "Standard Risk", color: "text-yellow-600 dark:text-yellow-400" },
+  standard: { label: "Standard Risk", color: "text-blue-600 dark:text-blue-400" },
   high: { label: "High Risk", color: "text-red-600 dark:text-red-400" },
 };
 
