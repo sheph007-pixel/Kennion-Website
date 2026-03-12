@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
+  AlertTriangle,
   LogOut,
   Loader2,
   Download,
@@ -268,12 +269,19 @@ function formatDateToMMDDYY(dateStr: string): string {
   return dateStr;
 }
 
+interface ValidationError {
+  guidance: string;
+  errors: string[];
+  matchRate: number;
+}
+
 function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void }) {
   const { toast } = useToast();
   const [step, setStep] = useState<"upload" | "confirm">("upload");
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [validationError, setValidationError] = useState<ValidationError | null>(null);
 
   const handleFile = useCallback(async (file: File) => {
     if (!file.name.endsWith(".csv")) {
@@ -324,6 +332,7 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
 
   const handleConfirm = async () => {
     setIsConfirming(true);
+    setValidationError(null);
     try {
       const res = await apiRequest("POST", "/api/groups/confirm", {});
       const data = await res.json();
@@ -332,7 +341,20 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
       onComplete(data.group);
     } catch (err: any) {
       const msg = err.message || "Upload failed";
-      if (msg.includes("pending") || msg.includes("upload a file")) {
+
+      // Check if this is a validation error
+      if (err.guidance && err.errors && err.matchRate !== undefined) {
+        setValidationError({
+          guidance: err.guidance,
+          errors: err.errors,
+          matchRate: err.matchRate,
+        });
+        toast({
+          title: "Validation Failed",
+          description: `Data integrity: ${err.matchRate}%. Please review the errors below.`,
+          variant: "destructive"
+        });
+      } else if (msg.includes("pending") || msg.includes("upload a file")) {
         toast({ title: "Session expired", description: "Please re-upload your CSV file.", variant: "destructive" });
         setStep("upload");
         setParseResult(null);
@@ -449,6 +471,56 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
           </div>
         )}
 
+        {validationError && (
+          <div className="mb-4 rounded-md bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-800 p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-red-900 dark:text-red-100 mb-2">
+                  Validation Failed ({validationError.matchRate}% Data Integrity)
+                </h3>
+                <p className="text-sm text-red-800 dark:text-red-200 mb-3">
+                  {validationError.guidance}
+                </p>
+                <div className="mb-3">
+                  <p className="text-xs font-medium text-red-900 dark:text-red-100 mb-1">Issues Found:</p>
+                  <ul className="text-xs text-red-700 dark:text-red-300 space-y-1 ml-4">
+                    {validationError.errors.map((error, i) => (
+                      <li key={i}>• {error}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setValidationError(null);
+                      setStep("upload");
+                      setParseResult(null);
+                    }}
+                    className="border-red-300 dark:border-red-700"
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    Upload New File
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                    className="border-red-300 dark:border-red-700"
+                  >
+                    <a href="/api/groups/template" download>
+                      <FileDown className="h-3 w-3 mr-1" />
+                      Download Template
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="mb-6 rounded-md border">
           <div className="p-3 border-b bg-muted/30">
             <h3 className="text-sm font-medium">Preview (first 10 rows)</h3>
@@ -485,12 +557,18 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
 
         <Button
           onClick={handleConfirm}
-          disabled={isConfirming}
+          disabled={isConfirming || validationError !== null}
           className="w-full"
           size="lg"
           data-testid="button-confirm-mapping"
+          variant={validationError ? "outline" : "default"}
         >
-          {isConfirming ? (
+          {validationError ? (
+            <>
+              <X className="mr-2 h-4 w-4" />
+              Cannot Submit - Fix Validation Errors First
+            </>
+          ) : isConfirming ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Processing Census...

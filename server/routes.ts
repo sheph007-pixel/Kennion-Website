@@ -17,7 +17,7 @@ import ConnectPgSimple from "connect-pg-simple";
 import { log } from "./index";
 import { sendMagicLinkEmail } from "./email";
 import { pool } from "./db";
-import { cleanCSVWithAI } from "./ai-csv-cleaner";
+import { cleanCSVWithAI, generateValidationGuidance } from "./ai-csv-cleaner";
 import { generateActuarialAnalysis } from "./ai-analysis";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -380,6 +380,104 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
     maleCount,
     femaleCount,
     characteristics: { ...characteristics, qualificationScore: qualScore },
+    ageBandDistribution, // Include this for validation
+  };
+}
+
+interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  matchRate: number;
+}
+
+function validateCensusData(
+  entries: { firstName: string; lastName: string; dateOfBirth: string; gender: string; zipCode: string; relationship: string }[],
+  analysis: ReturnType<typeof analyzeGroupRisk>
+): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  // Calculate Age Band table totals
+  const distribution = analysis.ageBandDistribution || {};
+  let tableTotalFemales = 0;
+  let tableTotalMales = 0;
+
+  Object.values(distribution).forEach((bandData: any) => {
+    const females = bandData.female || 0;
+    const males = bandData.male || 0;
+    tableTotalFemales += females;
+    tableTotalMales += males;
+  });
+  const tableTotalMembers = tableTotalFemales + tableTotalMales;
+
+  // Recalculate risk score for validation
+  let tableWeightedRiskSum = 0;
+  Object.entries(distribution).forEach(([band, bandData]: [string, any]) => {
+    const females = bandData.female || 0;
+    const males = bandData.male || 0;
+    const riskData = DEMOGRAPHIC_RISK_TABLE[band];
+    if (riskData) {
+      tableWeightedRiskSum += females * riskData.female + males * riskData.male;
+    }
+  });
+  const tableCalculatedRiskScore = tableTotalMembers > 0 ? Math.round((tableWeightedRiskSum / tableTotalMembers) * 100) / 100 : 0;
+
+  // Census Details values
+  const censusTotalMembers = entries.length;
+  const censusEmployees = entries.filter(e => e.relationship === "EE").length;
+  const censusSpouses = entries.filter(e => e.relationship === "SP").length;
+  const censusChildren = entries.filter(e => e.relationship === "CH").length;
+  const censusSumCheck = censusEmployees + censusSpouses + censusChildren;
+  const censusFemales = analysis.femaleCount || 0;
+  const censusMales = analysis.maleCount || 0;
+  const censusGenderTotal = censusFemales + censusMales;
+
+  // Validation checks
+  const totalLivesMatch = tableTotalMembers === censusTotalMembers && censusTotalMembers === censusSumCheck;
+  const genderTotalsMatch = tableTotalMembers === censusGenderTotal;
+  const genderBreakdownMatch = tableTotalFemales === censusFemales && tableTotalMales === censusMales;
+  const riskScoreExists = analysis.riskScore != null;
+  const riskScoreMatches = riskScoreExists && Math.abs(analysis.riskScore - tableCalculatedRiskScore) < 0.01;
+
+  // Risk tier validation
+  let riskTierCorrect = false;
+  if (riskScoreExists) {
+    if (analysis.riskScore < 1.0 && analysis.riskTier === 'preferred') riskTierCorrect = true;
+    else if (analysis.riskScore >= 1.0 && analysis.riskScore < 1.5 && analysis.riskTier === 'standard') riskTierCorrect = true;
+    else if (analysis.riskScore >= 1.5 && analysis.riskTier === 'high') riskTierCorrect = true;
+  }
+
+  // Build error messages
+  if (!totalLivesMatch) {
+    errors.push(`Total Lives Mismatch: Census (${censusTotalMembers}) ≠ Age Band Table (${tableTotalMembers}) ≠ Sum (${censusSumCheck}). Please ensure all employee records have valid dates of birth.`);
+  }
+
+  if (!genderTotalsMatch) {
+    errors.push(`Gender Total Mismatch: Age Band Table (${tableTotalMembers}) ≠ Gender Count (${censusGenderTotal}). Some records may have invalid gender values.`);
+  }
+
+  if (!genderBreakdownMatch) {
+    errors.push(`Gender Breakdown Mismatch: Table (${tableTotalFemales}F + ${tableTotalMales}M) ≠ Census (${censusFemales}F + ${censusMales}M). Check that all gender values are 'Male' or 'Female'.`);
+  }
+
+  if (!riskScoreMatches) {
+    errors.push(`Risk Score Calculation Error: Stored (${analysis.riskScore?.toFixed(3)}) ≠ Calculated (${tableCalculatedRiskScore.toFixed(3)}). Date of birth or gender data may be invalid.`);
+  }
+
+  if (!riskTierCorrect) {
+    errors.push(`Risk Tier Categorization Error: Score ${analysis.riskScore?.toFixed(3)} should be categorized as ${analysis.riskScore < 1.0 ? 'Preferred (<1.0)' : analysis.riskScore < 1.5 ? 'Standard (1.0-1.49)' : 'High (≥1.5)'}, but is marked as '${analysis.riskTier}'.`);
+  }
+
+  const allChecks = [totalLivesMatch, genderTotalsMatch, genderBreakdownMatch, riskScoreExists, riskScoreMatches, riskTierCorrect];
+  const passedChecks = allChecks.filter(Boolean).length;
+  const matchRate = Math.round((passedChecks / allChecks.length) * 100);
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+    matchRate,
   };
 }
 
@@ -740,6 +838,25 @@ export async function registerRoutes(
 
       const analysis = analyzeGroupRisk(entries);
 
+      // CRITICAL: Validate data integrity before saving
+      const validation = validateCensusData(entries, analysis);
+      if (!validation.valid) {
+        log(`Census validation failed: Match Rate ${validation.matchRate}%`);
+
+        // Generate AI-powered guidance to help users fix the issues
+        const guidance = await generateValidationGuidance(validation.errors, validation.matchRate);
+
+        return res.status(400).json({
+          message: "Census data validation failed",
+          guidance,
+          errors: validation.errors,
+          matchRate: validation.matchRate,
+          needsReupload: true,
+        });
+      }
+
+      log(`Census validation passed: Match Rate ${validation.matchRate}%`);
+
       const group = await storage.createGroup({
         userId: user.id,
         companyName: user.companyName || "Unnamed Company",
@@ -871,6 +988,25 @@ export async function registerRoutes(
       const childrenCount = entries.filter(e => e.relationship === "CH").length;
 
       const analysis = analyzeGroupRisk(entries);
+
+      // CRITICAL: Validate data integrity before saving
+      const validation = validateCensusData(entries, analysis);
+      if (!validation.valid) {
+        log(`Census validation failed (legacy upload): Match Rate ${validation.matchRate}%`);
+
+        // Generate AI-powered guidance to help users fix the issues
+        const guidance = await generateValidationGuidance(validation.errors, validation.matchRate);
+
+        return res.status(400).json({
+          message: "Census data validation failed",
+          guidance,
+          errors: validation.errors,
+          matchRate: validation.matchRate,
+          needsReupload: true,
+        });
+      }
+
+      log(`Census validation passed (legacy upload): Match Rate ${validation.matchRate}%`);
 
       const group = await storage.createGroup({
         userId: user.id,

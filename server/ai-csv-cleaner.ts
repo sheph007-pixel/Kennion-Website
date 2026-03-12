@@ -163,3 +163,49 @@ Only return valid JSON, no explanation.`;
     warnings: [...aiResult.warnings, ...warnings]
   };
 }
+
+/**
+ * Generate AI-powered validation error messages
+ * Helps users understand what's wrong and how to fix it
+ */
+export async function generateValidationGuidance(
+  errors: string[],
+  matchRate: number
+): Promise<string> {
+  const prompt = `You are a helpful data quality assistant. A user uploaded employee census data that failed validation with a ${matchRate}% match rate.
+
+Validation errors:
+${errors.map((e, i) => `${i + 1}. ${e}`).join('\n')}
+
+Generate a clear, helpful message that:
+1. Explains what went wrong in simple terms
+2. Provides specific steps to fix the issues
+3. Is encouraging and supportive (not technical/scary)
+4. Mentions they can download the template or use AI cleaning to help
+
+Keep it under 150 words. Be friendly and solution-focused.`;
+
+  try {
+    const openai = getOpenAIClient();
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful data quality assistant. Be clear, friendly, and solution-focused."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 300
+    });
+
+    return completion.choices[0].message.content || "Please review and correct the data validation errors before uploading.";
+  } catch (error) {
+    // Fallback if AI fails
+    return "Your census data has validation errors. Please ensure all records have valid dates of birth and gender values (Male/Female). Download our template for the correct format.";
+  }
+}
