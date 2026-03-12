@@ -373,7 +373,7 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
           <div>
             <h2 className="font-semibold text-lg" data-testid="text-upload-heading">Upload Your Employee Census</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              This allows us to analyze your group and provide you with an accurate benefits quote.
+              Please include employees and all dependents (i.e. spouses and children) so that we can provide the most accurate quote.
             </p>
           </div>
           <Button variant="outline" size="sm" asChild>
