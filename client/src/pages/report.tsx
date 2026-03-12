@@ -267,9 +267,11 @@ export default function ReportPage() {
               <h2>Score Explanation</h2>
               <div class="explanation">
                 <p>The Kennion Score of 1.0 represents the average baseline for a group with average expected healthcare costs.</p>
-                <p style="margin-top: 8px;"><strong>Below 1.0:</strong> Lower expected costs. A score of 0.50 means expected costs are 50% of the average group.</p>
-                <p style="margin-top: 8px;"><strong>Above 1.0:</strong> Higher expected costs. A score of 1.30 means expected costs are 30% higher than average.</p>
-                <p style="margin-top: 8px;"><strong>Risk Tiers:</strong> Preferred (&lt;0.85) | Standard (0.85-1.15) | High (&gt;1.15)</p>
+                <p style="margin-top: 8px;"><strong>Under 1.0:</strong> Lower expected costs. These groups are classified as Preferred Risk.</p>
+                <p style="margin-top: 8px;"><strong>1.0 to 1.5:</strong> Moderate expected costs. These groups are classified as Standard Risk and qualify for our program.</p>
+                <p style="margin-top: 8px;"><strong>Above 1.5:</strong> Higher expected costs. These groups are classified as High Risk and typically require fully-insured plans.</p>
+                <p style="margin-top: 12px;"><strong>Risk Tiers:</strong> Preferred (Under 1.0) | Standard (1.0-1.5) | High (Above 1.5)</p>
+                <p style="margin-top: 8px; font-size: 12px; color: #666;">We only accept Preferred and Standard risk groups into the Kennion level-funded program.</p>
               </div>
 
               <div class="footer">
@@ -441,49 +443,150 @@ export default function ReportPage() {
           </Card>
         )}
 
+        <Card className="p-6 mb-8 bg-primary/5 border-primary/20">
+          <h2 className="font-semibold mb-4 flex items-center gap-2">
+            <Shield className="h-4 w-4 text-primary" />
+            Detailed Actuarial Analysis
+          </h2>
+          <div className="space-y-4 text-sm leading-relaxed">
+            <p>
+              Our team has completed a comprehensive risk assessment of your group using our proprietary MARA (Multi-factor Actuarial Risk Analysis) model.
+              This advanced system evaluates over 50 different risk factors to predict your group's expected healthcare costs with high accuracy.
+            </p>
+
+            <div className="pl-4 border-l-2 border-primary/30 space-y-3">
+              <p className="font-medium text-foreground">What We Analyzed:</p>
+              <ul className="space-y-2 text-muted-foreground">
+                <li>• <strong>Age distribution:</strong> We looked at how ages are spread across your group. Younger groups usually have lower costs,
+                while groups with more people over 50 tend to have higher medical expenses.</li>
+                <li>• <strong>Gender mix:</strong> Different health needs between men and women affect overall costs. A balanced mix usually provides
+                the most stable results.</li>
+                <li>• <strong>Family coverage:</strong> We examined how many employees have spouses and children on their plan. More dependents
+                can spread risk but also increase total claims.</li>
+                <li>• <strong>Group size:</strong> Larger groups benefit from risk pooling, while smaller groups can see bigger swings in costs
+                from year to year.</li>
+                <li>• <strong>Geographic factors:</strong> Healthcare costs vary by location. We factor in regional pricing differences based
+                on your employees' zip codes.</li>
+              </ul>
+            </div>
+
+            <p>
+              Our MARA model compares your group to thousands of similar employee groups across the country. The score you see reflects how your
+              group's risk profile matches up against this national benchmark. A score of <strong className="text-foreground">1.0</strong> means
+              your group is right at the average — 50% of groups are higher risk and 50% are lower risk.
+            </p>
+
+            {group.riskScore != null && group.riskScore < 1.0 && (
+              <div className="rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-4">
+                <p className="font-medium text-green-700 dark:text-green-400 mb-2">✓ Your Group Shows Favorable Risk Factors</p>
+                <p className="text-sm text-green-600/90 dark:text-green-400/90">
+                  Your score of <strong>{group.riskScore.toFixed(2)}</strong> means we expect your healthcare costs to be about{" "}
+                  <strong>{Math.round((1 - group.riskScore) * 100)}% lower</strong> than an average group. This puts you in a great position
+                  for level-funded health plans. Groups like yours typically see stable premiums and often receive claims refunds at year-end.
+                </p>
+              </div>
+            )}
+
+            {group.riskScore != null && group.riskScore >= 1.0 && group.riskScore <= 1.5 && (
+              <div className="rounded-md bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 p-4">
+                <p className="font-medium text-yellow-700 dark:text-yellow-400 mb-2">Standard Risk Profile</p>
+                <p className="text-sm text-yellow-600/90 dark:text-yellow-400/90">
+                  Your score of <strong>{group.riskScore.toFixed(2)}</strong> indicates your expected healthcare costs are about{" "}
+                  <strong>{Math.round((group.riskScore - 1) * 100)}% higher</strong> than average. You still qualify for our program,
+                  and we can offer competitive rates. Many successful groups fall in this range and benefit from level-funded plans.
+                </p>
+              </div>
+            )}
+
+            {group.riskScore != null && group.riskScore > 1.5 && (
+              <div className="rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 p-4">
+                <p className="font-medium text-red-700 dark:text-red-400 mb-2">High Risk Indicators Detected</p>
+                <p className="text-sm text-red-600/90 dark:text-red-400/90">
+                  Your score of <strong>{group.riskScore.toFixed(2)}</strong> suggests expected costs about{" "}
+                  <strong>{Math.round((group.riskScore - 1) * 100)}% higher</strong> than average. Unfortunately, this falls outside our
+                  underwriting guidelines for level-funded plans. Hunter will reach out to discuss alternative coverage options that may
+                  better fit your group's needs.
+                </p>
+              </div>
+            )}
+          </div>
+        </Card>
+
         <Card className="p-6 mb-8">
-          <h2 className="font-semibold mb-4">Understanding the Kennion Score</h2>
+          <h2 className="font-semibold mb-4">Understanding Your Kennion Score</h2>
           <div className="space-y-4 text-sm text-muted-foreground">
             <p>
-              The Kennion Score of <strong className="text-foreground">1.0</strong> represents the average baseline score for a group
-              with average expected healthcare costs.
+              The Kennion Score uses a simple scale where <strong className="text-foreground">1.0</strong> represents average expected healthcare costs.
+              Think of it like a cost multiplier — a score of 0.80 means you'll likely spend 80% of what an average group spends, while 1.20
+              means you'll likely spend 120% of average.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="rounded-md border p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingDown className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  <span className="font-medium text-foreground">Score below 1.0</span>
+                  <span className="font-medium text-foreground">Score Under 1.0</span>
                 </div>
                 <p className="text-xs">
-                  Lower risk. A score of <strong>0.50</strong> means expected costs are 50% of
-                  the average group. Groups below 0.85 are classified as <strong>Preferred Risk</strong>.
+                  Lower risk. Groups scoring under <strong>1.0</strong> are classified as <strong>Preferred Risk</strong>.
+                  These groups typically have younger, healthier populations and see lower medical claims.
                 </p>
               </div>
               <div className="rounded-md border p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="h-4 w-4 text-red-600 dark:text-red-400" />
-                  <span className="font-medium text-foreground">Score above 1.0</span>
+                  <Activity className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                  <span className="font-medium text-foreground">Score 1.0 - 1.5</span>
                 </div>
                 <p className="text-xs">
-                  Higher risk. A score of <strong>1.30</strong> means expected costs are 30% higher
-                  than average. Groups above 1.15 are classified as <strong>High Risk</strong>.
+                  Moderate risk. Groups in the <strong>1.0 to 1.5</strong> range are <strong>Standard Risk</strong>.
+                  These groups qualify for our program and can benefit from level-funded health plans.
                 </p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-3 pt-2">
+            <div className="rounded-md border p-4 bg-muted/30">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="h-4 w-4 text-red-600 dark:text-red-400" />
+                <span className="font-medium text-foreground">Score Above 1.5</span>
+              </div>
+              <p className="text-xs">
+                Higher risk. Groups scoring above <strong>1.5</strong> are classified as <strong>High Risk</strong>.
+                These groups typically need fully-insured plans. We only accept Preferred and Standard risk groups into our level-funded program.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3 pt-2 border-t">
               <div className="flex items-center gap-1.5">
                 <div className="h-3 w-3 rounded-full bg-green-500" />
-                <span className="text-xs">Preferred (&lt; 0.85)</span>
+                <span className="text-xs font-medium">Preferred Risk: Under 1.0</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                <span className="text-xs">Standard (0.85 - 1.15)</span>
+                <span className="text-xs font-medium">Standard Risk: 1.0 - 1.5</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="h-3 w-3 rounded-full bg-red-500" />
-                <span className="text-xs">High (&gt; 1.15)</span>
+                <span className="text-xs font-medium">High Risk: Above 1.5</span>
               </div>
             </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 mb-8 border-primary/20">
+          <h2 className="font-semibold mb-4">About the Kennion Program</h2>
+          <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+            <p>
+              The Kennion Program specializes in <strong className="text-foreground">level-funded health plans</strong> for small and mid-sized
+              businesses. Unlike traditional insurance, level funding lets you pay a fixed monthly amount while potentially earning money back
+              if your claims are lower than expected.
+            </p>
+            <p>
+              <strong className="text-foreground">Why we can offer better rates:</strong> We carefully underwrite each group before acceptance.
+              By only taking Preferred and Standard risk groups, we keep our overall claims lower than fully-insured carriers who must accept
+              everyone. These savings get passed directly to you through lower monthly premiums.
+            </p>
+            <p>
+              <strong className="text-foreground">Our risk analysis advantage:</strong> Most brokers rely on insurance carrier underwriting.
+              We built our own MARA system to analyze groups upfront. This means you get an accurate quote faster, and you'll know right away
+              if you qualify — no waiting weeks for carrier responses.
+            </p>
           </div>
         </Card>
 
