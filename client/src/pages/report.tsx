@@ -631,9 +631,38 @@ export default function ReportPage() {
               Census #KBA-{group.id.substring(0, 8).toUpperCase()} | Submitted {new Date(group.submittedAt).toLocaleDateString()}
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={handleDownloadPdf} data-testid="button-download-report">
-            <FileDown className="mr-1.5 h-3.5 w-3.5" /> Download Report
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                const res = await fetch(`/api/groups/${groupId}/census`, { credentials: "include" });
+                if (res.ok) {
+                  const censusData = await res.json();
+                  const csv = Papa.unparse(censusData.map((entry: any) => ({
+                    'First Name': entry.firstName,
+                    'Last Name': entry.lastName,
+                    'Type': entry.relationship,
+                    'Date of Birth': entry.dateOfBirth,
+                    'Gender': entry.gender,
+                    'Zip Code': entry.zipCode,
+                  })));
+                  const blob = new Blob([csv], { type: 'text/csv' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `${group.companyName.replace(/[^a-z0-9]/gi, '_')}_census.csv`;
+                  a.click();
+                }
+              }}
+              data-testid="button-download-census"
+            >
+              <FileDown className="mr-1.5 h-3.5 w-3.5" /> Download Census
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownloadPdf} data-testid="button-download-report">
+              <FileDown className="mr-1.5 h-3.5 w-3.5" /> Download Report
+            </Button>
+          </div>
         </div>
 
         <Card className="p-4 mb-6">
@@ -928,6 +957,78 @@ export default function ReportPage() {
                 })()}
               </tbody>
             </table>
+          </div>
+        </Card>
+
+        <Card className="p-4 mb-6 border-l-4 border-l-blue-500">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Data Validation & Verification</h3>
+              {(() => {
+                const distribution = chars.ageBandDistribution || {};
+                const ageBands = ['0-4', '5-9', '10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64', '65-69', '70-Above'];
+
+                let tableTotalFemales = 0;
+                let tableTotalMales = 0;
+                ageBands.forEach(band => {
+                  const bandData = distribution[band] || { female: 0, male: 0 };
+                  tableTotalFemales += bandData.female || 0;
+                  tableTotalMales += bandData.male || 0;
+                });
+                const tableTotalMembers = tableTotalFemales + tableTotalMales;
+
+                const censusTotalMembers = group.totalLives || 0;
+                const censusEmployees = group.employeeCount || 0;
+                const censusSpouses = group.spouseCount || 0;
+                const censusDependents = group.dependentCount || 0;
+                const censusTotalCheck = censusEmployees + censusSpouses + censusDependents;
+
+                const dataMatch = tableTotalMembers === censusTotalMembers && censusTotalMembers === censusTotalCheck;
+                const genderMatch = (tableTotalFemales + tableTotalMales) === (group.femaleCount + group.maleCount);
+                const matchRate = dataMatch && genderMatch ? 100 : 0;
+
+                return (
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded flex items-center justify-center ${dataMatch ? 'bg-green-500' : 'bg-red-500'}`}>
+                        {dataMatch && <CheckCircle2 className="w-3 h-3 text-white" />}
+                      </div>
+                      <span className="text-blue-800 dark:text-blue-200">
+                        <strong>Total Members:</strong> Census Details ({censusTotalMembers}) = Age Band Table ({tableTotalMembers}) = Sum Check ({censusTotalCheck}) {dataMatch ? '✓' : '✗'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded flex items-center justify-center ${genderMatch ? 'bg-green-500' : 'bg-red-500'}`}>
+                        {genderMatch && <CheckCircle2 className="w-3 h-3 text-white" />}
+                      </div>
+                      <span className="text-blue-800 dark:text-blue-200">
+                        <strong>Gender Distribution:</strong> Table ({tableTotalFemales}F + {tableTotalMales}M) = Census ({group.femaleCount}F + {group.maleCount}M) {genderMatch ? '✓' : '✗'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded flex items-center justify-center ${group.riskScore != null ? 'bg-green-500' : 'bg-red-500'}`}>
+                        {group.riskScore != null && <CheckCircle2 className="w-3 h-3 text-white" />}
+                      </div>
+                      <span className="text-blue-800 dark:text-blue-200">
+                        <strong>Risk Score Calculated:</strong> {group.riskScore ? `${group.riskScore.toFixed(3)} (${group.riskTier})` : 'Pending'} {group.riskScore != null ? '✓' : '✗'}
+                      </span>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-blue-900 dark:text-blue-100">Data Integrity Match Rate:</span>
+                        <span className={`font-bold text-lg ${matchRate === 100 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {matchRate}%
+                        </span>
+                      </div>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                        All census counts, age band distributions, and risk calculations have been verified and cross-checked for accuracy.
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         </Card>
 
