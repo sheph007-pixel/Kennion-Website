@@ -103,25 +103,32 @@ function SimpleHeader({ hasGroups }: { hasGroups: boolean }) {
   return (
     <Card className="p-5 mb-6 bg-primary/5 border-primary/20">
       <div className="space-y-3">
+        <div>
+          <h3 className="text-base font-semibold mb-2">Welcome! Let's get you a quote for group health insurance.</h3>
+          <p className="text-sm text-muted-foreground mb-3">
+            To calculate your rates, we need to know who you're covering. It takes about 2 minutes.
+          </p>
+        </div>
         <div className="space-y-2 text-sm">
+          <p className="font-medium text-foreground">Here's how it works:</p>
           <ul className="space-y-1.5 text-muted-foreground">
             <li className="flex items-start gap-2">
-              <span className="text-primary mt-0.5">1.</span>
-              <span>Upload your employee list below</span>
+              <span className="text-primary font-semibold mt-0.5">1.</span>
+              <span>Upload your employee list (names, birthdays, zip codes)</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-primary mt-0.5">2.</span>
-              <span>We'll analyze your group instantly</span>
+              <span className="text-primary font-semibold mt-0.5">2.</span>
+              <span>We calculate your group rates instantly</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-primary mt-0.5">3.</span>
-              <span>Hunter will send you a custom benefits quote</span>
+              <span className="text-primary font-semibold mt-0.5">3.</span>
+              <span>Hunter calls you with pricing and plan options</span>
             </li>
           </ul>
         </div>
         <div className="pt-3 border-t">
-          <p className="text-sm text-muted-foreground">
-            Questions? Call Hunter: <a href="tel:+12056410469" className="font-semibold text-primary hover:underline">205-641-0469</a>
+          <p className="text-sm font-medium text-foreground">
+            Need help? Text or call Hunter: <a href="tel:+12056410469" className="font-semibold text-primary hover:underline">205-641-0469</a>
           </p>
         </div>
       </div>
