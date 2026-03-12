@@ -1,0 +1,100 @@
+import OpenAI from "openai";
+
+function getOpenAIClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY environment variable is not set");
+  }
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
+
+interface GroupAnalysisInput {
+  riskScore: number;
+  riskTier: string;
+  averageAge: number;
+  employeeCount: number;
+  spouseCount: number;
+  dependentCount: number;
+  totalLives: number;
+  maleCount: number;
+  femaleCount: number;
+  characteristics: any;
+  companyName: string;
+}
+
+export async function generateActuarialAnalysis(input: GroupAnalysisInput): Promise<string> {
+  const openai = getOpenAIClient();
+
+  const femalePercentage = ((input.femaleCount / (input.maleCount + input.femaleCount || 1)) * 100).toFixed(1);
+  const avgFamilySize = (input.totalLives / (input.employeeCount || 1)).toFixed(2);
+  const dependencyRatio = (((input.spouseCount || 0) + (input.dependentCount || 0)) / (input.employeeCount || 1)).toFixed(2);
+
+  const prompt = `You are an expert actuary analyzing a group health insurance census. Write a detailed analysis report for this employer group.
+
+Company: ${input.companyName}
+Risk Tier: ${input.riskTier}
+Risk Score: ${input.riskScore} (1.0 = average, <1.0 = better than average, >1.0 = worse than average)
+
+Group Composition:
+- ${input.totalLives} total covered lives
+- ${input.employeeCount} employees
+- ${input.spouseCount || 0} spouses
+- ${input.dependentCount || 0} dependents
+- Average age: ${input.averageAge} years
+- Employee average age: ${input.characteristics.averageEmployeeAge} years
+- Gender mix: ${femalePercentage}% female
+- Average family size: ${avgFamilySize}
+- Dependency ratio: ${dependencyRatio}
+
+Industry Benchmarks for Comparison:
+- Median age: 36.69 years
+- Average family size: 1.91
+- Female percentage: 50.96%
+
+Risk Factors Identified:
+${input.characteristics.factors?.map((f: string) => `- ${f}`).join('\n') || 'None'}
+
+Instructions:
+1. Write in plain English at an 8th grade reading level - clear and easy to understand
+2. DO NOT include any personally identifiable information (PHI) - only use aggregate statistics
+3. Explain what makes this group's risk profile ${input.riskTier}
+4. Compare their demographics to industry benchmarks and explain what that means for pricing
+5. Discuss age distribution impact on expected healthcare utilization
+6. Explain how the MARA (Multi-factor Actuarial Risk Analysis) model evaluated this group
+7. Mention key actuarial factors like:
+   - Expected medical cost trends for this age/gender mix
+   - How family size impacts premiums
+   - The significance of their dependency ratio
+   - Why their risk score of ${input.riskScore} matters
+8. If Preferred or Standard risk: Explain why they qualify for the Kennion program and potential savings
+9. If High risk: Explain why fully-insured may be better and what factors drove the higher risk score
+10. Keep it professional but conversational - like an expert advisor explaining to a business owner
+11. Focus on what this means for THEM - not generic insurance information
+12. Length: 3-4 paragraphs, roughly 250-350 words total
+
+Write ONLY the analysis text. No preamble, no "Here's the analysis" - just start with the analysis itself.`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert actuary and benefits consultant. Write clear, professional analysis reports that explain complex insurance concepts in simple terms. Always write in plain English at an 8th grade reading level."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 600
+    });
+
+    return completion.choices[0].message.content || "Analysis pending - please check back shortly.";
+  } catch (error) {
+    console.error("Error generating AI analysis:", error);
+    return "Our AI analysis system is currently processing your group. A detailed actuarial review will be available shortly.";
+  }
+}

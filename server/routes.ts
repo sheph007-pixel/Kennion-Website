@@ -18,6 +18,7 @@ import { log } from "./index";
 import { sendMagicLinkEmail } from "./email";
 import { pool } from "./db";
 import { cleanCSVWithAI } from "./ai-csv-cleaner";
+import { generateActuarialAnalysis } from "./ai-analysis";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
@@ -676,6 +677,21 @@ export async function registerRoutes(
         totalLives: entries.length,
       });
 
+      // Generate AI-powered actuarial analysis
+      const adminNotes = await generateActuarialAnalysis({
+        riskScore: analysis.riskScore,
+        riskTier: analysis.riskTier,
+        averageAge: analysis.averageAge,
+        employeeCount,
+        spouseCount,
+        dependentCount,
+        totalLives: entries.length,
+        maleCount: analysis.maleCount,
+        femaleCount: analysis.femaleCount,
+        characteristics: analysis.characteristics,
+        companyName: user.companyName || "Unnamed Company",
+      });
+
       await storage.updateGroup(group.id, {
         riskScore: analysis.riskScore,
         riskTier: analysis.riskTier,
@@ -684,6 +700,7 @@ export async function registerRoutes(
         femaleCount: analysis.femaleCount,
         groupCharacteristics: analysis.characteristics,
         score: analysis.characteristics.qualificationScore,
+        adminNotes,
         status: "analyzing",
       });
 
@@ -792,6 +809,21 @@ export async function registerRoutes(
         totalLives: entries.length,
       });
 
+      // Generate AI-powered actuarial analysis
+      const adminNotes = await generateActuarialAnalysis({
+        riskScore: analysis.riskScore,
+        riskTier: analysis.riskTier,
+        averageAge: analysis.averageAge,
+        employeeCount,
+        spouseCount,
+        dependentCount,
+        totalLives: entries.length,
+        maleCount: analysis.maleCount,
+        femaleCount: analysis.femaleCount,
+        characteristics: analysis.characteristics,
+        companyName: user.companyName || "Unnamed Company",
+      });
+
       await storage.updateGroup(group.id, {
         riskScore: analysis.riskScore,
         riskTier: analysis.riskTier,
@@ -800,6 +832,7 @@ export async function registerRoutes(
         femaleCount: analysis.femaleCount,
         groupCharacteristics: analysis.characteristics,
         score: analysis.characteristics.qualificationScore,
+        adminNotes,
         status: "analyzing",
       });
 
