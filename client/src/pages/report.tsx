@@ -635,14 +635,14 @@ export default function ReportPage() {
           </Button>
         </div>
 
-        <Card className="p-6 mb-6">
-          <div className="mb-4">
-            <p className="text-xs text-muted-foreground mb-1">Group Name:</p>
-            <h1 className="text-2xl font-bold" data-testid="text-report-title">{group.companyName}</h1>
+        <Card className="p-4 mb-6">
+          <div className="mb-3">
+            <p className="text-xs text-muted-foreground mb-1">Risk Classification</p>
+            <h1 className="text-xl font-bold" data-testid="text-report-title">{group.companyName}</h1>
           </div>
 
           {group.riskScore != null ? (
-            <div className="flex gap-3 max-w-2xl mx-auto">
+            <div className="flex gap-2 max-w-2xl mx-auto">
               {(['preferred', 'standard', 'high'] as const).map((tier) => {
                 const config = TIER_CONFIG[tier];
                 const Icon = config.icon;
@@ -651,17 +651,17 @@ export default function ReportPage() {
                 return (
                   <div
                     key={tier}
-                    className={`flex-1 px-4 py-4 rounded-lg border-2 text-center transition-all ${
+                    className={`flex-1 px-3 py-3 rounded-lg border-2 text-center transition-all ${
                       isActive
                         ? config.tabColor + ' font-bold'
                         : 'border-border bg-muted/20 text-muted-foreground/40'
                     }`}
                   >
-                    <div className="flex flex-col items-center gap-2">
-                      <Icon className="h-5 w-5" />
-                      <span className="text-sm font-semibold">{config.label.replace(' Risk', '')}</span>
+                    <div className="flex flex-col items-center gap-1.5">
+                      <Icon className="h-4 w-4" />
+                      <span className="text-xs font-semibold">{config.label.replace(' Risk', '')}</span>
                       {isActive && (
-                        <div className={`text-2xl font-bold ${config.color}`}>
+                        <div className={`text-xl font-bold ${config.color}`}>
                           {group.riskScore.toFixed(2)}
                         </div>
                       )}
@@ -671,8 +671,8 @@ export default function ReportPage() {
               })}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Clock className="mx-auto h-8 w-8 mb-2" />
+            <div className="text-center py-6 text-muted-foreground">
+              <Clock className="mx-auto h-6 w-6 mb-2" />
               <p className="text-sm">Analysis pending</p>
             </div>
           )}
