@@ -75,7 +75,7 @@ function DashboardNav() {
   }
 
   return (
-    <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
+    <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur print:hidden">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
         <div className="flex items-center gap-3">
           <div className="cursor-pointer" onClick={() => navigate("/dashboard")}>
@@ -100,78 +100,85 @@ function DashboardNav() {
 
 function PrintInstructions() {
   return (
-    <div className="hidden print:block p-8 max-w-2xl mx-auto bg-white text-black">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-2">Group Health Benefits Portal</h1>
-        <p className="text-lg text-gray-600">Simple Instructions for Getting Your Proposal</p>
-      </div>
-
+    <div className="hidden print:block p-12 max-w-4xl mx-auto bg-white text-black">
+      {/* Logo */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4 border-b-2 border-gray-300 pb-2">What You'll Get:</h2>
-        <p className="mb-2 text-gray-700">Group Health + Dental + Vision + Supplemental benefits proposal</p>
+        <KennionLogo size="lg" />
       </div>
 
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4 border-b-2 border-gray-300 pb-2">How It Works (3 Easy Steps):</h2>
-        <ol className="space-y-4">
-          <li className="flex gap-3">
-            <span className="font-bold text-xl">1.</span>
-            <div>
-              <p className="font-semibold">Upload Your Employee Census</p>
-              <p className="text-gray-700">Provide a list with all employees and family members (spouses, children) who will be covered.</p>
+      {/* Title */}
+      <div className="text-center mb-10">
+        <h1 className="text-4xl font-bold mb-2">Group Health Benefits Portal</h1>
+        <p className="text-xl text-gray-600">Simple Instructions</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-12 mb-10">
+        {/* Left Column */}
+        <div>
+          <h2 className="text-2xl font-bold mb-5">How It Works:</h2>
+          <ol className="space-y-4">
+            <li className="flex gap-3">
+              <span className="font-bold text-2xl text-blue-600">1.</span>
+              <div>
+                <p className="font-semibold text-lg">Upload Your Census</p>
+                <p className="text-gray-700">List all employees and family members</p>
+              </div>
+            </li>
+            <li className="flex gap-3">
+              <span className="font-bold text-2xl text-blue-600">2.</span>
+              <div>
+                <p className="font-semibold text-lg">We Underwrite</p>
+                <p className="text-gray-700">AI analyzes and approves your group</p>
+              </div>
+            </li>
+            <li className="flex gap-3">
+              <span className="font-bold text-2xl text-blue-600">3.</span>
+              <div>
+                <p className="font-semibold text-lg">Get Your Proposal</p>
+                <p className="text-gray-700">Receive rates and coverage options</p>
+              </div>
+            </li>
+          </ol>
+
+          <div className="mt-8 bg-gray-50 p-5 rounded-lg border-2 border-gray-200">
+            <h3 className="font-bold text-lg mb-3">Required Fields:</h3>
+            <div className="grid grid-cols-2 gap-y-2 text-sm">
+              <div>• First Name</div>
+              <div>• Last Name</div>
+              <div>• Type (EE/SP/CH)</div>
+              <div>• Date of Birth</div>
+              <div>• Gender</div>
+              <div>• Zip Code</div>
             </div>
-          </li>
-          <li className="flex gap-3">
-            <span className="font-bold text-xl">2.</span>
-            <div>
-              <p className="font-semibold">We Underwrite & Approve</p>
-              <p className="text-gray-700">Our system analyzes your group and determines eligibility.</p>
-            </div>
-          </li>
-          <li className="flex gap-3">
-            <span className="font-bold text-xl">3.</span>
-            <div>
-              <p className="font-semibold">Receive Your Benefits Proposal</p>
-              <p className="text-gray-700">Get a customized proposal with rates and coverage options.</p>
-            </div>
-          </li>
-        </ol>
-      </div>
-
-      <div className="mb-8 bg-gray-100 p-4 rounded">
-        <h2 className="text-xl font-semibold mb-3">Required Information (6 fields):</h2>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div>• First Name</div>
-          <div>• Last Name</div>
-          <div>• Type (EE/SP/CH)</div>
-          <div>• Date of Birth</div>
-          <div>• Gender</div>
-          <div>• Zip Code</div>
-        </div>
-        <p className="text-xs text-gray-600 mt-3">* AI automatically detects and maps your columns - any format works!</p>
-      </div>
-
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-3 border-b-2 border-gray-300 pb-2">Contact Information:</h2>
-        <div className="space-y-2">
-          <p className="font-semibold text-lg">Hunter Shepherd</p>
-          <p>Phone/Text: <span className="font-semibold text-blue-600">205-641-0469</span></p>
-        </div>
-      </div>
-
-      <div className="border-t-2 border-gray-300 pt-6 mt-8 text-center">
-        <p className="mb-4 font-semibold">Access the portal online:</p>
-        <div className="flex items-center justify-center gap-6">
-          <img
-            src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://www.kennion.com"
-            alt="QR Code to Kennion.com"
-            className="border-2 border-gray-300"
-          />
-          <div className="text-left">
-            <p className="text-lg font-bold">www.Kennion.com</p>
-            <p className="text-sm text-gray-600">Scan QR code or visit website</p>
+            <p className="text-xs text-gray-600 mt-3 italic">AI maps any format!</p>
           </div>
         </div>
+
+        {/* Right Column */}
+        <div className="flex flex-col justify-between">
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Contact:</h2>
+            <div className="space-y-2">
+              <p className="font-bold text-2xl">Hunter Shepherd</p>
+              <p className="text-lg">Phone/Text:</p>
+              <p className="font-bold text-3xl text-blue-600">205-641-0469</p>
+            </div>
+          </div>
+
+          <div className="mt-8 text-center">
+            <p className="font-semibold mb-4 text-lg">Access Portal:</p>
+            <img
+              src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://www.kennion.com"
+              alt="QR Code to Kennion.com"
+              className="border-4 border-gray-300 mx-auto mb-3 rounded"
+            />
+            <p className="text-2xl font-bold">www.Kennion.com</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="text-center pt-6 border-t-2 border-gray-300">
+        <p className="text-sm text-gray-600">Group Health + Dental + Vision + Supplemental</p>
       </div>
     </div>
   );
@@ -212,10 +219,9 @@ function SimpleHeader({ hasGroups, step }: { hasGroups: boolean; step: string })
               </p>
             </div>
             <Button
-              variant="outline"
               size="sm"
               onClick={handlePrint}
-              className="flex items-center gap-2 print:hidden"
+              className="flex items-center gap-2 print:hidden bg-green-600 hover:bg-green-700 text-white"
             >
               <Printer className="h-4 w-4" />
               Print Instructions
