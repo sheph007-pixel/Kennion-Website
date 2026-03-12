@@ -736,9 +736,60 @@ export async function registerRoutes(
         return res.status(400).json({ message: "CSV file contains no valid data" });
       }
 
-      // Use AI to clean and standardize VALUES only (columns already validated)
-      log("Using AI to standardize data values...");
+      // Detect column mapping with AI (don't clean data yet)
+      log("Detecting column mapping with AI...");
       const aiResult = await cleanCSVWithAI(headers, nonEmptyRows);
+
+      // Store raw data and AI result in session
+      req.session.pendingCensus = {
+        headers,
+        rows: nonEmptyRows,
+        fileName: req.file.originalname || "census.csv",
+        detectedMapping: aiResult.columnMapping
+      };
+
+      // Return detected mapping and sample data for confirmation
+      const sampleRows = nonEmptyRows.slice(0, 3).map(row => {
+        const sample: Record<string, string> = {};
+        headers.forEach(h => {
+          sample[h] = row[h]?.toString() || "";
+        });
+        return sample;
+      });
+
+      res.json({
+        totalRows: rows.length,
+        validRows: nonEmptyRows.length,
+        headers: headers,
+        columnMapping: aiResult.columnMapping,
+        sampleRows: sampleRows,
+        message: "Column mapping detected. Please confirm the mapping below."
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Parse failed" });
+    }
+  });
+
+  app.post("/api/groups/apply-mapping", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const pendingCensus = req.session.pendingCensus;
+      if (!pendingCensus || !pendingCensus.headers || !pendingCensus.rows) {
+        return res.status(400).json({ message: "No pending census data. Please upload a file first." });
+      }
+
+      const { columnMapping } = req.body;
+      if (!columnMapping) {
+        return res.status(400).json({ message: "Column mapping is required" });
+      }
+
+      log("Applying user-confirmed column mapping and cleaning data...");
+
+      // Clean data with user-confirmed mapping
+      const aiResult = await cleanCSVWithAI(
+        pendingCensus.headers,
+        pendingCensus.rows,
+        columnMapping
+      );
 
       // Convert cleaned data to preview format
       const previewRows = aiResult.cleanedData.slice(0, 10).map(cleaned => ({
@@ -751,15 +802,15 @@ export async function registerRoutes(
         issues: cleaned.issues
       }));
 
+      // Store cleaned data in session for submission
       req.session.pendingCensus = {
-        headers,
-        rows: nonEmptyRows,
-        fileName: req.file.originalname || "census.csv",
-        aiCleaned: aiResult
+        ...pendingCensus,
+        aiCleaned: aiResult,
+        confirmedMapping: columnMapping
       };
 
       res.json({
-        totalRows: rows.length,
+        totalRows: pendingCensus.rows.length,
         cleanedRows: aiResult.cleanedData.length,
         previewRows,
         summary: aiResult.summary,
@@ -767,7 +818,8 @@ export async function registerRoutes(
         confidence: aiResult.confidence
       });
     } catch (err: any) {
-      res.status(500).json({ message: err.message || "Parse failed" });
+      log(`Apply mapping error: ${err.message}`);
+      res.status(500).json({ message: err.message || "Failed to apply column mapping" });
     }
   });
 

@@ -25,6 +25,7 @@ interface CSVCleaningResult {
   confidence: "high" | "medium" | "low";
   summary: string;
   warnings: string[];
+  columnMapping: Record<string, string>; // CSV Header -> Required Field
 }
 
 /**
@@ -135,16 +136,21 @@ Be flexible - match variations like "FirstName", "first_name", "fname", "DOB", "
 /**
  * Clean CSV data using intelligent AI-powered column mapping
  * Automatically detects columns and standardizes values
+ *
+ * @param headers - CSV column headers
+ * @param rows - CSV data rows
+ * @param userMapping - Optional pre-defined column mapping (CSV Header -> Required Field)
  */
 export async function cleanCSVWithAI(
   headers: string[],
-  rows: Record<string, any>[]
+  rows: Record<string, any>[],
+  userMapping?: Record<string, string>
 ): Promise<CSVCleaningResult> {
   const cleanedData: CleanedRow[] = [];
   const warnings: string[] = [];
 
-  // Use AI to intelligently map columns
-  const columnMapping = await mapColumnsWithAI(headers);
+  // Use provided mapping or detect with AI
+  const columnMapping = userMapping || await mapColumnsWithAI(headers);
 
   // Reverse mapping: Required Field -> CSV Header
   const fieldToHeader: Record<string, string | null> = {
@@ -216,7 +222,8 @@ export async function cleanCSVWithAI(
     cleanedData,
     confidence: "high",
     summary: `AI detected and mapped ${headers.length} columns. Processed ${cleanedData.length} rows with auto-standardized values.`,
-    warnings
+    warnings,
+    columnMapping
   };
 }
 

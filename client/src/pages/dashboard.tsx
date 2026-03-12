@@ -276,9 +276,11 @@ interface ValidationError {
 
 function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void }) {
   const { toast } = useToast();
-  const [step, setStep] = useState<"upload" | "confirm">("upload");
-  const [parseResult, setParseResult] = useState<ParseResult | null>(null);
+  const [step, setStep] = useState<"upload" | "map-columns" | "confirm">("upload");
+  const [parseResult, setParseResult] = useState<any | null>(null);
+  const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
   const [isUploading, setIsUploading] = useState(false);
+  const [isApplyingMapping, setIsApplyingMapping] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [validationError, setValidationError] = useState<ValidationError | null>(null);
 
@@ -304,12 +306,13 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
         throw new Error(err.message || "Parse failed");
       }
 
-      const result: ParseResult = await res.json();
+      const result = await res.json();
       setParseResult(result);
-      setStep("confirm");
+      setColumnMapping(result.columnMapping || {});
+      setStep("map-columns");
       toast({
-        title: "AI Processing Complete",
-        description: result.summary,
+        title: "Column Mapping Detected",
+        description: result.message || "Please confirm the column mapping below.",
       });
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
@@ -328,6 +331,35 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
     const file = e.target.files?.[0];
     if (file) handleFile(file);
   }, [handleFile]);
+
+  const handleApplyMapping = async () => {
+    setIsApplyingMapping(true);
+    try {
+      const res = await fetch("/api/groups/apply-mapping", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ columnMapping }),
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to apply mapping");
+      }
+
+      const result = await res.json();
+      setParseResult(result);
+      setStep("confirm");
+      toast({
+        title: "Data Cleaned Successfully",
+        description: result.summary,
+      });
+    } catch (err: any) {
+      toast({ title: "Mapping failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsApplyingMapping(false);
+    }
+  };
 
   const handleConfirm = async () => {
     setIsConfirming(true);
@@ -425,6 +457,110 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
     );
   }
 
+  if (step === "map-columns" && parseResult) {
+    const REQUIRED_FIELDS = ["First Name", "Last Name", "Type", "Date of Birth", "Gender", "Zip Code"];
+
+    return (
+      <Card className="p-6">
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <Button variant="ghost" size="icon" onClick={() => setStep("upload")}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h2 className="font-semibold text-lg">Confirm Column Mapping</h2>
+          </div>
+          <p className="text-sm text-muted-foreground ml-10">
+            AI detected your columns. Verify they match correctly or adjust if needed.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {/* Column Mapping Table */}
+          <div className="rounded-md border">
+            <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 font-medium text-sm border-b">
+              <div>Required Field</div>
+              <div>Your CSV Column</div>
+            </div>
+            {REQUIRED_FIELDS.map((field) => {
+              const mappedColumn = Object.keys(columnMapping).find(k => columnMapping[k] === field) || "";
+              return (
+                <div key={field} className="grid grid-cols-2 gap-4 p-4 border-b last:border-b-0 items-center">
+                  <div className="font-medium text-sm">{field}</div>
+                  <Select
+                    value={mappedColumn}
+                    onValueChange={(value) => {
+                      // Clear any existing mapping to this field
+                      const newMapping = { ...columnMapping };
+                      Object.keys(newMapping).forEach(k => {
+                        if (newMapping[k] === field) delete newMapping[k];
+                      });
+                      // Set new mapping
+                      newMapping[value] = field;
+                      setColumnMapping(newMapping);
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select column..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {parseResult.headers.map((header: string) => (
+                        <SelectItem key={header} value={header}>
+                          {header}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Sample Data Preview */}
+          {parseResult.sampleRows && parseResult.sampleRows.length > 0 && (
+            <div className="rounded-md border p-4 bg-muted/20">
+              <h3 className="text-sm font-medium mb-3">Sample Data (first 3 rows)</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b">
+                      {parseResult.headers.map((h: string) => (
+                        <th key={h} className="text-left p-2 font-medium">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {parseResult.sampleRows.map((row: any, i: number) => (
+                      <tr key={i} className="border-b">
+                        {parseResult.headers.map((h: string) => (
+                          <td key={h} className="p-2">{row[h]}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <Button
+            className="w-full"
+            onClick={handleApplyMapping}
+            disabled={isApplyingMapping}
+          >
+            {isApplyingMapping ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>Confirm Mapping & Continue</>
+            )}
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
   if (step === "confirm" && parseResult) {
     const hasWarnings = parseResult.warnings.length > 0;
     const rowsWithIssues = parseResult.previewRows.filter(r => r.issues && r.issues.length > 0);
@@ -433,7 +569,7 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
       <Card className="p-6">
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-2">
-            <Button variant="ghost" size="icon" onClick={() => setStep("upload")} data-testid="button-back-upload">
+            <Button variant="ghost" size="icon" onClick={() => setStep("map-columns")} data-testid="button-back-mapping">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <h2 className="font-semibold text-lg">✓ AI Cleaned Your Data</h2>
