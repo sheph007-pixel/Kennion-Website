@@ -72,54 +72,42 @@ function getBaseUrl(req: Request): string {
   return `${req.protocol}://${host}`;
 }
 
-const REQUIRED_FIELDS = [
-  { key: "first_name", label: "First Name", aliases: ["first name", "firstname", "first", "fname", "given name", "given_name"] },
-  { key: "last_name", label: "Last Name", aliases: ["last name", "lastname", "last", "lname", "surname", "family name", "family_name"] },
-  { key: "type", label: "Type (EE/SP/CH)", aliases: ["type", "relationship", "relation", "member type", "member_type", "coverage type", "coverage_type", "ee/sp/ch", "ee/sp/dep", "enrollment type", "enrollment_type", "subscriber type", "subscriber_type", "child", "children"] },
-  { key: "date_of_birth", label: "Date of Birth", aliases: ["date of birth", "dob", "dateofbirth", "birth date", "birthdate", "birth_date", "birthday", "date_of_birth", "d.o.b.", "d.o.b"] },
-  { key: "gender", label: "Gender", aliases: ["gender", "sex", "m/f", "male/female"] },
-  { key: "zip_code", label: "Zip Code", aliases: ["zip code", "zipcode", "zip", "zip_code", "postal code", "postal_code", "postalcode"] },
+// STRICT: Require exact column names from template (no AI mapping)
+const REQUIRED_COLUMNS = [
+  "First Name",
+  "Last Name",
+  "Type",
+  "Date of Birth",
+  "Gender",
+  "Zip Code"
 ];
 
-function smartMatchHeaders(csvHeaders: string[]): Record<string, string | null> {
-  const mappings: Record<string, string | null> = {};
+/**
+ * Validates that CSV has exactly the required columns
+ * Returns error message if validation fails, null if valid
+ */
+function validateColumns(csvHeaders: string[]): string | null {
+  const trimmedHeaders = csvHeaders.map(h => h.trim());
 
-  for (const field of REQUIRED_FIELDS) {
-    let bestMatch: string | null = null;
-    let bestScore = 0;
+  // Check if all required columns are present
+  const missingColumns = REQUIRED_COLUMNS.filter(
+    required => !trimmedHeaders.includes(required)
+  );
 
-    for (const csvHeader of csvHeaders) {
-      const normalized = csvHeader.trim().toLowerCase().replace(/[_\-\.]/g, " ").replace(/\s+/g, " ");
-
-      if (normalized === field.key.replace(/_/g, " ")) {
-        bestMatch = csvHeader;
-        bestScore = 100;
-        break;
-      }
-
-      for (const alias of field.aliases) {
-        if (normalized === alias) {
-          bestMatch = csvHeader;
-          bestScore = 100;
-          break;
-        }
-        if (normalized.includes(alias) || alias.includes(normalized)) {
-          const score = Math.max(normalized.length, alias.length) > 0
-            ? (Math.min(normalized.length, alias.length) / Math.max(normalized.length, alias.length)) * 80
-            : 0;
-          if (score > bestScore) {
-            bestScore = score;
-            bestMatch = csvHeader;
-          }
-        }
-      }
-      if (bestScore === 100) break;
-    }
-
-    mappings[field.key] = bestScore >= 50 ? bestMatch : null;
+  if (missingColumns.length > 0) {
+    return `Missing required columns: ${missingColumns.join(", ")}. Please download and use our template with exact column names.`;
   }
 
-  return mappings;
+  // Check for extra columns (optional - could allow them)
+  const extraColumns = trimmedHeaders.filter(
+    header => header && !REQUIRED_COLUMNS.includes(header)
+  );
+
+  if (extraColumns.length > 0) {
+    return `Unexpected columns found: ${extraColumns.join(", ")}. Please use only the 6 required columns from our template.`;
+  }
+
+  return null; // Valid
 }
 
 // Demographic Risk Analysis lookup table based on age band and gender
@@ -734,6 +722,18 @@ export async function registerRoutes(
 
       const headers = Object.keys(rows[0]).filter(h => h.trim() !== "");
 
+      // CRITICAL: Validate exact column names (no AI mapping)
+      const columnError = validateColumns(headers);
+      if (columnError) {
+        log(`Column validation failed: ${columnError}`);
+        return res.status(400).json({
+          message: columnError,
+          hint: "Download our template to get the correct format. The template has the exact column names required.",
+        });
+      }
+
+      log(`Column validation passed: Found all 6 required columns`);
+
       // Filter out completely empty rows (rows where all values are empty/null)
       const nonEmptyRows = rows.filter(row => {
         const values = Object.values(row);
@@ -746,8 +746,8 @@ export async function registerRoutes(
         return res.status(400).json({ message: "CSV file contains no valid data" });
       }
 
-      // Use AI to automatically clean and map the CSV
-      log("Using AI to clean and map CSV data...");
+      // Use AI to clean and standardize VALUES only (columns already validated)
+      log("Using AI to standardize data values...");
       const aiResult = await cleanCSVWithAI(headers, nonEmptyRows);
 
       // Convert cleaned data to preview format
