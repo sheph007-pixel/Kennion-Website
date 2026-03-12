@@ -296,6 +296,46 @@ interface ValidationError {
   matchRate: number;
 }
 
+function WizardProgress({ step }: { step: "upload" | "map-columns" | "confirm" }) {
+  const steps = [
+    { id: "upload", label: "Upload", number: 1 },
+    { id: "map-columns", label: "Map Columns", number: 2 },
+    { id: "confirm", label: "Confirm", number: 3 },
+  ];
+
+  const currentStepIndex = steps.findIndex(s => s.id === step);
+
+  return (
+    <div className="mb-4">
+      <div className="flex items-center justify-between max-w-md mx-auto">
+        {steps.map((s, idx) => (
+          <div key={s.id} className="flex items-center flex-1">
+            <div className="flex flex-col items-center flex-1">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                idx <= currentStepIndex
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground'
+              }`}>
+                {s.number}
+              </div>
+              <div className={`text-xs mt-1 font-medium ${
+                idx === currentStepIndex ? 'text-foreground' : 'text-muted-foreground'
+              }`}>
+                {s.label}
+              </div>
+            </div>
+            {idx < steps.length - 1 && (
+              <div className={`h-0.5 flex-1 mx-2 ${
+                idx < currentStepIndex ? 'bg-primary' : 'bg-muted'
+              }`} />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Group) => void; hasGroups: boolean }) {
   const { toast } = useToast();
   const [step, setStep] = useState<"upload" | "map-columns" | "confirm">("upload");
@@ -427,6 +467,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
     return (
       <>
         <SimpleHeader hasGroups={hasGroups} step={step} />
+        <WizardProgress step={step} />
 
         {/* Upload Error Dialog */}
         <AlertDialog open={!!uploadError} onOpenChange={(open) => !open && setUploadError(null)}>
@@ -521,6 +562,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
     return (
       <>
         <SimpleHeader hasGroups={hasGroups} step={step} />
+        <WizardProgress step={step} />
 
         {/* Mapping Error Dialog */}
         <AlertDialog open={!!mappingError} onOpenChange={(open) => !open && setMappingError(null)}>
@@ -553,11 +595,11 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
               size="lg"
               onClick={handleApplyMapping}
               disabled={isApplyingMapping}
-              className="font-semibold shadow-lg"
+              className="font-bold shadow-xl h-12 text-base px-6"
             >
               {isApplyingMapping ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   Processing...
                 </>
               ) : (
@@ -656,14 +698,14 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
           })()}
 
           <Button
-            className="w-full font-semibold shadow-lg"
+            className="w-full h-12 text-base font-bold shadow-xl"
             size="lg"
             onClick={handleApplyMapping}
             disabled={isApplyingMapping}
           >
             {isApplyingMapping ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Processing...
               </>
             ) : (
@@ -683,6 +725,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
     return (
       <>
         <SimpleHeader hasGroups={hasGroups} step={step} />
+        <WizardProgress step={step} />
         <Card className="p-6">
         <div className="mb-6">
           <Button variant="outline" size="sm" onClick={() => setStep("map-columns")} data-testid="button-back-mapping" className="mb-4">
@@ -810,24 +853,24 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
         <Button
           onClick={handleConfirm}
           disabled={isConfirming || validationError !== null}
-          className="w-full"
+          className="w-full h-14 text-lg font-bold shadow-xl"
           size="lg"
           data-testid="button-confirm-mapping"
           variant={validationError ? "outline" : "default"}
         >
           {validationError ? (
             <>
-              <X className="mr-2 h-4 w-4" />
+              <X className="mr-2 h-5 w-5" />
               Cannot Submit - Fix Validation Errors First
             </>
           ) : isConfirming ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               Processing Census...
             </>
           ) : (
             <>
-              Looks Good - Submit & Get Risk Analysis <ArrowRight className="ml-2 h-4 w-4" />
+              Looks Good - Submit & Get Risk Analysis <ArrowRight className="ml-2 h-5 w-5" />
             </>
           )}
         </Button>
@@ -898,7 +941,7 @@ function GroupsList() {
     return (
       <Card className="p-8 text-center">
         <FileSpreadsheet className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
-        <h3 className="font-semibold">No submissions yet</h3>
+        <h3 className="font-semibold">No Submissions Yet</h3>
         <p className="text-sm text-muted-foreground mt-1">
           Upload your employee census above to get started.
         </p>
