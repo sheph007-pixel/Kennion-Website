@@ -131,8 +131,8 @@ function ReportNav() {
 function ScoreGauge({ score, label }: { score: number; label: string }) {
   const percentage = Math.min(100, Math.max(0, ((2.0 - score) / 1.6) * 100));
   const getColor = () => {
-    if (score < 0.85) return "text-green-600 dark:text-green-400";
-    if (score <= 1.15) return "text-yellow-600 dark:text-yellow-400";
+    if (score < 1.0) return "text-green-600 dark:text-green-400";
+    if (score < 1.5) return "text-yellow-600 dark:text-yellow-400";
     return "text-red-600 dark:text-red-400";
   };
 
@@ -598,15 +598,15 @@ export default function ReportPage() {
             <div class="risk-segments">
               <div class="segments-title">Member Risk Distribution</div>
               <div class="segment-row">
-                <span class="segment-label low-risk">● Low Risk (&lt;0.85)</span>
+                <span class="segment-label low-risk">● Low Risk (&lt;1.0)</span>
                 <span class="segment-value low-risk">${chars.riskSegments.lowRisk} (${chars.riskSegments.lowRiskPct}%)</span>
               </div>
               <div class="segment-row">
-                <span class="segment-label avg-risk">● Average Risk (0.85-1.15)</span>
+                <span class="segment-label avg-risk">● Average Risk (1.0-1.5)</span>
                 <span class="segment-value avg-risk">${chars.riskSegments.avgRisk} (${chars.riskSegments.avgRiskPct}%)</span>
               </div>
               <div class="segment-row">
-                <span class="segment-label high-risk">● High Risk (&gt;1.15)</span>
+                <span class="segment-label high-risk">● High Risk (&gt;1.5)</span>
                 <span class="segment-value high-risk">${chars.riskSegments.highRisk} (${chars.riskSegments.highRiskPct}%)</span>
               </div>
             </div>

@@ -333,8 +333,8 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
       const age = Math.floor((now.getTime() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
       if (age > 0 && age < 120) {
         const personRiskScore = getRiskScoreForPerson(age, entry.gender);
-        if (personRiskScore < 0.85) lowRisk++;
-        else if (personRiskScore < 1.15) avgRisk++;
+        if (personRiskScore < 1.0) lowRisk++;
+        else if (personRiskScore < 1.5) avgRisk++;
         else highRisk++;
       }
     }
