@@ -104,7 +104,7 @@ function SimpleHeader({ hasGroups }: { hasGroups: boolean }) {
     <Card className="p-5 mb-6 bg-primary/5 border-primary/20">
       <div className="space-y-3">
         <div>
-          <h3 className="text-base font-semibold mb-2">Welcome! Let's get you a quote for group health insurance.</h3>
+          <h3 className="text-base font-semibold mb-2">Welcome! Let's get you a Group Health Proposal.</h3>
           <p className="text-sm text-muted-foreground mb-3">
             To calculate your rates, we need to know who you're covering. It takes about 2 minutes.
           </p>
@@ -114,15 +114,15 @@ function SimpleHeader({ hasGroups }: { hasGroups: boolean }) {
           <ul className="space-y-1.5 text-muted-foreground">
             <li className="flex items-start gap-2.5">
               <span className="text-primary font-semibold min-w-[1.25rem]">1.</span>
-              <span>Upload your employee list (names, birthdays, zip codes).</span>
+              <span>Upload your employee/family member list (names, birthdays, zip codes).</span>
             </li>
             <li className="flex items-start gap-2.5">
               <span className="text-primary font-semibold min-w-[1.25rem]">2.</span>
-              <span>We calculate your group rates instantly.</span>
+              <span>We underwrite and approve your group.</span>
             </li>
             <li className="flex items-start gap-2.5">
               <span className="text-primary font-semibold min-w-[1.25rem]">3.</span>
-              <span>Hunter calls you with pricing and plan options.</span>
+              <span>We provide you with a benefits proposal.</span>
             </li>
           </ul>
         </div>
@@ -406,9 +406,9 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
 
   if (step === "upload") {
     return (
-      <Card className="p-6">
+      <Card className="p-6 border-4 border-primary/30 shadow-lg">
         <div className="mb-4">
-          <h2 className="font-bold text-xl" data-testid="text-upload-heading">Upload Your Employee Census</h2>
+          <h2 className="font-bold text-2xl text-primary" data-testid="text-upload-heading">Upload Your Employee Census</h2>
           <p className="text-sm text-muted-foreground mt-1">
             Upload any employee list - AI will handle the rest
           </p>
