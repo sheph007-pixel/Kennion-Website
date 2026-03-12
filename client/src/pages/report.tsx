@@ -703,43 +703,66 @@ export default function ReportPage() {
           </div>
         </div>
 
-        <Card className="p-6 mb-6 border-2">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2 justify-center">
-            <Shield className="h-6 w-6 text-primary" />
+        <Card className="p-4 mb-6 border-2">
+          <h2 className="text-lg font-bold mb-3 flex items-center gap-2 justify-center">
+            <Shield className="h-5 w-5 text-primary" />
             Risk Classification
           </h2>
 
           {group.riskScore != null ? (
-            <div className="flex gap-3">
-              {(['preferred', 'standard', 'high'] as const).map((tier) => {
-                const config = TIER_CONFIG[tier];
-                const Icon = config.icon;
-                const isActive = group.riskTier === tier;
+            <>
+              {/* Intro explanation */}
+              <div className="text-center mb-4 px-4">
+                <p className="text-sm leading-relaxed">
+                  {(() => {
+                    const riskTier = group.riskTier;
+                    const score = group.riskScore;
+                    const age = Math.round(medianAge);
+                    const size = groupCategory;
 
-                return (
-                  <div
-                    key={tier}
-                    className={`flex-1 px-6 py-6 rounded-lg border-3 text-center transition-all ${
-                      isActive
-                        ? config.tabColor + ' font-bold shadow-md'
-                        : 'border-border bg-muted/20 text-muted-foreground/40'
-                    }`}
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <Icon className={`h-8 w-8 ${isActive ? '' : 'opacity-40'}`} />
-                      <span className={`text-base font-bold ${isActive ? '' : 'font-semibold'}`}>
-                        {config.label.replace(' Risk', '')}
-                      </span>
-                      {isActive && (
-                        <div className={`text-4xl font-extrabold ${config.color} mt-1`}>
-                          {group.riskScore.toFixed(2)}
-                        </div>
-                      )}
+                    if (riskTier === 'preferred') {
+                      return `Congratulations! Your group is Preferred Risk with a score of ${score.toFixed(2)}. This is excellent. Your group has a younger average age (${age} years) and ${size === 'Micro' ? 'a small, healthy group' : 'healthy demographics'}, which means lower expected medical costs and better rates.`;
+                    } else if (riskTier === 'standard') {
+                      return `Your group is Standard Risk with a score of ${score.toFixed(2)}. This is good. Your group's age (${age} years) and ${group.totalLives} members put you right in the average range, which means fair pricing and solid coverage options.`;
+                    } else {
+                      return `Your group is High Risk with a score of ${score.toFixed(2)}. Your group has an older average age (${age} years) or other factors that increase expected medical costs. We recommend fully-insured plans that can better protect your group.`;
+                    }
+                  })()}
+                </p>
+              </div>
+
+              {/* Risk tier cards */}
+              <div className="flex gap-2">
+                {(['preferred', 'standard', 'high'] as const).map((tier) => {
+                  const config = TIER_CONFIG[tier];
+                  const Icon = config.icon;
+                  const isActive = group.riskTier === tier;
+
+                  return (
+                    <div
+                      key={tier}
+                      className={`flex-1 px-4 py-4 rounded-lg border-4 text-center transition-all ${
+                        isActive
+                          ? config.tabColor + ' font-bold shadow-lg'
+                          : 'border-border/60 bg-muted/30 text-muted-foreground/70'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-1.5">
+                        <Icon className={`h-6 w-6 ${isActive ? '' : 'opacity-60'}`} />
+                        <span className={`text-sm font-bold ${isActive ? '' : 'font-semibold'}`}>
+                          {config.label.replace(' Risk', '')}
+                        </span>
+                        {isActive && (
+                          <div className={`text-3xl font-extrabold ${config.color} mt-0.5`}>
+                            {group.riskScore.toFixed(2)}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </>
           ) : (
             <div className="text-center py-6 text-muted-foreground">
               <Clock className="mx-auto h-6 w-6 mb-2" />
