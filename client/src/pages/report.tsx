@@ -626,7 +626,8 @@ export default function ReportPage() {
       <div className="mx-auto max-w-5xl px-6 py-8" id="report-content">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div>
-            <p className="text-xs text-muted-foreground mb-1" data-testid="text-census-number">
+            <h1 className="text-2xl font-bold mb-1" data-testid="text-report-title">{group.companyName}</h1>
+            <p className="text-xs text-muted-foreground" data-testid="text-census-number">
               Census #KBA-{group.id.substring(0, 8).toUpperCase()} | Submitted {new Date(group.submittedAt).toLocaleDateString()}
             </p>
           </div>
@@ -636,10 +637,10 @@ export default function ReportPage() {
         </div>
 
         <Card className="p-4 mb-6">
-          <div className="mb-3">
-            <p className="text-xs text-muted-foreground mb-1">Risk Classification</p>
-            <h1 className="text-xl font-bold" data-testid="text-report-title">{group.companyName}</h1>
-          </div>
+          <h2 className="text-base font-semibold mb-3 flex items-center gap-2">
+            <Shield className="h-4 w-4 text-primary" />
+            Risk Classification
+          </h2>
 
           {group.riskScore != null ? (
             <div className="flex gap-2 max-w-2xl mx-auto">
