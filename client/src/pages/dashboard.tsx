@@ -100,85 +100,75 @@ function DashboardNav() {
 
 function PrintInstructions() {
   return (
-    <div className="hidden print:block p-12 max-w-4xl mx-auto bg-white text-black">
+    <div className="hidden print:block p-12 max-w-3xl mx-auto bg-white text-black">
       {/* Logo */}
       <div className="mb-8">
         <KennionLogo size="lg" />
       </div>
 
-      {/* Title */}
-      <div className="text-center mb-10">
-        <h1 className="text-4xl font-bold mb-2">Group Health Benefits Portal</h1>
-        <p className="text-xl text-gray-600">Simple Instructions</p>
+      {/* From */}
+      <div className="mb-8">
+        <p className="text-2xl font-bold">Hunter Shepherd</p>
+        <p className="text-lg text-gray-600">President, Kennion Benefit Advisors</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-12 mb-10">
-        {/* Left Column */}
+      {/* Letter Content */}
+      <div className="space-y-6 text-lg leading-relaxed">
+        <p className="text-xl font-semibold">
+          We can save your group a bunch of money on health insurance.
+        </p>
+
+        <p>
+          To get started, I need your employee census. You will need each <span className="font-semibold">employee</span> and all <span className="font-semibold">family members</span> (i.e. spouses and children) that will be covered under the group health plan.
+        </p>
+
+        <div className="bg-gray-50 p-5 rounded-lg border-2 border-gray-200">
+          <p className="font-semibold mb-3">What to include for each person:</p>
+          <ul className="space-y-1 text-base">
+            <li>• First Name & Last Name</li>
+            <li>• Type (Employee, Spouse, or Child)</li>
+            <li>• Date of Birth</li>
+            <li>• Gender</li>
+            <li>• Zip Code</li>
+          </ul>
+          <p className="text-sm text-gray-600 mt-3 italic">Don't worry about the format - our system automatically reads any CSV file!</p>
+        </div>
+
+        <p>
+          Once I receive your list, we'll underwrite your group. We're looking for <span className="font-semibold">Preferred or Standard Risk</span> groups.
+        </p>
+
+        <p>
+          Once approved, we'll send you an <span className="font-semibold">Employee Benefits proposal</span> with rates and coverage options.
+        </p>
+
+        <p className="text-xl font-semibold">
+          Excited to help!
+        </p>
+      </div>
+
+      {/* Contact Section */}
+      <div className="mt-10 pt-8 border-t-2 border-gray-300 flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-bold mb-5">How It Works:</h2>
-          <ol className="space-y-4">
-            <li className="flex gap-3">
-              <span className="font-bold text-2xl text-blue-600">1.</span>
-              <div>
-                <p className="font-semibold text-lg">Upload Your Census</p>
-                <p className="text-gray-700">List all employees and family members</p>
-              </div>
-            </li>
-            <li className="flex gap-3">
-              <span className="font-bold text-2xl text-blue-600">2.</span>
-              <div>
-                <p className="font-semibold text-lg">We Underwrite</p>
-                <p className="text-gray-700">AI analyzes and approves your group</p>
-              </div>
-            </li>
-            <li className="flex gap-3">
-              <span className="font-bold text-2xl text-blue-600">3.</span>
-              <div>
-                <p className="font-semibold text-lg">Get Your Proposal</p>
-                <p className="text-gray-700">Receive rates and coverage options</p>
-              </div>
-            </li>
-          </ol>
-
-          <div className="mt-8 bg-gray-50 p-5 rounded-lg border-2 border-gray-200">
-            <h3 className="font-bold text-lg mb-3">Required Fields:</h3>
-            <div className="grid grid-cols-2 gap-y-2 text-sm">
-              <div>• First Name</div>
-              <div>• Last Name</div>
-              <div>• Type (EE/SP/CH)</div>
-              <div>• Date of Birth</div>
-              <div>• Gender</div>
-              <div>• Zip Code</div>
-            </div>
-            <p className="text-xs text-gray-600 mt-3 italic">AI maps any format!</p>
-          </div>
+          <p className="text-lg font-semibold mb-2">Questions?</p>
+          <p className="text-base">Call or Text:</p>
+          <p className="text-3xl font-bold text-blue-600 mb-2">205-641-0469</p>
+          <p className="text-base text-gray-600">hunter@kennion.com</p>
         </div>
 
-        {/* Right Column */}
-        <div className="flex flex-col justify-between">
-          <div>
-            <h2 className="text-2xl font-bold mb-4">Contact:</h2>
-            <div className="space-y-2">
-              <p className="font-bold text-2xl">Hunter Shepherd</p>
-              <p className="text-lg">Phone/Text:</p>
-              <p className="font-bold text-3xl text-blue-600">205-641-0469</p>
-            </div>
-          </div>
-
-          <div className="mt-8 text-center">
-            <p className="font-semibold mb-4 text-lg">Access Portal:</p>
-            <img
-              src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://www.kennion.com"
-              alt="QR Code to Kennion.com"
-              className="border-4 border-gray-300 mx-auto mb-3 rounded"
-            />
-            <p className="text-2xl font-bold">www.Kennion.com</p>
-          </div>
+        <div className="text-center">
+          <p className="text-sm font-semibold mb-3">Access Online Portal:</p>
+          <img
+            src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://www.kennion.com"
+            alt="QR Code to Kennion.com"
+            className="border-4 border-gray-300 rounded mb-2"
+          />
+          <p className="text-lg font-bold">www.Kennion.com</p>
         </div>
       </div>
 
-      <div className="text-center pt-6 border-t-2 border-gray-300">
-        <p className="text-sm text-gray-600">Group Health + Dental + Vision + Supplemental</p>
+      <div className="mt-6 text-center text-sm text-gray-500">
+        Group Health + Dental + Vision + Supplemental Benefits
       </div>
     </div>
   );
