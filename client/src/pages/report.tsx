@@ -17,6 +17,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   Loader2,
+  ChevronRight,
+  Home,
 } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
@@ -43,10 +45,29 @@ function ReportNav() {
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} data-testid="button-back-dashboard">
+          <div className="cursor-pointer" onClick={() => navigate("/dashboard")}>
+            <KennionLogo size="md" />
+          </div>
+          <div className="h-4 w-px bg-border hidden sm:block" />
+          <div className="hidden sm:flex items-center gap-2 text-sm">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Dashboard
+            </button>
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="font-medium text-foreground">Report</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="sm:hidden"
+            onClick={() => navigate("/dashboard")}
+            data-testid="button-back-dashboard"
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <KennionLogo size="md" />
         </div>
         <div className="flex items-center gap-3">
           <span className="hidden sm:inline text-sm text-muted-foreground">{user?.fullName}</span>

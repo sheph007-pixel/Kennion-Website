@@ -75,7 +75,15 @@ function DashboardNav() {
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
-        <KennionLogo size="md" />
+        <div className="flex items-center gap-3">
+          <div className="cursor-pointer" onClick={() => navigate("/dashboard")}>
+            <KennionLogo size="md" />
+          </div>
+          <div className="h-4 w-px bg-border hidden sm:block" />
+          <div className="hidden sm:flex items-center gap-2 text-sm">
+            <span className="font-medium text-foreground">Dashboard</span>
+          </div>
+        </div>
         <div className="flex items-center gap-3">
           <span className="hidden sm:inline text-sm text-muted-foreground">{user?.fullName}</span>
           <ThemeToggle />
