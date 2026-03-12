@@ -410,7 +410,7 @@ function WizardProgress({ step }: { step: "upload" | "map-columns" | "confirm" }
   const currentStepIndex = steps.findIndex(s => s.id === step);
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 relative">
       {steps.map((s, idx) => {
         const isActive = idx === currentStepIndex;
         const isCompleted = idx < currentStepIndex;
@@ -418,12 +418,12 @@ function WizardProgress({ step }: { step: "upload" | "map-columns" | "confirm" }
         return (
           <div
             key={s.id}
-            className={`flex items-center gap-2 px-6 py-3 rounded-t-lg font-bold text-sm transition-all border-4 ${
+            className={`flex items-center gap-2 px-6 py-3 font-bold text-sm transition-all ${
               isActive
-                ? 'bg-white dark:bg-gray-900 text-black dark:text-white border-black dark:border-white border-b-white dark:border-b-gray-900 -mb-1 z-10'
+                ? 'bg-white dark:bg-gray-900 text-black dark:text-white border-4 border-black dark:border-white border-b-0 rounded-t-lg relative z-10'
                 : isCompleted
-                ? 'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-400 dark:border-gray-600'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700'
+                ? 'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-4 border-gray-400 dark:border-gray-600 rounded-lg mb-1'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-4 border-gray-200 dark:border-gray-700 rounded-lg mb-1'
             }`}
           >
             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
