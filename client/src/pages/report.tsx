@@ -641,43 +641,40 @@ export default function ReportPage() {
           </Button>
         </div>
 
-        <Card className="p-8 mb-8">
-          <div className="text-center mb-6">
-            <p className="text-sm text-muted-foreground mb-2">This Group Is A</p>
-            {tierConfig && (
-              <h2 className={`text-3xl font-bold ${tierConfig.color}`}>
-                {tierConfig.label}
-              </h2>
-            )}
+        <Card className="p-6 mb-8">
+          <div className="mb-4">
+            <p className="text-sm text-muted-foreground">Group Name:</p>
+            <h2 className="text-2xl font-bold">{group.companyName}</h2>
           </div>
 
           {group.riskScore != null ? (
-            <div className="flex flex-col items-center">
-              <div className="flex gap-3 mb-6 max-w-md mx-auto w-full">
-                {(['preferred', 'standard', 'high'] as const).map((tier) => {
-                  const config = TIER_CONFIG[tier];
-                  const Icon = config.icon;
-                  const isActive = group.riskTier === tier;
+            <div className="flex gap-3 max-w-2xl mx-auto">
+              {(['preferred', 'standard', 'high'] as const).map((tier) => {
+                const config = TIER_CONFIG[tier];
+                const Icon = config.icon;
+                const isActive = group.riskTier === tier;
 
-                  return (
-                    <div
-                      key={tier}
-                      className={`flex-1 px-4 py-3 rounded-lg border-2 text-center transition-all ${
-                        isActive
-                          ? config.tabColor + ' font-semibold'
-                          : 'border-border bg-muted/20 text-muted-foreground/40'
-                      }`}
-                    >
-                      <div className="flex flex-col items-center gap-1.5">
-                        <Icon className="h-4 w-4" />
-                        <span className="text-sm">{config.label.replace(' Risk', '')}</span>
-                      </div>
+                return (
+                  <div
+                    key={tier}
+                    className={`flex-1 px-4 py-4 rounded-lg border-2 text-center transition-all ${
+                      isActive
+                        ? config.tabColor + ' font-bold'
+                        : 'border-border bg-muted/20 text-muted-foreground/40'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <Icon className="h-5 w-5" />
+                      <span className="text-sm font-semibold">{config.label.replace(' Risk', '')}</span>
+                      {isActive && (
+                        <div className={`text-2xl font-bold ${config.color}`}>
+                          {group.riskScore.toFixed(2)}
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-
-              <ScoreGauge score={group.riskScore} label="Risk Score" />
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
@@ -693,40 +690,80 @@ export default function ReportPage() {
               <UserCheck className="h-3.5 w-3.5" /> Employees
             </div>
             <div className="text-2xl font-bold" data-testid="text-report-ee">{group.employeeCount}</div>
-            {chars.riskSegments && (
-              <div className="mt-3 pt-3 border-t space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="text-green-600 dark:text-green-400">Low Risk</span>
-                  <span className="font-semibold">{chars.riskSegments.lowRisk || 0} ({chars.riskSegments.lowRiskPct || 0}%)</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-yellow-600 dark:text-yellow-400">Avg Risk</span>
-                  <span className="font-semibold">{chars.riskSegments.avgRisk || 0} ({chars.riskSegments.avgRiskPct || 0}%)</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-red-600 dark:text-red-400">High Risk</span>
-                  <span className="font-semibold">{chars.riskSegments.highRisk || 0} ({chars.riskSegments.highRiskPct || 0}%)</span>
-                </div>
+            <div className="mt-3 pt-3 border-t space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-green-600 dark:text-green-400">Low Risk</span>
+                <span className="font-semibold">{chars.riskSegments?.lowRisk || 0} ({chars.riskSegments?.lowRiskPct || 0}%)</span>
               </div>
-            )}
+              <div className="flex justify-between text-xs">
+                <span className="text-yellow-600 dark:text-yellow-400">Avg Risk</span>
+                <span className="font-semibold">{chars.riskSegments?.avgRisk || 0} ({chars.riskSegments?.avgRiskPct || 0}%)</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-red-600 dark:text-red-400">High Risk</span>
+                <span className="font-semibold">{chars.riskSegments?.highRisk || 0} ({chars.riskSegments?.highRiskPct || 0}%)</span>
+              </div>
+            </div>
           </Card>
           <Card className="p-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <Heart className="h-3.5 w-3.5" /> Spouses
             </div>
             <div className="text-2xl font-bold" data-testid="text-report-sp">{group.spouseCount || 0}</div>
+            <div className="mt-3 pt-3 border-t space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-green-600 dark:text-green-400">Low Risk</span>
+                <span className="font-semibold">0 (0%)</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-yellow-600 dark:text-yellow-400">Avg Risk</span>
+                <span className="font-semibold">0 (0%)</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-red-600 dark:text-red-400">High Risk</span>
+                <span className="font-semibold">0 (0%)</span>
+              </div>
+            </div>
           </Card>
           <Card className="p-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <Baby className="h-3.5 w-3.5" /> Dependents
             </div>
             <div className="text-2xl font-bold" data-testid="text-report-dep">{group.dependentCount}</div>
+            <div className="mt-3 pt-3 border-t space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-green-600 dark:text-green-400">Low Risk</span>
+                <span className="font-semibold">0 (0%)</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-yellow-600 dark:text-yellow-400">Avg Risk</span>
+                <span className="font-semibold">0 (0%)</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-red-600 dark:text-red-400">High Risk</span>
+                <span className="font-semibold">0 (0%)</span>
+              </div>
+            </div>
           </Card>
           <Card className="p-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <Users className="h-3.5 w-3.5" /> Total Lives
             </div>
             <div className="text-2xl font-bold" data-testid="text-report-total">{group.totalLives}</div>
+            <div className="mt-3 pt-3 border-t space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-green-600 dark:text-green-400">Low Risk</span>
+                <span className="font-semibold">0 (0%)</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-yellow-600 dark:text-yellow-400">Avg Risk</span>
+                <span className="font-semibold">0 (0%)</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-red-600 dark:text-red-400">High Risk</span>
+                <span className="font-semibold">0 (0%)</span>
+              </div>
+            </div>
           </Card>
         </div>
 
