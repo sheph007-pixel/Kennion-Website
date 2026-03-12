@@ -574,8 +574,8 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
             }).filter(col => col !== "");
 
             return (
-              <div className="rounded-md border p-1.5 bg-muted/20">
-                <h3 className="text-[10px] font-medium mb-1 px-1 text-muted-foreground">Sample Preview (3 rows)</h3>
+              <div className="rounded-md border-2 border-blue-200 dark:border-blue-800 p-1.5 bg-blue-50 dark:bg-blue-950/30">
+                <h3 className="text-[10px] font-semibold mb-1 px-1 text-blue-700 dark:text-blue-300">Your Data Preview (3 rows)</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
