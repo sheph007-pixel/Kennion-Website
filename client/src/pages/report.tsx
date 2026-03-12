@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Loader2,
   ChevronRight,
+  ChevronDown,
   Home,
   Info,
 } from "lucide-react";
@@ -211,6 +212,8 @@ export default function ReportPage() {
   const [, params] = useRoute("/report/:id");
   const [, navigate] = useLocation();
   const groupId = params?.id;
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [advantageExpanded, setAdvantageExpanded] = useState(false);
 
   const { data: group, isLoading: groupLoading } = useQuery<Group>({
     queryKey: ["/api/groups", groupId],
@@ -417,72 +420,6 @@ export default function ReportPage() {
           </Card>
         </div>
 
-        <Card className="p-6 mb-8 border-l-4 border-l-primary">
-          <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
-            <Activity className="h-5 w-5 text-primary" />
-            Executive Summary
-          </h2>
-          <div className="space-y-3 text-[15px] leading-relaxed">
-            <p>
-              Your group has been classified as <strong className={tierConfig?.color || ''}>{tierConfig?.label || 'Standard Risk'}</strong> based on our proprietary AI analysis. Here's what this means for you:
-            </p>
-
-            <p>
-              Traditional commercial group health plans are expensive because they pool everyone together—healthy groups subsidize sick ones. This "one-size-fits-all" approach means you're likely overpaying for coverage that doesn't reflect your group's actual health profile.
-            </p>
-
-            <p>
-              Kennion takes a smarter approach. We use advanced AI technology to analyze your group's health risk with unprecedented accuracy. Because we can see that your group is <strong>{tierConfig?.label || 'Standard Risk'}</strong>, we're able to offer you better plans and better rates than the traditional market.
-            </p>
-
-            {(group.riskTier === 'preferred' || group.riskTier === 'standard') && (
-              <div className="mt-4 p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-                <p className="font-semibold text-green-900 dark:text-green-100 mb-2">
-                  ✓ Your Group Qualifies for the Kennion Program
-                </p>
-                <p className="text-green-800 dark:text-green-200">
-                  We only accept Preferred and Standard risk groups into our program. By carefully managing who we work with, we can deliver exceptional value. Groups like yours save an average of <strong>18% compared to traditional market rates</strong>, while getting better benefits and more personalized service.
-                </p>
-              </div>
-            )}
-
-            {group.riskTier === 'high' && (
-              <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                <p className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
-                  Program Eligibility
-                </p>
-                <p className="text-amber-800 dark:text-amber-200">
-                  At this time, your group's risk profile falls into our High Risk category. We focus on Preferred and Standard risk groups to maintain our ability to offer better-than-market rates. However, we're happy to discuss fully-insured options that may work better for your situation.
-                </p>
-              </div>
-            )}
-          </div>
-        </Card>
-
-        <Card className="p-6 mb-8 bg-gradient-to-br from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/5">
-          <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" />
-            The Kennion Advantage
-          </h2>
-          <div className="space-y-3 text-[15px] leading-relaxed">
-            <p>
-              <strong>Proprietary AI Technology:</strong> Kennion has developed cutting-edge artificial intelligence that analyzes your group's health risk with a level of transparency and accuracy that was never before possible. This isn't just automated data entry—our AI model examines age distributions, family structures, gender mix, and dozens of other factors to build a complete picture of your group's future healthcare needs.
-            </p>
-
-            <p>
-              <strong>Tailored Solutions:</strong> Armed with this comprehensive understanding, Kennion and our team of expert advisors can design group health solutions specifically matched to your company's makeup. We deliver highly accurate quotes with the confidence that comes from truly understanding your risk profile.
-            </p>
-
-            <p>
-              <strong>Better Benefits, Lower Costs:</strong> This is a win for your group. Because of our strong underwriting and carefully managed private program, you get better benefits at a lower cost. We're not playing guessing games with your rates—we know exactly what level of coverage your group needs and can price it accordingly.
-            </p>
-
-            <p className="text-sm text-muted-foreground mt-4 pt-4 border-t">
-              The traditional health insurance market is unsustainable. Employers are tired of year-over-year increases that don't reflect their actual experience. Kennion offers a better way forward.
-            </p>
-          </div>
-        </Card>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Card className="p-6">
             <h2 className="font-semibold mb-4 flex items-center gap-2">
@@ -651,6 +588,62 @@ export default function ReportPage() {
             </div>
           </Card>
         </div>
+
+        <Card className="mb-6 overflow-hidden border-l-4 border-l-primary">
+          <button
+            onClick={() => setSummaryExpanded(!summaryExpanded)}
+            className="w-full p-4 flex items-center justify-between text-left hover:bg-accent/50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-primary" />
+              <h3 className="font-semibold">Executive Summary</h3>
+            </div>
+            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${summaryExpanded ? 'rotate-180' : ''}`} />
+          </button>
+          {summaryExpanded && (
+            <div className="px-4 pb-4 space-y-2 text-sm">
+              <p>
+                Your group: <strong className={tierConfig?.color || ''}>{tierConfig?.label || 'Standard Risk'}</strong>. Traditional plans pool everyone together—healthy groups subsidize sick ones. Kennion uses AI to analyze your specific risk profile and offer better rates.
+              </p>
+              {(group.riskTier === 'preferred' || group.riskTier === 'standard') && (
+                <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800 text-green-900 dark:text-green-100">
+                  ✓ <strong>Qualifies for Kennion Program</strong> — Groups like yours save an average of <strong>18% vs traditional market rates</strong>.
+                </div>
+              )}
+              {group.riskTier === 'high' && (
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100">
+                  We focus on Preferred and Standard risk groups. We can discuss fully-insured options for your situation.
+                </div>
+              )}
+            </div>
+          )}
+        </Card>
+
+        <Card className="mb-6 overflow-hidden">
+          <button
+            onClick={() => setAdvantageExpanded(!advantageExpanded)}
+            className="w-full p-4 flex items-center justify-between text-left hover:bg-accent/50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary" />
+              <h3 className="font-semibold">The Kennion Advantage</h3>
+            </div>
+            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${advantageExpanded ? 'rotate-180' : ''}`} />
+          </button>
+          {advantageExpanded && (
+            <div className="px-4 pb-4 space-y-2 text-sm">
+              <p>
+                <strong>Proprietary AI:</strong> Our advanced technology analyzes age, family structure, gender mix, and dozens of factors to build a complete picture of your group's healthcare needs—transparency never before possible.
+              </p>
+              <p>
+                <strong>Tailored Solutions:</strong> We design group health solutions specifically matched to your company's composition. Highly accurate quotes backed by comprehensive risk understanding.
+              </p>
+              <p>
+                <strong>Better Benefits, Lower Costs:</strong> Strong underwriting + private program = better benefits at lower cost. We know exactly what coverage your group needs.
+              </p>
+            </div>
+          )}
+        </Card>
 
         {group.adminNotes && (
           <Card className="p-6 mb-8">
