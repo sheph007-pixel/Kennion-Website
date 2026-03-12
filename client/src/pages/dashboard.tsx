@@ -373,7 +373,7 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
           <div>
             <h2 className="font-semibold text-lg" data-testid="text-upload-heading">Upload Your Employee Census</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Please include employees and all dependents (i.e. spouses and children) so that we can provide the most accurate quote.
+              You will need each employee and all family members (i.e. spouses and children) that will be covered under the group health plan.
             </p>
           </div>
           <Button variant="outline" size="sm" asChild>
@@ -410,15 +410,15 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
           </div>
         )}
 
-        <div className="mt-4 rounded-md bg-card p-3 border">
-          <p className="text-xs font-medium mb-2">Required CSV Columns:</p>
+        <div className="mt-4 rounded-md bg-red-50 dark:bg-red-950/20 p-3 border-2 border-red-200 dark:border-red-800">
+          <p className="text-xs font-semibold mb-2 text-red-900 dark:text-red-100">Required CSV Columns:</p>
           <div className="flex flex-wrap gap-1.5">
             {["First Name", "Last Name", "Type (EE/SP/CH)", "Date of Birth", "Gender", "Zip Code"].map((col) => (
               <Badge key={col} variant="secondary" className="text-xs">{col}</Badge>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            AI will automatically detect and standardize your data (M→Male, EE→Employee, etc.)
+          <p className="text-xs text-red-700 dark:text-red-300 mt-2">
+            Exact column names required. Values will be auto-standardized (M→Male, EE→Employee, etc.)
           </p>
         </div>
       </Card>
