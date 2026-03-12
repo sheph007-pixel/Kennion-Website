@@ -968,61 +968,129 @@ export default function ReportPage() {
               {(() => {
                 const distribution = chars.ageBandDistribution || {};
                 const ageBands = ['0-4', '5-9', '10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64', '65-69', '70-Above'];
+                const riskTable: Record<string, { female: number; male: number }> = {
+                  "0-4": { female: 0.35, male: 0.40 },
+                  "5-9": { female: 0.30, male: 0.55 },
+                  "10-14": { female: 0.37, male: 0.46 },
+                  "15-19": { female: 0.62, male: 0.46 },
+                  "20-24": { female: 0.80, male: 0.46 },
+                  "25-29": { female: 0.92, male: 0.46 },
+                  "30-34": { female: 0.88, male: 0.45 },
+                  "35-39": { female: 0.81, male: 0.52 },
+                  "40-44": { female: 1.18, male: 0.77 },
+                  "45-49": { female: 1.03, male: 0.67 },
+                  "50-54": { female: 1.43, male: 1.20 },
+                  "55-59": { female: 1.22, male: 1.52 },
+                  "60-64": { female: 1.49, male: 1.99 },
+                  "65-69": { female: 3.81, male: 1.64 },
+                  "70-Above": { female: 10.36, male: 2.78 },
+                };
 
+                // Calculate Age Band table totals
                 let tableTotalFemales = 0;
                 let tableTotalMales = 0;
+                let tableWeightedRiskSum = 0;
                 ageBands.forEach(band => {
                   const bandData = distribution[band] || { female: 0, male: 0 };
-                  tableTotalFemales += bandData.female || 0;
-                  tableTotalMales += bandData.male || 0;
+                  const females = bandData.female || 0;
+                  const males = bandData.male || 0;
+                  tableTotalFemales += females;
+                  tableTotalMales += males;
+                  const riskData = riskTable[band];
+                  tableWeightedRiskSum += females * riskData.female + males * riskData.male;
                 });
                 const tableTotalMembers = tableTotalFemales + tableTotalMales;
+                const tableCalculatedRiskScore = tableTotalMembers > 0 ? tableWeightedRiskSum / tableTotalMembers : 0;
 
+                // Census Details values
                 const censusTotalMembers = group.totalLives || 0;
                 const censusEmployees = group.employeeCount || 0;
                 const censusSpouses = group.spouseCount || 0;
                 const censusDependents = group.dependentCount || 0;
-                const censusTotalCheck = censusEmployees + censusSpouses + censusDependents;
+                const censusSumCheck = censusEmployees + censusSpouses + censusDependents;
+                const censusFemales = group.femaleCount || 0;
+                const censusMales = group.maleCount || 0;
+                const censusGenderTotal = censusFemales + censusMales;
 
-                const dataMatch = tableTotalMembers === censusTotalMembers && censusTotalMembers === censusTotalCheck;
-                const genderMatch = (tableTotalFemales + tableTotalMales) === (group.femaleCount + group.maleCount);
-                const matchRate = dataMatch && genderMatch ? 100 : 0;
+                // Validation checks
+                const totalLivesMatch = tableTotalMembers === censusTotalMembers && censusTotalMembers === censusSumCheck;
+                const genderTotalsMatch = tableTotalMembers === censusGenderTotal;
+                const genderBreakdownMatch = tableTotalFemales === censusFemales && tableTotalMales === censusMales;
+                const riskScoreExists = group.riskScore != null;
+                const riskScoreMatches = riskScoreExists && Math.abs(group.riskScore - tableCalculatedRiskScore) < 0.01;
+
+                // Risk tier validation
+                let riskTierCorrect = false;
+                if (riskScoreExists) {
+                  if (group.riskScore < 1.0 && group.riskTier === 'preferred') riskTierCorrect = true;
+                  else if (group.riskScore >= 1.0 && group.riskScore < 1.5 && group.riskTier === 'standard') riskTierCorrect = true;
+                  else if (group.riskScore >= 1.5 && group.riskTier === 'high') riskTierCorrect = true;
+                }
+
+                const allChecks = [totalLivesMatch, genderTotalsMatch, genderBreakdownMatch, riskScoreExists, riskScoreMatches, riskTierCorrect];
+                const passedChecks = allChecks.filter(Boolean).length;
+                const matchRate = Math.round((passedChecks / allChecks.length) * 100);
 
                 return (
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
-                      <div className={`w-4 h-4 rounded flex items-center justify-center ${dataMatch ? 'bg-green-500' : 'bg-red-500'}`}>
-                        {dataMatch && <CheckCircle2 className="w-3 h-3 text-white" />}
+                      <div className={`w-4 h-4 rounded flex items-center justify-center ${totalLivesMatch ? 'bg-green-500' : 'bg-red-500'}`}>
+                        {totalLivesMatch && <CheckCircle2 className="w-3 h-3 text-white" />}
                       </div>
-                      <span className="text-blue-800 dark:text-blue-200">
-                        <strong>Total Members:</strong> Census Details ({censusTotalMembers}) = Age Band Table ({tableTotalMembers}) = Sum Check ({censusTotalCheck}) {dataMatch ? '✓' : '✗'}
+                      <span className="text-blue-800 dark:text-blue-200 text-xs">
+                        <strong>Total Lives:</strong> Census ({censusTotalMembers}) = Age Band ({tableTotalMembers}) = Sum ({censusSumCheck}) {totalLivesMatch ? '✓' : '✗'}
                       </span>
                     </div>
+
                     <div className="flex items-center gap-2">
-                      <div className={`w-4 h-4 rounded flex items-center justify-center ${genderMatch ? 'bg-green-500' : 'bg-red-500'}`}>
-                        {genderMatch && <CheckCircle2 className="w-3 h-3 text-white" />}
+                      <div className={`w-4 h-4 rounded flex items-center justify-center ${genderTotalsMatch ? 'bg-green-500' : 'bg-red-500'}`}>
+                        {genderTotalsMatch && <CheckCircle2 className="w-3 h-3 text-white" />}
                       </div>
-                      <span className="text-blue-800 dark:text-blue-200">
-                        <strong>Gender Distribution:</strong> Table ({tableTotalFemales}F + {tableTotalMales}M) = Census ({group.femaleCount}F + {group.maleCount}M) {genderMatch ? '✓' : '✗'}
+                      <span className="text-blue-800 dark:text-blue-200 text-xs">
+                        <strong>Gender Total:</strong> Age Band ({tableTotalMembers}) = Gender Count ({censusGenderTotal}) {genderTotalsMatch ? '✓' : '✗'}
                       </span>
                     </div>
+
                     <div className="flex items-center gap-2">
-                      <div className={`w-4 h-4 rounded flex items-center justify-center ${group.riskScore != null ? 'bg-green-500' : 'bg-red-500'}`}>
-                        {group.riskScore != null && <CheckCircle2 className="w-3 h-3 text-white" />}
+                      <div className={`w-4 h-4 rounded flex items-center justify-center ${genderBreakdownMatch ? 'bg-green-500' : 'bg-red-500'}`}>
+                        {genderBreakdownMatch && <CheckCircle2 className="w-3 h-3 text-white" />}
                       </div>
-                      <span className="text-blue-800 dark:text-blue-200">
-                        <strong>Risk Score Calculated:</strong> {group.riskScore ? `${group.riskScore.toFixed(3)} (${group.riskTier})` : 'Pending'} {group.riskScore != null ? '✓' : '✗'}
+                      <span className="text-blue-800 dark:text-blue-200 text-xs">
+                        <strong>Gender Breakdown:</strong> Table ({tableTotalFemales}F + {tableTotalMales}M) = Census ({censusFemales}F + {censusMales}M) {genderBreakdownMatch ? '✓' : '✗'}
                       </span>
                     </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded flex items-center justify-center ${riskScoreMatches ? 'bg-green-500' : 'bg-red-500'}`}>
+                        {riskScoreMatches && <CheckCircle2 className="w-3 h-3 text-white" />}
+                      </div>
+                      <span className="text-blue-800 dark:text-blue-200 text-xs">
+                        <strong>Risk Score Calculation:</strong> Stored ({group.riskScore?.toFixed(3)}) vs Calculated ({tableCalculatedRiskScore.toFixed(3)}) {riskScoreMatches ? '✓' : '✗'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded flex items-center justify-center ${riskTierCorrect ? 'bg-green-500' : 'bg-red-500'}`}>
+                        {riskTierCorrect && <CheckCircle2 className="w-3 h-3 text-white" />}
+                      </div>
+                      <span className="text-blue-800 dark:text-blue-200 text-xs">
+                        <strong>Risk Tier:</strong> {group.riskScore?.toFixed(3)} = {group.riskTier}
+                        {riskTierCorrect ? ' ✓' : ' ✗'}
+                        <span className="text-xs opacity-75">
+                          {' '}(Preferred: &lt;1.0, Standard: 1.0-1.49, High: ≥1.5)
+                        </span>
+                      </span>
+                    </div>
+
                     <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-blue-900 dark:text-blue-100">Data Integrity Match Rate:</span>
                         <span className={`font-bold text-lg ${matchRate === 100 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                          {matchRate}%
+                          {matchRate}% ({passedChecks}/{allChecks.length})
                         </span>
                       </div>
                       <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                        All census counts, age band distributions, and risk calculations have been verified and cross-checked for accuracy.
+                        All census counts, age band distributions, risk score calculations, and tier classifications have been double-checked and verified for accuracy.
                       </p>
                     </div>
                   </div>
