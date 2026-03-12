@@ -522,32 +522,48 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
             })}
           </div>
 
-          {/* Sample Data Preview */}
-          {parseResult.sampleRows && parseResult.sampleRows.length > 0 && (
-            <div className="rounded-md border p-4 bg-muted/20">
-              <h3 className="text-sm font-medium mb-3">Sample Data (first 3 rows)</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b">
-                      {parseResult.headers.map((h: string) => (
-                        <th key={h} className="text-left p-2 font-medium">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {parseResult.sampleRows.map((row: any, i: number) => (
-                      <tr key={i} className="border-b">
-                        {parseResult.headers.map((h: string) => (
-                          <td key={h} className="p-2">{row[h]}</td>
-                        ))}
+          {/* Sample Data Preview - Only show mapped columns */}
+          {parseResult.sampleRows && parseResult.sampleRows.length > 0 && (() => {
+            // Get the mapped CSV column names for each required field
+            const mappedColumns = REQUIRED_FIELDS.map(field => {
+              return Object.keys(columnMapping).find(k => columnMapping[k] === field) || "";
+            }).filter(col => col !== "");
+
+            return (
+              <div className="rounded-md border p-4 bg-muted/20">
+                <h3 className="text-sm font-medium mb-3">Sample Data Preview (first 3 rows - mapped columns only)</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b">
+                        {REQUIRED_FIELDS.map((field) => {
+                          const csvColumn = Object.keys(columnMapping).find(k => columnMapping[k] === field);
+                          return csvColumn ? (
+                            <th key={field} className="text-left p-2 font-medium">
+                              {field}
+                              <div className="text-[10px] text-muted-foreground font-normal">({csvColumn})</div>
+                            </th>
+                          ) : null;
+                        })}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {parseResult.sampleRows.map((row: any, i: number) => (
+                        <tr key={i} className="border-b last:border-b-0">
+                          {REQUIRED_FIELDS.map((field) => {
+                            const csvColumn = Object.keys(columnMapping).find(k => columnMapping[k] === field);
+                            return csvColumn ? (
+                              <td key={field} className="p-2">{row[csvColumn] || "-"}</td>
+                            ) : null;
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           <Button
             className="w-full"
