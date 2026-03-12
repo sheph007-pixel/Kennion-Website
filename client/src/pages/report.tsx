@@ -684,123 +684,94 @@ export default function ReportPage() {
               <UserCheck className="h-3.5 w-3.5" /> Employees
             </div>
             <div className="text-2xl font-bold" data-testid="text-report-ee">{group.employeeCount}</div>
-            <div className="mt-3 pt-3 border-t space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-green-600 dark:text-green-400">Low Risk</span>
-                <span className="font-semibold">{chars.riskSegments?.lowRisk || 0} ({chars.riskSegments?.lowRiskPct || 0}%)</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-yellow-600 dark:text-yellow-400">Avg Risk</span>
-                <span className="font-semibold">{chars.riskSegments?.avgRisk || 0} ({chars.riskSegments?.avgRiskPct || 0}%)</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-red-600 dark:text-red-400">High Risk</span>
-                <span className="font-semibold">{chars.riskSegments?.highRisk || 0} ({chars.riskSegments?.highRiskPct || 0}%)</span>
-              </div>
-            </div>
           </Card>
           <Card className="p-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <Heart className="h-3.5 w-3.5" /> Spouses
             </div>
             <div className="text-2xl font-bold" data-testid="text-report-sp">{group.spouseCount || 0}</div>
-            <div className="mt-3 pt-3 border-t space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-green-600 dark:text-green-400">Low Risk</span>
-                <span className="font-semibold">0 (0%)</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-yellow-600 dark:text-yellow-400">Avg Risk</span>
-                <span className="font-semibold">0 (0%)</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-red-600 dark:text-red-400">High Risk</span>
-                <span className="font-semibold">0 (0%)</span>
-              </div>
-            </div>
           </Card>
           <Card className="p-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <Baby className="h-3.5 w-3.5" /> Dependents
             </div>
             <div className="text-2xl font-bold" data-testid="text-report-dep">{group.dependentCount}</div>
-            <div className="mt-3 pt-3 border-t space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-green-600 dark:text-green-400">Low Risk</span>
-                <span className="font-semibold">0 (0%)</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-yellow-600 dark:text-yellow-400">Avg Risk</span>
-                <span className="font-semibold">0 (0%)</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-red-600 dark:text-red-400">High Risk</span>
-                <span className="font-semibold">0 (0%)</span>
-              </div>
-            </div>
           </Card>
           <Card className="p-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <Users className="h-3.5 w-3.5" /> Total Lives
             </div>
             <div className="text-2xl font-bold" data-testid="text-report-total">{group.totalLives}</div>
-            <div className="mt-3 pt-3 border-t space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-green-600 dark:text-green-400">Low Risk</span>
-                <span className="font-semibold">0 (0%)</span>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <Card className="p-6">
+            <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
+              <Activity className="h-4 w-4 text-primary" />
+              Census Details
+            </h2>
+
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-green-600 dark:text-green-400">Low Risk</span>
+                <span className="text-lg font-bold">{chars.riskSegments?.lowRisk || 0} ({chars.riskSegments?.lowRiskPct || 0}%)</span>
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-yellow-600 dark:text-yellow-400">Avg Risk</span>
-                <span className="font-semibold">0 (0%)</span>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-yellow-600 dark:text-yellow-400">Avg Risk</span>
+                <span className="text-lg font-bold">{chars.riskSegments?.avgRisk || 0} ({chars.riskSegments?.avgRiskPct || 0}%)</span>
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-red-600 dark:text-red-400">High Risk</span>
-                <span className="font-semibold">0 (0%)</span>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-red-600 dark:text-red-400">High Risk</span>
+                <span className="text-lg font-bold">{chars.riskSegments?.highRisk || 0} ({chars.riskSegments?.highRiskPct || 0}%)</span>
+              </div>
+            </div>
+          </Card>
+
+            <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-primary" />
+              Group Demographics
+            </h2>
+
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Median Age</span>
+                <div className="text-right">
+                  <div className="text-lg font-bold">{Math.round(medianAge)}</div>
+                  <div className="text-xs text-muted-foreground">{medianAgeComp.text}</div>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Employee Age</span>
+                <div className="text-lg font-bold">{Math.round(employeeAge)}</div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Avg Family Size</span>
+                <div className="text-right">
+                  <div className="text-lg font-bold">{avgFamilySize.toFixed(2)}</div>
+                  <div className="text-xs text-muted-foreground">{familySizeComp.text}</div>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Group Category</span>
+                <Badge variant="secondary" className="font-semibold text-sm">{groupCategory}</Badge>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Dependency Ratio</span>
+                <div className="text-lg font-bold">{dependencyRatio.toFixed(2)}</div>
+              </div>
+
+              <div className="pt-3 border-t">
+                <div className="text-xs text-muted-foreground mb-2">Gender Mix</div>
+                <GenderChart male={maleCount} female={femaleCount} />
               </div>
             </div>
           </Card>
         </div>
-
-        <Card className="p-6 mb-6">
-          <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-primary" />
-            Group Demographics
-          </h2>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-4">
-            <div>
-              <div className="text-xs text-muted-foreground mb-1">Median Age</div>
-              <div className="text-xl font-bold">{Math.round(medianAge)}</div>
-              <div className="text-xs text-muted-foreground mt-0.5">{medianAgeComp.text}</div>
-            </div>
-
-            <div>
-              <div className="text-xs text-muted-foreground mb-1">Employee Age</div>
-              <div className="text-xl font-bold">{Math.round(employeeAge)}</div>
-            </div>
-
-            <div>
-              <div className="text-xs text-muted-foreground mb-1">Avg Family Size</div>
-              <div className="text-xl font-bold">{avgFamilySize.toFixed(2)}</div>
-              <div className="text-xs text-muted-foreground mt-0.5">{familySizeComp.text}</div>
-            </div>
-
-            <div>
-              <div className="text-xs text-muted-foreground mb-1">Group Category</div>
-              <Badge variant="secondary" className="font-semibold text-sm">{groupCategory}</Badge>
-            </div>
-
-            <div>
-              <div className="text-xs text-muted-foreground mb-1">Dependency Ratio</div>
-              <div className="text-xl font-bold">{dependencyRatio.toFixed(2)}</div>
-            </div>
-
-            <div className="col-span-2 md:col-span-3 pt-2 border-t">
-              <div className="text-xs text-muted-foreground mb-2">Gender Mix</div>
-              <GenderChart male={maleCount} female={femaleCount} />
-            </div>
-          </div>
-        </Card>
 
         {(group.riskTier === 'preferred' || group.riskTier === 'standard') && (
           <Card className="p-4 mb-6 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
