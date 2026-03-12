@@ -418,19 +418,21 @@ function WizardProgress({ step }: { step: "upload" | "map-columns" | "confirm" }
         return (
           <div
             key={s.id}
-            className={`flex items-center gap-2 px-5 py-2 rounded-t-md font-bold text-sm transition-all ${
+            className={`flex items-center gap-2 px-6 py-3 rounded-t-lg font-bold text-sm transition-all ${
               isActive
-                ? 'bg-card text-foreground border-t-2 border-x-2 border-border -mb-px'
+                ? 'bg-white dark:bg-gray-900 text-black dark:text-white border-t-4 border-x-4 border-black dark:border-white shadow-lg -mb-px'
                 : isCompleted
-                ? 'bg-muted/60 text-foreground'
-                : 'bg-muted/30 text-muted-foreground'
+                ? 'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
             }`}
-            style={isActive ? { borderBottom: '2px solid var(--background)' } : {}}
+            style={isActive ? { borderBottom: '4px solid var(--background)' } : {}}
           >
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
-              isActive || isCompleted
-                ? 'bg-foreground text-background'
-                : 'bg-muted-foreground/30 text-muted-foreground'
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+              isActive
+                ? 'bg-black dark:bg-white text-white dark:text-black'
+                : isCompleted
+                ? 'bg-gray-600 dark:bg-gray-400 text-white dark:text-black'
+                : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
             }`}>
               {s.number}
             </div>
