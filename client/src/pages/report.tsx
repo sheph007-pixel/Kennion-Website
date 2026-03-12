@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
+import { useState } from "react";
 import {
   ArrowLeft,
   Building2,
@@ -19,6 +20,7 @@ import {
   Loader2,
   ChevronRight,
   Home,
+  Info,
 } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
@@ -31,11 +33,53 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import type { Group, CensusEntry } from "@shared/schema";
 import { LogOut } from "lucide-react";
 
-const TIER_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
-  preferred: { label: "Preferred Risk", color: "text-green-700 dark:text-green-400", bgColor: "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800", icon: CheckCircle2 },
-  standard: { label: "Standard Risk", color: "text-yellow-700 dark:text-yellow-400", bgColor: "bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800", icon: Activity },
-  high: { label: "High Risk", color: "text-red-700 dark:text-red-400", bgColor: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800", icon: AlertTriangle },
+// Industry benchmarks
+const BENCHMARKS = {
+  medianAge: 36.69,
+  avgFamilySize: 1.91,
+  femalePercentage: 50.96,
 };
+
+const TIER_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: any; tabColor: string }> = {
+  preferred: {
+    label: "Preferred Risk",
+    color: "text-green-700 dark:text-green-400",
+    bgColor: "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800",
+    tabColor: "border-green-500 bg-green-500/10 text-green-700 dark:text-green-400",
+    icon: CheckCircle2
+  },
+  standard: {
+    label: "Standard Risk",
+    color: "text-yellow-700 dark:text-yellow-400",
+    bgColor: "bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800",
+    tabColor: "border-yellow-500 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400",
+    icon: Activity
+  },
+  high: {
+    label: "High Risk",
+    color: "text-red-700 dark:text-red-400",
+    bgColor: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800",
+    tabColor: "border-red-500 bg-red-500/10 text-red-700 dark:text-red-400",
+    icon: AlertTriangle
+  },
+};
+
+function getGroupCategory(totalLives: number): string {
+  if (totalLives >= 51) return "Large";
+  if (totalLives >= 15) return "Small";
+  return "Micro";
+}
+
+function getComparison(value: number, benchmark: number): { diff: number; isAbove: boolean; text: string } {
+  const diff = Math.abs(value - benchmark);
+  const percentage = ((diff / benchmark) * 100).toFixed(1);
+  const isAbove = value > benchmark;
+  return {
+    diff,
+    isAbove,
+    text: `${percentage}% ${isAbove ? 'above' : 'below'} benchmark`
+  };
+}
 
 function ReportNav() {
   const { user, logout } = useAuth();
@@ -221,6 +265,23 @@ export default function ReportPage() {
   const tierConfig = group.riskTier ? TIER_CONFIG[group.riskTier] : null;
   const TierIcon = tierConfig?.icon || Activity;
 
+  // Calculate metrics
+  const groupCategory = getGroupCategory(group.totalLives || 0);
+  const medianAge = group.averageAge || 0;
+  const employeeAge = chars.averageEmployeeAge || 0;
+  const totalPeople = group.totalLives || 1;
+  const avgFamilySize = totalPeople / (group.employeeCount || 1);
+  const femaleCount = group.femaleCount || 0;
+  const maleCount = group.maleCount || 0;
+  const totalGender = femaleCount + maleCount || 1;
+  const femalePercentage = (femaleCount / totalGender) * 100;
+  const dependencyRatio = ((group.spouseCount || 0) + (group.dependentCount || 0)) / (group.employeeCount || 1);
+
+  // Benchmark comparisons
+  const medianAgeComp = getComparison(medianAge, BENCHMARKS.medianAge);
+  const familySizeComp = getComparison(avgFamilySize, BENCHMARKS.avgFamilySize);
+  const genderComp = getComparison(femalePercentage, BENCHMARKS.femalePercentage);
+
   const handleDownloadPdf = () => {
     const printContent = document.getElementById("report-content");
     if (printContent) {
@@ -356,39 +417,174 @@ export default function ReportPage() {
           </Card>
         </div>
 
-        <Card className="p-6 mb-8 max-w-md mx-auto">
-          <h2 className="font-semibold mb-4 flex items-center gap-2">
-            <Shield className="h-4 w-4 text-primary" />
-            Kennion Risk Score
-          </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <Card className="p-6">
+            <h2 className="font-semibold mb-4 flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary" />
+              Kennion Risk Score
+            </h2>
 
-          {group.riskScore != null ? (
-            <div className="flex flex-col items-center">
-              <ScoreGauge score={group.riskScore} label="Risk Score" />
+            {group.riskScore != null ? (
+              <div className="flex flex-col items-center">
+                <ScoreGauge score={group.riskScore} label="Risk Score" />
 
-              {tierConfig && (
-                <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-md border ${tierConfig.bgColor}`}>
-                  <TierIcon className={`h-4 w-4 ${tierConfig.color}`} />
-                  <span className={`font-semibold text-sm ${tierConfig.color}`} data-testid="text-report-tier">
-                    {tierConfig.label}
+                <div className="mt-6 w-full">
+                  <div className="flex gap-2">
+                    {(['preferred', 'standard', 'high'] as const).map((tier) => {
+                      const config = TIER_CONFIG[tier];
+                      const Icon = config.icon;
+                      const isActive = group.riskTier === tier;
+
+                      return (
+                        <div
+                          key={tier}
+                          className={`flex-1 px-3 py-2 rounded-md border-2 text-center transition-all ${
+                            isActive
+                              ? config.tabColor + ' font-semibold'
+                              : 'border-border bg-background text-muted-foreground'
+                          }`}
+                        >
+                          <div className="flex items-center justify-center gap-1.5">
+                            <Icon className="h-3.5 w-3.5" />
+                            <span className="text-xs">{config.label.replace(' Risk', '')}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-3 text-xs text-muted-foreground text-center">
+                    <div className="space-y-0.5">
+                      <div>Preferred: &lt;1.0 | Standard: 1.0-1.5 | High: &gt;1.5</div>
+                      <div className="text-[11px]">We accept Preferred and Standard risk groups</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Clock className="mx-auto h-8 w-8 mb-2" />
+                <p className="text-sm">Analysis pending</p>
+              </div>
+            )}
+          </Card>
+
+          <Card className="p-6">
+            <h2 className="font-semibold mb-4 flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-primary" />
+              Group Demographics
+            </h2>
+
+            <div className="space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-sm text-muted-foreground">Median Age</span>
+                    <div className="group relative">
+                      <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                      <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-48 p-2 text-xs bg-popover border rounded-md shadow-lg">
+                        The middle age value across all members in the group
+                      </div>
+                    </div>
+                  </div>
+                  <div className="font-bold text-lg">{Math.round(medianAge)}</div>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    {medianAgeComp.isAbove ? (
+                      <TrendingUp className="h-3 w-3 text-red-500" />
+                    ) : (
+                      <TrendingDown className="h-3 w-3 text-green-500" />
+                    )}
+                    <span className="text-xs text-muted-foreground">{medianAgeComp.text}</span>
+                  </div>
+                </div>
+
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-sm text-muted-foreground">Employee Age</span>
+                    <div className="group relative">
+                      <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                      <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-48 p-2 text-xs bg-popover border rounded-md shadow-lg">
+                        Average age of employees only (excludes spouses and dependents)
+                      </div>
+                    </div>
+                  </div>
+                  <div className="font-bold text-lg">{Math.round(employeeAge)}</div>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-sm text-muted-foreground">Avg Family Size</span>
+                  <div className="group relative">
+                    <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                    <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-56 p-2 text-xs bg-popover border rounded-md shadow-lg">
+                      Average number of covered lives per employee (employee + spouse + dependents)
+                    </div>
+                  </div>
+                </div>
+                <div className="font-bold text-lg">{avgFamilySize.toFixed(2)}</div>
+                <div className="flex items-center gap-1.5 mt-1">
+                  {familySizeComp.isAbove ? (
+                    <TrendingUp className="h-3 w-3 text-orange-500" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3 text-blue-500" />
+                  )}
+                  <span className="text-xs text-muted-foreground">{familySizeComp.text}</span>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className="text-sm text-muted-foreground">Gender Mix</span>
+                  <div className="group relative">
+                    <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                    <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-48 p-2 text-xs bg-popover border rounded-md shadow-lg">
+                      Percentage of female members in the group
+                    </div>
+                  </div>
+                </div>
+                <GenderChart male={maleCount} female={femaleCount} />
+                <div className="flex items-center gap-1.5 mt-2">
+                  {genderComp.isAbove ? (
+                    <TrendingUp className="h-3 w-3 text-pink-500" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3 text-blue-500" />
+                  )}
+                  <span className="text-xs text-muted-foreground">
+                    {femalePercentage.toFixed(1)}% female ({genderComp.text})
                   </span>
                 </div>
-              )}
+              </div>
 
-              {group.score != null && (
-                <div className="mt-4 text-center">
-                  <div className="text-xs text-muted-foreground">Qualification Score</div>
-                  <div className="text-lg font-bold">{group.score}/100</div>
+              <div className="flex items-start justify-between gap-4 pt-2 border-t">
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-sm text-muted-foreground">Group Category</span>
+                    <div className="group relative">
+                      <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                      <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-56 p-2 text-xs bg-popover border rounded-md shadow-lg">
+                        Micro: 2-14 lives | Small: 15-50 lives | Large: 51+ lives
+                      </div>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="font-semibold">{groupCategory}</Badge>
                 </div>
-              )}
+
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-sm text-muted-foreground">Dependency Ratio</span>
+                    <div className="group relative">
+                      <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                      <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-56 p-2 text-xs bg-popover border rounded-md shadow-lg">
+                        Average number of dependents and spouses per employee
+                      </div>
+                    </div>
+                  </div>
+                  <div className="font-bold text-lg">{dependencyRatio.toFixed(2)}</div>
+                </div>
+              </div>
             </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Clock className="mx-auto h-8 w-8 mb-2" />
-              <p className="text-sm">Analysis pending</p>
-            </div>
-          )}
-        </Card>
+          </Card>
+        </div>
 
         {group.adminNotes && (
           <Card className="p-6 mb-8">
