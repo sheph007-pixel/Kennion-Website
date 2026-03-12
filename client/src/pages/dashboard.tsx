@@ -396,40 +396,42 @@ interface ValidationError {
 
 function WizardProgress({ step }: { step: "upload" | "map-columns" | "confirm" }) {
   const steps = [
-    { id: "upload", label: "Upload", number: 1 },
-    { id: "map-columns", label: "Map Columns", number: 2 },
-    { id: "confirm", label: "Confirm", number: 3 },
+    { id: "upload", label: "UPLOAD", number: 1 },
+    { id: "map-columns", label: "MAP", number: 2 },
+    { id: "confirm", label: "SUBMIT", number: 3 },
   ];
 
   const currentStepIndex = steps.findIndex(s => s.id === step);
 
   return (
-    <div className="mb-4">
-      <div className="flex items-center justify-between max-w-md mx-auto">
-        {steps.map((s, idx) => (
-          <div key={s.id} className="flex items-center flex-1">
-            <div className="flex flex-col items-center flex-1">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                idx <= currentStepIndex
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground'
-              }`}>
-                {s.number}
-              </div>
-              <div className={`text-xs mt-1 font-medium ${
-                idx === currentStepIndex ? 'text-foreground' : 'text-muted-foreground'
-              }`}>
-                {s.label}
-              </div>
+    <div className="flex gap-1 -mb-px">
+      {steps.map((s, idx) => {
+        const isActive = idx === currentStepIndex;
+        const isCompleted = idx < currentStepIndex;
+
+        return (
+          <div
+            key={s.id}
+            className={`flex items-center gap-2 px-5 py-2 rounded-t-md font-bold text-sm transition-all ${
+              isActive
+                ? 'bg-card text-foreground border-t-2 border-x-2 border-border -mb-px'
+                : isCompleted
+                ? 'bg-muted/60 text-foreground'
+                : 'bg-muted/30 text-muted-foreground'
+            }`}
+            style={isActive ? { borderBottom: '2px solid var(--background)' } : {}}
+          >
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+              isActive || isCompleted
+                ? 'bg-foreground text-background'
+                : 'bg-muted-foreground/30 text-muted-foreground'
+            }`}>
+              {s.number}
             </div>
-            {idx < steps.length - 1 && (
-              <div className={`h-0.5 flex-1 mx-2 ${
-                idx < currentStepIndex ? 'bg-primary' : 'bg-muted'
-              }`} />
-            )}
+            <span className="tracking-wide">{s.label}</span>
           </div>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 }
@@ -587,7 +589,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
           </AlertDialogContent>
         </AlertDialog>
 
-        <Card className="p-6 border-4 border-primary/30 shadow-lg">
+        <Card className="p-6 border-4 border-primary/30 shadow-lg rounded-tl-none">
           <div className="mb-4">
             <h2 className="font-bold text-2xl text-primary" data-testid="text-upload-heading">Upload Your Employee Census</h2>
             <p className="text-sm text-muted-foreground mt-1">
@@ -682,7 +684,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
           </AlertDialogContent>
         </AlertDialog>
 
-        <Card className="p-4">
+        <Card className="p-4 rounded-tl-none">
         <div className="mb-3">
           <div className="flex items-start justify-between gap-4 mb-3">
             <Button variant="outline" size="sm" onClick={() => setStep("upload")}>
@@ -824,7 +826,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
       <>
         <SimpleHeader hasGroups={hasGroups} step={step} />
         <WizardProgress step={step} />
-        <Card className="p-6">
+        <Card className="p-6 rounded-tl-none">
         <div className="mb-6">
           <Button variant="outline" size="sm" onClick={() => setStep("map-columns")} data-testid="button-back-mapping" className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
