@@ -356,82 +356,39 @@ export default function ReportPage() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card className="p-6">
-            <h2 className="font-semibold mb-4 flex items-center gap-2">
-              <Shield className="h-4 w-4 text-primary" />
-              Kennion Risk Score
-            </h2>
+        <Card className="p-6 mb-8 max-w-md mx-auto">
+          <h2 className="font-semibold mb-4 flex items-center gap-2">
+            <Shield className="h-4 w-4 text-primary" />
+            Kennion Risk Score
+          </h2>
 
-            {group.riskScore != null ? (
-              <div className="flex flex-col items-center">
-                <ScoreGauge score={group.riskScore} label="Risk Score" />
+          {group.riskScore != null ? (
+            <div className="flex flex-col items-center">
+              <ScoreGauge score={group.riskScore} label="Risk Score" />
 
-                {tierConfig && (
-                  <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-md border ${tierConfig.bgColor}`}>
-                    <TierIcon className={`h-4 w-4 ${tierConfig.color}`} />
-                    <span className={`font-semibold text-sm ${tierConfig.color}`} data-testid="text-report-tier">
-                      {tierConfig.label}
-                    </span>
-                  </div>
-                )}
-
-                {group.score != null && (
-                  <div className="mt-4 text-center">
-                    <div className="text-xs text-muted-foreground">Qualification Score</div>
-                    <div className="text-lg font-bold">{group.score}/100</div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Clock className="mx-auto h-8 w-8 mb-2" />
-                <p className="text-sm">Analysis pending</p>
-              </div>
-            )}
-          </Card>
-
-          <Card className="p-6">
-            <h2 className="font-semibold mb-4 flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" />
-              Group Demographics
-            </h2>
-
-            <div className="space-y-5">
-              <div>
-                <div className="flex items-center justify-between text-sm mb-1">
-                  <span className="text-muted-foreground">Average Age</span>
-                  <span className="font-semibold" data-testid="text-report-avg-age">{group.averageAge?.toFixed(1) || "N/A"}</span>
-                </div>
-                {chars.averageEmployeeAge && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Avg Employee Age</span>
-                    <span className="font-semibold">{chars.averageEmployeeAge}</span>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">Gender Distribution</p>
-                <GenderChart male={group.maleCount || 0} female={group.femaleCount || 0} />
-              </div>
-
-              {chars.groupSizeCategory && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Group Category</span>
-                  <Badge variant="secondary">{chars.groupSizeCategory}</Badge>
+              {tierConfig && (
+                <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-md border ${tierConfig.bgColor}`}>
+                  <TierIcon className={`h-4 w-4 ${tierConfig.color}`} />
+                  <span className={`font-semibold text-sm ${tierConfig.color}`} data-testid="text-report-tier">
+                    {tierConfig.label}
+                  </span>
                 </div>
               )}
 
-              {chars.dependencyRatio != null && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Dependency Ratio</span>
-                  <span className="font-semibold">{chars.dependencyRatio}</span>
+              {group.score != null && (
+                <div className="mt-4 text-center">
+                  <div className="text-xs text-muted-foreground">Qualification Score</div>
+                  <div className="text-lg font-bold">{group.score}/100</div>
                 </div>
               )}
             </div>
-          </Card>
-        </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Clock className="mx-auto h-8 w-8 mb-2" />
+              <p className="text-sm">Analysis pending</p>
+            </div>
+          )}
+        </Card>
 
         {group.adminNotes && (
           <Card className="p-6 mb-8">
