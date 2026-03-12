@@ -429,6 +429,18 @@ export default function ReportPage() {
 
             {group.riskScore != null ? (
               <div className="flex flex-col items-center">
+                {tierConfig && (
+                  <div className="mb-4 text-center">
+                    <p className="text-sm text-muted-foreground mb-1">Your Group Is A</p>
+                    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${tierConfig.bgColor}`}>
+                      <TierIcon className={`h-5 w-5 ${tierConfig.color}`} />
+                      <span className={`font-bold text-lg ${tierConfig.color}`}>
+                        {tierConfig.label}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <ScoreGauge score={group.riskScore} label="Risk Score" />
 
                 <div className="mt-6 w-full">
@@ -454,12 +466,6 @@ export default function ReportPage() {
                         </div>
                       );
                     })}
-                  </div>
-                  <div className="mt-3 text-xs text-muted-foreground text-center">
-                    <div className="space-y-0.5">
-                      <div>Preferred: &lt;1.0 | Standard: 1.0-1.5 | High: &gt;1.5</div>
-                      <div className="text-[11px]">We accept Preferred and Standard risk groups</div>
-                    </div>
                   </div>
                 </div>
               </div>
