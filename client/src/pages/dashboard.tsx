@@ -410,7 +410,7 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
         <div className="mb-4">
           <h2 className="font-bold text-2xl text-primary" data-testid="text-upload-heading">Upload Your Employee Census</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Upload any employee list - AI will handle the rest
+            You will need each <span className="font-semibold text-foreground">employee</span> and all <span className="font-semibold text-foreground">family members</span> (i.e. spouses and children) that will be covered under the group health plan.
           </p>
         </div>
 
