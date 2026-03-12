@@ -357,14 +357,14 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
           </div>
         ) : (
           <div
-            className="relative rounded-md border-2 border-dashed p-8 text-center transition-colors hover-elevate"
+            className="relative rounded-lg border-[3px] border-dashed border-primary/40 bg-primary/5 p-12 text-center transition-all hover:border-primary/60 hover:bg-primary/10 cursor-pointer"
             onDragOver={(e) => { e.preventDefault(); }}
             onDrop={onDrop}
             data-testid="drop-zone-csv"
           >
-            <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
-            <p className="text-sm font-medium">Drag & drop your CSV file here</p>
-            <p className="mt-1 text-xs text-muted-foreground">or click to browse</p>
+            <Upload className="mx-auto h-12 w-12 text-primary mb-4" />
+            <p className="text-base font-semibold text-foreground">Drag & drop your CSV file here</p>
+            <p className="mt-2 text-sm text-muted-foreground">or click anywhere to browse</p>
             <input
               type="file"
               accept=".csv"
