@@ -728,6 +728,7 @@ export default function ReportPage() {
             </div>
           </Card>
 
+          <Card className="p-6">
             <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-primary" />
               Group Demographics
