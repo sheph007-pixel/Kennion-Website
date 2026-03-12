@@ -393,12 +393,74 @@ export default function ReportPage() {
           </Button>
         </div>
 
+        <Card className="p-8 mb-8">
+          <div className="text-center mb-6">
+            <p className="text-sm text-muted-foreground mb-2">This Group Is A</p>
+            {tierConfig && (
+              <h2 className={`text-3xl font-bold ${tierConfig.color}`}>
+                {tierConfig.label}
+              </h2>
+            )}
+          </div>
+
+          {group.riskScore != null ? (
+            <div className="flex flex-col items-center">
+              <div className="flex gap-3 mb-6 max-w-md mx-auto w-full">
+                {(['preferred', 'standard', 'high'] as const).map((tier) => {
+                  const config = TIER_CONFIG[tier];
+                  const Icon = config.icon;
+                  const isActive = group.riskTier === tier;
+
+                  return (
+                    <div
+                      key={tier}
+                      className={`flex-1 px-4 py-3 rounded-lg border-2 text-center transition-all ${
+                        isActive
+                          ? config.tabColor + ' font-semibold'
+                          : 'border-border bg-muted/20 text-muted-foreground/40'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-1.5">
+                        <Icon className="h-4 w-4" />
+                        <span className="text-sm">{config.label.replace(' Risk', '')}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <ScoreGauge score={group.riskScore} label="Risk Score" />
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Clock className="mx-auto h-8 w-8 mb-2" />
+              <p className="text-sm">Analysis pending</p>
+            </div>
+          )}
+        </Card>
+
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <Card className="p-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <UserCheck className="h-3.5 w-3.5" /> Employees
             </div>
             <div className="text-2xl font-bold" data-testid="text-report-ee">{group.employeeCount}</div>
+            {chars.riskSegments && (
+              <div className="mt-3 pt-3 border-t space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-green-600 dark:text-green-400">Low Risk</span>
+                  <span className="font-semibold">{chars.riskSegments.lowRisk || 0} ({chars.riskSegments.lowRiskPct || 0}%)</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-yellow-600 dark:text-yellow-400">Avg Risk</span>
+                  <span className="font-semibold">{chars.riskSegments.avgRisk || 0} ({chars.riskSegments.avgRiskPct || 0}%)</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-red-600 dark:text-red-400">High Risk</span>
+                  <span className="font-semibold">{chars.riskSegments.highRisk || 0} ({chars.riskSegments.highRiskPct || 0}%)</span>
+                </div>
+              </div>
+            )}
           </Card>
           <Card className="p-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
@@ -421,60 +483,8 @@ export default function ReportPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card className="p-6">
-            <h2 className="font-semibold mb-4 flex items-center gap-2">
-              <Shield className="h-4 w-4 text-primary" />
-              Kennion Risk Score
-            </h2>
-
-            {group.riskScore != null ? (
-              <div className="flex flex-col items-center">
-                {tierConfig && (
-                  <div className="mb-4 text-center">
-                    <p className="text-sm text-muted-foreground mb-1">Your Group Is A</p>
-                    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${tierConfig.bgColor}`}>
-                      <TierIcon className={`h-5 w-5 ${tierConfig.color}`} />
-                      <span className={`font-bold text-lg ${tierConfig.color}`}>
-                        {tierConfig.label}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                <ScoreGauge score={group.riskScore} label="Risk Score" />
-
-                <div className="mt-6 w-full">
-                  <div className="flex gap-2">
-                    {(['preferred', 'standard', 'high'] as const).map((tier) => {
-                      const config = TIER_CONFIG[tier];
-                      const Icon = config.icon;
-                      const isActive = group.riskTier === tier;
-
-                      return (
-                        <div
-                          key={tier}
-                          className={`flex-1 px-3 py-2 rounded-md border-2 text-center transition-all ${
-                            isActive
-                              ? config.tabColor + ' font-semibold'
-                              : 'border-border bg-background text-muted-foreground'
-                          }`}
-                        >
-                          <div className="flex items-center justify-center gap-1.5">
-                            <Icon className="h-3.5 w-3.5" />
-                            <span className="text-xs">{config.label.replace(' Risk', '')}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Clock className="mx-auto h-8 w-8 mb-2" />
-                <p className="text-sm">Analysis pending</p>
-              </div>
-            )}
+          <Card className="p-6" style={{ display: 'none' }}>
+            {/* Risk Score card moved to top */}
           </Card>
 
           <Card className="p-6">

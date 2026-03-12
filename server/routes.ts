@@ -291,6 +291,54 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
   const olderEes = eeAges.filter(a => a > 55).length;
   const olderRatio = eeAges.length > 0 ? olderEes / eeAges.length : 0;
 
+  // Calculate risk segments for individual members
+  let lowRisk = 0;
+  let avgRisk = 0;
+  let highRisk = 0;
+
+  for (const entry of entries) {
+    const dobStr = entry.dateOfBirth.trim();
+    let dob: Date | null = null;
+
+    const formats = [
+      /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
+      /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
+    ];
+
+    for (const fmt of formats) {
+      const m = dobStr.match(fmt);
+      if (m) {
+        if (fmt === formats[0]) {
+          dob = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+        } else {
+          dob = new Date(parseInt(m[3]), parseInt(m[1]) - 1, parseInt(m[2]));
+        }
+        break;
+      }
+    }
+
+    if (!dob || isNaN(dob.getTime())) {
+      dob = new Date(dobStr);
+    }
+
+    if (dob && !isNaN(dob.getTime())) {
+      const now = new Date();
+      const age = Math.floor((now.getTime() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+      if (age > 0 && age < 120) {
+        const personRiskScore = getRiskScoreForPerson(age, entry.gender);
+        if (personRiskScore < 0.85) lowRisk++;
+        else if (personRiskScore < 1.15) avgRisk++;
+        else highRisk++;
+      }
+    }
+  }
+
+  const total = lowRisk + avgRisk + highRisk || 1;
+  const lowRiskPct = Math.round((lowRisk / total) * 100);
+  const avgRiskPct = Math.round((avgRisk / total) * 100);
+  const highRiskPct = Math.round((highRisk / total) * 100);
+
   const characteristics = {
     ageDistribution: ageRanges,
     ageBandDistribution,
@@ -298,6 +346,14 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
     dependencyRatio: eeCount > 0 ? Math.round(((entries.length - eeCount) / eeCount) * 100) / 100 : 0,
     groupSizeCategory: eeCount < 10 ? "Micro" : eeCount < 25 ? "Small" : eeCount < 50 ? "Mid-Size" : eeCount < 100 ? "Large" : "Enterprise",
     factors: [] as string[],
+    riskSegments: {
+      lowRisk,
+      avgRisk,
+      highRisk,
+      lowRiskPct,
+      avgRiskPct,
+      highRiskPct,
+    },
   };
 
   if (avgEeAge < 35) characteristics.factors.push("Young workforce (favorable)");
