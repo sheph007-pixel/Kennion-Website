@@ -240,6 +240,21 @@ interface ParseResult {
   confidence: "high" | "medium" | "low";
 }
 
+function formatDateToMMDDYY(dateStr: string): string {
+  if (!dateStr) return "";
+
+  // Handle YYYY-MM-DD format
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const [, year, month, day] = match;
+    const shortYear = year.slice(-2);
+    return `${month}/${day}/${shortYear}`;
+  }
+
+  // Return as-is if already in different format
+  return dateStr;
+}
+
 function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void }) {
   const { toast } = useToast();
   const [step, setStep] = useState<"upload" | "confirm">("upload");
@@ -445,7 +460,7 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
                     <td className="py-2 px-3">
                       <Badge variant="outline" className="text-xs">{row.relationship}</Badge>
                     </td>
-                    <td className="py-2 px-3">{row.dob || <span className="text-muted-foreground">—</span>}</td>
+                    <td className="py-2 px-3">{formatDateToMMDDYY(row.dob) || <span className="text-muted-foreground">—</span>}</td>
                     <td className="py-2 px-3">{row.gender}</td>
                     <td className="py-2 px-3">{row.zip || <span className="text-muted-foreground">—</span>}</td>
                   </tr>
