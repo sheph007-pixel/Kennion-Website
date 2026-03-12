@@ -630,9 +630,21 @@ export async function registerRoutes(
 
       const headers = Object.keys(rows[0]).filter(h => h.trim() !== "");
 
+      // Filter out completely empty rows (rows where all values are empty/null)
+      const nonEmptyRows = rows.filter(row => {
+        const values = Object.values(row);
+        return values.some(val => val != null && String(val).trim() !== "");
+      });
+
+      log(`Filtered ${rows.length} rows down to ${nonEmptyRows.length} non-empty rows`);
+
+      if (nonEmptyRows.length === 0) {
+        return res.status(400).json({ message: "CSV file contains no valid data" });
+      }
+
       // Use AI to automatically clean and map the CSV
       log("Using AI to clean and map CSV data...");
-      const aiResult = await cleanCSVWithAI(headers, rows);
+      const aiResult = await cleanCSVWithAI(headers, nonEmptyRows);
 
       // Convert cleaned data to preview format
       const previewRows = aiResult.cleanedData.slice(0, 10).map(cleaned => ({
@@ -647,7 +659,7 @@ export async function registerRoutes(
 
       req.session.pendingCensus = {
         headers,
-        rows,
+        rows: nonEmptyRows,
         fileName: req.file.originalname || "census.csv",
         aiCleaned: aiResult
       };
