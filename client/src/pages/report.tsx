@@ -650,13 +650,6 @@ export default function ReportPage() {
             </div>
           )}
         </Card>
-
-        {group.adminNotes && (
-          <Card className="p-6 mb-8">
-            <h2 className="font-semibold mb-2">Notes from Kennion</h2>
-            <p className="text-sm text-muted-foreground" data-testid="text-admin-notes">{group.adminNotes}</p>
-          </Card>
-        )}
       </div>
     </div>
   );
