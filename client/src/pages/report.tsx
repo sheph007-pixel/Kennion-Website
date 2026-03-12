@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { useState } from "react";
+import Papa from "papaparse";
 import {
   ArrowLeft,
   Building2,
@@ -665,14 +666,14 @@ export default function ReportPage() {
           </div>
         </div>
 
-        <Card className="p-4 mb-6">
-          <h2 className="text-base font-semibold mb-3 flex items-center gap-2">
-            <Shield className="h-4 w-4 text-primary" />
+        <Card className="p-6 mb-6 border-2">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2 justify-center">
+            <Shield className="h-6 w-6 text-primary" />
             Risk Classification
           </h2>
 
           {group.riskScore != null ? (
-            <div className="flex gap-2 max-w-2xl mx-auto">
+            <div className="flex gap-3">
               {(['preferred', 'standard', 'high'] as const).map((tier) => {
                 const config = TIER_CONFIG[tier];
                 const Icon = config.icon;
@@ -681,17 +682,19 @@ export default function ReportPage() {
                 return (
                   <div
                     key={tier}
-                    className={`flex-1 px-3 py-3 rounded-lg border-2 text-center transition-all ${
+                    className={`flex-1 px-6 py-6 rounded-lg border-3 text-center transition-all ${
                       isActive
-                        ? config.tabColor + ' font-bold'
+                        ? config.tabColor + ' font-bold shadow-md'
                         : 'border-border bg-muted/20 text-muted-foreground/40'
                     }`}
                   >
-                    <div className="flex flex-col items-center gap-1.5">
-                      <Icon className="h-4 w-4" />
-                      <span className="text-xs font-semibold">{config.label.replace(' Risk', '')}</span>
+                    <div className="flex flex-col items-center gap-2">
+                      <Icon className={`h-8 w-8 ${isActive ? '' : 'opacity-40'}`} />
+                      <span className={`text-base font-bold ${isActive ? '' : 'font-semibold'}`}>
+                        {config.label.replace(' Risk', '')}
+                      </span>
                       {isActive && (
-                        <div className={`text-xl font-bold ${config.color}`}>
+                        <div className={`text-4xl font-extrabold ${config.color} mt-1`}>
                           {group.riskScore.toFixed(2)}
                         </div>
                       )}
