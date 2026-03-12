@@ -715,6 +715,18 @@ export default function ReportPage() {
                 </div>
                 <span className="text-lg font-bold" data-testid="text-report-total">{group.totalLives}</span>
               </div>
+              <div className="flex justify-between items-center py-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Group Category</span>
+                  <div className="group relative">
+                    <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                    <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-56 p-2 text-xs bg-popover border rounded-md shadow-lg">
+                      Micro: 2-14 lives | Small: 15-50 lives | Large: 51+ lives
+                    </div>
+                  </div>
+                </div>
+                <Badge variant="secondary" className="font-semibold text-sm">{groupCategory}</Badge>
+              </div>
             </div>
           </Card>
 
@@ -726,7 +738,15 @@ export default function ReportPage() {
 
             <div className="divide-y">
               <div className="flex justify-between items-center py-2">
-                <span className="text-sm text-muted-foreground">Median Age</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm text-muted-foreground">Median Age</span>
+                  <div className="group relative">
+                    <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                    <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-48 p-2 text-xs bg-popover border rounded-md shadow-lg">
+                      The middle age value across all members in the group
+                    </div>
+                  </div>
+                </div>
                 <div className="text-right">
                   <div className="text-lg font-bold">{Math.round(medianAge)}</div>
                   <div className="text-xs text-muted-foreground">{medianAgeComp.text}</div>
@@ -734,12 +754,28 @@ export default function ReportPage() {
               </div>
 
               <div className="flex justify-between items-center py-2">
-                <span className="text-sm text-muted-foreground">Employee Age</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm text-muted-foreground">Employee Age</span>
+                  <div className="group relative">
+                    <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                    <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-48 p-2 text-xs bg-popover border rounded-md shadow-lg">
+                      Average age of employees only (excludes spouses and dependents)
+                    </div>
+                  </div>
+                </div>
                 <div className="text-lg font-bold">{Math.round(employeeAge)}</div>
               </div>
 
               <div className="flex justify-between items-center py-2">
-                <span className="text-sm text-muted-foreground">Avg Family Size</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm text-muted-foreground">Avg Family Size</span>
+                  <div className="group relative">
+                    <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                    <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-56 p-2 text-xs bg-popover border rounded-md shadow-lg">
+                      Average number of covered lives per employee (employee + spouse + dependents)
+                    </div>
+                  </div>
+                </div>
                 <div className="text-right">
                   <div className="text-lg font-bold">{avgFamilySize.toFixed(2)}</div>
                   <div className="text-xs text-muted-foreground">{familySizeComp.text}</div>
@@ -747,17 +783,28 @@ export default function ReportPage() {
               </div>
 
               <div className="flex justify-between items-center py-2">
-                <span className="text-sm text-muted-foreground">Group Category</span>
-                <Badge variant="secondary" className="font-semibold text-sm">{groupCategory}</Badge>
-              </div>
-
-              <div className="flex justify-between items-center py-2">
-                <span className="text-sm text-muted-foreground">Dependency Ratio</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm text-muted-foreground">Dependency Ratio</span>
+                  <div className="group relative">
+                    <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                    <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-56 p-2 text-xs bg-popover border rounded-md shadow-lg">
+                      Average number of dependents and spouses per employee
+                    </div>
+                  </div>
+                </div>
                 <div className="text-lg font-bold">{dependencyRatio.toFixed(2)}</div>
               </div>
 
               <div className="pt-2 pb-1">
-                <div className="text-xs text-muted-foreground mb-2">Gender Mix</div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className="text-xs text-muted-foreground">Gender Mix</span>
+                  <div className="group relative">
+                    <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                    <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-48 p-2 text-xs bg-popover border rounded-md shadow-lg">
+                      Percentage of female members in the group
+                    </div>
+                  </div>
+                </div>
                 <GenderChart male={maleCount} female={femaleCount} />
               </div>
             </div>
