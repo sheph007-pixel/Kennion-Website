@@ -97,10 +97,23 @@ function SimpleHeader({ hasGroups }: { hasGroups: boolean }) {
           <Upload className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
-          <h2 className="font-semibold text-lg mb-1">Get Your Benefits Analysis</h2>
-          <p className="text-sm text-muted-foreground">
-            Upload your employee census below to receive an instant risk analysis. Hunter Shepherd will contact you with a customized proposal.
-          </p>
+          <h2 className="font-semibold text-xl mb-3">Get Your Benefits Quote</h2>
+          <div className="space-y-2 text-sm">
+            <p className="font-medium text-foreground">
+              Here's what to do:
+            </p>
+            <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+              <li>Upload your employee census (CSV file) below</li>
+              <li>We'll instantly analyze your group and provide a risk score</li>
+              <li>Hunter Shepherd will contact you with a customized benefits proposal</li>
+            </ol>
+            <div className="mt-4 pt-4 border-t">
+              <p className="font-medium text-foreground mb-1">Need Help?</p>
+              <p className="text-muted-foreground">
+                Text or call Hunter Shepherd: <a href="tel:+12056410469" className="font-semibold text-primary hover:underline">205-641-0469</a>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </Card>
@@ -308,9 +321,9 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
       <Card className="p-6">
         <div className="mb-4 flex items-center justify-between gap-2 flex-wrap">
           <div>
-            <h2 className="font-semibold" data-testid="text-upload-heading">Upload Employee Census</h2>
+            <h2 className="font-semibold text-lg" data-testid="text-upload-heading">Step 1: Upload Your Employee Census</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Submit your employee census data to begin the qualification process.
+              This allows us to analyze your group and provide you with an accurate benefits quote.
             </p>
           </div>
           <Button variant="outline" size="sm" asChild>
@@ -692,8 +705,11 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold tracking-tight" data-testid="text-welcome-message">
             Welcome, {firstName}!
           </h1>
+          {user?.companyName && (
+            <p className="text-lg font-semibold text-primary mt-1">{user.companyName}</p>
+          )}
           <p className="text-sm text-muted-foreground mt-1">
-            {user?.companyName ? `${user.companyName} \u2022 ` : ""}Benefits Qualification Portal
+            Benefits Qualification Portal
           </p>
         </div>
 
