@@ -466,6 +466,14 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
 
   if (step === "map-columns" && parseResult) {
     const REQUIRED_FIELDS = ["First Name", "Last Name", "Type", "Date of Birth", "Gender", "Zip Code"];
+    const FIELD_LABELS: Record<string, string> = {
+      "First Name": "First Name",
+      "Last Name": "Last Name",
+      "Type": "Type (Employee / Spouse / Child)",
+      "Date of Birth": "Date of Birth",
+      "Gender": "Gender (Male / Female)",
+      "Zip Code": "Zip Code"
+    };
 
     return (
       <Card className="p-6">
@@ -492,7 +500,7 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
               const mappedColumn = Object.keys(columnMapping).find(k => columnMapping[k] === field) || "";
               return (
                 <div key={field} className="grid grid-cols-2 gap-4 p-4 border-b last:border-b-0 items-center">
-                  <div className="font-medium text-sm">{field}</div>
+                  <div className="font-medium text-sm">{FIELD_LABELS[field]}</div>
                   <Select
                     value={mappedColumn}
                     onValueChange={(value) => {
