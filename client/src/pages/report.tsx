@@ -680,35 +680,35 @@ export default function ReportPage() {
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <Card className="p-6">
-            <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
+          <Card className="p-5">
+            <h2 className="text-base font-semibold mb-3 flex items-center gap-2">
               <Activity className="h-4 w-4 text-primary" />
               Census Details
             </h2>
 
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
+            <div className="divide-y">
+              <div className="flex justify-between items-center py-2">
                 <div className="flex items-center gap-2">
                   <UserCheck className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">Employees</span>
                 </div>
                 <span className="text-lg font-bold" data-testid="text-report-ee">{group.employeeCount}</span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center py-2">
                 <div className="flex items-center gap-2">
                   <Heart className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">Spouses</span>
                 </div>
                 <span className="text-lg font-bold" data-testid="text-report-sp">{group.spouseCount || 0}</span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center py-2">
                 <div className="flex items-center gap-2">
                   <Baby className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">Dependents</span>
                 </div>
                 <span className="text-lg font-bold" data-testid="text-report-dep">{group.dependentCount}</span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center py-2">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">Total Lives</span>
@@ -718,14 +718,14 @@ export default function ReportPage() {
             </div>
           </Card>
 
-          <Card className="p-6">
-            <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
+          <Card className="p-5">
+            <h2 className="text-base font-semibold mb-3 flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-primary" />
               Group Demographics
             </h2>
 
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
+            <div className="divide-y">
+              <div className="flex justify-between items-center py-2">
                 <span className="text-sm text-muted-foreground">Median Age</span>
                 <div className="text-right">
                   <div className="text-lg font-bold">{Math.round(medianAge)}</div>
@@ -733,12 +733,12 @@ export default function ReportPage() {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center py-2">
                 <span className="text-sm text-muted-foreground">Employee Age</span>
                 <div className="text-lg font-bold">{Math.round(employeeAge)}</div>
               </div>
 
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center py-2">
                 <span className="text-sm text-muted-foreground">Avg Family Size</span>
                 <div className="text-right">
                   <div className="text-lg font-bold">{avgFamilySize.toFixed(2)}</div>
@@ -746,17 +746,17 @@ export default function ReportPage() {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center py-2">
                 <span className="text-sm text-muted-foreground">Group Category</span>
                 <Badge variant="secondary" className="font-semibold text-sm">{groupCategory}</Badge>
               </div>
 
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center py-2">
                 <span className="text-sm text-muted-foreground">Dependency Ratio</span>
                 <div className="text-lg font-bold">{dependencyRatio.toFixed(2)}</div>
               </div>
 
-              <div className="pt-3 border-t">
+              <div className="pt-2 pb-1">
                 <div className="text-xs text-muted-foreground mb-2">Gender Mix</div>
                 <GenderChart male={maleCount} female={femaleCount} />
               </div>
