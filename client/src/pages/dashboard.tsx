@@ -101,29 +101,28 @@ function SimpleHeader({ hasGroups }: { hasGroups: boolean }) {
   if (hasGroups) return null;
 
   return (
-    <Card className="p-6 mb-6 bg-primary/5 border-primary/20">
-      <div className="flex items-start gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 flex-shrink-0">
-          <Upload className="h-6 w-6 text-primary" />
+    <Card className="p-5 mb-6 bg-primary/5 border-primary/20">
+      <div className="space-y-3">
+        <div className="space-y-2 text-sm">
+          <ul className="space-y-1.5 text-muted-foreground">
+            <li className="flex items-start gap-2">
+              <span className="text-primary mt-0.5">1.</span>
+              <span>Upload your employee list below</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary mt-0.5">2.</span>
+              <span>We'll analyze your group instantly</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary mt-0.5">3.</span>
+              <span>Hunter will send you a custom benefits quote</span>
+            </li>
+          </ul>
         </div>
-        <div className="flex-1">
-          <h2 className="font-semibold text-xl mb-3">Get Your Benefits Quote</h2>
-          <div className="space-y-2 text-sm">
-            <p className="font-medium text-foreground">
-              Here's what to do:
-            </p>
-            <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-              <li>Upload your employee census (CSV file) below</li>
-              <li>We'll instantly analyze your group and provide a risk score</li>
-              <li>Hunter Shepherd will contact you with a customized benefits proposal</li>
-            </ol>
-            <div className="mt-4 pt-4 border-t">
-              <p className="font-medium text-foreground mb-1">Need Help?</p>
-              <p className="text-muted-foreground">
-                Text or call Hunter Shepherd: <a href="tel:+12056410469" className="font-semibold text-primary hover:underline">205-641-0469</a>
-              </p>
-            </div>
-          </div>
+        <div className="pt-3 border-t">
+          <p className="text-sm text-muted-foreground">
+            Questions? Call Hunter: <a href="tel:+12056410469" className="font-semibold text-primary hover:underline">205-641-0469</a>
+          </p>
         </div>
       </div>
     </Card>
@@ -371,14 +370,14 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
       <Card className="p-6">
         <div className="mb-4 flex items-center justify-between gap-2 flex-wrap">
           <div>
-            <h2 className="font-semibold text-lg" data-testid="text-upload-heading">Upload Your Employee Census</h2>
+            <h2 className="font-bold text-xl" data-testid="text-upload-heading">Upload Your Employee Census</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              You will need each employee and all family members (i.e. spouses and children) that will be covered under the group health plan.
+              Include all employees and family members covered under the plan
             </p>
           </div>
           <Button variant="outline" size="sm" asChild>
             <a href="/api/groups/template" download data-testid="button-download-template">
-              <Download className="mr-1.5 h-3.5 w-3.5" /> CSV Template
+              <Download className="mr-1.5 h-3.5 w-3.5" /> Template
             </a>
           </Button>
         </div>
@@ -851,16 +850,10 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background">
       <DashboardNav />
       <div className="mx-auto max-w-4xl px-6 py-8">
-        <div className="mb-2">
-          <h1 className="text-2xl font-bold tracking-tight" data-testid="text-welcome-message">
-            Welcome, {firstName}!
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold tracking-tight" data-testid="text-company-name">
+            {user?.companyName || firstName}
           </h1>
-          {user?.companyName && (
-            <p className="text-lg font-semibold text-primary mt-1">{user.companyName}</p>
-          )}
-          <p className="text-sm text-muted-foreground mt-1">
-            Benefits Qualification Portal
-          </p>
         </div>
 
         <SimpleHeader hasGroups={hasGroups} />
