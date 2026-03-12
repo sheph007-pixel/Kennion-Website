@@ -12,7 +12,7 @@ function getOpenAIClient() {
 interface CleanedRow {
   firstName: string;
   lastName: string;
-  relationship: "Employee" | "Spouse" | "Dependent";
+  relationship: "Employee" | "Spouse" | "Child";
   dob: string;
   gender: "Male" | "Female";
   zip: string;
@@ -45,8 +45,8 @@ Sample rows (first 10): ${JSON.stringify(sampleRows, null, 2)}
 
 Your task:
 1. Identify which columns map to: firstName, lastName, relationship, dob (date of birth), gender, zip
-2. Standardize relationship values to EXACTLY one of: "Employee", "Spouse", "Dependent"
-   - Common abbreviations: EE/E/Emp → Employee, SP/S/Spouse → Spouse, DEP/D/CH/Child → Dependent
+2. Standardize relationship values to EXACTLY one of: "Employee", "Spouse", "Child"
+   - Common abbreviations: EE/E/Emp → Employee, SP/S/Spouse → Spouse, DEP/D/CH/Child/Dependent → Child
 3. Standardize gender to EXACTLY: "Male" or "Female"
    - M/Male/male → Male, F/Female/female → Female
 4. Keep dates in original format
@@ -111,14 +111,14 @@ Only return valid JSON, no explanation.`;
       const zip = row[mappings.zip]?.toString().trim() || "";
 
       // Standardize relationship
-      let relationship: "Employee" | "Spouse" | "Dependent" = "Employee";
+      let relationship: "Employee" | "Spouse" | "Child" = "Employee";
       if (rules.relationship[rawRelationship]) {
         relationship = rules.relationship[rawRelationship];
       } else {
         // Fallback logic
         const rel = rawRelationship.toLowerCase();
         if (rel.includes('sp') || rel.includes('spouse')) relationship = "Spouse";
-        else if (rel.includes('dep') || rel.includes('child') || rel.includes('ch')) relationship = "Dependent";
+        else if (rel.includes('dep') || rel.includes('child') || rel.includes('ch')) relationship = "Child";
       }
 
       // Standardize gender

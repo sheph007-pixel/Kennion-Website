@@ -711,7 +711,7 @@ export async function registerRoutes(
         // Map relationship to storage format
         let relationship = "EE";
         if (cleaned.relationship === "Spouse") relationship = "SP";
-        else if (cleaned.relationship === "Dependent") relationship = "DEP";
+        else if (cleaned.relationship === "Child") relationship = "DEP";
         else if (cleaned.relationship === "Employee") relationship = "EE";
 
         return {
@@ -736,7 +736,7 @@ export async function registerRoutes(
 
       const employeeCount = entries.filter((e: CensusEntry) => e.relationship === "EE").length;
       const spouseCount = entries.filter((e: CensusEntry) => e.relationship === "SP").length;
-      const dependentCount = entries.filter((e: CensusEntry) => e.relationship === "DEP" || e.relationship === "SP").length;
+      const childrenCount = entries.filter((e: CensusEntry) => e.relationship === "DEP").length;
 
       const analysis = analyzeGroupRisk(entries);
 
@@ -746,7 +746,7 @@ export async function registerRoutes(
         contactName: user.fullName,
         contactEmail: user.email,
         employeeCount,
-        dependentCount,
+        childrenCount,
         spouseCount,
         totalLives: entries.length,
       });
@@ -758,7 +758,7 @@ export async function registerRoutes(
         averageAge: analysis.averageAge,
         employeeCount,
         spouseCount,
-        dependentCount,
+        childrenCount,
         totalLives: entries.length,
         maleCount: analysis.maleCount,
         femaleCount: analysis.femaleCount,
@@ -868,7 +868,7 @@ export async function registerRoutes(
 
       const employeeCount = entries.filter(e => e.relationship === "EE").length;
       const spouseCount = entries.filter(e => e.relationship === "SP").length;
-      const dependentCount = entries.filter(e => e.relationship === "DEP" || e.relationship === "SP").length;
+      const childrenCount = entries.filter(e => e.relationship === "DEP").length;
 
       const analysis = analyzeGroupRisk(entries);
 
@@ -878,7 +878,7 @@ export async function registerRoutes(
         contactName: user.fullName,
         contactEmail: user.email,
         employeeCount,
-        dependentCount,
+        childrenCount,
         spouseCount,
         totalLives: entries.length,
       });
@@ -890,7 +890,7 @@ export async function registerRoutes(
         averageAge: analysis.averageAge,
         employeeCount,
         spouseCount,
-        dependentCount,
+        childrenCount,
         totalLives: entries.length,
         maleCount: analysis.maleCount,
         femaleCount: analysis.femaleCount,

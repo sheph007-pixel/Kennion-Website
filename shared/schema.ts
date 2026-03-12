@@ -24,7 +24,7 @@ export const groups = pgTable("groups", {
   contactName: text("contact_name").notNull(),
   contactEmail: text("contact_email").notNull(),
   employeeCount: integer("employee_count").default(0),
-  dependentCount: integer("dependent_count").default(0),
+  childrenCount: integer("children_count").default(0),
   spouseCount: integer("spouse_count").default(0),
   totalLives: integer("total_lives").default(0),
   status: text("status").default("pending_review").notNull(),

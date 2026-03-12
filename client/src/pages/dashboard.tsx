@@ -221,8 +221,8 @@ function AnalysisAnimation({ onComplete, group }: { onComplete: () => void; grou
             <div className="text-lg font-bold">{group?.spouseCount || "..."}</div>
           </div>
           <div className="text-center">
-            <div className="text-xs text-muted-foreground">Dependents</div>
-            <div className="text-lg font-bold">{group?.dependentCount || "..."}</div>
+            <div className="text-xs text-muted-foreground">Children</div>
+            <div className="text-lg font-bold">{group?.childrenCount || "..."}</div>
           </div>
           <div className="text-center">
             <div className="text-xs text-muted-foreground">Total</div>
@@ -649,7 +649,7 @@ function GroupsList() {
                     <td className="py-3 px-4 text-center" data-testid="text-total-lives">
                       <div className="font-semibold">{group.totalLives}</div>
                       <div className="text-xs text-muted-foreground">
-                        {group.employeeCount}e·{group.spouseCount || 0}s·{group.dependentCount}d
+                        {group.employeeCount}e·{group.spouseCount || 0}s·{group.childrenCount}c
                       </div>
                     </td>
                     <td className="py-3 px-4 text-center">

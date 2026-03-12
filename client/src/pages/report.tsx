@@ -278,7 +278,7 @@ export default function ReportPage() {
   const maleCount = group.maleCount || 0;
   const totalGender = femaleCount + maleCount || 1;
   const femalePercentage = (femaleCount / totalGender) * 100;
-  const dependencyRatio = ((group.spouseCount || 0) + (group.dependentCount || 0)) / (group.employeeCount || 1);
+  const dependencyRatio = ((group.spouseCount || 0) + (group.childrenCount || 0)) / (group.employeeCount || 1);
 
   // Benchmark comparisons
   const medianAgeComp = getComparison(medianAge, BENCHMARKS.medianAge);
@@ -545,8 +545,8 @@ export default function ReportPage() {
                 <div class="stat-value">${group.spouseCount || 0}</div>
               </div>
               <div class="stat-card">
-                <div class="stat-label">Dependents</div>
-                <div class="stat-value">${group.dependentCount || 0}</div>
+                <div class="stat-label">Children</div>
+                <div class="stat-value">${group.childrenCount || 0}</div>
               </div>
               <div class="stat-card">
                 <div class="stat-label">Total Lives</div>
@@ -733,9 +733,9 @@ export default function ReportPage() {
               <div className="flex justify-between items-center py-2">
                 <div className="flex items-center gap-2">
                   <Baby className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Dependents</span>
+                  <span className="text-sm text-muted-foreground">Children</span>
                 </div>
-                <span className="text-lg font-bold" data-testid="text-report-dep">{group.dependentCount}</span>
+                <span className="text-lg font-bold" data-testid="text-report-dep">{group.childrenCount}</span>
               </div>
               <div className="flex justify-between items-center py-2">
                 <div className="flex items-center gap-2">
@@ -1006,8 +1006,8 @@ export default function ReportPage() {
                 const censusTotalMembers = group.totalLives || 0;
                 const censusEmployees = group.employeeCount || 0;
                 const censusSpouses = group.spouseCount || 0;
-                const censusDependents = group.dependentCount || 0;
-                const censusSumCheck = censusEmployees + censusSpouses + censusDependents;
+                const censusChildren = group.childrenCount || 0;
+                const censusSumCheck = censusEmployees + censusSpouses + censusChildren;
                 const censusFemales = group.femaleCount || 0;
                 const censusMales = group.maleCount || 0;
                 const censusGenderTotal = censusFemales + censusMales;

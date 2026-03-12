@@ -15,7 +15,7 @@ interface GroupAnalysisInput {
   averageAge: number;
   employeeCount: number;
   spouseCount: number;
-  dependentCount: number;
+  childrenCount: number;
   totalLives: number;
   maleCount: number;
   femaleCount: number;
@@ -28,7 +28,7 @@ export async function generateActuarialAnalysis(input: GroupAnalysisInput): Prom
 
   const femalePercentage = ((input.femaleCount / (input.maleCount + input.femaleCount || 1)) * 100).toFixed(1);
   const avgFamilySize = (input.totalLives / (input.employeeCount || 1)).toFixed(2);
-  const dependencyRatio = (((input.spouseCount || 0) + (input.dependentCount || 0)) / (input.employeeCount || 1)).toFixed(2);
+  const dependencyRatio = (((input.spouseCount || 0) + (input.childrenCount || 0)) / (input.employeeCount || 1)).toFixed(2);
 
   const prompt = `You are an expert actuary analyzing a group health insurance census. Write a detailed analysis report for this employer group.
 
@@ -40,7 +40,7 @@ Group Composition:
 - ${input.totalLives} total covered lives
 - ${input.employeeCount} employees
 - ${input.spouseCount || 0} spouses
-- ${input.dependentCount || 0} dependents
+- ${input.childrenCount || 0} children
 - Average age: ${input.averageAge} years
 - Employee average age: ${input.characteristics.averageEmployeeAge} years
 - Gender mix: ${femalePercentage}% female
