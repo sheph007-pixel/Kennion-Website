@@ -112,23 +112,23 @@ function SimpleHeader({ hasGroups }: { hasGroups: boolean }) {
         <div className="space-y-2 text-sm">
           <p className="font-medium text-foreground">Here's how it works:</p>
           <ul className="space-y-1.5 text-muted-foreground">
-            <li className="flex items-start gap-2">
-              <span className="text-primary font-semibold mt-0.5">1.</span>
-              <span>Upload your employee list (names, birthdays, zip codes)</span>
+            <li className="flex items-start gap-2.5">
+              <span className="text-primary font-semibold min-w-[1.25rem]">1.</span>
+              <span>Upload your employee list (names, birthdays, zip codes).</span>
             </li>
-            <li className="flex items-start gap-2">
-              <span className="text-primary font-semibold mt-0.5">2.</span>
-              <span>We calculate your group rates instantly</span>
+            <li className="flex items-start gap-2.5">
+              <span className="text-primary font-semibold min-w-[1.25rem]">2.</span>
+              <span>We calculate your group rates instantly.</span>
             </li>
-            <li className="flex items-start gap-2">
-              <span className="text-primary font-semibold mt-0.5">3.</span>
-              <span>Hunter calls you with pricing and plan options</span>
+            <li className="flex items-start gap-2.5">
+              <span className="text-primary font-semibold min-w-[1.25rem]">3.</span>
+              <span>Hunter calls you with pricing and plan options.</span>
             </li>
           </ul>
         </div>
         <div className="pt-3 border-t">
           <p className="text-sm font-medium text-foreground">
-            Need help? Text or call Hunter: <a href="tel:+12056410469" className="font-semibold text-primary hover:underline">205-641-0469</a>
+            Questions? Text/Call Hunter Shepherd: <a href="tel:+12056410469" className="font-semibold text-primary hover:underline">205-641-0469</a>
           </p>
         </div>
       </div>
