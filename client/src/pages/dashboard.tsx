@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { format } from "date-fns";
 import {
   Upload,
   FileSpreadsheet,
@@ -495,138 +496,41 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
   return null;
 }
 
-function GroupCard({ group, index, onClick, onDelete }: { group: Group; index: number; onClick: () => void; onDelete: () => void }) {
-  const tier = group.riskTier ? TIER_CONFIG[group.riskTier] || { label: group.riskTier, color: "text-muted-foreground" } : null;
-  const censusNumber = `KBA-${group.id.substring(0, 8).toUpperCase()}`;
-  const isQualified = group.riskTier === "preferred" || group.riskTier === "standard";
-
-  return (
-    <Card
-      className="p-6 hover-elevate transition-colors"
-      data-testid={`card-group-${group.id}`}
-    >
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={onClick}>
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 dark:bg-primary/20">
-            <Building2 className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <h3 className="font-semibold" data-testid="text-group-company">{group.companyName}</h3>
-            <p className="text-xs text-muted-foreground" data-testid="text-census-number">
-              Census #{censusNumber}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {isQualified && (
-            <Badge variant="secondary" className="text-xs text-green-600 dark:text-green-400">
-              <CheckCircle2 className="h-3 w-3 mr-1" /> Qualified
-            </Badge>
-          )}
-          {group.riskTier === "high" && (
-            <Badge variant="secondary" className="text-xs text-red-600 dark:text-red-400">
-              <XCircle className="h-3 w-3 mr-1" /> High Risk
-            </Badge>
-          )}
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" data-testid={`button-delete-${group.id}`} onClick={(e) => e.stopPropagation()}>
-                <Trash2 className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Census</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete census #{censusNumber}? This will permanently remove the census data and risk analysis. You can re-upload a new census afterwards.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={onDelete} data-testid="button-confirm-delete">Delete</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-4 gap-4 cursor-pointer" onClick={onClick}>
-        <div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <UserCheck className="h-3 w-3" /> Employees
-          </div>
-          <div className="text-lg font-semibold" data-testid="text-employee-count">{group.employeeCount}</div>
-        </div>
-        <div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Heart className="h-3 w-3" /> Spouses
-          </div>
-          <div className="text-lg font-semibold" data-testid="text-spouse-count">{group.spouseCount || 0}</div>
-        </div>
-        <div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Baby className="h-3 w-3" /> Dependents
-          </div>
-          <div className="text-lg font-semibold" data-testid="text-dependent-count">{group.dependentCount}</div>
-        </div>
-        <div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Users className="h-3 w-3" /> Total Lives
-          </div>
-          <div className="text-lg font-semibold" data-testid="text-total-lives">{group.totalLives}</div>
-        </div>
-      </div>
-
-      {group.riskScore != null && (
-        <div className="mt-4 pt-4 border-t cursor-pointer" onClick={onClick}>
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div>
-                <div className="text-xs text-muted-foreground">Kennion Score</div>
-                <div className="text-xl font-bold text-primary" data-testid="text-risk-score">
-                  {group.riskScore.toFixed(2)}
-                </div>
-              </div>
-              {tier && (
-                <Badge variant="outline" className={`text-xs ${tier.color}`} data-testid="text-risk-tier">
-                  {tier.label}
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" data-testid={`button-view-report-${group.id}`}>
-                View Report <ChevronRight className="ml-1 h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
-
-          {isQualified && (
-            <div className="mt-3 rounded-md border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 p-3">
-              <div className="flex items-start gap-3">
-                <Shield className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-green-700 dark:text-green-400">
-                    ✓ Qualified for Benefits Program
-                  </p>
-                  <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-1">
-                    Hunter Shepherd will contact you with a customized proposal
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </Card>
-  );
-}
-
 function GroupsList() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const [sortField, setSortField] = useState<"submittedAt" | "companyName" | "riskScore">("submittedAt");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
   const { data: groups, isLoading } = useQuery<Group[]>({
     queryKey: ["/api/groups"],
   });
+
+  const sortedGroups = useMemo(() => {
+    if (!groups) return [];
+    return [...groups].sort((a, b) => {
+      let aVal: any = a[sortField];
+      let bVal: any = b[sortField];
+
+      if (sortField === "submittedAt") {
+        aVal = new Date(aVal).getTime();
+        bVal = new Date(bVal).getTime();
+      }
+
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [groups, sortField, sortDirection]);
+
+  const handleSort = (field: "submittedAt" | "companyName" | "riskScore") => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
+  };
 
   const handleDelete = async (groupId: string) => {
     try {
@@ -640,19 +544,10 @@ function GroupsList() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        {[1, 2].map((i) => (
-          <Card key={i} className="p-6">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-10 w-10 rounded-md" />
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-3 w-24" />
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+      <Card className="p-4">
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-12 w-full mt-4" />
+      </Card>
     );
   }
 
@@ -674,15 +569,160 @@ function GroupsList() {
         <h2 className="font-semibold">Your Census Submissions</h2>
         <Badge variant="secondary">{groups.length} submission{groups.length !== 1 ? "s" : ""}</Badge>
       </div>
-      {groups.map((g, i) => (
-        <GroupCard
-          key={g.id}
-          group={g}
-          index={i}
-          onClick={() => navigate(`/report/${g.id}`)}
-          onDelete={() => handleDelete(g.id)}
-        />
-      ))}
+
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 border-b">
+              <tr>
+                <th
+                  className="text-left py-3 px-4 font-medium cursor-pointer hover:bg-muted/70 transition-colors"
+                  onClick={() => handleSort("submittedAt")}
+                >
+                  <div className="flex items-center gap-1">
+                    Submitted {sortField === "submittedAt" && (sortDirection === "asc" ? "↑" : "↓")}
+                  </div>
+                </th>
+                <th
+                  className="text-left py-3 px-4 font-medium cursor-pointer hover:bg-muted/70 transition-colors"
+                  onClick={() => handleSort("companyName")}
+                >
+                  <div className="flex items-center gap-1">
+                    Company {sortField === "companyName" && (sortDirection === "asc" ? "↑" : "↓")}
+                  </div>
+                </th>
+                <th className="text-left py-3 px-4 font-medium">Census ID</th>
+                <th className="text-center py-3 px-4 font-medium">Lives</th>
+                <th
+                  className="text-center py-3 px-4 font-medium cursor-pointer hover:bg-muted/70 transition-colors"
+                  onClick={() => handleSort("riskScore")}
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    Score {sortField === "riskScore" && (sortDirection === "asc" ? "↑" : "↓")}
+                  </div>
+                </th>
+                <th className="text-center py-3 px-4 font-medium">Status</th>
+                <th className="text-right py-3 px-4 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedGroups.map((group) => {
+                const censusNumber = `KBA-${group.id.substring(0, 8).toUpperCase()}`;
+                const isQualified = group.riskTier === "preferred" || group.riskTier === "standard";
+                const tier = group.riskTier ? TIER_CONFIG[group.riskTier] || { label: group.riskTier, color: "text-muted-foreground" } : null;
+
+                return (
+                  <tr
+                    key={group.id}
+                    className="border-b hover:bg-muted/30 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/report/${group.id}`)}
+                    data-testid={`row-group-${group.id}`}
+                  >
+                    <td className="py-3 px-4">
+                      <div className="text-sm">
+                        {format(new Date(group.submittedAt), "MM/dd/yy")}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {format(new Date(group.submittedAt), "h:mm a")}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 font-medium" data-testid="text-group-company">
+                      {group.companyName}
+                    </td>
+                    <td className="py-3 px-4">
+                      <code className="text-xs text-muted-foreground" data-testid="text-census-number">
+                        {censusNumber}
+                      </code>
+                    </td>
+                    <td className="py-3 px-4 text-center" data-testid="text-total-lives">
+                      <div className="font-semibold">{group.totalLives}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {group.employeeCount}e·{group.spouseCount || 0}s·{group.dependentCount}d
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      {group.riskScore != null ? (
+                        <div>
+                          <div className="font-bold text-primary" data-testid="text-risk-score">
+                            {group.riskScore.toFixed(2)}
+                          </div>
+                          {tier && (
+                            <div className={`text-xs ${tier.color}`} data-testid="text-risk-tier">
+                              {tier.label.replace(" Risk", "")}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      {isQualified && (
+                        <Badge variant="secondary" className="text-xs text-green-600 dark:text-green-400">
+                          <CheckCircle2 className="h-3 w-3 mr-1" /> Qualified
+                        </Badge>
+                      )}
+                      {group.riskTier === "high" && (
+                        <Badge variant="secondary" className="text-xs text-red-600 dark:text-red-400">
+                          High Risk
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/report/${group.id}`);
+                          }}
+                          data-testid={`button-view-report-${group.id}`}
+                        >
+                          <FileText className="h-3.5 w-3.5 mr-1" />
+                          Report
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => e.stopPropagation()}
+                              data-testid={`button-delete-${group.id}`}
+                            >
+                              <Trash2 className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Census</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete census #{censusNumber}? This will permanently remove the census data and risk analysis. You can re-upload a new census afterwards.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(group.id);
+                                }}
+                                data-testid="button-confirm-delete"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 }
