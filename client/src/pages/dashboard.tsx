@@ -368,18 +368,11 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
   if (step === "upload") {
     return (
       <Card className="p-6">
-        <div className="mb-4 flex items-center justify-between gap-2 flex-wrap">
-          <div>
-            <h2 className="font-bold text-xl" data-testid="text-upload-heading">Upload Your Employee Census</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Include all employees and family members covered under the plan
-            </p>
-          </div>
-          <Button variant="outline" size="sm" asChild>
-            <a href="/api/groups/template" download data-testid="button-download-template">
-              <Download className="mr-1.5 h-3.5 w-3.5" /> Template
-            </a>
-          </Button>
+        <div className="mb-4">
+          <h2 className="font-bold text-xl" data-testid="text-upload-heading">Upload Your Employee Census</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Upload any employee list - AI will handle the rest
+          </p>
         </div>
 
         {isUploading ? (
@@ -413,14 +406,17 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
           <div className="flex items-start gap-2">
             <div className="rounded-full bg-blue-500 text-white px-2 py-0.5 text-[10px] font-bold mt-0.5">AI</div>
             <div className="flex-1">
-              <p className="text-xs font-semibold mb-2 text-blue-900 dark:text-blue-100">Required Data Fields:</p>
+              <p className="text-xs font-semibold mb-2 text-blue-900 dark:text-blue-100">Just include these 6 fields (any column names work):</p>
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {["First Name", "Last Name", "Type (EE/SP/CH)", "Date of Birth", "Gender", "Zip Code"].map((col) => (
                   <Badge key={col} variant="secondary" className="text-xs">{col}</Badge>
                 ))}
               </div>
               <p className="text-xs text-blue-700 dark:text-blue-300">
-                ✨ AI automatically detects your column names and standardizes values (FirstName→First Name, M→Male, EE→Employee, etc.)
+                ✨ AI detects columns and cleans data automatically
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Don't have a list? <a href="/api/groups/template" download className="text-primary hover:underline font-medium">Download example CSV</a>
               </p>
             </div>
           </div>
