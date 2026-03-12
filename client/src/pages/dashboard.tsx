@@ -97,9 +97,24 @@ function DashboardNav() {
   );
 }
 
-function SimpleHeader({ hasGroups }: { hasGroups: boolean }) {
+function SimpleHeader({ hasGroups, step }: { hasGroups: boolean; step: string }) {
   if (hasGroups) return null;
 
+  // Minimized version for non-upload steps
+  if (step !== "upload") {
+    return (
+      <Card className="p-3 mb-4 bg-primary/5 border-primary/20">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Group Health + Dental + Vision + Supplemental Proposal</h3>
+          <p className="text-xs text-muted-foreground">
+            Questions? <a href="tel:+12056410469" className="font-semibold text-primary hover:underline">205-641-0469</a>
+          </p>
+        </div>
+      </Card>
+    );
+  }
+
+  // Full version for upload step
   return (
     <Card className="p-5 mb-6 bg-primary/5 border-primary/20">
       <div className="space-y-3">
@@ -281,7 +296,7 @@ interface ValidationError {
   matchRate: number;
 }
 
-function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void }) {
+function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Group) => void; hasGroups: boolean }) {
   const { toast } = useToast();
   const [step, setStep] = useState<"upload" | "map-columns" | "confirm">("upload");
   const [parseResult, setParseResult] = useState<any | null>(null);
@@ -406,13 +421,15 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
 
   if (step === "upload") {
     return (
-      <Card className="p-6 border-4 border-primary/30 shadow-lg">
-        <div className="mb-4">
-          <h2 className="font-bold text-2xl text-primary" data-testid="text-upload-heading">Upload Your Employee Census</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            You will need each <span className="font-semibold text-foreground">employee</span> and all <span className="font-semibold text-foreground">family members</span> (i.e. spouses and children) that will be covered under the group health plan.
-          </p>
-        </div>
+      <>
+        <SimpleHeader hasGroups={hasGroups} step={step} />
+        <Card className="p-6 border-4 border-primary/30 shadow-lg">
+          <div className="mb-4">
+            <h2 className="font-bold text-2xl text-primary" data-testid="text-upload-heading">Upload Your Employee Census</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              You will need each <span className="font-semibold text-foreground">employee</span> and all <span className="font-semibold text-foreground">family members</span> (i.e. spouses and children) that will be covered under the group health plan.
+            </p>
+          </div>
 
         {isUploading ? (
           <div className="space-y-4 py-8">
@@ -461,6 +478,7 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
           </div>
         </div>
       </Card>
+      </>
     );
   }
 
@@ -476,15 +494,16 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
     };
 
     return (
-      <Card className="p-6">
+      <>
+        <SimpleHeader hasGroups={hasGroups} step={step} />
+        <Card className="p-6">
         <div className="mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Button variant="ghost" size="icon" onClick={() => setStep("upload")}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h2 className="font-semibold text-lg">Confirm Column Mapping</h2>
-          </div>
-          <p className="text-sm text-muted-foreground ml-10">
+          <Button variant="outline" size="sm" onClick={() => setStep("upload")} className="mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Upload
+          </Button>
+          <h2 className="font-semibold text-lg mb-2">Confirm Column Mapping</h2>
+          <p className="text-sm text-muted-foreground">
             AI detected your columns. Verify they match correctly or adjust if needed.
           </p>
         </div>
@@ -589,6 +608,7 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
           </Button>
         </div>
       </Card>
+      </>
     );
   }
 
@@ -597,15 +617,16 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
     const rowsWithIssues = parseResult.previewRows.filter(r => r.issues && r.issues.length > 0);
 
     return (
-      <Card className="p-6">
+      <>
+        <SimpleHeader hasGroups={hasGroups} step={step} />
+        <Card className="p-6">
         <div className="mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Button variant="ghost" size="icon" onClick={() => setStep("map-columns")} data-testid="button-back-mapping">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h2 className="font-semibold text-lg">✓ AI Cleaned Your Data</h2>
-          </div>
-          <p className="text-sm text-muted-foreground ml-10">{parseResult.summary}</p>
+          <Button variant="outline" size="sm" onClick={() => setStep("map-columns")} data-testid="button-back-mapping" className="mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Column Mapping
+          </Button>
+          <h2 className="font-semibold text-lg mb-2">✓ AI Cleaned Your Data</h2>
+          <p className="text-sm text-muted-foreground">{parseResult.summary}</p>
         </div>
 
         <div className="mb-4 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-3">
@@ -747,6 +768,7 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
           )}
         </Button>
       </Card>
+      </>
     );
   }
 
@@ -1019,13 +1041,11 @@ export default function DashboardPage() {
           </h1>
         </div>
 
-        <SimpleHeader hasGroups={hasGroups} />
-
         {showAnalysis ? (
           <AnalysisAnimation onComplete={handleAnalysisComplete} group={analyzingGroup} />
         ) : (
           <div className="space-y-6">
-            <CensusUploadWizard onComplete={handleUploadComplete} />
+            <CensusUploadWizard onComplete={handleUploadComplete} hasGroups={hasGroups} />
             <GroupsList />
           </div>
         )}
