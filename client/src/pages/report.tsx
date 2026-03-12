@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { useState } from "react";
 import Papa from "papaparse";
+import html2pdf from "html2pdf.js";
 import {
   ArrowLeft,
   Building2,
@@ -286,9 +287,10 @@ export default function ReportPage() {
   const familySizeComp = getComparison(avgFamilySize, BENCHMARKS.avgFamilySize);
   const genderComp = getComparison(femalePercentage, BENCHMARKS.femalePercentage);
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     const tierColor = group.riskTier === 'preferred' ? '#16a34a' : group.riskTier === 'standard' ? '#ca8a04' : '#dc2626';
     const tierBg = group.riskTier === 'preferred' ? '#dcfce7' : group.riskTier === 'standard' ? '#fef9c3' : '#fee2e2';
+    const censusNum = `KBA-${group.id.substring(0, 8).toUpperCase()}`;
 
     const htmlContent = `
       <html>
@@ -618,32 +620,24 @@ export default function ReportPage() {
       </html>
     `;
 
-    // Create a hidden iframe for printing
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
+    // Create a temporary element to hold the HTML
+    const element = document.createElement('div');
+    element.innerHTML = htmlContent;
 
-    const iframeDoc = iframe.contentWindow?.document;
-    if (iframeDoc) {
-      iframeDoc.open();
-      iframeDoc.write(htmlContent);
-      iframeDoc.close();
+    const opt = {
+      margin: 0,
+      filename: `${group.companyName.replace(/[^a-z0-9]/gi, '_')}_${censusNum}_Report.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
 
-      // Wait for content to load then print
-      iframe.onload = () => {
-        setTimeout(() => {
-          iframe.contentWindow?.print();
-          // Clean up after printing
-          setTimeout(() => {
-            document.body.removeChild(iframe);
-          }, 100);
-        }, 250);
-      };
+    // Generate and download PDF
+    try {
+      await html2pdf().set(opt).from(element).save();
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF. Please try again.');
     }
   };
 
@@ -679,7 +673,8 @@ export default function ReportPage() {
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `${group.companyName.replace(/[^a-z0-9]/gi, '_')}_Census_${new Date().toISOString().split('T')[0]}.csv`;
+                    const censusNum = `KBA-${group.id.substring(0, 8).toUpperCase()}`;
+                    a.download = `${group.companyName.replace(/[^a-z0-9]/gi, '_')}_${censusNum}_Census.csv`;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
