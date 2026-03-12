@@ -796,19 +796,13 @@ export async function registerRoutes(
       }
 
       const entries: CensusEntry[] = aiCleaned.cleanedData.map((cleaned: any) => {
-        // Map relationship to storage format
-        let relationship = "EE";
-        if (cleaned.relationship === "Spouse") relationship = "SP";
-        else if (cleaned.relationship === "Child") relationship = "CH";
-        else if (cleaned.relationship === "Employee") relationship = "EE";
-
         return {
           firstName: cleaned.firstName,
           lastName: cleaned.lastName,
           dateOfBirth: cleaned.dob,
           gender: cleaned.gender,
           zipCode: cleaned.zip,
-          relationship,
+          relationship: cleaned.relationship, // Already in "EE"/"SP"/"CH" format from AI cleaner
         };
       });
 

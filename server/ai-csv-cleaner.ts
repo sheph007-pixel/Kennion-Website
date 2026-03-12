@@ -12,7 +12,7 @@ function getOpenAIClient() {
 interface CleanedRow {
   firstName: string;
   lastName: string;
-  relationship: "Employee" | "Spouse" | "Child";
+  relationship: "EE" | "SP" | "CH";
   dob: string;
   gender: "Male" | "Female";
   zip: string;
@@ -30,26 +30,26 @@ interface CSVCleaningResult {
 /**
  * Standardize relationship value using simple rules
  */
-function standardizeRelationship(value: string): "Employee" | "Spouse" | "Child" {
+function standardizeRelationship(value: string): "EE" | "SP" | "CH" {
   const normalized = value.trim().toUpperCase();
 
   // Employee patterns
   if (["EE", "E", "EMP", "EMPLOYEE", "STAFF", "WORKER", "MEMBER"].includes(normalized)) {
-    return "Employee";
+    return "EE";
   }
 
   // Spouse patterns
   if (["SP", "S", "SPOUSE", "PARTNER", "WIFE", "HUSBAND"].includes(normalized)) {
-    return "Spouse";
+    return "SP";
   }
 
   // Child patterns
   if (["CH", "C", "CHILD", "CHILDREN", "DEP", "DEPENDENT", "KID", "SON", "DAUGHTER"].includes(normalized)) {
-    return "Child";
+    return "CH";
   }
 
   // Default to Employee if unrecognized
-  return "Employee";
+  return "EE";
 }
 
 /**
