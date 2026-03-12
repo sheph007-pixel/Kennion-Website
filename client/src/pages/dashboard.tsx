@@ -119,7 +119,7 @@ function SimpleHeader({ hasGroups, step }: { hasGroups: boolean; step: string })
     <Card className="p-5 mb-6 bg-primary/5 border-primary/20">
       <div className="space-y-3">
         <div>
-          <h3 className="text-base font-semibold mb-2">Welcome! Let's get you a Group Health + Dental + Vision + Supplemental proposal.</h3>
+          <h3 className="text-base font-semibold mb-2">Group Health + Dental + Vision + Supplemental</h3>
           <p className="text-sm text-muted-foreground mb-3">
             To calculate your rates, we need to know who you're covering. It takes about 2 minutes.
           </p>
