@@ -624,15 +624,9 @@ export default function ReportPage() {
     <div className="min-h-screen bg-background">
       <ReportNav />
       <div className="mx-auto max-w-5xl px-6 py-8" id="report-content">
-        <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
+        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Building2 className="h-5 w-5 text-primary" />
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-report-title">
-                {group.companyName}
-              </h1>
-            </div>
-            <p className="text-sm text-muted-foreground" data-testid="text-census-number">
+            <p className="text-xs text-muted-foreground mb-1" data-testid="text-census-number">
               Census #KBA-{group.id.substring(0, 8).toUpperCase()} | Submitted {new Date(group.submittedAt).toLocaleDateString()}
             </p>
           </div>
@@ -641,10 +635,10 @@ export default function ReportPage() {
           </Button>
         </div>
 
-        <Card className="p-6 mb-8">
+        <Card className="p-6 mb-6">
           <div className="mb-4">
-            <p className="text-sm text-muted-foreground">Group Name:</p>
-            <h2 className="text-2xl font-bold">{group.companyName}</h2>
+            <p className="text-xs text-muted-foreground mb-1">Group Name:</p>
+            <h1 className="text-2xl font-bold" data-testid="text-report-title">{group.companyName}</h1>
           </div>
 
           {group.riskScore != null ? (
@@ -684,7 +678,7 @@ export default function ReportPage() {
           )}
         </Card>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           <Card className="p-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <UserCheck className="h-3.5 w-3.5" /> Employees
@@ -767,184 +761,74 @@ export default function ReportPage() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card className="p-6" style={{ display: 'none' }}>
-            {/* Risk Score card moved to top */}
-          </Card>
+        <Card className="p-6 mb-6">
+          <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-primary" />
+            Group Demographics
+          </h2>
 
-          <Card className="p-6">
-            <h2 className="font-semibold mb-4 flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" />
-              Group Demographics
-            </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-4">
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Median Age</div>
+              <div className="text-xl font-bold">{Math.round(medianAge)}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">{medianAgeComp.text}</div>
+            </div>
 
-            <div className="space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-sm text-muted-foreground">Median Age</span>
-                    <div className="group relative">
-                      <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                      <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-48 p-2 text-xs bg-popover border rounded-md shadow-lg">
-                        The middle age value across all members in the group
-                      </div>
-                    </div>
-                  </div>
-                  <div className="font-bold text-lg">{Math.round(medianAge)}</div>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    {medianAgeComp.isAbove ? (
-                      <TrendingUp className="h-3 w-3 text-red-500" />
-                    ) : (
-                      <TrendingDown className="h-3 w-3 text-green-500" />
-                    )}
-                    <span className="text-xs text-muted-foreground">{medianAgeComp.text}</span>
-                  </div>
-                </div>
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Employee Age</div>
+              <div className="text-xl font-bold">{Math.round(employeeAge)}</div>
+            </div>
 
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-sm text-muted-foreground">Employee Age</span>
-                    <div className="group relative">
-                      <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                      <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-48 p-2 text-xs bg-popover border rounded-md shadow-lg">
-                        Average age of employees only (excludes spouses and dependents)
-                      </div>
-                    </div>
-                  </div>
-                  <div className="font-bold text-lg">{Math.round(employeeAge)}</div>
-                </div>
-              </div>
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Avg Family Size</div>
+              <div className="text-xl font-bold">{avgFamilySize.toFixed(2)}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">{familySizeComp.text}</div>
+            </div>
 
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Group Category</div>
+              <Badge variant="secondary" className="font-semibold text-sm">{groupCategory}</Badge>
+            </div>
+
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Dependency Ratio</div>
+              <div className="text-xl font-bold">{dependencyRatio.toFixed(2)}</div>
+            </div>
+
+            <div className="col-span-2 md:col-span-3 pt-2 border-t">
+              <div className="text-xs text-muted-foreground mb-2">Gender Mix</div>
+              <GenderChart male={maleCount} female={femaleCount} />
+            </div>
+          </div>
+        </Card>
+
+        {(group.riskTier === 'preferred' || group.riskTier === 'standard') && (
+          <Card className="p-4 mb-6 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
               <div>
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-sm text-muted-foreground">Avg Family Size</span>
-                  <div className="group relative">
-                    <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                    <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-56 p-2 text-xs bg-popover border rounded-md shadow-lg">
-                      Average number of covered lives per employee (employee + spouse + dependents)
-                    </div>
-                  </div>
-                </div>
-                <div className="font-bold text-lg">{avgFamilySize.toFixed(2)}</div>
-                <div className="flex items-center gap-1.5 mt-1">
-                  {familySizeComp.isAbove ? (
-                    <TrendingUp className="h-3 w-3 text-orange-500" />
-                  ) : (
-                    <TrendingDown className="h-3 w-3 text-blue-500" />
-                  )}
-                  <span className="text-xs text-muted-foreground">{familySizeComp.text}</span>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <span className="text-sm text-muted-foreground">Gender Mix</span>
-                  <div className="group relative">
-                    <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                    <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-48 p-2 text-xs bg-popover border rounded-md shadow-lg">
-                      Percentage of female members in the group
-                    </div>
-                  </div>
-                </div>
-                <GenderChart male={maleCount} female={femaleCount} />
-                <div className="flex items-center gap-1.5 mt-2">
-                  {genderComp.isAbove ? (
-                    <TrendingUp className="h-3 w-3 text-pink-500" />
-                  ) : (
-                    <TrendingDown className="h-3 w-3 text-blue-500" />
-                  )}
-                  <span className="text-xs text-muted-foreground">
-                    {femalePercentage.toFixed(1)}% female ({genderComp.text})
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-start justify-between gap-4 pt-2 border-t">
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-sm text-muted-foreground">Group Category</span>
-                    <div className="group relative">
-                      <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                      <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-56 p-2 text-xs bg-popover border rounded-md shadow-lg">
-                        Micro: 2-14 lives | Small: 15-50 lives | Large: 51+ lives
-                      </div>
-                    </div>
-                  </div>
-                  <Badge variant="secondary" className="font-semibold">{groupCategory}</Badge>
-                </div>
-
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-sm text-muted-foreground">Dependency Ratio</span>
-                    <div className="group relative">
-                      <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                      <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-56 p-2 text-xs bg-popover border rounded-md shadow-lg">
-                        Average number of dependents and spouses per employee
-                      </div>
-                    </div>
-                  </div>
-                  <div className="font-bold text-lg">{dependencyRatio.toFixed(2)}</div>
-                </div>
+                <h3 className="font-semibold text-green-900 dark:text-green-100 mb-1">Qualifies for Kennion Program</h3>
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  Groups like yours save an average of <strong>18% vs traditional market rates</strong>.
+                </p>
               </div>
             </div>
           </Card>
-        </div>
+        )}
 
-        <Card className="mb-6 overflow-hidden border-l-4 border-l-primary">
-          <button
-            onClick={() => setSummaryExpanded(!summaryExpanded)}
-            className="w-full p-4 flex items-center justify-between text-left hover:bg-accent/50 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-primary" />
-              <h3 className="font-semibold">Executive Summary</h3>
-            </div>
-            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${summaryExpanded ? 'rotate-180' : ''}`} />
-          </button>
-          {summaryExpanded && (
-            <div className="px-4 pb-4 space-y-2 text-sm">
-              <p>
-                Your group: <strong className={tierConfig?.color || ''}>{tierConfig?.label || 'Standard Risk'}</strong>. Traditional plans pool everyone together—healthy groups subsidize sick ones. Kennion uses AI to analyze your specific risk profile and offer better rates.
-              </p>
-              {(group.riskTier === 'preferred' || group.riskTier === 'standard') && (
-                <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800 text-green-900 dark:text-green-100">
-                  ✓ <strong>Qualifies for Kennion Program</strong> — Groups like yours save an average of <strong>18% vs traditional market rates</strong>.
-                </div>
-              )}
-              {group.riskTier === 'high' && (
-                <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100">
+        {group.riskTier === 'high' && (
+          <Card className="p-4 mb-6 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+            <div className="flex items-start gap-3">
+              <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-1">Alternative Options Available</h3>
+                <p className="text-sm text-amber-800 dark:text-amber-200">
                   We focus on Preferred and Standard risk groups. We can discuss fully-insured options for your situation.
-                </div>
-              )}
+                </p>
+              </div>
             </div>
-          )}
-        </Card>
-
-        <Card className="mb-6 overflow-hidden">
-          <button
-            onClick={() => setAdvantageExpanded(!advantageExpanded)}
-            className="w-full p-4 flex items-center justify-between text-left hover:bg-accent/50 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-primary" />
-              <h3 className="font-semibold">The Kennion Advantage</h3>
-            </div>
-            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${advantageExpanded ? 'rotate-180' : ''}`} />
-          </button>
-          {advantageExpanded && (
-            <div className="px-4 pb-4 space-y-2 text-sm">
-              <p>
-                <strong>Proprietary AI:</strong> Our advanced technology analyzes age, family structure, gender mix, and dozens of factors to build a complete picture of your group's healthcare needs—transparency never before possible.
-              </p>
-              <p>
-                <strong>Tailored Solutions:</strong> We design group health solutions specifically matched to your company's composition. Highly accurate quotes backed by comprehensive risk understanding.
-              </p>
-              <p>
-                <strong>Better Benefits, Lower Costs:</strong> Strong underwriting + private program = better benefits at lower cost. We know exactly what coverage your group needs.
-              </p>
-            </div>
-          )}
-        </Card>
+          </Card>
+        )}
       </div>
     </div>
   );

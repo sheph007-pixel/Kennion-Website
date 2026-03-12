@@ -259,10 +259,16 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
   // Round to 2 decimal places
   riskScore = Math.round(riskScore * 100) / 100;
 
-  // Determine risk tier based on the specified thresholds
-  let riskTier = "standard"; // 1.0 - 1.5
-  if (riskScore < 1.0) riskTier = "preferred"; // Below 1.0
-  else if (riskScore >= 1.5) riskTier = "high"; // 1.5+
+  // CRITICAL: Risk tier categorization thresholds (DO NOT MODIFY without approval)
+  // Preferred Risk: < 1.0 (Below 1.0)
+  // Standard Risk: 1.0 - 1.49 (1.0 to less than 1.5)
+  // High Risk: >= 1.5 (1.5 and above)
+  let riskTier = "standard";
+  if (riskScore < 1.0) {
+    riskTier = "preferred";
+  } else if (riskScore >= 1.5) {
+    riskTier = "high";
+  }
 
   const eeCount = entries.filter(e => {
     const r = e.relationship.toUpperCase();
