@@ -305,14 +305,17 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
   const [isApplyingMapping, setIsApplyingMapping] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [validationError, setValidationError] = useState<ValidationError | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [mappingError, setMappingError] = useState<string | null>(null);
 
   const handleFile = useCallback(async (file: File) => {
     if (!file.name.endsWith(".csv")) {
-      toast({ title: "Invalid file", description: "Please upload a CSV file.", variant: "destructive" });
+      setUploadError("Invalid file type. Please upload a CSV file (.csv extension required).");
       return;
     }
 
     setIsUploading(true);
+    setUploadError(null);
     const formData = new FormData();
     formData.append("file", file);
 
@@ -337,7 +340,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
         description: result.message || "Please confirm the column mapping below.",
       });
     } catch (err: any) {
-      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+      setUploadError(err.message || "Failed to parse CSV file");
     } finally {
       setIsUploading(false);
     }
@@ -356,6 +359,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
 
   const handleApplyMapping = async () => {
     setIsApplyingMapping(true);
+    setMappingError(null);
     try {
       const res = await fetch("/api/groups/apply-mapping", {
         method: "POST",
@@ -377,7 +381,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
         description: result.summary,
       });
     } catch (err: any) {
-      toast({ title: "Mapping failed", description: err.message, variant: "destructive" });
+      setMappingError(err.message || "Failed to apply column mapping");
     } finally {
       setIsApplyingMapping(false);
     }
@@ -423,6 +427,27 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
     return (
       <>
         <SimpleHeader hasGroups={hasGroups} step={step} />
+
+        {/* Upload Error Dialog */}
+        <AlertDialog open={!!uploadError} onOpenChange={(open) => !open && setUploadError(null)}>
+          <AlertDialogContent className="max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-red-600 dark:text-red-400 flex items-center gap-2">
+                <XCircle className="h-5 w-5" />
+                Upload Failed
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-base pt-2">
+                {uploadError}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={() => setUploadError(null)}>
+                Try Again
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <Card className="p-6 border-4 border-primary/30 shadow-lg">
           <div className="mb-4">
             <h2 className="font-bold text-2xl text-primary" data-testid="text-upload-heading">Upload Your Employee Census</h2>
@@ -496,6 +521,27 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
     return (
       <>
         <SimpleHeader hasGroups={hasGroups} step={step} />
+
+        {/* Mapping Error Dialog */}
+        <AlertDialog open={!!mappingError} onOpenChange={(open) => !open && setMappingError(null)}>
+          <AlertDialogContent className="max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-red-600 dark:text-red-400 flex items-center gap-2">
+                <XCircle className="h-5 w-5" />
+                Mapping Failed
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-base pt-2">
+                {mappingError}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={() => setMappingError(null)}>
+                OK
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <Card className="p-4">
         <div className="mb-3">
           <div className="flex items-start justify-between gap-4 mb-3">
