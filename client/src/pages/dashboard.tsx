@@ -336,7 +336,7 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
       <Card className="p-6">
         <div className="mb-4 flex items-center justify-between gap-2 flex-wrap">
           <div>
-            <h2 className="font-semibold text-lg" data-testid="text-upload-heading">Step 1: Upload Your Employee Census</h2>
+            <h2 className="font-semibold text-lg" data-testid="text-upload-heading">Upload Your Employee Census</h2>
             <p className="text-sm text-muted-foreground mt-1">
               This allows us to analyze your group and provide you with an accurate benefits quote.
             </p>
