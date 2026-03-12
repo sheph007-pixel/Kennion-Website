@@ -811,6 +811,126 @@ export default function ReportPage() {
           </Card>
         </div>
 
+        <Card className="p-5 mb-6">
+          <h2 className="text-base font-semibold mb-3 flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-primary" />
+            Age Band Risk Analysis
+          </h2>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b-2 border-primary/20">
+                  <th className="text-left py-2 px-3 font-semibold">Age Band</th>
+                  <th className="text-right py-2 px-3 font-semibold">Females</th>
+                  <th className="text-right py-2 px-3 font-semibold">Males</th>
+                  <th className="text-right py-2 px-3 font-semibold">Total</th>
+                  <th className="text-right py-2 px-3 font-semibold">Avg Risk Score</th>
+                  <th className="text-right py-2 px-3 font-semibold">vs. Benchmark</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {(() => {
+                  const ageBands = ['0-4', '5-9', '10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64', '65-69', '70-Above'];
+                  const riskTable: Record<string, { female: number; male: number }> = {
+                    "0-4": { female: 0.35, male: 0.40 },
+                    "5-9": { female: 0.30, male: 0.55 },
+                    "10-14": { female: 0.37, male: 0.46 },
+                    "15-19": { female: 0.62, male: 0.46 },
+                    "20-24": { female: 0.80, male: 0.46 },
+                    "25-29": { female: 0.92, male: 0.46 },
+                    "30-34": { female: 0.88, male: 0.45 },
+                    "35-39": { female: 0.81, male: 0.52 },
+                    "40-44": { female: 1.18, male: 0.77 },
+                    "45-49": { female: 1.03, male: 0.67 },
+                    "50-54": { female: 1.43, male: 1.20 },
+                    "55-59": { female: 1.22, male: 1.52 },
+                    "60-64": { female: 1.49, male: 1.99 },
+                    "65-69": { female: 3.81, male: 1.64 },
+                    "70-Above": { female: 10.36, male: 2.78 },
+                  };
+
+                  const distribution = chars.ageBandDistribution || {};
+                  let totalFemales = 0;
+                  let totalMales = 0;
+                  let weightedRiskSum = 0;
+                  let totalCount = 0;
+
+                  return (
+                    <>
+                      {ageBands.map(band => {
+                        const bandData = distribution[band] || { female: 0, male: 0 };
+                        const females = bandData.female || 0;
+                        const males = bandData.male || 0;
+                        const total = females + males;
+                        const riskData = riskTable[band];
+
+                        if (total === 0) {
+                          return (
+                            <tr key={band} className="text-muted-foreground/40">
+                              <td className="py-2 px-3">{band}</td>
+                              <td className="text-right py-2 px-3">—</td>
+                              <td className="text-right py-2 px-3">—</td>
+                              <td className="text-right py-2 px-3">—</td>
+                              <td className="text-right py-2 px-3">—</td>
+                              <td className="text-right py-2 px-3">—</td>
+                            </tr>
+                          );
+                        }
+
+                        const avgRisk = total > 0
+                          ? (females * riskData.female + males * riskData.male) / total
+                          : 0;
+                        const vsBenchmark = avgRisk - 1.0;
+
+                        totalFemales += females;
+                        totalMales += males;
+                        weightedRiskSum += females * riskData.female + males * riskData.male;
+                        totalCount += total;
+
+                        return (
+                          <tr key={band} className={avgRisk >= 1.5 ? 'bg-red-50 dark:bg-red-950/10' : avgRisk < 1.0 ? 'bg-green-50 dark:bg-green-950/10' : ''}>
+                            <td className="py-2 px-3">{band}</td>
+                            <td className="text-right py-2 px-3 font-medium">{females}</td>
+                            <td className="text-right py-2 px-3 font-medium">{males}</td>
+                            <td className="text-right py-2 px-3 font-bold">{total}</td>
+                            <td className={`text-right py-2 px-3 font-bold ${
+                              avgRisk >= 1.5 ? 'text-red-600 dark:text-red-400' :
+                              avgRisk < 1.0 ? 'text-green-600 dark:text-green-400' :
+                              'text-yellow-600 dark:text-yellow-400'
+                            }`}>
+                              {avgRisk.toFixed(3)}
+                            </td>
+                            <td className={`text-right py-2 px-3 font-medium ${
+                              vsBenchmark > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
+                            }`}>
+                              {vsBenchmark > 0 ? '+' : ''}{vsBenchmark.toFixed(3)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      <tr className="border-t-2 border-primary bg-primary/5 font-bold">
+                        <td className="py-2 px-3">ALL AGES</td>
+                        <td className="text-right py-2 px-3">{totalFemales}</td>
+                        <td className="text-right py-2 px-3">{totalMales}</td>
+                        <td className="text-right py-2 px-3">{totalCount}</td>
+                        <td className="text-right py-2 px-3">{totalCount > 0 ? (weightedRiskSum / totalCount).toFixed(3) : '—'}</td>
+                        <td className={`text-right py-2 px-3 ${
+                          totalCount > 0 && (weightedRiskSum / totalCount - 1.0) > 0
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-green-600 dark:text-green-400'
+                        }`}>
+                          {totalCount > 0 ? ((weightedRiskSum / totalCount - 1.0) > 0 ? '+' : '') + (weightedRiskSum / totalCount - 1.0).toFixed(3) : '—'}
+                        </td>
+                      </tr>
+                    </>
+                  );
+                })()}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
         {(group.riskTier === 'preferred' || group.riskTier === 'standard') && (
           <Card className="p-4 mb-6 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
             <div className="flex items-start gap-3">
