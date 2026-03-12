@@ -46,7 +46,7 @@ Sample rows (first 10): ${JSON.stringify(sampleRows, null, 2)}
 Your task:
 1. Identify which columns map to: firstName, lastName, relationship, dob (date of birth), gender, zip
 2. Standardize relationship values to EXACTLY one of: "Employee", "Spouse", "Child"
-   - Common abbreviations: EE/E/Emp → Employee, SP/S/Spouse → Spouse, DEP/D/CH/Child/Dependent → Child
+   - Common abbreviations: EE/E/Emp → Employee, SP/S/Spouse → Spouse, CH/Child/Children/DEP/Dependent → Child
 3. Standardize gender to EXACTLY: "Male" or "Female"
    - M/Male/male → Male, F/Female/female → Female
 4. Keep dates in original format

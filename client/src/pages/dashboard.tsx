@@ -391,7 +391,7 @@ function CensusUploadWizard({ onComplete }: { onComplete: (group: Group) => void
         <div className="mt-4 rounded-md bg-card p-3 border">
           <p className="text-xs font-medium mb-2">Required CSV Columns:</p>
           <div className="flex flex-wrap gap-1.5">
-            {["First Name", "Last Name", "Type (EE/SP/DEP)", "Date of Birth", "Gender", "Zip Code"].map((col) => (
+            {["First Name", "Last Name", "Type (EE/SP/CH)", "Date of Birth", "Gender", "Zip Code"].map((col) => (
               <Badge key={col} variant="secondary" className="text-xs">{col}</Badge>
             ))}
           </div>

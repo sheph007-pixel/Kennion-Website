@@ -75,7 +75,7 @@ function getBaseUrl(req: Request): string {
 const REQUIRED_FIELDS = [
   { key: "first_name", label: "First Name", aliases: ["first name", "firstname", "first", "fname", "given name", "given_name"] },
   { key: "last_name", label: "Last Name", aliases: ["last name", "lastname", "last", "lname", "surname", "family name", "family_name"] },
-  { key: "type", label: "Type (EE/SP/DEP)", aliases: ["type", "relationship", "relation", "member type", "member_type", "coverage type", "coverage_type", "ee/sp/dep", "enrollment type", "enrollment_type", "subscriber type", "subscriber_type", "dependent type", "dependent_type"] },
+  { key: "type", label: "Type (EE/SP/CH)", aliases: ["type", "relationship", "relation", "member type", "member_type", "coverage type", "coverage_type", "ee/sp/ch", "ee/sp/dep", "enrollment type", "enrollment_type", "subscriber type", "subscriber_type", "child", "children"] },
   { key: "date_of_birth", label: "Date of Birth", aliases: ["date of birth", "dob", "dateofbirth", "birth date", "birthdate", "birth_date", "birthday", "date_of_birth", "d.o.b.", "d.o.b"] },
   { key: "gender", label: "Gender", aliases: ["gender", "sex", "m/f", "male/female"] },
   { key: "zip_code", label: "Zip Code", aliases: ["zip code", "zipcode", "zip", "zip_code", "postal code", "postal_code", "postalcode"] },
@@ -594,7 +594,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/groups/template", (_req: Request, res: Response) => {
-    const csv = "First Name,Last Name,Type,Date of Birth,Gender,Zip Code\nJohn,Smith,EE,1985-03-15,Male,30301\nJane,Smith,SP,1987-08-22,Female,30301\nTommy,Smith,DEP,2015-01-10,Male,30301\nSarah,Johnson,EE,1990-06-12,Female,30301\nMike,Williams,EE,1978-11-03,Male,30302\n";
+    const csv = "First Name,Last Name,Type,Date of Birth,Gender,Zip Code\nJohn,Smith,EE,3/15/1985,Male,30301\nJane,Smith,SP,8/22/1987,Female,30301\nTommy,Smith,CH,1/10/2015,Male,30301\nSarah,Johnson,EE,6/12/1990,Female,30301\nMike,Williams,EE,11/3/1978,Male,30302\n";
     res.setHeader("Content-Type", "text/csv");
     res.setHeader("Content-Disposition", "attachment; filename=census_template.csv");
     res.send(csv);
@@ -602,11 +602,11 @@ export async function registerRoutes(
 
   app.get("/api/groups/sample", (_req: Request, res: Response) => {
     const sampleData = [
-      { "First Name": "John", "Last Name": "Smith", "Type": "EE", "Date of Birth": "1985-03-15", "Gender": "Male", "Zip Code": "30301" },
-      { "First Name": "Jane", "Last Name": "Smith", "Type": "SP", "Date of Birth": "1987-08-22", "Gender": "Female", "Zip Code": "30301" },
-      { "First Name": "Tommy", "Last Name": "Smith", "Type": "DEP", "Date of Birth": "2015-01-10", "Gender": "Male", "Zip Code": "30301" },
-      { "First Name": "Sarah", "Last Name": "Johnson", "Type": "EE", "Date of Birth": "1990-06-12", "Gender": "Female", "Zip Code": "30301" },
-      { "First Name": "Mike", "Last Name": "Williams", "Type": "EE", "Date of Birth": "1978-11-03", "Gender": "Male", "Zip Code": "30302" },
+      { "First Name": "John", "Last Name": "Smith", "Type": "EE", "Date of Birth": "3/15/1985", "Gender": "Male", "Zip Code": "30301" },
+      { "First Name": "Jane", "Last Name": "Smith", "Type": "SP", "Date of Birth": "8/22/1987", "Gender": "Female", "Zip Code": "30301" },
+      { "First Name": "Tommy", "Last Name": "Smith", "Type": "CH", "Date of Birth": "1/10/2015", "Gender": "Male", "Zip Code": "30301" },
+      { "First Name": "Sarah", "Last Name": "Johnson", "Type": "EE", "Date of Birth": "6/12/1990", "Gender": "Female", "Zip Code": "30301" },
+      { "First Name": "Mike", "Last Name": "Williams", "Type": "EE", "Date of Birth": "11/3/1978", "Gender": "Male", "Zip Code": "30302" },
     ];
     res.json(sampleData);
   });
@@ -711,7 +711,7 @@ export async function registerRoutes(
         // Map relationship to storage format
         let relationship = "EE";
         if (cleaned.relationship === "Spouse") relationship = "SP";
-        else if (cleaned.relationship === "Child") relationship = "DEP";
+        else if (cleaned.relationship === "Child") relationship = "CH";
         else if (cleaned.relationship === "Employee") relationship = "EE";
 
         return {
@@ -736,7 +736,7 @@ export async function registerRoutes(
 
       const employeeCount = entries.filter((e: CensusEntry) => e.relationship === "EE").length;
       const spouseCount = entries.filter((e: CensusEntry) => e.relationship === "SP").length;
-      const childrenCount = entries.filter((e: CensusEntry) => e.relationship === "DEP").length;
+      const childrenCount = entries.filter((e: CensusEntry) => e.relationship === "CH").length;
 
       const analysis = analyzeGroupRisk(entries);
 
@@ -845,7 +845,7 @@ export async function registerRoutes(
         const rel = (row.type || row.relationship || "EE").trim().toUpperCase();
         let relationship = "EE";
         if (["SP", "SPOUSE"].includes(rel)) relationship = "SP";
-        else if (["DEP", "DEPENDENT", "CHILD"].includes(rel)) relationship = "DEP";
+        else if (["CH", "CHILD", "CHILDREN", "DEP", "DEPENDENT"].includes(rel)) relationship = "CH";
 
         return {
           firstName: (row.first_name || "").trim(),
@@ -868,7 +868,7 @@ export async function registerRoutes(
 
       const employeeCount = entries.filter(e => e.relationship === "EE").length;
       const spouseCount = entries.filter(e => e.relationship === "SP").length;
-      const childrenCount = entries.filter(e => e.relationship === "DEP").length;
+      const childrenCount = entries.filter(e => e.relationship === "CH").length;
 
       const analysis = analyzeGroupRisk(entries);
 
