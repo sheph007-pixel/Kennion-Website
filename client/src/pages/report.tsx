@@ -226,6 +226,7 @@ export default function ReportPage() {
   const groupId = params?.id;
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [advantageExpanded, setAdvantageExpanded] = useState(false);
+  const [expandedBands, setExpandedBands] = useState<Set<string>>(new Set());
 
   const { data: group, isLoading: groupLoading } = useQuery<Group>({
     queryKey: ["/api/groups", groupId],
@@ -246,6 +247,48 @@ export default function ReportPage() {
     },
     enabled: !!groupId,
   });
+
+  // Helper function to calculate age from date of birth
+  const calculateAge = (dateOfBirth: string): number => {
+    const birthDate = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  // Helper function to get age band for a given age
+  const getAgeBand = (age: number): string => {
+    if (age <= 4) return '0-4';
+    if (age <= 9) return '5-9';
+    if (age <= 14) return '10-14';
+    if (age <= 19) return '15-19';
+    if (age <= 24) return '20-24';
+    if (age <= 29) return '25-29';
+    if (age <= 34) return '30-34';
+    if (age <= 39) return '35-39';
+    if (age <= 44) return '40-44';
+    if (age <= 49) return '45-49';
+    if (age <= 54) return '50-54';
+    if (age <= 59) return '55-59';
+    if (age <= 64) return '60-64';
+    if (age <= 69) return '65-69';
+    return '70-Above';
+  };
+
+  // Helper function to toggle band expansion
+  const toggleBandExpansion = (band: string) => {
+    const newExpanded = new Set(expandedBands);
+    if (newExpanded.has(band)) {
+      newExpanded.delete(band);
+    } else {
+      newExpanded.add(band);
+    }
+    setExpandedBands(newExpanded);
+  };
 
   if (groupLoading) {
     return (
@@ -824,20 +867,116 @@ export default function ReportPage() {
                         weightedRiskSum += females * riskData.female + males * riskData.male;
                         totalCount += total;
 
+                        const isExpanded = expandedBands.has(band);
+
+                        // Get members for this age band from census data
+                        const bandMembers = (census || []).filter(member => {
+                          const age = calculateAge(member.dateOfBirth);
+                          return getAgeBand(age) === band;
+                        }).map(member => {
+                          const age = calculateAge(member.dateOfBirth);
+                          const gender = member.gender.toLowerCase();
+                          const riskScore = gender === 'female' ? riskData.female : riskData.male;
+                          return {
+                            ...member,
+                            age,
+                            riskScore,
+                          };
+                        });
+
+                        // Calculate validation
+                        const memberCount = bandMembers.length;
+                        const calculatedAvg = memberCount > 0
+                          ? bandMembers.reduce((sum, m) => sum + m.riskScore, 0) / memberCount
+                          : 0;
+                        const countMatches = memberCount === total;
+                        const avgMatches = Math.abs(calculatedAvg - avgRisk) < 0.001;
+
                         return (
-                          <tr key={band} className={avgRisk >= 1.5 ? 'bg-red-50 dark:bg-red-950/10' : avgRisk < 1.0 ? 'bg-green-50 dark:bg-green-950/10' : ''}>
-                            <td className="py-2 px-3">{band}</td>
-                            <td className="text-right py-2 px-3 font-medium">{females}</td>
-                            <td className="text-right py-2 px-3 font-medium">{males}</td>
-                            <td className="text-right py-2 px-3 font-bold">{total}</td>
-                            <td className={`text-right py-2 px-3 font-bold ${
-                              avgRisk >= 1.5 ? 'text-red-600 dark:text-red-400' :
-                              avgRisk < 1.0 ? 'text-green-600 dark:text-green-400' :
-                              'text-yellow-600 dark:text-yellow-400'
-                            }`}>
-                              {avgRisk.toFixed(3)}
-                            </td>
-                          </tr>
+                          <>
+                            <tr
+                              key={band}
+                              onClick={() => toggleBandExpansion(band)}
+                              className={`cursor-pointer hover:opacity-80 transition-opacity ${
+                                avgRisk >= 1.5 ? 'bg-red-50 dark:bg-red-950/10' :
+                                avgRisk < 1.0 ? 'bg-green-50 dark:bg-green-950/10' : ''
+                              }`}
+                            >
+                              <td className="py-2 px-3">
+                                <div className="flex items-center gap-2">
+                                  {isExpanded ? (
+                                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                  )}
+                                  <span>{band}</span>
+                                </div>
+                              </td>
+                              <td className="text-right py-2 px-3 font-medium">{females}</td>
+                              <td className="text-right py-2 px-3 font-medium">{males}</td>
+                              <td className="text-right py-2 px-3 font-bold">{total}</td>
+                              <td className={`text-right py-2 px-3 font-bold ${
+                                avgRisk >= 1.5 ? 'text-red-600 dark:text-red-400' :
+                                avgRisk < 1.0 ? 'text-green-600 dark:text-green-400' :
+                                'text-yellow-600 dark:text-yellow-400'
+                              }`}>
+                                {avgRisk.toFixed(3)}
+                              </td>
+                            </tr>
+                            {isExpanded && (
+                              <tr key={`${band}-expanded`}>
+                                <td colSpan={5} className="px-3 py-2 bg-muted/30">
+                                  <div className="pl-6 pr-2 py-2">
+                                    <div className="text-xs font-semibold text-muted-foreground mb-2 uppercase">
+                                      Individual Members
+                                    </div>
+                                    <div className="space-y-1">
+                                      {bandMembers.map((member, idx) => (
+                                        <div
+                                          key={idx}
+                                          className="flex items-center justify-between text-xs py-1 px-2 bg-background rounded"
+                                        >
+                                          <div className="flex items-center gap-3">
+                                            <User className="h-3 w-3 text-muted-foreground" />
+                                            <span className="font-medium">
+                                              {member.firstName} {member.lastName}
+                                            </span>
+                                            <span className="text-muted-foreground">
+                                              Age {member.age}
+                                            </span>
+                                            <span className="text-muted-foreground">
+                                              {member.gender}
+                                            </span>
+                                          </div>
+                                          <span className="font-mono font-semibold">
+                                            {member.riskScore.toFixed(3)}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <div className="mt-3 pt-2 border-t border-border text-xs space-y-1">
+                                      <div className="flex items-center justify-between">
+                                        <span className="font-semibold">Band Average (Calculated):</span>
+                                        <span className="font-mono">{calculatedAvg.toFixed(3)}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between text-muted-foreground">
+                                        <span>Member Count Validation:</span>
+                                        <span className={countMatches ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                                          {memberCount} = {total} {countMatches ? '✓' : '✗'}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center justify-between text-muted-foreground">
+                                        <span>Average Validation:</span>
+                                        <span className={avgMatches ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                                          {calculatedAvg.toFixed(3)} ≈ {avgRisk.toFixed(3)} {avgMatches ? '✓' : '✗'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </>
                         );
                       })}
                       <tr className="border-t-2 border-primary bg-primary/5 font-bold">
