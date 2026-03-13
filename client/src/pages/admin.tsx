@@ -19,6 +19,8 @@ import {
   BarChart3,
   FileBarChart,
   User,
+  Eye,
+  ExternalLink,
 } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
@@ -157,6 +159,7 @@ function GroupDetailDialog({
   open: boolean;
   onClose: () => void;
 }) {
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const [status, setStatus] = useState(group?.status || "pending_review");
   const [score, setScore] = useState(group?.score?.toString() || "");
@@ -195,10 +198,24 @@ function GroupDetailDialog({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-primary" />
-            {group.companyName}
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              {group.companyName}
+            </DialogTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                navigate(`/report/${group.id}`);
+                onClose();
+              }}
+              className="gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              View Report
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="space-y-6 mt-2">
@@ -332,6 +349,8 @@ function GroupDetailDialog({
 }
 
 function GroupsTable({ groups, onSelect }: { groups: Group[]; onSelect: (g: Group) => void }) {
+  const [, navigate] = useLocation();
+
   return (
     <Card>
       <div className="overflow-x-auto">
@@ -374,9 +393,23 @@ function GroupsTable({ groups, onSelect }: { groups: Group[]; onSelect: (g: Grou
                     {new Date(g.submittedAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Button variant="ghost" size="sm" data-testid={`button-edit-${g.id}`}>
-                      Edit
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/report/${g.id}`);
+                        }}
+                        className="gap-1.5"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        Report
+                      </Button>
+                      <Button variant="ghost" size="sm" data-testid={`button-edit-${g.id}`}>
+                        Edit
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               );
