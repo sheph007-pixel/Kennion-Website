@@ -522,8 +522,11 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
       onComplete(data.group);
     } catch (err: any) {
-      // Any error shows the contact popup - no partial uploads allowed
+      // Suppress all error toasts - show clean contact popup instead
+      // Don't rethrow, don't show details, no partial uploads allowed
       setCensusError(true);
+      // Explicitly prevent error propagation
+      return;
     } finally {
       setIsConfirming(false);
     }
