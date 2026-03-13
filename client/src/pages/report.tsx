@@ -329,21 +329,19 @@ export default function ReportPage() {
           <div>
             <Button
               variant="outline"
-              size="sm"
               onClick={() => navigate("/dashboard")}
               className="mb-3 print:hidden"
             >
-              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to Dashboard
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
             </Button>
             <h1 className="text-2xl font-bold mb-1" data-testid="text-report-title">{group.companyName}</h1>
             <p className="text-xs text-muted-foreground" data-testid="text-census-number">
               Census #KBA-{group.id.substring(0, 8).toUpperCase()} | Submitted {new Date(group.submittedAt).toLocaleDateString()}
             </p>
           </div>
-          <div className="flex gap-2 print:hidden">
+          <div className="flex gap-3 print:hidden">
             <Button
-              variant="outline"
-              size="sm"
+              variant="default"
               onClick={async () => {
                 try {
                   const res = await fetch(`/api/groups/${groupId}/census`, { credentials: "include" });
@@ -378,10 +376,10 @@ export default function ReportPage() {
               }}
               data-testid="button-download-census"
             >
-              <FileDown className="mr-1.5 h-3.5 w-3.5" /> Download Census
+              <FileDown className="mr-2 h-4 w-4" /> Download Census
             </Button>
-            <Button variant="outline" size="sm" onClick={handlePrint} data-testid="button-download-report">
-              <Printer className="mr-1.5 h-3.5 w-3.5" /> Print Report
+            <Button variant="default" onClick={handlePrint} data-testid="button-download-report">
+              <Printer className="mr-2 h-4 w-4" /> Print Report
             </Button>
           </div>
         </div>
