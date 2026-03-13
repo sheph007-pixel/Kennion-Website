@@ -337,7 +337,7 @@ export default function ReportPage() {
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap print:block">
           <div>
             <Button
-              variant="outline"
+              variant="default"
               onClick={() => navigate("/dashboard")}
               className="mb-3 print:hidden"
             >
