@@ -60,30 +60,27 @@ const TIER_CONFIG: Record<string, { label: string; color: string }> = {
 };
 
 const STATUS_OPTIONS = [
-  { value: "pending_review", label: "Pending Review" },
-  { value: "under_review", label: "Under Review" },
-  { value: "analyzing", label: "Analyzing" },
-  { value: "qualified", label: "Qualified" },
-  { value: "not_qualified", label: "Not Qualified" },
-  { value: "rates_available", label: "Rates Available" },
+  { value: "census_uploaded", label: "Census Uploaded" },
+  { value: "proposal_sent", label: "Proposal Sent" },
+  { value: "proposal_accepted", label: "Proposal Accepted" },
+  { value: "client", label: "Client" },
+  { value: "not_approved", label: "Not Approved" },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  pending_review: "text-yellow-600 dark:text-yellow-400",
-  under_review: "text-blue-600 dark:text-blue-400",
-  analyzing: "text-purple-600 dark:text-purple-400",
-  qualified: "text-green-600 dark:text-green-400",
-  not_qualified: "text-red-600 dark:text-red-400",
-  rates_available: "text-green-600 dark:text-green-400",
+  census_uploaded: "text-blue-600 dark:text-blue-400",
+  proposal_sent: "text-purple-600 dark:text-purple-400",
+  proposal_accepted: "text-green-600 dark:text-green-400",
+  client: "text-green-600 dark:text-green-400",
+  not_approved: "text-red-600 dark:text-red-400",
 };
 
 const STATUS_ICONS: Record<string, any> = {
-  pending_review: Clock,
-  under_review: AlertCircle,
-  analyzing: Activity,
-  qualified: CheckCircle2,
-  not_qualified: XCircle,
-  rates_available: TrendingUp,
+  census_uploaded: Clock,
+  proposal_sent: AlertCircle,
+  proposal_accepted: CheckCircle2,
+  client: TrendingUp,
+  not_approved: XCircle,
 };
 
 function AdminNav() {
@@ -128,20 +125,22 @@ function AdminNav() {
 }
 
 function StatsOverview({ groups }: { groups: Group[] }) {
-  const totalGroups = groups.length;
-  const pending = groups.filter((g) => g.status === "pending_review" || g.status === "under_review").length;
-  const qualified = groups.filter((g) => g.status === "qualified" || g.status === "rates_available").length;
-  const totalLives = groups.reduce((sum, g) => sum + (g.totalLives || 0), 0);
+  const censusUploaded = groups.filter((g) => g.status === "census_uploaded").length;
+  const proposalSent = groups.filter((g) => g.status === "proposal_sent").length;
+  const proposalAccepted = groups.filter((g) => g.status === "proposal_accepted").length;
+  const client = groups.filter((g) => g.status === "client").length;
+  const notApproved = groups.filter((g) => g.status === "not_approved").length;
 
   const stats = [
-    { label: "Total Groups", value: totalGroups, icon: Building2 },
-    { label: "Pending Review", value: pending, icon: Clock },
-    { label: "Qualified", value: qualified, icon: CheckCircle2 },
-    { label: "Total Lives", value: totalLives.toLocaleString(), icon: Users },
+    { label: "Census Uploaded", value: censusUploaded, icon: Clock },
+    { label: "Proposal Sent", value: proposalSent, icon: AlertCircle },
+    { label: "Proposal Accepted", value: proposalAccepted, icon: CheckCircle2 },
+    { label: "Client", value: client, icon: TrendingUp },
+    { label: "Not Approved", value: notApproved, icon: XCircle },
   ];
 
   return (
-    <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
       {stats.map((s) => (
         <Card key={s.label} className="p-4">
           <div className="flex items-center gap-3">
@@ -265,20 +264,34 @@ function GroupsTable({
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-center gap-1.5">
-                      {isQualified ? (
+                      {g.status === "census_uploaded" && (
+                        <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Census Uploaded
+                        </Badge>
+                      )}
+                      {g.status === "proposal_sent" && (
+                        <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Proposal Sent
+                        </Badge>
+                      )}
+                      {g.status === "proposal_accepted" && (
                         <Badge variant="default" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Qualified
+                          Proposal Accepted
                         </Badge>
-                      ) : g.riskTier === "high" ? (
+                      )}
+                      {g.status === "client" && (
+                        <Badge variant="default" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          Client
+                        </Badge>
+                      )}
+                      {g.status === "not_approved" && (
                         <Badge variant="destructive" className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20">
                           <XCircle className="h-3 w-3 mr-1" />
-                          Not Qualified
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20">
-                          <Clock className="h-3 w-3 mr-1" />
-                          Pending
+                          Not Approved
                         </Badge>
                       )}
                     </div>

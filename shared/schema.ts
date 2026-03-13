@@ -27,7 +27,7 @@ export const groups = pgTable("groups", {
   childrenCount: integer("dependent_count").default(0),
   spouseCount: integer("spouse_count").default(0),
   totalLives: integer("total_lives").default(0),
-  status: text("status").default("pending_review").notNull(),
+  status: text("status").default("census_uploaded").notNull(),
   score: integer("score"),
   riskScore: real("risk_score"),
   riskTier: text("risk_tier"),
@@ -104,7 +104,7 @@ export const insertCensusEntrySchema = createInsertSchema(censusEntries).omit({
 });
 
 export const updateGroupStatusSchema = z.object({
-  status: z.enum(["pending_review", "under_review", "analyzing", "qualified", "not_qualified", "rates_available"]),
+  status: z.enum(["census_uploaded", "proposal_sent", "proposal_accepted", "client", "not_approved"]),
   score: z.number().min(0).max(100).optional(),
   riskScore: z.number().optional(),
   riskTier: z.enum(["preferred", "standard", "high"]).optional(),
