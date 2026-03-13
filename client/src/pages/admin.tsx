@@ -22,6 +22,8 @@ import {
   User,
   Eye,
   ExternalLink,
+  Trash2,
+  ArrowUpDown,
 } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
@@ -157,8 +159,25 @@ function StatsOverview({ groups }: { groups: Group[] }) {
   );
 }
 
-function GroupsTable({ groups }: { groups: Group[] }) {
+function GroupsTable({
+  groups,
+  sortField,
+  sortDirection,
+  onSort,
+  onDelete
+}: {
+  groups: Group[];
+  sortField: string;
+  sortDirection: "asc" | "desc";
+  onSort: (field: string) => void;
+  onDelete: (id: number) => void;
+}) {
   const [, navigate] = useLocation();
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ArrowUpDown className="h-3.5 w-3.5 ml-1 opacity-40" />;
+    return sortDirection === "asc" ? "↑" : "↓";
+  };
 
   return (
     <Card>
@@ -166,18 +185,38 @@ function GroupsTable({ groups }: { groups: Group[] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/30">
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Submitted</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Company</th>
+              <th
+                className="px-4 py-3 text-left font-medium text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => onSort("submittedAt")}
+              >
+                <div className="flex items-center">
+                  Submitted <SortIcon field="submittedAt" />
+                </div>
+              </th>
+              <th
+                className="px-4 py-3 text-left font-medium text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => onSort("companyName")}
+              >
+                <div className="flex items-center">
+                  Company <SortIcon field="companyName" />
+                </div>
+              </th>
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">Census ID</th>
-              <th className="px-4 py-3 text-center font-medium text-muted-foreground">Employees</th>
-              <th className="px-4 py-3 text-center font-medium text-muted-foreground">Score</th>
+              <th className="px-4 py-3 text-center font-medium text-muted-foreground">Lives</th>
+              <th
+                className="px-4 py-3 text-center font-medium text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => onSort("riskScore")}
+              >
+                <div className="flex items-center justify-center">
+                  Score <SortIcon field="riskScore" />
+                </div>
+              </th>
               <th className="px-4 py-3 text-center font-medium text-muted-foreground">Status</th>
               <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
             </tr>
           </thead>
           <tbody>
             {groups.map((g) => {
-              const StatusIcon = STATUS_ICONS[g.status] || Clock;
               const censusNumber = `KBA-${g.id.substring(0, 8).toUpperCase()}`;
               const isQualified = g.riskTier === "preferred" || g.riskTier === "standard";
               const tier = g.riskTier ? TIER_CONFIG[g.riskTier] || { label: g.riskTier, color: "text-muted-foreground" } : null;
@@ -185,8 +224,7 @@ function GroupsTable({ groups }: { groups: Group[] }) {
               return (
                 <tr
                   key={g.id}
-                  className="border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/report/${g.id}`)}
+                  className="border-b last:border-0 hover:bg-muted/30 transition-colors"
                   data-testid={`row-group-${g.id}`}
                 >
                   <td className="px-4 py-3">
@@ -204,7 +242,10 @@ function GroupsTable({ groups }: { groups: Group[] }) {
                     </code>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <div className="font-semibold">{g.employeeCount}</div>
+                    <div className="font-semibold">{g.totalLives}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {g.employeeCount}e·{g.spouseCount || 0}s·{g.childrenCount}c
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-center">
                     {g.riskScore != null ? (
@@ -243,17 +284,28 @@ function GroupsTable({ groups }: { groups: Group[] }) {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
-                      className="gap-1.5"
-                    >
-                      <FileBarChart className="h-3.5 w-3.5" />
-                      Report
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/report/${g.id}`)}
+                        className="gap-1.5"
+                      >
+                        <FileBarChart className="h-3.5 w-3.5" />
+                        Report
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(g.id);
+                        }}
+                        className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -268,10 +320,41 @@ function GroupsTable({ groups }: { groups: Group[] }) {
 export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortField, setSortField] = useState<string>("submittedAt");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const { toast } = useToast();
 
   const { data: groups, isLoading } = useQuery<Group[]>({
     queryKey: ["/api/admin/groups"],
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/admin/groups/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/groups"] });
+      toast({ title: "Group deleted", description: "The group has been removed." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
+  };
+
+  const handleDelete = (id: number) => {
+    if (confirm("Are you sure you want to delete this group?")) {
+      deleteMutation.mutate(id);
+    }
+  };
 
   const filtered = (groups || [])
     .filter((g) => {
@@ -281,7 +364,28 @@ export default function AdminPage() {
       const matchStatus = statusFilter === "all" || g.status === statusFilter;
       return matchSearch && matchStatus;
     })
-    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+    .sort((a, b) => {
+      let aVal: any, bVal: any;
+
+      if (sortField === "submittedAt") {
+        aVal = new Date(a.submittedAt).getTime();
+        bVal = new Date(b.submittedAt).getTime();
+      } else if (sortField === "companyName") {
+        aVal = a.companyName.toLowerCase();
+        bVal = b.companyName.toLowerCase();
+      } else if (sortField === "riskScore") {
+        aVal = a.riskScore ?? -1;
+        bVal = b.riskScore ?? -1;
+      } else {
+        return 0;
+      }
+
+      if (sortDirection === "asc") {
+        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+      } else {
+        return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+      }
+    });
 
   return (
     <div className="min-h-screen bg-background">
@@ -356,7 +460,13 @@ export default function AdminPage() {
             </p>
           </Card>
         ) : (
-          <GroupsTable groups={filtered} />
+          <GroupsTable
+            groups={filtered}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSort={handleSort}
+            onDelete={handleDelete}
+          />
         )}
       </div>
     </div>

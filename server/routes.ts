@@ -1184,5 +1184,20 @@ export async function registerRoutes(
     }
   });
 
+  app.delete("/api/admin/groups/:id", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const group = await storage.getGroup(id);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      await storage.deleteCensusByGroupId(id);
+      await storage.deleteGroup(id);
+      res.json({ message: "Group deleted successfully" });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Delete failed" });
+    }
+  });
+
   return httpServer;
 }
