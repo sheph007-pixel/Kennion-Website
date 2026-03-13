@@ -764,7 +764,6 @@ export default function ReportPage() {
                   <th className="text-right py-2 px-3 font-semibold">Males</th>
                   <th className="text-right py-2 px-3 font-semibold">Total</th>
                   <th className="text-right py-2 px-3 font-semibold">Avg Risk Score</th>
-                  <th className="text-right py-2 px-3 font-semibold">vs. Benchmark</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -811,7 +810,6 @@ export default function ReportPage() {
                               <td className="text-right py-2 px-3">—</td>
                               <td className="text-right py-2 px-3">—</td>
                               <td className="text-right py-2 px-3">—</td>
-                              <td className="text-right py-2 px-3">—</td>
                             </tr>
                           );
                         }
@@ -839,11 +837,6 @@ export default function ReportPage() {
                             }`}>
                               {avgRisk.toFixed(3)}
                             </td>
-                            <td className={`text-right py-2 px-3 font-medium ${
-                              vsBenchmark > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
-                            }`}>
-                              {vsBenchmark > 0 ? '+' : ''}{vsBenchmark.toFixed(3)}
-                            </td>
                           </tr>
                         );
                       })}
@@ -853,13 +846,6 @@ export default function ReportPage() {
                         <td className="text-right py-2 px-3">{totalMales}</td>
                         <td className="text-right py-2 px-3">{totalCount}</td>
                         <td className="text-right py-2 px-3">{totalCount > 0 ? (weightedRiskSum / totalCount).toFixed(3) : '—'}</td>
-                        <td className={`text-right py-2 px-3 ${
-                          totalCount > 0 && (weightedRiskSum / totalCount - 1.0) > 0
-                            ? 'text-red-600 dark:text-red-400'
-                            : 'text-green-600 dark:text-green-400'
-                        }`}>
-                          {totalCount > 0 ? ((weightedRiskSum / totalCount - 1.0) > 0 ? '+' : '') + (weightedRiskSum / totalCount - 1.0).toFixed(3) : '—'}
-                        </td>
                       </tr>
                     </>
                   );
