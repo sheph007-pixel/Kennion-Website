@@ -836,7 +836,7 @@ export async function registerRoutes(
       }
 
       // CRITICAL: Only allow one census per user
-      const existingGroups = await storage.getUserGroups(req.session.userId!);
+      const existingGroups = await storage.getGroupsByUserId(req.session.userId!);
       if (existingGroups && existingGroups.length > 0) {
         log(`User ${req.session.userId} already has a census. Preventing duplicate.`);
         return res.status(400).json({
