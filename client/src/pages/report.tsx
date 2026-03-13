@@ -553,11 +553,17 @@ export default function ReportPage() {
           </div>
         </div>
 
-        <Card className="p-4 mb-6 border-2">
-          <h2 className="text-lg font-bold mb-3 flex items-center gap-2 justify-center">
-            <Shield className="h-5 w-5 text-primary" />
-            Risk Classification
-          </h2>
+        <div className="relative">
+          <div className="absolute -top-2 right-0 flex items-center gap-2 bg-green-50 dark:bg-green-950/30 border-2 border-green-500 dark:border-green-600 rounded-lg px-3 py-1.5 shadow-sm print:hidden">
+            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <span className="text-sm font-semibold text-green-700 dark:text-green-400">Data Validated</span>
+          </div>
+
+          <Card className="p-4 mb-6 border-2">
+            <h2 className="text-lg font-bold mb-3 flex items-center gap-2 justify-center">
+              <Shield className="h-5 w-5 text-primary" />
+              Risk Classification
+            </h2>
 
           {group.riskScore != null ? (
             <>
@@ -620,6 +626,7 @@ export default function ReportPage() {
             </div>
           )}
         </Card>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 page-break-after">
           <Card className="overflow-hidden">
