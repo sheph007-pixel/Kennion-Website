@@ -1,9 +1,8 @@
 import { Resend } from "resend";
 import { log } from "./index";
 
-// After verifying kennion.com domain in Resend, change this to:
-// const FROM_EMAIL = "Kennion Benefit Advisors <noreply@kennion.com>";
-const FROM_EMAIL = "Kennion Benefit Advisors <onboarding@resend.dev>";
+// Using verified domain site.kennion.com
+const FROM_EMAIL = "Kennion Benefit Advisors <noreply@site.kennion.com>";
 
 function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY;
