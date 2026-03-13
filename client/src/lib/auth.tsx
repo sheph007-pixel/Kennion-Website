@@ -12,7 +12,6 @@ interface AuthContextType {
   register: (data: { firstName: string; lastName: string; email: string; phone: string; companyName: string }) => Promise<{ message: string; email: string }>;
   verifyMagicLink: (token: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  adminLogin: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -55,11 +54,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
   }, []);
 
-  const adminLogin = useCallback(async (email: string, password: string) => {
-    await apiRequest("POST", "/api/auth/admin/login", { email, password });
-    await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-  }, []);
-
   const logout = useCallback(async () => {
     await apiRequest("POST", "/api/auth/logout");
     queryClient.setQueryData(["/api/auth/me"], null);
@@ -67,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user: user ?? null, isLoading, requestMagicLink, register, verifyMagicLink, login, adminLogin, logout }}>
+    <AuthContext.Provider value={{ user: user ?? null, isLoading, requestMagicLink, register, verifyMagicLink, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

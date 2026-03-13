@@ -27,7 +27,7 @@ export default function LoginPage() {
   const [emailSent, setEmailSent] = useState(false);
   const [sentToEmail, setSentToEmail] = useState("");
   const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const { requestMagicLink, login, adminLogin } = useAuth();
+  const { requestMagicLink, login } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
@@ -77,7 +77,7 @@ export default function LoginPage() {
   async function onAdminLogin(data: z.infer<typeof adminLoginSchema>) {
     setIsLoading(true);
     try {
-      await adminLogin(data.email, data.password);
+      await login(data.email, data.password);
       navigate("/admin");
     } catch (err: any) {
       toast({

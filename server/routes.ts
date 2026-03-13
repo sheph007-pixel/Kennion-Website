@@ -489,53 +489,24 @@ export async function registerRoutes(
 
   const PgStore = ConnectPgSimple(session);
 
-  // Client session configuration
-  const clientSession = session({
-    store: new PgStore({
-      pool,
-      tableName: "session",
-    }),
-    name: "kennion.client",
-    secret: process.env.SESSION_SECRET || "kennion-secret-key",
-    resave: false,
-    saveUninitialized: false,
-    proxy: true,
-    cookie: {
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-    },
-  });
-
-  // Admin session configuration
-  const adminSession = session({
-    store: new PgStore({
-      pool,
-      tableName: "session",
-    }),
-    name: "kennion.admin",
-    secret: process.env.SESSION_SECRET || "kennion-secret-key",
-    resave: false,
-    saveUninitialized: false,
-    proxy: true,
-    cookie: {
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-    },
-  });
-
-  // Use client session by default
-  app.use((req, res, next) => {
-    // Use admin session for admin routes
-    if (req.path.startsWith("/api/admin") || req.path.startsWith("/api/auth/admin")) {
-      return adminSession(req, res, next);
-    }
-    // Use client session for all other routes
-    return clientSession(req, res, next);
-  });
+  // Single session for everyone (standard approach)
+  app.use(
+    session({
+      store: new PgStore({
+        pool,
+      }),
+      secret: process.env.SESSION_SECRET || "kennion-secret-key",
+      resave: false,
+      saveUninitialized: false,
+      proxy: true,
+      cookie: {
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+      },
+    })
+  );
 
   app.post("/api/auth/magic-link", async (req: Request, res: Response) => {
     try {
@@ -654,7 +625,6 @@ export async function registerRoutes(
     }
   });
 
-  // Client login endpoint
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
       const data = loginSchema.parse(req.body);
@@ -682,39 +652,6 @@ export async function registerRoutes(
     }
   });
 
-  // Admin login endpoint (uses admin session)
-  app.post("/api/auth/admin/login", async (req: Request, res: Response) => {
-    try {
-      const data = loginSchema.parse(req.body);
-      const user = await storage.getUserByEmail(data.email);
-
-      if (!user || !user.password) {
-        return res.status(401).json({ message: "Invalid email or password" });
-      }
-
-      if (user.role !== "admin") {
-        return res.status(403).json({ message: "Admin access required" });
-      }
-
-      const valid = await bcrypt.compare(data.password, user.password);
-      if (!valid) {
-        return res.status(401).json({ message: "Invalid email or password" });
-      }
-
-      req.session.userId = user.id;
-      res.json({
-        id: user.id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-        companyName: user.companyName,
-      });
-    } catch (err: any) {
-      res.status(400).json({ message: err.message || "Login failed" });
-    }
-  });
-
-  // Client auth check
   app.get("/api/auth/me", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
@@ -723,33 +660,6 @@ export async function registerRoutes(
     const user = await storage.getUser(req.session.userId);
     if (!user) {
       return res.status(401).json({ message: "User not found" });
-    }
-
-    res.json({
-      id: user.id,
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role,
-      companyName: user.companyName,
-      phone: user.phone,
-      verified: user.verified,
-      createdAt: user.createdAt,
-    });
-  });
-
-  // Admin auth check (uses admin session)
-  app.get("/api/auth/admin/me", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    const user = await storage.getUser(req.session.userId);
-    if (!user) {
-      return res.status(401).json({ message: "User not found" });
-    }
-
-    if (user.role !== "admin") {
-      return res.status(403).json({ message: "Admin access required" });
     }
 
     res.json({

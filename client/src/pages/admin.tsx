@@ -47,37 +47,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ThemeToggle } from "@/components/theme-toggle";
-import type { Group, CensusEntry, User } from "@shared/schema";
-
-// Admin auth hook - uses admin session
-function useAdminAuth() {
-  const { data: user } = useQuery<Pick<User, "id" | "fullName" | "email" | "role" | "companyName"> | null>({
-    queryKey: ["/api/auth/admin/me"],
-    queryFn: async () => {
-      try {
-        const res = await fetch("/api/auth/admin/me", { credentials: "include" });
-        if (res.status === 401 || res.status === 403) return null;
-        if (!res.ok) return null;
-        return await res.json();
-      } catch {
-        return null;
-      }
-    },
-    staleTime: 60000,
-    retry: false,
-  });
-
-  const logout = async () => {
-    await apiRequest("POST", "/api/auth/logout");
-    queryClient.setQueryData(["/api/auth/admin/me"], null);
-    await queryClient.invalidateQueries({ queryKey: ["/api/auth/admin/me"] });
-  };
-
-  return { user: user ?? null, logout };
-}
+import type { Group, CensusEntry } from "@shared/schema";
 
 const TIER_CONFIG: Record<string, { label: string; color: string }> = {
   preferred: { label: "Preferred Risk", color: "text-green-600 dark:text-green-400" },
@@ -110,7 +84,7 @@ const STATUS_ICONS: Record<string, any> = {
 };
 
 function AdminNav() {
-  const { user, logout } = useAdminAuth();
+  const { user, logout } = useAuth();
   const [, navigate] = useLocation();
 
   async function handleLogout() {
