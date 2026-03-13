@@ -201,21 +201,11 @@ function SimpleHeader({ hasGroups, step }: { hasGroups: boolean; step: string })
       <PrintInstructions />
       <Card className="p-5 mb-6 bg-primary/5 border-primary/20 print:hidden">
         <div className="space-y-3">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <h3 className="text-base font-semibold mb-2">Group Health + Dental + Vision + Supplemental</h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                To calculate your rates, we need to know who you're covering. It takes about 2 minutes.
-              </p>
-            </div>
-            <Button
-              size="sm"
-              onClick={handlePrint}
-              className="flex items-center gap-2 print:hidden bg-green-600 hover:bg-green-700 text-white"
-            >
-              <Printer className="h-4 w-4" />
-              Print Instructions
-            </Button>
+          <div>
+            <h3 className="text-base font-semibold mb-2">Group Health + Dental + Vision + Supplemental</h3>
+            <p className="text-sm text-muted-foreground mb-3">
+              To calculate your rates, we need to know who you're covering. It takes about 2 minutes.
+            </p>
           </div>
           <div className="space-y-2 text-sm">
             <p className="font-medium text-foreground">Here's how it works:</p>
@@ -684,7 +674,12 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
         <Card className="p-4 border-4 border-black dark:border-white rounded-tl-none">
         <div className="mb-3">
           <div className="flex items-start justify-between gap-4 mb-3">
-            <Button variant="outline" size="sm" onClick={() => setStep("upload")}>
+            <Button variant="outline" size="sm" onClick={() => {
+              setStep("upload");
+              setParseResult(null);
+              setColumnMapping({});
+              setMappingError(null);
+            }}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Upload
             </Button>
@@ -825,10 +820,38 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
         <WizardProgress step={step} />
         <Card className="p-6 border-4 border-black dark:border-white rounded-tl-none">
         <div className="mb-6">
-          <Button variant="outline" size="sm" onClick={() => setStep("map-columns")} data-testid="button-back-mapping" className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Column Mapping
-          </Button>
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <Button variant="outline" size="sm" onClick={() => {
+              setStep("map-columns");
+              setValidationError(null);
+            }} data-testid="button-back-mapping">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Column Mapping
+            </Button>
+            <Button
+              size="lg"
+              onClick={handleConfirm}
+              disabled={isConfirming || validationError !== null}
+              className="font-bold shadow-xl h-12 text-base px-8"
+              data-testid="button-submit-top"
+            >
+              {validationError ? (
+                <>
+                  <X className="mr-2 h-5 w-5" />
+                  Fix Errors First
+                </>
+              ) : isConfirming ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  Submit
+                </>
+              )}
+            </Button>
+          </div>
           <h2 className="font-semibold text-lg mb-2">✓ AI Cleaned Your Data</h2>
           <p className="text-sm text-muted-foreground">{parseResult.summary}</p>
         </div>
