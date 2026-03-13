@@ -287,6 +287,107 @@ export default function ReportPage() {
   const familySizeComp = getComparison(avgFamilySize, BENCHMARKS.avgFamilySize);
   const genderComp = getComparison(femalePercentage, BENCHMARKS.femalePercentage);
 
+  // Validate data integrity
+  const ageBands = ['0-4', '5-9', '10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64', '65-69', '70-Above'];
+  const riskTable: Record<string, { female: number; male: number }> = {
+    "0-4": { female: 0.35, male: 0.40 },
+    "5-9": { female: 0.30, male: 0.55 },
+    "10-14": { female: 0.37, male: 0.46 },
+    "15-19": { female: 0.62, male: 0.46 },
+    "20-24": { female: 0.80, male: 0.46 },
+    "25-29": { female: 0.92, male: 0.46 },
+    "30-34": { female: 0.88, male: 0.45 },
+    "35-39": { female: 0.81, male: 0.52 },
+    "40-44": { female: 1.18, male: 0.77 },
+    "45-49": { female: 1.03, male: 0.67 },
+    "50-54": { female: 1.43, male: 1.20 },
+    "55-59": { female: 1.22, male: 1.52 },
+    "60-64": { female: 1.49, male: 1.99 },
+    "65-69": { female: 3.81, male: 1.64 },
+    "70-Above": { female: 10.36, male: 2.78 },
+  };
+
+  const distribution = chars.ageBandDistribution || {};
+  let tableTotalFemales = 0;
+  let tableTotalMales = 0;
+  let tableWeightedRiskSum = 0;
+  ageBands.forEach(band => {
+    const bandData = distribution[band] || { female: 0, male: 0 };
+    const females = bandData.female || 0;
+    const males = bandData.male || 0;
+    tableTotalFemales += females;
+    tableTotalMales += males;
+    const riskData = riskTable[band];
+    tableWeightedRiskSum += females * riskData.female + males * riskData.male;
+  });
+  const tableTotalMembers = tableTotalFemales + tableTotalMales;
+  const tableCalculatedRiskScore = tableTotalMembers > 0 ? tableWeightedRiskSum / tableTotalMembers : 0;
+
+  const censusTotalMembers = group.totalLives || 0;
+  const censusEmployees = group.employeeCount || 0;
+  const censusSpouses = group.spouseCount || 0;
+  const censusChildren = group.childrenCount || 0;
+  const censusSumCheck = censusEmployees + censusSpouses + censusChildren;
+  const censusGenderTotal = femaleCount + maleCount;
+
+  const totalLivesMatch = tableTotalMembers === censusTotalMembers && censusTotalMembers === censusSumCheck;
+  const genderTotalsMatch = tableTotalMembers === censusGenderTotal;
+  const genderBreakdownMatch = tableTotalFemales === femaleCount && tableTotalMales === maleCount;
+  const riskScoreExists = group.riskScore != null;
+  const riskScoreMatches = riskScoreExists && Math.abs(group.riskScore - tableCalculatedRiskScore) < 0.01;
+
+  let riskTierCorrect = false;
+  if (riskScoreExists) {
+    if (group.riskScore < 1.0 && group.riskTier === 'preferred') riskTierCorrect = true;
+    else if (group.riskScore >= 1.0 && group.riskScore < 1.5 && group.riskTier === 'standard') riskTierCorrect = true;
+    else if (group.riskScore >= 1.5 && group.riskTier === 'high') riskTierCorrect = true;
+  }
+
+  const allChecks = [totalLivesMatch, genderTotalsMatch, genderBreakdownMatch, riskScoreExists, riskScoreMatches, riskTierCorrect];
+  const passedChecks = allChecks.filter(Boolean).length;
+  const matchRate = Math.round((passedChecks / allChecks.length) * 100);
+
+  // If validation fails, show error instead of report
+  if (matchRate !== 100) {
+    return (
+      <div className="min-h-screen bg-background">
+        <ReportNav />
+        <div className="mx-auto max-w-3xl px-6 py-16">
+          <Card className="p-8 border-2 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20">
+            <div className="text-center">
+              <AlertTriangle className="h-16 w-16 text-red-600 dark:text-red-400 mx-auto mb-4" />
+              <h1 className="text-2xl font-bold text-red-900 dark:text-red-100 mb-3">
+                Unable to Generate Report
+              </h1>
+              <p className="text-red-800 dark:text-red-200 mb-6 text-lg">
+                Data validation failed. There appears to be an issue with the census data that prevents us from generating an accurate report.
+              </p>
+              <div className="bg-white dark:bg-gray-900 rounded-lg p-6 border border-red-300 dark:border-red-700 mb-6">
+                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  Please contact:
+                </p>
+                <p className="text-xl font-bold text-primary mb-1">
+                  Hunter Shepherd
+                </p>
+                <p className="text-2xl font-bold text-primary">
+                  (205) 641-0469
+                </p>
+              </div>
+              <Button
+                variant="default"
+                size="lg"
+                onClick={() => navigate("/dashboard")}
+                className="mt-4"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   const handlePrint = () => {
     window.print();
   };
