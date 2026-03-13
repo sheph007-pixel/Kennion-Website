@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { format } from "date-fns";
 import {
   LogOut,
   Users,
@@ -49,6 +50,12 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { Group, CensusEntry } from "@shared/schema";
+
+const TIER_CONFIG: Record<string, { label: string; color: string }> = {
+  preferred: { label: "Preferred Risk", color: "text-green-600 dark:text-green-400" },
+  standard: { label: "Standard Risk", color: "text-blue-600 dark:text-blue-400" },
+  high: { label: "High Risk", color: "text-red-600 dark:text-red-400" },
+};
 
 const STATUS_OPTIONS = [
   { value: "pending_review", label: "Pending Review" },
@@ -150,205 +157,7 @@ function StatsOverview({ groups }: { groups: Group[] }) {
   );
 }
 
-function GroupDetailDialog({
-  group,
-  open,
-  onClose,
-}: {
-  group: Group | null;
-  open: boolean;
-  onClose: () => void;
-}) {
-  const [, navigate] = useLocation();
-  const { toast } = useToast();
-  const [status, setStatus] = useState(group?.status || "pending_review");
-  const [score, setScore] = useState(group?.score?.toString() || "");
-  const [riskTier, setRiskTier] = useState(group?.riskTier || "");
-  const [notes, setNotes] = useState(group?.adminNotes || "");
-  const [isSaving, setIsSaving] = useState(false);
-
-  const { data: census, isLoading: censusLoading } = useQuery<CensusEntry[]>({
-    queryKey: ["/api/admin/groups", group?.id, "census"],
-    enabled: !!group?.id && open,
-  });
-
-  async function handleSave() {
-    if (!group) return;
-    setIsSaving(true);
-    try {
-      await apiRequest("PATCH", `/api/admin/groups/${group.id}`, {
-        status,
-        score: score ? parseInt(score) : undefined,
-        riskTier: riskTier || undefined,
-        adminNotes: notes || undefined,
-      });
-      await queryClient.invalidateQueries({ queryKey: ["/api/admin/groups"] });
-      toast({ title: "Group updated", description: "Changes saved successfully." });
-      onClose();
-    } catch (err: any) {
-      toast({ title: "Update failed", description: err.message, variant: "destructive" });
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  if (!group) return null;
-
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-primary" />
-              {group.companyName}
-            </DialogTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                navigate(`/report/${group.id}`);
-                onClose();
-              }}
-              className="gap-2"
-            >
-              <Eye className="h-4 w-4" />
-              View Report
-            </Button>
-          </div>
-        </DialogHeader>
-
-        <div className="space-y-6 mt-2">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-xs text-muted-foreground">Contact</Label>
-              <p className="text-sm font-medium">{group.contactName}</p>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Email</Label>
-              <p className="text-sm font-medium">{group.contactEmail}</p>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Employees</Label>
-              <p className="text-sm font-medium">{group.employeeCount}</p>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Total Lives</Label>
-              <p className="text-sm font-medium">{group.totalLives}</p>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Submitted</Label>
-              <p className="text-sm font-medium">{new Date(group.submittedAt).toLocaleDateString()}</p>
-            </div>
-          </div>
-
-          <div className="border-t pt-4">
-            <h4 className="text-sm font-semibold mb-3">Update Status</h4>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger data-testid="select-status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Score (0-100)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={score}
-                  onChange={(e) => setScore(e.target.value)}
-                  placeholder="e.g. 85"
-                  data-testid="input-score"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Risk Tier</Label>
-                <Select value={riskTier} onValueChange={setRiskTier}>
-                  <SelectTrigger data-testid="select-risk-tier">
-                    <SelectValue placeholder="Select tier" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="preferred">Preferred Risk</SelectItem>
-                    <SelectItem value="standard">Standard Risk</SelectItem>
-                    <SelectItem value="high">High Risk</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="mt-4 space-y-2">
-              <Label>Notes to Client</Label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Enter notes visible to the client..."
-                data-testid="input-notes"
-                className="resize-none"
-                rows={3}
-              />
-            </div>
-            <div className="mt-4 flex justify-end">
-              <Button onClick={handleSave} disabled={isSaving} data-testid="button-save-group">
-                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Save Changes
-              </Button>
-            </div>
-          </div>
-
-          {census && census.length > 0 && (
-            <div className="border-t pt-4">
-              <h4 className="text-sm font-semibold mb-3">
-                Census Data ({census.length} records)
-              </h4>
-              <div className="rounded-md border overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Name</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">DOB</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Gender</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Zip</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Type</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {census.map((entry) => (
-                      <tr key={entry.id} className="border-b last:border-0">
-                        <td className="px-3 py-2">{entry.firstName} {entry.lastName}</td>
-                        <td className="px-3 py-2">{entry.dateOfBirth}</td>
-                        <td className="px-3 py-2 capitalize">{entry.gender}</td>
-                        <td className="px-3 py-2">{entry.zipCode}</td>
-                        <td className="px-3 py-2 capitalize">{entry.relationship}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-          {censusLoading && (
-            <div className="border-t pt-4">
-              <Skeleton className="h-4 w-32 mb-3" />
-              <Skeleton className="h-32 w-full" />
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function GroupsTable({ groups, onSelect }: { groups: Group[]; onSelect: (g: Group) => void }) {
+function GroupsTable({ groups }: { groups: Group[] }) {
   const [, navigate] = useLocation();
 
   return (
@@ -357,59 +166,94 @@ function GroupsTable({ groups, onSelect }: { groups: Group[]; onSelect: (g: Grou
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/30">
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Company</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Contact</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Lives</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Score</th>
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">Submitted</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Company</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Census ID</th>
+              <th className="px-4 py-3 text-center font-medium text-muted-foreground">Employees</th>
+              <th className="px-4 py-3 text-center font-medium text-muted-foreground">Score</th>
+              <th className="px-4 py-3 text-center font-medium text-muted-foreground">Status</th>
               <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
             </tr>
           </thead>
           <tbody>
             {groups.map((g) => {
               const StatusIcon = STATUS_ICONS[g.status] || Clock;
+              const censusNumber = `KBA-${g.id.substring(0, 8).toUpperCase()}`;
+              const isQualified = g.riskTier === "preferred" || g.riskTier === "standard";
+              const tier = g.riskTier ? TIER_CONFIG[g.riskTier] || { label: g.riskTier, color: "text-muted-foreground" } : null;
+
               return (
-                <tr key={g.id} className="border-b last:border-0 hover-elevate cursor-pointer" onClick={() => onSelect(g)} data-testid={`row-group-${g.id}`}>
-                  <td className="px-4 py-3 font-medium">{g.companyName}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{g.contactName}</td>
-                  <td className="px-4 py-3">{g.totalLives}</td>
+                <tr
+                  key={g.id}
+                  className="border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/report/${g.id}`)}
+                  data-testid={`row-group-${g.id}`}
+                >
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5">
-                      <StatusIcon className={`h-3.5 w-3.5 ${STATUS_COLORS[g.status]}`} />
-                      <span className={`text-xs font-medium ${STATUS_COLORS[g.status]}`}>
-                        {STATUS_OPTIONS.find((o) => o.value === g.status)?.label}
-                      </span>
+                    <div className="text-sm">
+                      {format(new Date(g.submittedAt), "MM/dd/yy")}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {format(new Date(g.submittedAt), "h:mm a")}
                     </div>
                   </td>
+                  <td className="px-4 py-3 font-medium">{g.companyName}</td>
                   <td className="px-4 py-3">
-                    {g.score !== null && g.score !== undefined ? (
-                      <span className="font-medium">{g.score}</span>
+                    <code className="text-xs text-muted-foreground">
+                      {censusNumber}
+                    </code>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <div className="font-semibold">{g.employeeCount}</div>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {g.riskScore != null ? (
+                      <div>
+                        <div className="font-bold text-primary">
+                          {g.riskScore.toFixed(2)}
+                        </div>
+                        {tier && (
+                          <div className={`text-xs ${tier.color}`}>
+                            {tier.label.replace(" Risk", "")}
+                          </div>
+                        )}
+                      </div>
                     ) : (
-                      <span className="text-muted-foreground">--</span>
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {new Date(g.submittedAt).toLocaleDateString()}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-center gap-1.5">
+                      {isQualified ? (
+                        <Badge variant="default" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Qualified
+                        </Badge>
+                      ) : g.riskTier === "high" ? (
+                        <Badge variant="destructive" className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20">
+                          <XCircle className="h-3 w-3 mr-1" />
+                          Not Qualified
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Pending
+                        </Badge>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/report/${g.id}`);
-                        }}
-                        className="gap-1.5"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        Report
-                      </Button>
-                      <Button variant="ghost" size="sm" data-testid={`button-edit-${g.id}`}>
-                        Edit
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                      className="gap-1.5"
+                    >
+                      <FileBarChart className="h-3.5 w-3.5" />
+                      Report
+                    </Button>
                   </td>
                 </tr>
               );
@@ -422,7 +266,6 @@ function GroupsTable({ groups, onSelect }: { groups: Group[]; onSelect: (g: Grou
 }
 
 export default function AdminPage() {
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -430,13 +273,15 @@ export default function AdminPage() {
     queryKey: ["/api/admin/groups"],
   });
 
-  const filtered = (groups || []).filter((g) => {
-    const matchSearch =
-      g.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      g.contactName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchStatus = statusFilter === "all" || g.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  const filtered = (groups || [])
+    .filter((g) => {
+      const matchSearch =
+        g.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        g.contactName.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchStatus = statusFilter === "all" || g.status === statusFilter;
+      return matchSearch && matchStatus;
+    })
+    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
 
   return (
     <div className="min-h-screen bg-background">
@@ -511,14 +356,8 @@ export default function AdminPage() {
             </p>
           </Card>
         ) : (
-          <GroupsTable groups={filtered} onSelect={(g) => setSelectedGroup(g)} />
+          <GroupsTable groups={filtered} />
         )}
-
-        <GroupDetailDialog
-          group={selectedGroup}
-          open={!!selectedGroup}
-          onClose={() => setSelectedGroup(null)}
-        />
       </div>
     </div>
   );
