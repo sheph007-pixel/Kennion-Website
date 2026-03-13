@@ -589,10 +589,13 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
           </div>
 
         {isUploading ? (
-          <div className="space-y-4 py-8">
-            <div className="flex items-center justify-center gap-3">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <span className="text-sm font-medium">Parsing your file...</span>
+          <div className="space-y-6 py-12">
+            <div className="flex flex-col items-center justify-center gap-4">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <div className="text-center">
+                <p className="text-2xl font-bold text-primary mb-1">Uploading Your Data</p>
+                <p className="text-sm text-muted-foreground">Please wait while we process your file...</p>
+              </div>
             </div>
           </div>
         ) : (
