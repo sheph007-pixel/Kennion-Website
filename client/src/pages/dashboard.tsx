@@ -427,6 +427,8 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
   const { toast } = useToast();
   const [step, setStep] = useState<"upload" | "map-columns" | "confirm">("upload");
   const [parseResult, setParseResult] = useState<any | null>(null);
+  const [originalParseResult, setOriginalParseResult] = useState<any | null>(null);
+  const [cleanedResult, setCleanedResult] = useState<any | null>(null);
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
   const [isUploading, setIsUploading] = useState(false);
   const [isApplyingMapping, setIsApplyingMapping] = useState(false);
@@ -460,6 +462,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
 
       const result = await res.json();
       setParseResult(result);
+      setOriginalParseResult(result);
       setColumnMapping(result.columnMapping || {});
       setStep("map-columns");
       toast({
@@ -501,6 +504,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
       }
 
       const result = await res.json();
+      setCleanedResult(result);
       setParseResult(result);
       setStep("confirm");
       toast({
@@ -677,6 +681,8 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
             <Button variant="outline" size="sm" onClick={() => {
               setStep("upload");
               setParseResult(null);
+              setOriginalParseResult(null);
+              setCleanedResult(null);
               setColumnMapping({});
               setMappingError(null);
             }}>
@@ -810,9 +816,9 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
     );
   }
 
-  if (step === "confirm" && parseResult) {
-    const hasWarnings = parseResult.warnings.length > 0;
-    const rowsWithIssues = parseResult.previewRows.filter(r => r.issues && r.issues.length > 0);
+  if (step === "confirm" && cleanedResult) {
+    const hasWarnings = cleanedResult.warnings.length > 0;
+    const rowsWithIssues = cleanedResult.previewRows.filter(r => r.issues && r.issues.length > 0);
 
     return (
       <>
@@ -823,6 +829,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
           <div className="flex items-start justify-between gap-4 mb-4">
             <Button variant="outline" size="sm" onClick={() => {
               setStep("map-columns");
+              setParseResult(originalParseResult);
               setValidationError(null);
             }} data-testid="button-back-mapping">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -853,14 +860,14 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
             </Button>
           </div>
           <h2 className="font-semibold text-lg mb-2">✓ AI Cleaned Your Data</h2>
-          <p className="text-sm text-muted-foreground">{parseResult.summary}</p>
+          <p className="text-sm text-muted-foreground">{cleanedResult.summary}</p>
         </div>
 
         <div className="mb-4 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-3">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
             <span className="text-sm font-medium text-green-700 dark:text-green-400">
-              {parseResult.cleanedRows} rows processed successfully
+              {cleanedResult.cleanedRows} rows processed successfully
             </span>
           </div>
         </div>
@@ -874,11 +881,11 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
                   Data Quality Warnings
                 </span>
                 <ul className="text-xs text-yellow-600/80 dark:text-yellow-400/80 space-y-0.5">
-                  {parseResult.warnings.slice(0, 5).map((w, i) => (
+                  {cleanedResult.warnings.slice(0, 5).map((w, i) => (
                     <li key={i}>• {w}</li>
                   ))}
-                  {parseResult.warnings.length > 5 && (
-                    <li className="italic">...and {parseResult.warnings.length - 5} more</li>
+                  {cleanedResult.warnings.length > 5 && (
+                    <li className="italic">...and {cleanedResult.warnings.length - 5} more</li>
                   )}
                 </ul>
               </div>
@@ -913,6 +920,8 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
                       setValidationError(null);
                       setStep("upload");
                       setParseResult(null);
+                      setOriginalParseResult(null);
+                      setCleanedResult(null);
                     }}
                     className="border-red-300 dark:border-red-700"
                   >
@@ -953,7 +962,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
                 </tr>
               </thead>
               <tbody>
-                {parseResult.previewRows.map((row, i) => (
+                {cleanedResult.previewRows.map((row, i) => (
                   <tr key={i} className={`border-b ${row.issues ? 'bg-yellow-50/50 dark:bg-yellow-950/10' : ''}`}>
                     <td className="py-2 px-3">{row.firstName || <span className="text-muted-foreground">—</span>}</td>
                     <td className="py-2 px-3">{row.lastName || <span className="text-muted-foreground">—</span>}</td>
