@@ -648,6 +648,14 @@ export default function ReportPage() {
       <div className="mx-auto max-w-5xl px-6 py-8" id="report-content">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/dashboard")}
+              className="mb-3"
+            >
+              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to Dashboard
+            </Button>
             <h1 className="text-2xl font-bold mb-1" data-testid="text-report-title">{group.companyName}</h1>
             <p className="text-xs text-muted-foreground" data-testid="text-census-number">
               Census #KBA-{group.id.substring(0, 8).toUpperCase()} | Submitted {new Date(group.submittedAt).toLocaleDateString()}

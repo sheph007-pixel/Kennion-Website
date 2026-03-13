@@ -1263,9 +1263,13 @@ export default function DashboardPage() {
   };
 
   const handleAnalysisComplete = () => {
+    const groupId = analyzingGroup?.id;
     setShowAnalysis(false);
     setAnalyzingGroup(null);
     queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+    if (groupId) {
+      navigate(`/report/${groupId}`);
+    }
   };
 
   return (
