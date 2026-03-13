@@ -674,6 +674,56 @@ export async function registerRoutes(
     });
   });
 
+  // User management endpoints
+  app.get("/api/admin/users", requireAdmin, async (_req: Request, res: Response) => {
+    const allUsers = await storage.getAllUsers();
+    res.json(allUsers);
+  });
+
+  app.patch("/api/admin/users/:id", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id;
+      const data = req.body;
+
+      // Build update object with only provided fields
+      const updates: any = {};
+      if (data.fullName !== undefined) updates.fullName = data.fullName;
+      if (data.email !== undefined) updates.email = data.email;
+      if (data.companyName !== undefined) updates.companyName = data.companyName;
+      if (data.phone !== undefined) updates.phone = data.phone;
+      if (data.role !== undefined) updates.role = data.role;
+      if (data.verified !== undefined) updates.verified = data.verified;
+
+      const updated = await storage.updateUser(id, updates);
+      if (!updated) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(updated);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Update failed" });
+    }
+  });
+
+  app.delete("/api/admin/users/:id", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id;
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Don't allow deleting yourself
+      if (req.session.userId === id) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+
+      await storage.deleteUser(id);
+      res.json({ message: "User deleted successfully" });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Delete failed" });
+    }
+  });
+
   app.post("/api/auth/logout", (req: Request, res: Response) => {
     req.session.destroy(() => {
       res.json({ message: "Logged out" });

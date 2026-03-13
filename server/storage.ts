@@ -18,6 +18,8 @@ export interface IStorage {
   getUserByMagicToken(token: string): Promise<User | undefined>;
   createUser(user: Partial<InsertUser> & { fullName: string; email: string; magicToken?: string; magicTokenExpiry?: Date }): Promise<User>;
   updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
+  deleteUser(id: string): Promise<void>;
 
   getGroupsByUserId(userId: string): Promise<Group[]>;
   getAllGroups(): Promise<Group[]>;
@@ -55,6 +57,14 @@ export class DatabaseStorage implements IStorage {
   async updateUser(id: string, data: Partial<User>): Promise<User | undefined> {
     const [updated] = await db.update(users).set(data).where(eq(users.id, id)).returning();
     return updated;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
 
   async getGroupsByUserId(userId: string): Promise<Group[]> {

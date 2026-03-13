@@ -46,12 +46,29 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ThemeToggle } from "@/components/theme-toggle";
-import type { Group, CensusEntry } from "@shared/schema";
+import type { Group, CensusEntry, User as DbUser } from "@shared/schema";
 
 const TIER_CONFIG: Record<string, { label: string; color: string }> = {
   preferred: { label: "Preferred Risk", color: "text-green-600 dark:text-green-400" },
@@ -645,6 +662,313 @@ function ReportModal({
   );
 }
 
+function UserManagement() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedUser, setSelectedUser] = useState<DbUser | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const { data: users, isLoading } = useQuery<DbUser[]>({
+    queryKey: ["/api/admin/users"],
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/admin/users/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({ title: "User deleted", description: "The user has been removed." });
+      setDeleteUserId(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<DbUser> }) => {
+      return await apiRequest("PATCH", `/api/admin/users/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({ title: "User updated", description: "User details have been saved." });
+      setIsEditDialogOpen(false);
+      setSelectedUser(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Update failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const filtered = users?.filter(user =>
+    user.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.companyName?.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
+  return (
+    <>
+      <div className="flex items-center gap-3 mb-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search users..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Badge variant="secondary" className="px-3 py-1">
+          {filtered.length} {filtered.length === 1 ? 'user' : 'users'}
+        </Badge>
+      </div>
+
+      {isLoading ? (
+        <Card className="p-6">
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-14 w-full" />
+            ))}
+          </div>
+        </Card>
+      ) : filtered.length === 0 ? (
+        <Card className="p-8 text-center">
+          <Users className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+          <h3 className="font-semibold">No users found</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            {searchQuery ? "Try adjusting your search." : "No registered users yet."}
+          </p>
+        </Card>
+      ) : (
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="border-b bg-muted/50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Email</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Company</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Phone</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Role</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Verified</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Joined</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((user) => (
+                  <tr key={user.id} className="border-b hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3 text-sm font-medium">{user.fullName}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{user.email}</td>
+                    <td className="px-4 py-3 text-sm">{user.companyName || '—'}</td>
+                    <td className="px-4 py-3 text-sm">{user.phone || '—'}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                        {user.role}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {user.verified ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {format(new Date(user.createdAt!), 'MMM d, yyyy')}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setIsEditDialogOpen(true);
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteUserId(user.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      <EditUserDialog
+        user={selectedUser}
+        open={isEditDialogOpen}
+        onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) setSelectedUser(null);
+        }}
+        onSave={(data) => {
+          if (selectedUser) {
+            updateUserMutation.mutate({ id: selectedUser.id, data });
+          }
+        }}
+        isSaving={updateUserMutation.isPending}
+      />
+
+      <AlertDialog open={!!deleteUserId} onOpenChange={(open) => !open && setDeleteUserId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this user? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteUserId && deleteUserMutation.mutate(deleteUserId)}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+function EditUserDialog({
+  user,
+  open,
+  onOpenChange,
+  onSave,
+  isSaving,
+}: {
+  user: DbUser | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (data: Partial<DbUser>) => void;
+  isSaving: boolean;
+}) {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    companyName: '',
+    phone: '',
+    role: 'client',
+    verified: false,
+  });
+
+  React.useEffect(() => {
+    if (user) {
+      setFormData({
+        fullName: user.fullName || '',
+        email: user.email || '',
+        companyName: user.companyName || '',
+        phone: user.phone || '',
+        role: user.role || 'client',
+        verified: user.verified || false,
+      });
+    }
+  }, [user]);
+
+  if (!user) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit User</DialogTitle>
+          <DialogDescription>
+            Update user details and permissions.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="fullName">Full Name</Label>
+            <Input
+              id="fullName"
+              value={formData.fullName}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="companyName">Company Name</Label>
+            <Input
+              id="companyName"
+              value={formData.companyName}
+              onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone</Label>
+            <Input
+              id="phone"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="role">Role</Label>
+            <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+              <SelectTrigger id="role">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="client">Client</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="verified"
+              checked={formData.verified}
+              onChange={(e) => setFormData({ ...formData, verified: e.target.checked })}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            <Label htmlFor="verified" className="cursor-pointer">Verified</Label>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button onClick={() => onSave(formData)} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Save Changes'
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -738,11 +1062,24 @@ export default function AdminPage() {
             Admin Console
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage group submissions and qualification status.
+            Manage group submissions, users, and system settings.
           </p>
         </div>
 
-        {isLoading ? (
+        <Tabs defaultValue="groups" className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="groups" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Groups
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Users
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="groups" className="mt-0">
+            {isLoading ? (
           <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
             {[1, 2, 3, 4].map((i) => (
               <Card key={i} className="p-4">
@@ -813,17 +1150,23 @@ export default function AdminPage() {
           />
         )}
 
-        <GroupDetailModal
-          group={selectedGroup}
-          open={isDetailModalOpen}
-          onOpenChange={setIsDetailModalOpen}
-        />
+            <GroupDetailModal
+              group={selectedGroup}
+              open={isDetailModalOpen}
+              onOpenChange={setIsDetailModalOpen}
+            />
 
-        <ReportModal
-          groupId={reportGroupId}
-          open={isReportModalOpen}
-          onOpenChange={setIsReportModalOpen}
-        />
+            <ReportModal
+              groupId={reportGroupId}
+              open={isReportModalOpen}
+              onOpenChange={setIsReportModalOpen}
+            />
+          </TabsContent>
+
+          <TabsContent value="users" className="mt-0">
+            <UserManagement />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
