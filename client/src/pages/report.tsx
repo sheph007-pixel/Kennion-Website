@@ -466,6 +466,11 @@ export default function ReportPage() {
             margin-bottom: 8px !important;
           }
 
+          /* Page break classes for PDF organization */
+          .page-break-after {
+            page-break-after: always !important;
+          }
+
           /* Tables more compact */
           table {
             font-size: 9px !important;
@@ -621,7 +626,7 @@ export default function ReportPage() {
           )}
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 page-break-after">
           <Card className="overflow-hidden">
             <div className="bg-primary/10 px-4 py-2.5 border-b">
               <h2 className="text-sm font-bold flex items-center gap-2">
@@ -740,7 +745,7 @@ export default function ReportPage() {
           </Card>
         </div>
 
-        <Card className="overflow-hidden mb-6">
+        <Card className="overflow-hidden mb-6 page-break-after">
           <div className="bg-primary/10 px-4 py-2.5 border-b">
             <h2 className="text-sm font-bold flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
