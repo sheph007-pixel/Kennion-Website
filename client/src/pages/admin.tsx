@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
@@ -174,10 +174,31 @@ function GroupsTable({
   onRowClick: (group: Group) => void;
 }) {
   const [, navigate] = useLocation();
+  const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
 
   const SortIcon = ({ field }: { field: string }) => {
     if (sortField !== field) return <ArrowUpDown className="h-3.5 w-3.5 ml-1 opacity-40" />;
     return sortDirection === "asc" ? "↑" : "↓";
+  };
+
+  // Group by company name
+  const groupedByCompany = groups.reduce((acc, group) => {
+    const company = group.companyName;
+    if (!acc[company]) {
+      acc[company] = [];
+    }
+    acc[company].push(group);
+    return acc;
+  }, {} as Record<string, Group[]>);
+
+  const toggleCompany = (company: string) => {
+    const newExpanded = new Set(expandedCompanies);
+    if (newExpanded.has(company)) {
+      newExpanded.delete(company);
+    } else {
+      newExpanded.add(company);
+    }
+    setExpandedCompanies(newExpanded);
   };
 
   return (
@@ -217,113 +238,190 @@ function GroupsTable({
             </tr>
           </thead>
           <tbody>
-            {groups.map((g) => {
-              const censusNumber = `KBA-${g.id.substring(0, 8).toUpperCase()}`;
-              const isQualified = g.riskTier === "preferred" || g.riskTier === "standard";
-              const tier = g.riskTier ? TIER_CONFIG[g.riskTier] || { label: g.riskTier, color: "text-muted-foreground" } : null;
+            {Object.entries(groupedByCompany).map(([companyName, companyGroups]) => {
+              const isExpanded = expandedCompanies.has(companyName);
+              const censusCount = companyGroups.length;
+              const totalLives = companyGroups.reduce((sum, g) => sum + (g.totalLives || 0), 0);
+              const latestSubmission = companyGroups.reduce((latest, g) =>
+                new Date(g.submittedAt) > new Date(latest.submittedAt) ? g : latest
+              );
 
               return (
-                <tr
-                  key={g.id}
-                  className="border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
-                  data-testid={`row-group-${g.id}`}
-                  onClick={() => onRowClick(g)}
-                >
-                  <td className="px-4 py-3">
-                    <div className="text-sm">
-                      {format(new Date(g.submittedAt), "MM/dd/yy")}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {format(new Date(g.submittedAt), "h:mm a")}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 font-medium">{g.companyName}</td>
-                  <td className="px-4 py-3">
-                    <code className="text-xs text-muted-foreground">
-                      {censusNumber}
-                    </code>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <div className="font-semibold">{g.totalLives}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {g.employeeCount}e·{g.spouseCount || 0}s·{g.childrenCount}c
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {g.riskScore != null ? (
-                      <div>
-                        <div className="font-bold text-primary">
-                          {g.riskScore.toFixed(2)}
-                        </div>
-                        {tier && (
-                          <div className={`text-xs ${tier.color}`}>
-                            {tier.label.replace(" Risk", "")}
-                          </div>
-                        )}
+                <React.Fragment key={companyName}>
+                  {/* Company Summary Row */}
+                  <tr
+                    className="border-b hover:bg-muted/30 transition-colors cursor-pointer bg-muted/10"
+                    onClick={() => toggleCompany(companyName)}
+                    data-testid={`row-company-${companyName}`}
+                  >
+                    <td className="px-4 py-3">
+                      <div className="text-sm">
+                        {format(new Date(latestSubmission.submittedAt), "MM/dd/yy")}
                       </div>
-                    ) : (
+                      <div className="text-xs text-muted-foreground">Latest</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        <div>
+                          <div className="font-bold">{companyName}</div>
+                          <div className="text-xs text-muted-foreground">{censusCount} census submission{censusCount > 1 ? 's' : ''}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant="outline" className="text-xs">
+                        {censusCount} total
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="font-bold text-lg">{totalLives}</div>
+                      <div className="text-xs text-muted-foreground">Total Lives</div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
                       <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {g.status === "census_uploaded" && (
-                        <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
-                          <Clock className="h-3 w-3 mr-1" />
-                          Census Uploaded
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <Badge variant="secondary" className="text-xs">
+                          {companyGroups.filter(g => g.status === "census_uploaded").length} uploaded
                         </Badge>
-                      )}
-                      {g.status === "proposal_sent" && (
-                        <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20">
-                          <AlertCircle className="h-3 w-3 mr-1" />
-                          Proposal Sent
-                        </Badge>
-                      )}
-                      {g.status === "proposal_accepted" && (
-                        <Badge variant="default" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Proposal Accepted
-                        </Badge>
-                      )}
-                      {g.status === "client" && (
-                        <Badge variant="default" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
-                          <TrendingUp className="h-3 w-3 mr-1" />
-                          Client
-                        </Badge>
-                      )}
-                      {g.status === "not_approved" && (
-                        <Badge variant="destructive" className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20">
-                          <XCircle className="h-3 w-3 mr-1" />
-                          Not Approved
-                        </Badge>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigate(`/report/${g.id}`)}
-                        className="gap-1.5"
-                      >
-                        <FileBarChart className="h-3.5 w-3.5" />
-                        Report
-                      </Button>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-right">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onDelete(g.id);
+                          toggleCompany(companyName);
                         }}
-                        className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        {isExpanded ? 'Collapse' : 'Expand'}
                       </Button>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
+
+                  {/* Individual Census Rows */}
+                  {isExpanded && companyGroups.map((g) => {
+                    const censusNumber = `KBA-${g.id.substring(0, 8).toUpperCase()}`;
+                    const tier = g.riskTier ? TIER_CONFIG[g.riskTier] || { label: g.riskTier, color: "text-muted-foreground" } : null;
+
+                    return (
+                      <tr
+                        key={g.id}
+                        className="border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer bg-background"
+                        data-testid={`row-group-${g.id}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRowClick(g);
+                        }}
+                      >
+                        <td className="px-4 py-3 pl-12">
+                          <div className="text-sm">
+                            {format(new Date(g.submittedAt), "MM/dd/yy")}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {format(new Date(g.submittedAt), "h:mm a")}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 pl-12 text-muted-foreground text-sm">
+                          <code className="text-xs">
+                            {censusNumber}
+                          </code>
+                        </td>
+                        <td className="px-4 py-3">
+                          <code className="text-xs text-muted-foreground">
+                            {censusNumber}
+                          </code>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="font-semibold">{g.totalLives}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {g.employeeCount}e·{g.spouseCount || 0}s·{g.childrenCount}c
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {g.riskScore != null ? (
+                            <div>
+                              <div className="font-bold text-primary">
+                                {g.riskScore.toFixed(2)}
+                              </div>
+                              {tier && (
+                                <div className={`text-xs ${tier.color}`}>
+                                  {tier.label.replace(" Risk", "")}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center gap-1.5">
+                            {g.status === "census_uploaded" && (
+                              <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Census Uploaded
+                              </Badge>
+                            )}
+                            {g.status === "proposal_sent" && (
+                              <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20">
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                Proposal Sent
+                              </Badge>
+                            )}
+                            {g.status === "proposal_accepted" && (
+                              <Badge variant="default" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Proposal Accepted
+                              </Badge>
+                            )}
+                            {g.status === "client" && (
+                              <Badge variant="default" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
+                                <TrendingUp className="h-3 w-3 mr-1" />
+                                Client
+                              </Badge>
+                            )}
+                            {g.status === "not_approved" && (
+                              <Badge variant="destructive" className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20">
+                                <XCircle className="h-3 w-3 mr-1" />
+                                Not Approved
+                              </Badge>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/report/${g.id}`);
+                              }}
+                              className="gap-1.5"
+                            >
+                              <FileBarChart className="h-3.5 w-3.5" />
+                              Report
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(g.id);
+                              }}
+                              className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </React.Fragment>
               );
             })}
           </tbody>
