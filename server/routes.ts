@@ -577,9 +577,24 @@ export async function registerRoutes(
       const baseUrl = getBaseUrl(req);
       const magicLinkUrl = `${baseUrl}/auth/verify?token=${token}`;
 
-      await sendMagicLinkEmail(data.email, magicLinkUrl, fullName);
+      // Try to send email, but don't fail registration if it fails
+      let emailSent = true;
+      try {
+        await sendMagicLinkEmail(data.email, magicLinkUrl, fullName);
+      } catch (emailErr: any) {
+        log(`Warning: Could not send email during registration: ${emailErr.message}`);
+        emailSent = false;
+      }
 
-      res.json({ message: "Sign-in link sent to your email", email: data.email });
+      if (emailSent) {
+        res.json({ message: "Sign-in link sent to your email", email: data.email });
+      } else {
+        res.json({
+          message: "Account created, but email could not be sent. Please contact support for a sign-in link.",
+          email: data.email,
+          warning: "Email delivery failed"
+        });
+      }
     } catch (err: any) {
       log(`Registration error: ${err.message}`);
       res.status(400).json({ message: err.message || "Registration failed" });

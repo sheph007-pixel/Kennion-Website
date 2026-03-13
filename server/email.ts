@@ -1,6 +1,8 @@
 import { Resend } from "resend";
 import { log } from "./index";
 
+// Using resend.dev for testing - only works with verified recipient emails
+// To send to @kennion.com, you need to verify the domain in Resend dashboard
 const FROM_EMAIL = "Kennion Benefit Advisors <onboarding@resend.dev>";
 
 function getResendClient() {
