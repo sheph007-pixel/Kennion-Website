@@ -20,6 +20,9 @@ export async function sendMagicLinkEmail(
   fullName?: string
 ) {
   try {
+    log(`[EMAIL DEBUG] Starting email send to: ${toEmail}`);
+    log(`[EMAIL DEBUG] API Key present: ${!!process.env.RESEND_API_KEY}`);
+
     const client = getResendClient();
     const greeting = fullName ? `Hi ${fullName},` : "Hi,";
 
@@ -48,14 +51,15 @@ export async function sendMagicLinkEmail(
     });
 
     if (result.error) {
-      log(`Resend API error: ${JSON.stringify(result.error)}`);
+      log(`[EMAIL ERROR] Resend API error: ${JSON.stringify(result.error)}`);
       throw new Error(`Email delivery failed: ${result.error.message}`);
     }
 
-    log(`Magic link email sent to ${toEmail} (id: ${result.data?.id})`);
+    log(`[EMAIL SUCCESS] Magic link email sent to ${toEmail} (id: ${result.data?.id})`);
     return true;
   } catch (err: any) {
-    log(`Failed to send magic link email to ${toEmail}: ${err.message}`);
+    log(`[EMAIL ERROR] Failed to send magic link email to ${toEmail}: ${err.message}`);
+    log(`[EMAIL ERROR] Full error: ${JSON.stringify(err)}`);
     throw new Error("Failed to send sign-in email. Please try again.");
   }
 }
