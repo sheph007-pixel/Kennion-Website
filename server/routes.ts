@@ -530,7 +530,7 @@ export async function registerRoutes(
   // Use client session by default
   app.use((req, res, next) => {
     // Use admin session for admin routes
-    if (req.path.startsWith("/api/admin") || req.path === "/api/auth/admin-login") {
+    if (req.path.startsWith("/api/admin") || req.path === "/api/auth/admin/login") {
       return adminSession(req, res, next);
     }
     // Use client session for all other routes
@@ -654,6 +654,7 @@ export async function registerRoutes(
     }
   });
 
+  // Client login endpoint
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
       const data = loginSchema.parse(req.body);
@@ -661,6 +662,38 @@ export async function registerRoutes(
 
       if (!user || !user.password) {
         return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      const valid = await bcrypt.compare(data.password, user.password);
+      if (!valid) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      req.session.userId = user.id;
+      res.json({
+        id: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        companyName: user.companyName,
+      });
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Login failed" });
+    }
+  });
+
+  // Admin login endpoint (uses admin session)
+  app.post("/api/auth/admin/login", async (req: Request, res: Response) => {
+    try {
+      const data = loginSchema.parse(req.body);
+      const user = await storage.getUserByEmail(data.email);
+
+      if (!user || !user.password) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      if (user.role !== "admin") {
+        return res.status(403).json({ message: "Admin access required" });
       }
 
       const valid = await bcrypt.compare(data.password, user.password);
