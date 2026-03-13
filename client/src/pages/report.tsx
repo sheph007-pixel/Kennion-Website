@@ -628,28 +628,9 @@ export default function ReportPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center py-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-muted-foreground">Dependency Ratio</span>
-                    <div className="group relative">
-                      <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                      <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-56 p-2 text-xs bg-popover border rounded-md shadow-lg">
-                        Average number of children and spouses per employee
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-base font-bold">{dependencyRatio.toFixed(2)}</div>
-                </div>
-
                 <div className="pt-1.5 pb-1">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <span className="text-xs text-muted-foreground">Gender Mix</span>
-                    <div className="group relative">
-                      <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                      <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-48 p-2 text-xs bg-popover border rounded-md shadow-lg">
-                        Percentage of female members in the group
-                      </div>
-                    </div>
                   </div>
                   <GenderChart male={maleCount} female={femaleCount} />
                 </div>
