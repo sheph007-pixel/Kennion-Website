@@ -710,15 +710,7 @@ export default function ReportPage() {
                   <span className="text-base font-bold" data-testid="text-report-total">{group.totalLives}</span>
                 </div>
                 <div className="flex justify-between items-center py-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Group Category</span>
-                    <div className="group relative">
-                      <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                      <div className="absolute left-0 top-5 hidden group-hover:block z-10 w-56 p-2 text-xs bg-popover border rounded-md shadow-lg">
-                        Micro: 2-14 lives | Small: 15-50 lives | Large: 51+ lives
-                      </div>
-                    </div>
-                  </div>
+                  <span className="text-xs text-muted-foreground">Group Category</span>
                   <Badge variant="secondary" className="font-semibold text-xs">{groupCategory}</Badge>
                 </div>
               </div>
