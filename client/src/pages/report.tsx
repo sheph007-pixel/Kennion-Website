@@ -297,28 +297,37 @@ export default function ReportPage() {
         @media print {
           @page {
             size: letter;
-            margin: 0.75in 0.6in;
+            margin: 0.5in;
+          }
+
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
           }
 
           body {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            margin: 0;
+            padding: 0;
           }
 
           nav, .print\\:hidden {
             display: none !important;
           }
 
-          .mx-auto {
-            max-width: none !important;
-            padding: 0 !important;
+          #report-content {
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0.25in !important;
+            width: 100% !important;
           }
 
           h1 {
             page-break-after: avoid;
+            margin-top: 0;
           }
 
-          .grid {
+          .grid, .mb-6 {
             page-break-inside: avoid;
           }
         }
