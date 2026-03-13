@@ -374,12 +374,6 @@ function formatDateToMMDDYY(dateStr: string): string {
   return dateStr;
 }
 
-interface ValidationError {
-  guidance: string;
-  errors: string[];
-  matchRate: number;
-}
-
 function WizardProgress({ step }: { step: "upload" | "map-columns" | "confirm" }) {
   const steps = [
     { id: "upload", label: "UPLOAD", number: 1 },
@@ -433,7 +427,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
   const [isUploading, setIsUploading] = useState(false);
   const [isApplyingMapping, setIsApplyingMapping] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
-  const [validationError, setValidationError] = useState<ValidationError | null>(null);
+  const [censusError, setCensusError] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [mappingError, setMappingError] = useState<string | null>(null);
 
@@ -520,7 +514,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
 
   const handleConfirm = async () => {
     setIsConfirming(true);
-    setValidationError(null);
+    setCensusError(false);
     try {
       const res = await apiRequest("POST", "/api/groups/confirm", {});
       const data = await res.json();
@@ -528,27 +522,8 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
       onComplete(data.group);
     } catch (err: any) {
-      const msg = err.message || "Upload failed";
-
-      // Check if this is a validation error
-      if (err.guidance && err.errors && err.matchRate !== undefined) {
-        setValidationError({
-          guidance: err.guidance,
-          errors: err.errors,
-          matchRate: err.matchRate,
-        });
-        toast({
-          title: "Validation Failed",
-          description: `Data integrity: ${err.matchRate}%. Please review the errors below.`,
-          variant: "destructive"
-        });
-      } else if (msg.includes("pending") || msg.includes("upload a file")) {
-        toast({ title: "Session expired", description: "Please re-upload your CSV file.", variant: "destructive" });
-        setStep("upload");
-        setParseResult(null);
-      } else {
-        toast({ title: "Upload failed", description: msg, variant: "destructive" });
-      }
+      // Any error shows the contact popup - no partial uploads allowed
+      setCensusError(true);
     } finally {
       setIsConfirming(false);
     }
@@ -833,7 +808,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
             <Button variant="outline" size="sm" onClick={() => {
               setStep("map-columns");
               setParseResult(originalParseResult);
-              setValidationError(null);
+              setCensusError(false);
             }} data-testid="button-back-mapping">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Column Mapping
@@ -841,14 +816,14 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
             <Button
               size="lg"
               onClick={handleConfirm}
-              disabled={isConfirming || validationError !== null}
+              disabled={isConfirming || censusError}
               className="font-bold shadow-xl h-12 text-base px-8"
               data-testid="button-submit-top"
             >
-              {validationError ? (
+              {censusError ? (
                 <>
                   <X className="mr-2 h-5 w-5" />
-                  Fix Errors First
+                  Upload Failed
                 </>
               ) : isConfirming ? (
                 <>
@@ -896,57 +871,46 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
           </div>
         )}
 
-        {validationError && (
-          <div className="mb-4 rounded-md bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-800 p-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold text-red-900 dark:text-red-100 mb-2">
-                  Validation Failed ({validationError.matchRate}% Data Integrity)
-                </h3>
-                <p className="text-sm text-red-800 dark:text-red-200 mb-3">
-                  {validationError.guidance}
+        {/* Census Error Dialog - Clean popup that sticks */}
+        <AlertDialog open={censusError} onOpenChange={setCensusError}>
+          <AlertDialogContent className="max-w-md border-4 border-red-500 dark:border-red-600">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-2xl font-bold text-red-600 dark:text-red-400 flex items-center gap-3">
+                <XCircle className="h-8 w-8" />
+                Census Error
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-base pt-4 space-y-4">
+                <p className="text-lg font-medium text-foreground">
+                  We are unable to upload your census.
                 </p>
-                <div className="mb-3">
-                  <p className="text-xs font-medium text-red-900 dark:text-red-100 mb-1">Issues Found:</p>
-                  <ul className="text-xs text-red-700 dark:text-red-300 space-y-1 ml-4">
-                    {validationError.errors.map((error, i) => (
-                      <li key={i}>• {error}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setValidationError(null);
-                      setStep("upload");
-                      setParseResult(null);
-                      setOriginalParseResult(null);
-                      setCleanedResult(null);
-                    }}
-                    className="border-red-300 dark:border-red-700"
+                <p className="text-base text-foreground">
+                  Please contact Hunter Shepherd at{" "}
+                  <a
+                    href="tel:205-641-0469"
+                    className="font-bold text-primary underline hover:text-primary/80"
                   >
-                    <Upload className="h-3 w-3 mr-1" />
-                    Upload New File
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                    className="border-red-300 dark:border-red-700"
-                  >
-                    <a href="/api/groups/template" download>
-                      <FileDown className="h-3 w-3 mr-1" />
-                      Download Template
-                    </a>
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+                    205-641-0469
+                  </a>
+                  {" "}for help.
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction
+                onClick={() => {
+                  setCensusError(false);
+                  setStep("upload");
+                  setParseResult(null);
+                  setOriginalParseResult(null);
+                  setCleanedResult(null);
+                }}
+                className="w-full h-12 text-base font-bold"
+              >
+                OK
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <div className="mb-6 rounded-md border-2 border-blue-200 dark:border-blue-800 p-1.5 bg-blue-50 dark:bg-blue-950/30">
           <h3 className="text-[10px] font-semibold mb-1 px-1 text-blue-700 dark:text-blue-300">Preview (first 10 rows)</h3>
@@ -982,16 +946,16 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
 
         <Button
           onClick={handleConfirm}
-          disabled={isConfirming || validationError !== null}
+          disabled={isConfirming || censusError}
           className="w-full h-14 text-lg font-bold shadow-xl"
           size="lg"
           data-testid="button-confirm-mapping"
-          variant={validationError ? "outline" : "default"}
+          variant={censusError ? "outline" : "default"}
         >
-          {validationError ? (
+          {censusError ? (
             <>
               <X className="mr-2 h-5 w-5" />
-              Cannot Submit - Fix Validation Errors First
+              Upload Failed - Please Contact Support
             </>
           ) : isConfirming ? (
             <>
