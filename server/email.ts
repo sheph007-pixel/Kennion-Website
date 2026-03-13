@@ -6,6 +6,7 @@ const FROM_EMAIL = "Kennion Benefit Advisors <onboarding@resend.dev>";
 function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
+    log("ERROR: RESEND_API_KEY environment variable is not set");
     throw new Error("RESEND_API_KEY not configured");
   }
   return new Resend(apiKey);
