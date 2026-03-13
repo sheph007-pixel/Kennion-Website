@@ -1025,15 +1025,6 @@ function GroupsList() {
     }
   };
 
-  const handleDelete = async (groupId: string) => {
-    try {
-      await apiRequest("DELETE", `/api/groups/${groupId}`);
-      toast({ title: "Census deleted", description: "You can upload a new census at any time." });
-      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
-    } catch (err: any) {
-      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
-    }
-  };
 
   if (isLoading) {
     return (
@@ -1162,52 +1153,18 @@ function GroupsList() {
                       )}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/report/${group.id}`);
-                          }}
-                          data-testid={`button-view-report-${group.id}`}
-                        >
-                          <FileText className="h-3.5 w-3.5 mr-1" />
-                          Report
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => e.stopPropagation()}
-                              data-testid={`button-delete-${group.id}`}
-                            >
-                              <Trash2 className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Census</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete census #{censusNumber}? This will permanently remove the census data and risk analysis. You can re-upload a new census afterwards.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDelete(group.id);
-                                }}
-                                data-testid="button-confirm-delete"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/report/${group.id}`);
+                        }}
+                        data-testid={`button-view-report-${group.id}`}
+                      >
+                        <FileText className="h-3.5 w-3.5 mr-1" />
+                        Report
+                      </Button>
                     </td>
                   </tr>
                 );
