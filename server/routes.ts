@@ -835,16 +835,6 @@ export async function registerRoutes(
         return res.status(401).json({ message: "User not found" });
       }
 
-      // CRITICAL: Only allow one census per user
-      const existingGroups = await storage.getGroupsByUserId(req.session.userId!);
-      if (existingGroups && existingGroups.length > 0) {
-        log(`User ${req.session.userId} already has a census. Preventing duplicate.`);
-        return res.status(400).json({
-          message: "You already have a census submitted. Each account can only submit one census and proposal.",
-          existingGroup: existingGroups[0]
-        });
-      }
-
       const aiCleaned = pendingCensus.aiCleaned;
 
       // Convert AI-cleaned data to storage format
