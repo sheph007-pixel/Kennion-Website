@@ -945,33 +945,31 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
           </div>
         )}
 
-        <div className="mb-6 rounded-md border">
-          <div className="p-3 border-b bg-muted/30">
-            <h3 className="text-sm font-medium">Preview (first 10 rows)</h3>
-          </div>
+        <div className="mb-6 rounded-md border-2 border-blue-200 dark:border-blue-800 p-1.5 bg-blue-50 dark:bg-blue-950/30">
+          <h3 className="text-[10px] font-semibold mb-1 px-1 text-blue-700 dark:text-blue-300">Preview (first 10 rows)</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b bg-muted/20">
-                  <th className="text-left py-2 px-3 font-medium">First</th>
-                  <th className="text-left py-2 px-3 font-medium">Last</th>
-                  <th className="text-left py-2 px-3 font-medium">Type</th>
-                  <th className="text-left py-2 px-3 font-medium">DOB</th>
-                  <th className="text-left py-2 px-3 font-medium">Gender</th>
-                  <th className="text-left py-2 px-3 font-medium">Zip</th>
+                <tr className="border-b">
+                  <th className="text-left px-1 py-0.5 font-medium text-[10px]">First</th>
+                  <th className="text-left px-1 py-0.5 font-medium text-[10px]">Last</th>
+                  <th className="text-left px-1 py-0.5 font-medium text-[10px]">Type</th>
+                  <th className="text-left px-1 py-0.5 font-medium text-[10px]">DOB</th>
+                  <th className="text-left px-1 py-0.5 font-medium text-[10px]">Gender</th>
+                  <th className="text-left px-1 py-0.5 font-medium text-[10px]">Zip</th>
                 </tr>
               </thead>
               <tbody>
                 {cleanedResult.previewRows.map((row, i) => (
-                  <tr key={i} className={`border-b ${row.issues ? 'bg-yellow-50/50 dark:bg-yellow-950/10' : ''}`}>
-                    <td className="py-2 px-3">{row.firstName || <span className="text-muted-foreground">—</span>}</td>
-                    <td className="py-2 px-3">{row.lastName || <span className="text-muted-foreground">—</span>}</td>
-                    <td className="py-2 px-3">
-                      <Badge variant="outline" className="text-xs">{row.relationship}</Badge>
+                  <tr key={i} className={`border-b last:border-b-0 ${row.issues ? 'bg-yellow-50/50 dark:bg-yellow-950/10' : ''}`}>
+                    <td className="px-1 py-0.5 text-[10px]">{row.firstName || <span className="text-muted-foreground">—</span>}</td>
+                    <td className="px-1 py-0.5 text-[10px]">{row.lastName || <span className="text-muted-foreground">—</span>}</td>
+                    <td className="px-1 py-0.5 text-[10px]">
+                      <Badge variant="outline" className="text-[9px]">{row.relationship}</Badge>
                     </td>
-                    <td className="py-2 px-3">{formatDateToMMDDYY(row.dob) || <span className="text-muted-foreground">—</span>}</td>
-                    <td className="py-2 px-3">{row.gender}</td>
-                    <td className="py-2 px-3">{row.zip || <span className="text-muted-foreground">—</span>}</td>
+                    <td className="px-1 py-0.5 text-[10px]">{formatDateToMMDDYY(row.dob) || <span className="text-muted-foreground">—</span>}</td>
+                    <td className="px-1 py-0.5 text-[10px]">{row.gender}</td>
+                    <td className="px-1 py-0.5 text-[10px]">{row.zip || <span className="text-muted-foreground">—</span>}</td>
                   </tr>
                 ))}
               </tbody>
