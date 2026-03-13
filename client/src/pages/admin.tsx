@@ -164,7 +164,8 @@ function GroupsTable({
   sortDirection,
   onSort,
   onDelete,
-  onRowClick
+  onRowClick,
+  onViewReport
 }: {
   groups: Group[];
   sortField: string;
@@ -172,8 +173,8 @@ function GroupsTable({
   onSort: (field: string) => void;
   onDelete: (id: number) => void;
   onRowClick: (group: Group) => void;
+  onViewReport: (groupId: string) => void;
 }) {
-  const [, navigate] = useLocation();
   const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
 
   const SortIcon = ({ field }: { field: string }) => {
@@ -398,7 +399,7 @@ function GroupsTable({
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/report/${g.id}`);
+                                onViewReport(g.id);
                               }}
                               className="gap-1.5"
                             >
@@ -612,6 +613,38 @@ function GroupDetailModal({
   );
 }
 
+function ReportModal({
+  groupId,
+  open,
+  onOpenChange,
+}: {
+  groupId: string | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  if (!groupId) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[95vw] w-full h-[95vh] p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+          <DialogTitle className="text-xl flex items-center gap-2">
+            <FileBarChart className="h-5 w-5" />
+            Census Report
+          </DialogTitle>
+        </DialogHeader>
+        <div className="flex-1 overflow-hidden">
+          <iframe
+            src={`/report/${groupId}`}
+            className="w-full h-full border-0"
+            title="Census Report"
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -619,6 +652,8 @@ export default function AdminPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [reportGroupId, setReportGroupId] = useState<string | null>(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: groups, isLoading } = useQuery<Group[]>({
@@ -656,6 +691,11 @@ export default function AdminPage() {
   const handleRowClick = (group: Group) => {
     setSelectedGroup(group);
     setIsDetailModalOpen(true);
+  };
+
+  const handleViewReport = (groupId: string) => {
+    setReportGroupId(groupId);
+    setIsReportModalOpen(true);
   };
 
   const filtered = (groups || [])
@@ -769,6 +809,7 @@ export default function AdminPage() {
             onSort={handleSort}
             onDelete={handleDelete}
             onRowClick={handleRowClick}
+            onViewReport={handleViewReport}
           />
         )}
 
@@ -776,6 +817,12 @@ export default function AdminPage() {
           group={selectedGroup}
           open={isDetailModalOpen}
           onOpenChange={setIsDetailModalOpen}
+        />
+
+        <ReportModal
+          groupId={reportGroupId}
+          open={isReportModalOpen}
+          onOpenChange={setIsReportModalOpen}
         />
       </div>
     </div>

@@ -489,23 +489,53 @@ export async function registerRoutes(
 
   const PgStore = ConnectPgSimple(session);
 
-  app.use(
-    session({
-      store: new PgStore({
-        pool,
-      }),
-      secret: process.env.SESSION_SECRET || "kennion-secret-key",
-      resave: false,
-      saveUninitialized: false,
-      proxy: true,
-      cookie: {
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-      },
-    })
-  );
+  // Client session configuration
+  const clientSession = session({
+    store: new PgStore({
+      pool,
+      tableName: "session",
+    }),
+    name: "kennion.client",
+    secret: process.env.SESSION_SECRET || "kennion-secret-key",
+    resave: false,
+    saveUninitialized: false,
+    proxy: true,
+    cookie: {
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    },
+  });
+
+  // Admin session configuration
+  const adminSession = session({
+    store: new PgStore({
+      pool,
+      tableName: "session",
+    }),
+    name: "kennion.admin",
+    secret: process.env.SESSION_SECRET || "kennion-secret-key",
+    resave: false,
+    saveUninitialized: false,
+    proxy: true,
+    cookie: {
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    },
+  });
+
+  // Use client session by default
+  app.use((req, res, next) => {
+    // Use admin session for admin routes
+    if (req.path.startsWith("/api/admin") || req.path === "/api/auth/admin-login") {
+      return adminSession(req, res, next);
+    }
+    // Use client session for all other routes
+    return clientSession(req, res, next);
+  });
 
   app.post("/api/auth/magic-link", async (req: Request, res: Response) => {
     try {
