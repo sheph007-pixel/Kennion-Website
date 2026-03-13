@@ -34,6 +34,7 @@ import {
   Brain,
   Sparkles,
   Printer,
+  User,
 } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
@@ -86,11 +87,20 @@ function DashboardNav() {
             <span className="font-medium text-foreground">Dashboard</span>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="hidden sm:inline text-sm text-muted-foreground">{user?.fullName}</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 px-3 py-1.5 rounded-md bg-muted/50">
+            <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10">
+              <User className="h-4 w-4 text-primary" />
+            </div>
+            <div className="hidden sm:flex flex-col">
+              <span className="text-sm font-medium text-foreground">{user?.fullName}</span>
+              <span className="text-xs text-muted-foreground">{user?.email}</span>
+            </div>
+          </div>
           <ThemeToggle />
-          <Button size="icon" variant="ghost" onClick={handleLogout} data-testid="button-logout">
+          <Button variant="outline" onClick={handleLogout} data-testid="button-logout" className="gap-2">
             <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">Logout</span>
           </Button>
         </div>
       </div>
