@@ -163,13 +163,15 @@ function GroupsTable({
   sortField,
   sortDirection,
   onSort,
-  onDelete
+  onDelete,
+  onRowClick
 }: {
   groups: Group[];
   sortField: string;
   sortDirection: "asc" | "desc";
   onSort: (field: string) => void;
   onDelete: (id: number) => void;
+  onRowClick: (group: Group) => void;
 }) {
   const [, navigate] = useLocation();
 
@@ -223,8 +225,9 @@ function GroupsTable({
               return (
                 <tr
                   key={g.id}
-                  className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                  className="border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
                   data-testid={`row-group-${g.id}`}
+                  onClick={() => onRowClick(g)}
                 >
                   <td className="px-4 py-3">
                     <div className="text-sm">
@@ -330,11 +333,194 @@ function GroupsTable({
   );
 }
 
+function GroupDetailModal({
+  group,
+  open,
+  onOpenChange,
+}: {
+  group: Group | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { toast } = useToast();
+  const [status, setStatus] = useState(group?.status || "census_uploaded");
+  const [adminNotes, setAdminNotes] = useState(group?.adminNotes || "");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: { status: string; adminNotes: string }) => {
+      if (!group) return;
+      await apiRequest("PATCH", `/api/admin/groups/${group.id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/groups"] });
+      toast({ title: "Changes saved", description: "Group status and notes updated." });
+      onOpenChange(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Save failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    await updateMutation.mutateAsync({ status, adminNotes });
+    setIsSaving(false);
+  };
+
+  if (!group) return null;
+
+  const censusNumber = `KBA-${group.id.substring(0, 8).toUpperCase()}`;
+  const tier = group.riskTier ? TIER_CONFIG[group.riskTier] || { label: group.riskTier, color: "text-muted-foreground" } : null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl flex items-center gap-3">
+            <Building2 className="h-6 w-6 text-primary" />
+            {group.companyName}
+          </DialogTitle>
+          <p className="text-sm text-muted-foreground mt-1">
+            Census ID: <code className="text-xs">{censusNumber}</code> • Submitted {format(new Date(group.submittedAt), "MMM d, yyyy 'at' h:mm a")}
+          </p>
+        </DialogHeader>
+
+        <div className="space-y-6 mt-4">
+          {/* Contact Information */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Contact Information
+            </h3>
+            <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg">
+              <div>
+                <Label className="text-xs text-muted-foreground">Contact Name</Label>
+                <p className="font-medium">{group.contactName}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Email</Label>
+                <p className="font-medium">{group.contactEmail}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Census Details */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Census Details
+            </h3>
+            <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg">
+              <div>
+                <Label className="text-xs text-muted-foreground">Total Lives</Label>
+                <p className="font-bold text-lg">{group.totalLives}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Breakdown</Label>
+                <p className="font-medium">{group.employeeCount}e · {group.spouseCount || 0}s · {group.childrenCount}c</p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Average Age</Label>
+                <p className="font-medium">{group.averageAge ? group.averageAge.toFixed(1) : "—"}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Gender Split</Label>
+                <p className="font-medium">{group.maleCount}M · {group.femaleCount}F</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Risk Analysis */}
+          {group.riskScore != null && (
+            <div>
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Risk Analysis
+              </h3>
+              <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Risk Score</Label>
+                  <p className="font-bold text-2xl text-primary">{group.riskScore.toFixed(2)}</p>
+                </div>
+                {tier && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Risk Tier</Label>
+                    <p className={`font-bold text-lg ${tier.color}`}>{tier.label}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Status */}
+          <div>
+            <Label htmlFor="status" className="text-sm font-semibold flex items-center gap-2 mb-2">
+              <Activity className="h-4 w-4" />
+              Status
+            </Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger id="status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Admin Notes */}
+          <div>
+            <Label htmlFor="notes" className="text-sm font-semibold flex items-center gap-2 mb-2">
+              <FileText className="h-4 w-4" />
+              Admin Notes
+            </Label>
+            <Textarea
+              id="notes"
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              placeholder="Add notes about this group..."
+              rows={5}
+              className="resize-none"
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortField, setSortField] = useState<string>("submittedAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: groups, isLoading } = useQuery<Group[]>({
@@ -367,6 +553,11 @@ export default function AdminPage() {
     if (confirm("Are you sure you want to delete this group?")) {
       deleteMutation.mutate(id);
     }
+  };
+
+  const handleRowClick = (group: Group) => {
+    setSelectedGroup(group);
+    setIsDetailModalOpen(true);
   };
 
   const filtered = (groups || [])
@@ -479,8 +670,15 @@ export default function AdminPage() {
             sortDirection={sortDirection}
             onSort={handleSort}
             onDelete={handleDelete}
+            onRowClick={handleRowClick}
           />
         )}
+
+        <GroupDetailModal
+          group={selectedGroup}
+          open={isDetailModalOpen}
+          onOpenChange={setIsDetailModalOpen}
+        />
       </div>
     </div>
   );
