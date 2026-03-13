@@ -18,6 +18,7 @@ import {
   Loader2,
   BarChart3,
   FileBarChart,
+  User,
 } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
@@ -86,12 +87,28 @@ function AdminNav() {
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
-        <KennionLogo size="md" />
         <div className="flex items-center gap-3">
-          <Badge variant="secondary" className="text-xs">Admin</Badge>
+          <KennionLogo size="md" />
+          <div className="h-4 w-px bg-border hidden sm:block" />
+          <div className="hidden sm:flex items-center gap-2 text-sm">
+            <span className="font-medium text-foreground">Admin Panel</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 px-3 py-1.5 rounded-md bg-muted/50">
+            <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10">
+              <User className="h-4 w-4 text-primary" />
+            </div>
+            <div className="hidden sm:flex flex-col">
+              <span className="text-sm font-medium text-foreground">{user?.fullName}</span>
+              <span className="text-xs text-muted-foreground">{user?.email}</span>
+            </div>
+            <Badge variant="secondary" className="text-xs ml-2">Admin</Badge>
+          </div>
           <ThemeToggle />
-          <Button size="icon" variant="ghost" onClick={handleLogout} data-testid="button-admin-logout">
+          <Button variant="outline" onClick={handleLogout} data-testid="button-admin-logout" className="gap-2">
             <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">Logout</span>
           </Button>
         </div>
       </div>
