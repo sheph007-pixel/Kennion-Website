@@ -398,7 +398,7 @@ export default function ReportPage() {
         @media print {
           @page {
             size: letter;
-            margin: 0.4in 0.5in 0.6in 0.5in;
+            margin: 0.75in;
             @bottom-center {
               content: "Advisor: Hunter Shepherd (205) 641-0469";
               font-size: 10px;
@@ -480,23 +480,8 @@ export default function ReportPage() {
             padding: 2px 4px !important;
           }
 
-          /* Footer on each page */
-          .print-footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 10px;
-            color: #666;
-            padding: 8px 0;
-            border-top: 1px solid #e5e5e5;
-          }
         }
       `}} />
-      <div className="print-footer print:block hidden">
-        Advisor: Hunter Shepherd (205) 641-0469
-      </div>
       <ReportNav />
       <div className="mx-auto max-w-5xl px-6 py-8" id="report-content">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap print:block">
