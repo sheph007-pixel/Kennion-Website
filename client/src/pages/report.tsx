@@ -297,108 +297,112 @@ export default function ReportPage() {
         <head>
           <title>Kennion Risk Report - ${group.companyName}</title>
           <style>
-            @page { size: letter; margin: 0; }
+            @page {
+              size: letter;
+              margin: 0.75in 0.6in;
+            }
             @media print {
-              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
             }
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
               font-family: 'Inter', -apple-system, system-ui, sans-serif;
-              width: 8.5in;
-              height: 11in;
-              padding: 0.5in;
               color: #1a1a1a;
               background: white;
+              line-height: 1.4;
             }
 
             .header {
               display: flex;
               justify-content: space-between;
               align-items: center;
-              margin-bottom: 24px;
-              padding-bottom: 16px;
+              margin-bottom: 18px;
+              padding-bottom: 12px;
               border-bottom: 3px solid ${tierColor};
             }
 
             .logo {
-              font-size: 28px;
+              font-size: 26px;
               font-weight: 800;
               color: #2563eb;
             }
 
             .report-date {
               text-align: right;
-              font-size: 11px;
+              font-size: 10px;
               color: #666;
             }
 
             .company-section {
               background: linear-gradient(135deg, ${tierBg} 0%, white 100%);
-              padding: 24px;
-              border-radius: 12px;
-              margin-bottom: 20px;
+              padding: 18px 20px;
+              border-radius: 10px;
+              margin-bottom: 16px;
               border-left: 6px solid ${tierColor};
             }
 
             .company-name {
-              font-size: 28px;
+              font-size: 24px;
               font-weight: 700;
               color: #1a1a1a;
-              margin-bottom: 6px;
+              margin-bottom: 4px;
             }
 
             .census-id {
-              font-size: 12px;
+              font-size: 11px;
               color: #666;
             }
 
             .risk-tier-banner {
               background: ${tierColor};
               color: white;
-              padding: 16px 24px;
-              border-radius: 12px;
+              padding: 14px 20px;
+              border-radius: 10px;
               text-align: center;
-              margin-bottom: 20px;
+              margin-bottom: 16px;
             }
 
             .tier-label {
-              font-size: 14px;
+              font-size: 12px;
               font-weight: 500;
               opacity: 0.9;
-              margin-bottom: 4px;
+              margin-bottom: 2px;
             }
 
             .tier-value {
-              font-size: 32px;
+              font-size: 26px;
               font-weight: 800;
             }
 
             .stats-grid {
               display: grid;
               grid-template-columns: repeat(4, 1fr);
-              gap: 12px;
-              margin-bottom: 20px;
+              gap: 10px;
+              margin-bottom: 16px;
             }
 
             .stat-card {
               background: #f8fafc;
               border: 2px solid #e2e8f0;
-              border-radius: 10px;
-              padding: 16px;
+              border-radius: 8px;
+              padding: 12px;
               text-align: center;
             }
 
             .stat-label {
-              font-size: 11px;
+              font-size: 10px;
               color: #64748b;
               font-weight: 600;
               text-transform: uppercase;
               letter-spacing: 0.5px;
-              margin-bottom: 6px;
+              margin-bottom: 4px;
             }
 
             .stat-value {
-              font-size: 32px;
+              font-size: 26px;
               font-weight: 800;
               color: #1a1a1a;
             }
@@ -406,28 +410,28 @@ export default function ReportPage() {
             .score-section {
               display: grid;
               grid-template-columns: 1fr 2fr;
-              gap: 20px;
-              margin-bottom: 20px;
+              gap: 16px;
+              margin-bottom: 16px;
             }
 
             .score-card {
               background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
               border: 2px solid #bae6fd;
-              border-radius: 12px;
-              padding: 20px;
+              border-radius: 10px;
+              padding: 16px;
               text-align: center;
             }
 
             .score-number {
-              font-size: 56px;
+              font-size: 48px;
               font-weight: 900;
               color: ${tierColor};
               line-height: 1;
-              margin-bottom: 8px;
+              margin-bottom: 6px;
             }
 
             .score-label-text {
-              font-size: 13px;
+              font-size: 12px;
               color: #0369a1;
               font-weight: 600;
             }
@@ -435,14 +439,14 @@ export default function ReportPage() {
             .demographics-card {
               background: white;
               border: 2px solid #e2e8f0;
-              border-radius: 12px;
-              padding: 20px;
+              border-radius: 10px;
+              padding: 16px;
             }
 
             .demo-grid {
               display: grid;
               grid-template-columns: repeat(3, 1fr);
-              gap: 16px;
+              gap: 12px;
             }
 
             .demo-item {
@@ -450,15 +454,15 @@ export default function ReportPage() {
             }
 
             .demo-label {
-              font-size: 10px;
+              font-size: 9px;
               color: #64748b;
               font-weight: 600;
               text-transform: uppercase;
-              margin-bottom: 4px;
+              margin-bottom: 3px;
             }
 
             .demo-value {
-              font-size: 22px;
+              font-size: 20px;
               font-weight: 700;
               color: #1a1a1a;
             }
@@ -466,16 +470,16 @@ export default function ReportPage() {
             .risk-segments {
               background: #fafafa;
               border: 2px solid #e5e5e5;
-              border-radius: 10px;
-              padding: 16px;
-              margin-bottom: 16px;
+              border-radius: 8px;
+              padding: 14px;
+              margin-bottom: 14px;
             }
 
             .segments-title {
-              font-size: 12px;
+              font-size: 11px;
               font-weight: 700;
               color: #1a1a1a;
-              margin-bottom: 12px;
+              margin-bottom: 10px;
               text-align: center;
             }
 
@@ -483,16 +487,16 @@ export default function ReportPage() {
               display: flex;
               justify-content: space-between;
               align-items: center;
-              padding: 6px 0;
+              padding: 5px 0;
             }
 
             .segment-label {
-              font-size: 11px;
+              font-size: 10px;
               font-weight: 600;
             }
 
             .segment-value {
-              font-size: 13px;
+              font-size: 12px;
               font-weight: 700;
             }
 
@@ -501,10 +505,7 @@ export default function ReportPage() {
             .high-risk { color: #dc2626; }
 
             .footer {
-              position: absolute;
-              bottom: 0.5in;
-              left: 0.5in;
-              right: 0.5in;
+              margin-top: 24px;
               padding-top: 16px;
               border-top: 2px solid #e5e5e5;
               display: flex;
