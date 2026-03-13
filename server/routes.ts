@@ -530,7 +530,7 @@ export async function registerRoutes(
   // Use client session by default
   app.use((req, res, next) => {
     // Use admin session for admin routes
-    if (req.path.startsWith("/api/admin") || req.path === "/api/auth/admin/login") {
+    if (req.path.startsWith("/api/admin") || req.path.startsWith("/api/auth/admin")) {
       return adminSession(req, res, next);
     }
     // Use client session for all other routes
@@ -714,6 +714,7 @@ export async function registerRoutes(
     }
   });
 
+  // Client auth check
   app.get("/api/auth/me", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
@@ -722,6 +723,33 @@ export async function registerRoutes(
     const user = await storage.getUser(req.session.userId);
     if (!user) {
       return res.status(401).json({ message: "User not found" });
+    }
+
+    res.json({
+      id: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      companyName: user.companyName,
+      phone: user.phone,
+      verified: user.verified,
+      createdAt: user.createdAt,
+    });
+  });
+
+  // Admin auth check (uses admin session)
+  app.get("/api/auth/admin/me", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const user = await storage.getUser(req.session.userId);
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    if (user.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
     }
 
     res.json({
