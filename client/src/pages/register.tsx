@@ -142,9 +142,6 @@ export default function RegisterPage() {
                   <UserPlus className="h-6 w-6 text-primary" />
                 </div>
                 <h1 className="text-2xl font-bold tracking-tight" data-testid="text-register-title">Submit Your Group</h1>
-                <p className="text-muted-foreground mt-2">
-                  Register your organization to begin your benefits qualification analysis
-                </p>
               </div>
 
               <Card className="p-6">
