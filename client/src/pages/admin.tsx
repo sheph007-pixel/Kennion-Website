@@ -281,20 +281,49 @@ function GroupsTable({
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="text-muted-foreground text-sm">—</span>
+                    <td className="px-4 py-3 text-sm">
+                      {latestSubmission.contactName}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="text-muted-foreground text-sm">—</span>
+                    <td className="px-4 py-3 text-sm">
+                      <a href={`mailto:${latestSubmission.contactEmail}`} className="text-primary hover:underline">
+                        {latestSubmission.contactEmail}
+                      </a>
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="text-muted-foreground text-sm">—</span>
+                    <td className="px-4 py-3 text-sm">
+                      {latestSubmission.contactPhone || '—'}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1.5">
-                        <Badge variant="secondary" className="text-xs">
-                          {censusCount} submission{censusCount > 1 ? 's' : ''}
-                        </Badge>
+                        {latestSubmission.status === "census_uploaded" && (
+                          <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Census Uploaded
+                          </Badge>
+                        )}
+                        {latestSubmission.status === "proposal_sent" && (
+                          <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            Proposal Sent
+                          </Badge>
+                        )}
+                        {latestSubmission.status === "proposal_accepted" && (
+                          <Badge variant="default" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Proposal Accepted
+                          </Badge>
+                        )}
+                        {latestSubmission.status === "client" && (
+                          <Badge variant="default" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
+                            <TrendingUp className="h-3 w-3 mr-1" />
+                            Client
+                          </Badge>
+                        )}
+                        {latestSubmission.status === "not_approved" && (
+                          <Badge variant="destructive" className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20">
+                            <XCircle className="h-3 w-3 mr-1" />
+                            Not Approved
+                          </Badge>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center">
