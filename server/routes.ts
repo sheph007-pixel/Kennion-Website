@@ -1264,7 +1264,10 @@ export async function registerRoutes(
   });
 
   app.get("/api/groups", requireAuth, async (req: Request, res: Response) => {
+    log(`📋 /api/groups called - Session userId: ${req.session.userId}`);
     const userGroups = await storage.getGroupsByUserId(req.session.userId!);
+    log(`📋 Found ${userGroups.length} groups for user ${req.session.userId}`);
+    log(`📋 First group userId (if any): ${userGroups[0]?.userId}`);
     res.json(userGroups);
   });
 
