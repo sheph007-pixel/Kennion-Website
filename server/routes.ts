@@ -554,6 +554,11 @@ export async function registerRoutes(
     try {
       const data = registerSchema.parse(req.body);
 
+      // Validate access code
+      if (data.accessCode !== "8787") {
+        return res.status(400).json({ message: "Invalid access code. Please check your code and try again." });
+      }
+
       const fullName = `${data.firstName} ${data.lastName}`;
 
       const existing = await storage.getUserByEmail(data.email);
@@ -561,40 +566,26 @@ export async function registerRoutes(
         return res.status(400).json({ message: "An account with this email already exists. Please sign in instead." });
       }
 
-      const token = generateMagicToken();
-      const expiry = new Date(Date.now() + 15 * 60 * 1000);
-
+      // Create user as verified (access code grants instant access)
       const user = await storage.createUser({
         fullName,
         email: data.email,
         companyName: data.companyName,
         phone: data.phone,
         password: null,
-        magicToken: token,
-        magicTokenExpiry: expiry,
+        verified: true,
+        magicToken: null,
+        magicTokenExpiry: null,
       });
 
-      const baseUrl = getBaseUrl(req);
-      const magicLinkUrl = `${baseUrl}/auth/verify?token=${token}`;
+      // Log user in immediately
+      req.session.userId = user.id;
 
-      // Try to send email, but don't fail registration if it fails
-      let emailSent = true;
-      try {
-        await sendMagicLinkEmail(data.email, magicLinkUrl, fullName);
-      } catch (emailErr: any) {
-        log(`Warning: Could not send email during registration: ${emailErr.message}`);
-        emailSent = false;
-      }
-
-      if (emailSent) {
-        res.json({ message: "Sign-in link sent to your email", email: data.email });
-      } else {
-        res.json({
-          message: "Account created, but email could not be sent. Please contact support for a sign-in link.",
-          email: data.email,
-          warning: "Email delivery failed"
-        });
-      }
+      res.json({
+        message: "Account created successfully",
+        email: data.email,
+        verified: true
+      });
     } catch (err: any) {
       log(`Registration error: ${err.message}`);
       res.status(400).json({ message: err.message || "Registration failed" });
