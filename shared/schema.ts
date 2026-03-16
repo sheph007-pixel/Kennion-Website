@@ -67,10 +67,24 @@ export const magicLinkRequestSchema = z.object({
   phone: z.string().optional(),
 });
 
+// Personal email domains blocklist
+const BLOCKED_EMAIL_DOMAINS = [
+  'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com',
+  'icloud.com', 'me.com', 'mac.com', 'live.com', 'msn.com',
+  'ymail.com', 'rocketmail.com', 'protonmail.com', 'mail.com',
+  'gmx.com', 'zoho.com', 'inbox.com', 'hey.com'
+];
+
 export const registerSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Valid email required"),
+  email: z.string().email("Valid email required").refine(
+    (email) => {
+      const domain = email.split('@')[1]?.toLowerCase();
+      return !BLOCKED_EMAIL_DOMAINS.includes(domain);
+    },
+    { message: "Please use your business email address (not Gmail, Yahoo, Hotmail, etc.)" }
+  ),
   phone: z.string().min(7, "Valid phone number required"),
   companyName: z.string().min(1, "Company name is required"),
   accessCode: z.string().min(1, "Access code is required"),

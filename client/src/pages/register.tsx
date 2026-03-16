@@ -13,11 +13,25 @@ import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 
+// Personal email domains blocklist
+const BLOCKED_EMAIL_DOMAINS = [
+  'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com',
+  'icloud.com', 'me.com', 'mac.com', 'live.com', 'msn.com',
+  'ymail.com', 'rocketmail.com', 'protonmail.com', 'mail.com',
+  'gmx.com', 'zoho.com', 'inbox.com', 'hey.com'
+];
+
 const registerFormSchema = z.object({
   accessCode: z.string().min(1, "Access code is required"),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().email("Please enter a valid email address").refine(
+    (email) => {
+      const domain = email.split('@')[1]?.toLowerCase();
+      return !BLOCKED_EMAIL_DOMAINS.includes(domain);
+    },
+    { message: "Please use your business email (not Gmail, Yahoo, Hotmail, etc.)" }
+  ),
   phone: z.string().min(7, "Please enter a valid phone number"),
   companyName: z.string().min(1, "Company name is required"),
 });
