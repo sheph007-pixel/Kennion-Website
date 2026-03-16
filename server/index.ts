@@ -61,6 +61,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Run database migrations first
+  const { runMigrations } = await import("./migrate");
+  await runMigrations();
+
   await registerRoutes(httpServer, app);
 
   const { seedDatabase } = await import("./seed");
