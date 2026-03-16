@@ -11,6 +11,8 @@ import {
   magicLinkVerifySchema,
   loginSchema,
   registerSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
   updateGroupStatusSchema,
 } from "@shared/schema";
 import ConnectPgSimple from "connect-pg-simple";
@@ -566,13 +568,16 @@ export async function registerRoutes(
         return res.status(400).json({ message: "An account with this email already exists. Please sign in instead." });
       }
 
+      // Hash password
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+
       // Create user as verified (access code grants instant access)
       const user = await storage.createUser({
         fullName,
         email: data.email,
         companyName: data.companyName,
         phone: data.phone,
-        password: null,
+        password: hashedPassword,
         verified: true,
         magicToken: null,
         magicTokenExpiry: null,
@@ -655,6 +660,69 @@ export async function registerRoutes(
       });
     } catch (err: any) {
       res.status(400).json({ message: err.message || "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/forgot-password", async (req: Request, res: Response) => {
+    try {
+      const data = forgotPasswordSchema.parse(req.body);
+      const user = await storage.getUserByEmail(data.email);
+
+      // Always return success to prevent email enumeration
+      if (!user) {
+        return res.json({ message: "If an account exists, a password reset link has been sent" });
+      }
+
+      // Generate reset token
+      const resetToken = generateMagicToken();
+      const resetExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+      await storage.updateUser(user.id, {
+        magicToken: resetToken,
+        magicTokenExpiry: resetExpiry,
+      });
+
+      // Send reset email
+      const baseUrl = getBaseUrl(req);
+      const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
+
+      await sendMagicLinkEmail(data.email, resetUrl, user.fullName);
+
+      res.json({ message: "If an account exists, a password reset link has been sent" });
+    } catch (err: any) {
+      log(`Forgot password error: ${err.message}`);
+      res.status(400).json({ message: "Failed to process request" });
+    }
+  });
+
+  app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
+    try {
+      const data = resetPasswordSchema.parse(req.body);
+      const user = await storage.getUserByMagicToken(data.token);
+
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired reset link" });
+      }
+
+      if (!user.magicTokenExpiry || new Date() > user.magicTokenExpiry) {
+        await storage.updateUser(user.id, { magicToken: null, magicTokenExpiry: null });
+        return res.status(400).json({ message: "This reset link has expired. Please request a new one." });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+
+      // Update password and clear reset token
+      await storage.updateUser(user.id, {
+        password: hashedPassword,
+        magicToken: null,
+        magicTokenExpiry: null,
+      });
+
+      res.json({ message: "Password reset successfully. You can now log in with your new password." });
+    } catch (err: any) {
+      log(`Reset password error: ${err.message}`);
+      res.status(400).json({ message: err.message || "Failed to reset password" });
     }
   });
 

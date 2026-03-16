@@ -15,6 +15,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 const signInSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
 const adminLoginSchema = z.object({
@@ -33,7 +34,7 @@ export default function LoginPage() {
 
   const form = useForm<z.infer<typeof signInSchema>>({
     resolver: zodResolver(signInSchema),
-    defaultValues: { email: "" },
+    defaultValues: { email: "", password: "" },
   });
 
   const adminForm = useForm<z.infer<typeof adminLoginSchema>>({
@@ -44,28 +45,13 @@ export default function LoginPage() {
   async function onSubmit(data: z.infer<typeof signInSchema>) {
     setIsLoading(true);
     try {
-      const result = await requestMagicLink({ email: data.email });
-
-      if (result.needsSignup) {
-        toast({
-          title: "Account not found",
-          description: "No account found with that email. Please register first.",
-          variant: "destructive",
-        });
-        navigate("/register");
-      } else {
-        setEmailSent(true);
-        setSentToEmail(data.email);
-        toast({
-          title: "Check your email",
-          description: "We sent you a secure sign-in link.",
-        });
-      }
+      await login(data.email, data.password);
+      navigate("/dashboard");
     } catch (err: any) {
       const errMsg = err.message || "";
-      const cleanMessage = errMsg.replace(/^\d+:\s*/, "").replace(/[{}"]|message:/g, "").trim() || "Please try again.";
+      const cleanMessage = errMsg.replace(/^\d+:\s*/, "").replace(/[{}"]|message:/g, "").trim() || "Invalid email or password.";
       toast({
-        title: "Something went wrong",
+        title: "Login failed",
         description: cleanMessage,
         variant: "destructive",
       });
@@ -149,36 +135,15 @@ export default function LoginPage() {
                 </button>
               </div>
             </>
-          ) : emailSent ? (
-            <div className="text-center space-y-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mx-auto">
-                <Mail className="h-8 w-8 text-primary" />
-              </div>
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-check-email-title">Check your email</h1>
-              <p className="text-muted-foreground">
-                We sent a sign-in link to <span className="font-medium text-foreground" data-testid="text-sent-email">{sentToEmail}</span>
-              </p>
-              <Card className="p-6 text-left space-y-3">
-                <p className="text-sm text-muted-foreground">Click the link in the email to sign in securely. The link expires in 15 minutes.</p>
-                <p className="text-sm text-muted-foreground">Didn't get the email? Check your spam folder or try again.</p>
-              </Card>
-              <Button
-                variant="outline"
-                onClick={() => { setEmailSent(false); }}
-                data-testid="button-try-different-email"
-              >
-                Try a different email
-              </Button>
-            </div>
           ) : (
             <>
               <div className="text-center mb-8">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mx-auto mb-4">
-                  <Mail className="h-6 w-6 text-primary" />
+                  <Lock className="h-6 w-6 text-primary" />
                 </div>
                 <h1 className="text-2xl font-bold tracking-tight" data-testid="text-sign-in-title">Sign In</h1>
                 <p className="text-muted-foreground mt-2">
-                  Enter your email and we'll send you a secure sign-in link
+                  Enter your credentials to access your account
                 </p>
               </div>
 
@@ -186,36 +151,60 @@ export default function LoginPage() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Business Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="you@company.com"
-                      {...form.register("email")}
-                      data-testid="input-email"
-                    />
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="you@company.com"
+                        className="pl-9"
+                        {...form.register("email")}
+                        data-testid="input-email"
+                      />
+                    </div>
                     {form.formState.errors.email && (
                       <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
                     )}
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-send-link">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Password</Label>
+                      <Link href="/forgot-password" className="text-xs text-primary hover:underline" data-testid="link-forgot-password">
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Enter your password"
+                        className="pl-9"
+                        {...form.register("password")}
+                        data-testid="input-password"
+                      />
+                    </div>
+                    {form.formState.errors.password && (
+                      <p className="text-sm text-destructive">{form.formState.errors.password.message}</p>
+                    )}
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-sign-in">
                     {isLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <>Send Sign-In Link <ArrowRight className="ml-1 h-4 w-4" /></>
+                      <>Sign In <ArrowRight className="ml-1 h-4 w-4" /></>
                     )}
                   </Button>
                 </form>
               </Card>
 
-              <div className="text-center mt-6 space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  No password needed. We'll email you a secure link to sign in.
-                </p>
+              <div className="text-center mt-6">
                 <p className="text-sm">
                   Don't have an account?{" "}
                   <Link href="/register" className="font-medium text-primary" data-testid="link-register">
-                    Get Started
+                    Register Now
                   </Link>
                 </p>
               </div>

@@ -102,6 +102,7 @@ export const registerSchema = z.object({
     },
     { message: "Please use your business email address (not Gmail, Yahoo, Hotmail, etc.)" }
   ),
+  password: z.string().min(8, "Password must be at least 8 characters"),
   phone: z.string().min(1, "Phone number is required").refine(
     isValidUSPhone,
     { message: "Please enter a valid US phone number (10 digits)" }
@@ -117,6 +118,15 @@ export const magicLinkVerifySchema = z.object({
 export const loginSchema = z.object({
   email: z.string().email("Valid email required"),
   password: z.string().min(1, "Password is required"),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Valid email required"),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Reset token is required"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 export const insertGroupSchema = createInsertSchema(groups).omit({

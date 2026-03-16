@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
-import { ArrowRight, Loader2, UserPlus, Mail, Building2, Phone, User, Key } from "lucide-react";
+import { ArrowRight, Loader2, UserPlus, Mail, Building2, Phone, User, Key, Lock } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -47,6 +47,7 @@ const registerFormSchema = z.object({
     },
     { message: "Please use your business email (not Gmail, Yahoo, Hotmail, etc.)" }
   ),
+  password: z.string().min(8, "Password must be at least 8 characters"),
   phone: z.string().min(1, "Phone number is required").refine(
     isValidUSPhone,
     { message: "Please enter a valid US phone number (10 digits)" }
@@ -64,7 +65,7 @@ export default function RegisterPage() {
 
   const form = useForm<z.infer<typeof registerFormSchema>>({
     resolver: zodResolver(registerFormSchema),
-    defaultValues: { accessCode: "", firstName: "", lastName: "", email: "", phone: "", companyName: "" },
+    defaultValues: { accessCode: "", firstName: "", lastName: "", email: "", password: "", phone: "", companyName: "" },
   });
 
   async function onSubmit(data: z.infer<typeof registerFormSchema>) {
@@ -215,6 +216,24 @@ export default function RegisterPage() {
                     </div>
                     {form.formState.errors.email && (
                       <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Create a password (min 8 characters)"
+                        className="pl-9"
+                        {...form.register("password")}
+                        data-testid="input-password"
+                      />
+                    </div>
+                    {form.formState.errors.password && (
+                      <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>
                     )}
                   </div>
 
