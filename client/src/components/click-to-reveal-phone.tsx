@@ -24,9 +24,9 @@ export function ClickToRevealPhone({
     return (
       <a
         href={getTelLink()}
-        className={`font-semibold text-primary hover:underline inline-flex items-center gap-1 ${className}`}
+        className={`font-semibold text-primary hover:underline ${className}`}
+        style={{ display: 'inline' }}
       >
-        <Phone className="h-4 w-4" />
         {getNumber()}
       </a>
     );
@@ -49,9 +49,9 @@ export function ClickToRevealPhone({
   return (
     <button
       onClick={() => setRevealed(true)}
-      className={`text-primary hover:underline inline-flex items-center gap-1 ${className}`}
+      className={`text-primary hover:underline ${className}`}
+      style={{ display: 'inline' }}
     >
-      <Eye className="h-4 w-4" />
       {label}
     </button>
   );

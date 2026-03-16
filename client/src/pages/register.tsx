@@ -164,7 +164,8 @@ export default function RegisterPage() {
                       <p className="text-xs text-destructive">{form.formState.errors.accessCode.message}</p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      Need A Code? Text Hunter Shepherd <ClickToRevealPhone label="(click to reveal phone)" variant="link" className="text-xs" />
+                      Need A Code? Text Hunter Shepherd{" "}
+                      <ClickToRevealPhone label="(click to reveal)" variant="link" className="text-xs inline-flex" />
                     </p>
                   </div>
 
