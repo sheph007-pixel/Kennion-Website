@@ -75,6 +75,23 @@ const BLOCKED_EMAIL_DOMAINS = [
   'gmx.com', 'zoho.com', 'inbox.com', 'hey.com'
 ];
 
+// Validate US phone number (accepts multiple formats)
+function isValidUSPhone(phone: string): boolean {
+  // Strip all non-digit characters
+  const digits = phone.replace(/\D/g, '');
+
+  // Accept 10 digits (e.g., 5551234567)
+  // Or 11 digits starting with 1 (e.g., 15551234567)
+  if (digits.length === 10) {
+    return true;
+  }
+  if (digits.length === 11 && digits[0] === '1') {
+    return true;
+  }
+
+  return false;
+}
+
 export const registerSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -85,7 +102,10 @@ export const registerSchema = z.object({
     },
     { message: "Please use your business email address (not Gmail, Yahoo, Hotmail, etc.)" }
   ),
-  phone: z.string().min(7, "Valid phone number required"),
+  phone: z.string().min(1, "Phone number is required").refine(
+    isValidUSPhone,
+    { message: "Please enter a valid US phone number (10 digits)" }
+  ),
   companyName: z.string().min(1, "Company name is required"),
   accessCode: z.string().min(1, "Access code is required"),
 });
