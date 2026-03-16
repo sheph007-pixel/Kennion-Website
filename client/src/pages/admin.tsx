@@ -242,18 +242,11 @@ function GroupsTable({
                   Company <SortIcon field="companyName" />
                 </div>
               </th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Census ID</th>
-              <th className="px-4 py-3 text-center font-medium text-muted-foreground">Lives</th>
-              <th
-                className="px-4 py-3 text-center font-medium text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => onSort("riskScore")}
-              >
-                <div className="flex items-center justify-center">
-                  Score <SortIcon field="riskScore" />
-                </div>
-              </th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Contact</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Email</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Phone</th>
               <th className="px-4 py-3 text-center font-medium text-muted-foreground">Status</th>
-              <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
+              <th className="px-4 py-3 text-center font-medium text-muted-foreground">View</th>
             </tr>
           </thead>
           <tbody>
@@ -289,25 +282,22 @@ function GroupsTable({
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant="outline" className="text-xs">
-                        {censusCount} total
-                      </Badge>
+                      <span className="text-muted-foreground text-sm">—</span>
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="font-bold text-lg">{totalLives}</div>
-                      <div className="text-xs text-muted-foreground">Total Lives</div>
+                    <td className="px-4 py-3">
+                      <span className="text-muted-foreground text-sm">—</span>
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="text-muted-foreground">—</span>
+                    <td className="px-4 py-3">
+                      <span className="text-muted-foreground text-sm">—</span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1.5">
                         <Badge variant="secondary" className="text-xs">
-                          {companyGroups.filter(g => g.status === "census_uploaded").length} uploaded
+                          {censusCount} submission{censusCount > 1 ? 's' : ''}
                         </Badge>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-center">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -344,37 +334,16 @@ function GroupsTable({
                             {format(new Date(g.submittedAt), "h:mm a")}
                           </div>
                         </td>
-                        <td className="px-4 py-3 pl-12 text-muted-foreground text-sm">
-                          <code className="text-xs">
-                            {censusNumber}
-                          </code>
+                        <td className="px-4 py-3 pl-12 text-sm">
+                          {g.contactName}
                         </td>
-                        <td className="px-4 py-3">
-                          <code className="text-xs text-muted-foreground">
-                            {censusNumber}
-                          </code>
+                        <td className="px-4 py-3 text-sm">
+                          <a href={`mailto:${g.contactEmail}`} className="text-primary hover:underline">
+                            {g.contactEmail}
+                          </a>
                         </td>
-                        <td className="px-4 py-3 text-center">
-                          <div className="font-semibold">{g.totalLives}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {g.employeeCount}e·{g.spouseCount || 0}s·{g.childrenCount}c
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          {g.riskScore != null ? (
-                            <div>
-                              <div className="font-bold text-primary">
-                                {g.riskScore.toFixed(2)}
-                              </div>
-                              {tier && (
-                                <div className={`text-xs ${tier.color}`}>
-                                  {tier.label.replace(" Risk", "")}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
+                        <td className="px-4 py-3 text-sm">
+                          {g.contactPhone || '—'}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-1.5">
@@ -410,32 +379,19 @@ function GroupsTable({
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onViewReport(g.id);
-                              }}
-                              className="gap-1.5"
-                            >
-                              <FileBarChart className="h-3.5 w-3.5" />
-                              Report
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDelete(g.id);
-                              }}
-                              className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
+                        <td className="px-4 py-3 text-center">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onViewReport(g.id);
+                            }}
+                            className="gap-1.5"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            View Dashboard
+                          </Button>
                         </td>
                       </tr>
                     );

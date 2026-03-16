@@ -23,6 +23,7 @@ export const groups = pgTable("groups", {
   companyName: text("company_name").notNull(),
   contactName: text("contact_name").notNull(),
   contactEmail: text("contact_email").notNull(),
+  contactPhone: text("contact_phone"),
   employeeCount: integer("employee_count").default(0),
   childrenCount: integer("dependent_count").default(0),
   spouseCount: integer("spouse_count").default(0),
