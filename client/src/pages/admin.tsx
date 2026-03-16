@@ -24,6 +24,7 @@ import {
   ExternalLink,
   Trash2,
   ArrowUpDown,
+  KeyRound,
 } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
@@ -859,6 +860,7 @@ function EditUserDialog({
   onSave: (data: Partial<DbUser>) => void;
   isSaving: boolean;
 }) {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -867,6 +869,7 @@ function EditUserDialog({
     role: 'client',
     verified: false,
   });
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   React.useEffect(() => {
     if (user) {
@@ -880,6 +883,37 @@ function EditUserDialog({
       });
     }
   }, [user]);
+
+  const handleResetPassword = async () => {
+    if (!user) return;
+
+    setIsResettingPassword(true);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/reset-password`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to send reset email');
+      }
+
+      const data = await res.json();
+      toast({
+        title: "Password reset sent",
+        description: `Reset email sent to ${user.email}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to send reset email",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
 
   if (!user) return null;
 
@@ -947,6 +981,32 @@ function EditUserDialog({
               className="h-4 w-4 rounded border-gray-300"
             />
             <Label htmlFor="verified" className="cursor-pointer">Verified</Label>
+          </div>
+          <div className="pt-4 border-t">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Password Reset</p>
+                <p className="text-xs text-muted-foreground">Send password reset email to user</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResetPassword}
+                disabled={isResettingPassword || isSaving}
+              >
+                {isResettingPassword ? (
+                  <>
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <KeyRound className="mr-2 h-3 w-3" />
+                    Send Reset Email
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
         <div className="flex justify-end gap-2">

@@ -798,6 +798,39 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/admin/users/:id/reset-password", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id;
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Generate reset token
+      const resetToken = generateMagicToken();
+      const resetExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours for admin resets
+
+      await storage.updateUser(user.id, {
+        magicToken: resetToken,
+        magicTokenExpiry: resetExpiry,
+      });
+
+      // Send reset email
+      const baseUrl = getBaseUrl(req);
+      const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
+
+      await sendMagicLinkEmail(user.email, resetUrl, user.fullName);
+
+      res.json({
+        message: "Password reset email sent to user",
+        resetUrl: resetUrl // Include for admin to see/share if needed
+      });
+    } catch (err: any) {
+      log(`Admin password reset error: ${err.message}`);
+      res.status(500).json({ message: err.message || "Failed to send reset email" });
+    }
+  });
+
   app.post("/api/auth/logout", (req: Request, res: Response) => {
     req.session.destroy(() => {
       res.json({ message: "Logged out" });
