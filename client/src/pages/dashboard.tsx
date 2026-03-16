@@ -37,6 +37,7 @@ import {
   User,
 } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
+import { ClickToRevealPhone } from "@/components/click-to-reveal-phone";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -162,7 +163,9 @@ function PrintInstructions() {
         <div>
           <p className="text-lg font-semibold mb-2">Questions?</p>
           <p className="text-base">Call or Text:</p>
-          <p className="text-3xl font-bold text-blue-600 mb-2">205-641-0469</p>
+          <p className="text-3xl font-bold text-blue-600 mb-2">
+            <ClickToRevealPhone label="Click to reveal phone" variant="link" />
+          </p>
           <p className="text-base text-gray-600">hunter@kennion.com</p>
         </div>
 
@@ -198,7 +201,7 @@ function SimpleHeader({ hasGroups, step }: { hasGroups: boolean; step: string })
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">Group Health + Dental + Vision + Supplemental Proposal</h3>
           <p className="text-xs text-muted-foreground">
-            Questions? <a href="tel:+12056410469" className="font-semibold text-primary hover:underline">205-641-0469</a>
+            Questions? <ClickToRevealPhone label="Click to reveal phone" variant="link" className="text-xs" />
           </p>
         </div>
       </Card>
@@ -236,7 +239,7 @@ function SimpleHeader({ hasGroups, step }: { hasGroups: boolean; step: string })
           </div>
           <div className="pt-3 border-t">
             <p className="text-sm font-medium text-foreground">
-              Questions? Text/Call Hunter Shepherd: <a href="tel:+12056410469" className="font-semibold text-primary hover:underline">205-641-0469</a>
+              Questions? Text/Call Hunter Shepherd: <ClickToRevealPhone label="Click to reveal phone" variant="link" className="text-sm" />
             </p>
           </div>
         </div>
@@ -898,12 +901,7 @@ function CensusUploadWizard({ onComplete, hasGroups }: { onComplete: (group: Gro
                 </p>
                 <p className="text-base text-foreground">
                   Please contact Hunter Shepherd at{" "}
-                  <a
-                    href="tel:205-641-0469"
-                    className="font-bold text-primary underline hover:text-primary/80"
-                  >
-                    205-641-0469
-                  </a>
+                  <ClickToRevealPhone label="Click to reveal phone" variant="link" className="font-bold" />
                   {" "}for help.
                 </p>
               </AlertDialogDescription>

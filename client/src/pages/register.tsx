@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ClickToRevealPhone } from "@/components/click-to-reveal-phone";
 
 // Personal email domains blocklist
 const BLOCKED_EMAIL_DOMAINS = [
@@ -163,7 +164,7 @@ export default function RegisterPage() {
                       <p className="text-xs text-destructive">{form.formState.errors.accessCode.message}</p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      Need A Code? Text Hunter Shepherd 205-641-0469
+                      Need A Code? Text Hunter Shepherd <ClickToRevealPhone label="(click to reveal phone)" variant="link" className="text-xs" />
                     </p>
                   </div>
 
