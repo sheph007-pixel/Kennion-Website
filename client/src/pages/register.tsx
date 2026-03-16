@@ -140,9 +140,9 @@ export default function RegisterPage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mx-auto mb-4">
                   <UserPlus className="h-6 w-6 text-primary" />
                 </div>
-                <h1 className="text-2xl font-bold tracking-tight" data-testid="text-register-title">Get Started</h1>
+                <h1 className="text-2xl font-bold tracking-tight" data-testid="text-register-title">Submit Your Group</h1>
                 <p className="text-muted-foreground mt-2">
-                  Create your account to begin your benefits qualification analysis
+                  Register your organization to begin your benefits qualification analysis
                 </p>
               </div>
 
@@ -264,9 +264,6 @@ export default function RegisterPage() {
               </Card>
 
               <div className="text-center mt-6 space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  We'll email you a secure link to verify your account. No password needed.
-                </p>
                 <p className="text-sm">
                   Already have an account?{" "}
                   <Link href="/login" className="font-medium text-primary" data-testid="link-login">
