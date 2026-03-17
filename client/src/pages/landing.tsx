@@ -40,9 +40,9 @@ function Navbar() {
         </div>
       </div>
 
-      {/* Row 2: Client Links + Sales CTAs */}
+      {/* Row 2: Client Links + Sales CTAs - All Right Aligned */}
       <div className="bg-background/50">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-2.5">
+        <div className="mx-auto flex max-w-7xl items-center justify-end gap-4 px-6 py-2.5">
           {/* Client Links - Small, Muted */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground font-medium">For Clients:</span>
