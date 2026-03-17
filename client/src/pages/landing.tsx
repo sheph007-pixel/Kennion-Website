@@ -30,6 +30,29 @@ function Navbar() {
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
+
+          {/* Clients Section */}
+          <div className="hidden md:flex items-center gap-1.5 px-3 border-l border-r border-border">
+            <span className="text-xs text-muted-foreground font-medium">Clients:</span>
+            <a
+              href="https://go.kennion.com/support"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-primary hover:underline"
+            >
+              Support
+            </a>
+            <span className="text-muted-foreground">|</span>
+            <a
+              href="http://go.kennion.com/enroll"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-primary hover:underline"
+            >
+              Login
+            </a>
+          </div>
+
           <Link href="/login">
             <Button variant="ghost" size="sm" data-testid="link-login">
               Log In
