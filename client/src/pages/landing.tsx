@@ -20,9 +20,9 @@ import { KennionLogo } from "@/components/kennion-logo";
 function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="mx-auto max-w-7xl px-6">
-        {/* Top Row: Logo + Nav + Client Links */}
-        <div className="flex items-center justify-between gap-6 py-2">
+      <div className="mx-auto max-w-7xl px-6 relative">
+        {/* Main Header Row */}
+        <div className="flex items-center justify-between gap-6 py-3">
           {/* Left: Logo */}
           <KennionLogo size="md" />
 
@@ -62,9 +62,9 @@ function Navbar() {
           </div>
         </div>
 
-        {/* Bottom Row: Sales CTAs aligned right */}
-        <div className="flex justify-end pb-3">
-          <div className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border/60 bg-muted/30 shadow-sm">
+        {/* Tab Section: CTAs sit on the border */}
+        <div className="absolute right-6 bottom-0 translate-y-1/2 z-10">
+          <div className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border bg-background shadow-md">
             <Link href="/login">
               <Button variant="ghost" size="default" data-testid="link-login">
                 Log In
