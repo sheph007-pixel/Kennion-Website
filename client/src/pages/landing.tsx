@@ -41,7 +41,7 @@ function Navbar() {
         <div className="flex items-center gap-4">
           {/* Client Links */}
           <div className="hidden md:flex items-center gap-2">
-            <span className="text-xs text-muted-foreground font-medium">For Clients:</span>
+            <span className="text-xs text-muted-foreground font-medium">Existing Clients:</span>
             <a
               href="https://go.kennion.com/support"
               target="_blank"
@@ -62,7 +62,7 @@ function Navbar() {
           </div>
 
           {/* Sales CTAs - Highlighted Zone */}
-          <div className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border/60 bg-muted/20 shadow-sm">
+          <div className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border/60 bg-muted/30 shadow-sm">
             <Link href="/login">
               <Button variant="ghost" size="default" data-testid="link-login">
                 Log In
