@@ -21,48 +21,63 @@ import { KennionLogo } from "@/components/kennion-logo";
 function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
-        <KennionLogo size="md" />
-        <div className="hidden md:flex items-center gap-6">
-          <a href="#how-it-works" className="text-sm text-muted-foreground transition-colors" data-testid="link-how-it-works">How It Works</a>
-          <a href="#features" className="text-sm text-muted-foreground transition-colors" data-testid="link-features">Platform</a>
-          <a href="#benefits" className="text-sm text-muted-foreground transition-colors" data-testid="link-benefits">Benefits</a>
-        </div>
-        <div className="flex items-center gap-2">
+      {/* Row 1: Logo + Navigation + Theme Toggle */}
+      <div className="border-b border-border/40">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
+          <KennionLogo size="md" />
+          <div className="hidden md:flex items-center gap-6">
+            <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-how-it-works">
+              How It Works
+            </a>
+            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-features">
+              Platform
+            </a>
+            <a href="#benefits" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-benefits">
+              Benefits
+            </a>
+          </div>
           <ThemeToggle />
+        </div>
+      </div>
 
-          {/* Clients Section */}
-          <div className="hidden md:flex items-center gap-1.5 px-3 border-l border-r border-border">
-            <span className="text-xs text-muted-foreground font-medium">Clients:</span>
+      {/* Row 2: Client Links + Sales CTAs */}
+      <div className="bg-background/50">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-2.5">
+          {/* Client Links - Small, Muted */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground font-medium">For Clients:</span>
             <a
               href="https://go.kennion.com/support"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-primary hover:underline"
+              className="text-xs text-muted-foreground hover:text-primary transition-colors"
             >
               Support
             </a>
-            <span className="text-muted-foreground">|</span>
+            <span className="text-muted-foreground/50">•</span>
             <a
               href="http://go.kennion.com/enroll"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-primary hover:underline"
+              className="text-xs text-muted-foreground hover:text-primary transition-colors"
             >
               Login
             </a>
           </div>
 
-          <Link href="/login">
-            <Button variant="ghost" size="sm" data-testid="link-login">
-              Log In
-            </Button>
-          </Link>
-          <Link href="/register">
-            <Button size="sm" data-testid="link-register">
-              Get Started <ArrowRight className="ml-1 h-3.5 w-3.5" />
-            </Button>
-          </Link>
+          {/* Sales CTAs - Large, Prominent */}
+          <div className="flex items-center gap-3">
+            <Link href="/login">
+              <Button variant="ghost" size="default" data-testid="link-login">
+                Log In
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button size="default" className="font-semibold shadow-sm" data-testid="link-register">
+                Get Started <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </nav>
