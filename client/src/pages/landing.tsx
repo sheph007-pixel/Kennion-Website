@@ -61,17 +61,19 @@ function Navbar() {
             </a>
           </div>
 
-          {/* Sales CTAs */}
-          <Link href="/login">
-            <Button variant="ghost" size="default" data-testid="link-login">
-              Log In
-            </Button>
-          </Link>
-          <Link href="/register">
-            <Button size="default" className="font-semibold shadow-sm" data-testid="link-register">
-              Get Started <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
+          {/* Sales CTAs - Highlighted Zone */}
+          <div className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border/60 bg-muted/20 shadow-sm">
+            <Link href="/login">
+              <Button variant="ghost" size="default" data-testid="link-login">
+                Log In
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button size="default" className="font-semibold shadow-sm" data-testid="link-register">
+                Get Started <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </nav>
