@@ -20,26 +20,26 @@ import { KennionLogo } from "@/components/kennion-logo";
 function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-3">
-        {/* Left: Logo */}
-        <KennionLogo size="md" />
+      <div className="mx-auto max-w-7xl px-6">
+        {/* Top Row: Logo + Nav + Client Links */}
+        <div className="flex items-center justify-between gap-6 py-2">
+          {/* Left: Logo */}
+          <KennionLogo size="md" />
 
-        {/* Center: Primary Navigation */}
-        <div className="hidden md:flex items-center gap-6">
-          <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-how-it-works">
-            How It Works
-          </a>
-          <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-features">
-            Platform
-          </a>
-          <a href="#benefits" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-benefits">
-            Benefits
-          </a>
-        </div>
+          {/* Center: Primary Navigation */}
+          <div className="hidden md:flex items-center gap-6">
+            <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-how-it-works">
+              How It Works
+            </a>
+            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-features">
+              Platform
+            </a>
+            <a href="#benefits" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-benefits">
+              Benefits
+            </a>
+          </div>
 
-        {/* Right: Client Links + CTAs */}
-        <div className="flex items-center gap-4">
-          {/* Client Links */}
+          {/* Right: Client Links */}
           <div className="hidden md:flex items-center gap-2">
             <span className="text-xs text-muted-foreground font-medium">Existing Clients:</span>
             <a
@@ -60,8 +60,10 @@ function Navbar() {
               Login
             </a>
           </div>
+        </div>
 
-          {/* Sales CTAs - Highlighted Zone */}
+        {/* Bottom Row: Sales CTAs aligned right */}
+        <div className="flex justify-end pb-3">
           <div className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border/60 bg-muted/30 shadow-sm">
             <Link href="/login">
               <Button variant="ghost" size="default" data-testid="link-login">
