@@ -10,8 +10,7 @@ export function KennionLogo({ size = "md", linkTo = "/" }: KennionLogoProps) {
     <img
       src="https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/attachments/production/5004437337/logo/qGPs3ykt503dCIwP_qHVHmcxV3JVHXZucQ.png"
       alt="Kennion Benefit Advisors"
-      width={200}
-      className="cursor-pointer"
+      className="cursor-pointer h-auto"
       data-testid="logo-kennion"
     />
   );
