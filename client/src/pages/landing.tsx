@@ -63,7 +63,7 @@ function Navbar() {
         </div>
 
         {/* Tab Section: CTAs sit on the border */}
-        <div className="absolute right-6 bottom-0 translate-y-1/2 z-10">
+        <div className="absolute right-6 top-full z-10">
           <div className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border bg-background shadow-md">
             <Link href="/login">
               <Button variant="ghost" size="default" data-testid="link-login">
