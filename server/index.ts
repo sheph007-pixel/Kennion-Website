@@ -63,7 +63,11 @@ app.use((req, res, next) => {
   await registerRoutes(httpServer, app);
 
   const { seedDatabase } = await import("./seed");
-  await seedDatabase();
+  try {
+    await seedDatabase();
+  } catch (err: any) {
+    console.error("Seed failed (non-fatal):", err.message);
+  }
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

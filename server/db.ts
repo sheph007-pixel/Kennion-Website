@@ -7,9 +7,13 @@ const isProduction = process.env.NODE_ENV === "production";
 export const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: isProduction ? { rejectUnauthorized: false } : false,
-  max: 10,
-  idleTimeoutMillis: 30000,
+  max: 5,
+  min: 0,
+  idleTimeoutMillis: 10000,
   connectionTimeoutMillis: 10000,
+  allowExitOnIdle: true,
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10000,
 });
 
 pool.on("error", (err) => {
