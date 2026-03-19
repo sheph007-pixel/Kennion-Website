@@ -499,7 +499,7 @@ function ContactSection() {
       <div className="mt-20 relative overflow-hidden">
         <div className="relative h-[400px] md:h-[500px]">
           <img
-            src="/kennion-building.jpg"
+            src="https://images.squarespace-cdn.com/content/v1/650a374c4246d47a3dbe7afb/1695168363204-7SHD3HNS7AARCJU8LO2L/The%2BLindsey%2BBuilding-14.jpg"
             alt="Kennion Benefit Advisors headquarters"
             className="absolute inset-0 w-full h-full object-cover object-center"
           />
