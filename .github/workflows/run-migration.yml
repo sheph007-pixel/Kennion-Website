@@ -1,0 +1,91 @@
+name: Run database migration
+on:
+  push:
+    branches:
+      - 'claude/fix-kennion-database-instance-ZThAG'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/fix-kennion-database-instance-ZThAG
+          token: ${{ github.token }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Push schema to new database
+        env:
+          DATABASE_URL: "postgresql://postgres:ifseKRIqZzsoBkgZZcquzpUomaGkoTDl@autorack.proxy.rlwy.net:35212/railway"
+        run: npx drizzle-kit push --force
+
+      - name: Run data migration
+        env:
+          DATABASE_URL: "postgresql://postgres:ifseKRIqZzsoBkgZZcquzpUomaGkoTDl@autorack.proxy.rlwy.net:35212/railway"
+        run: npx tsx script/migrate-data.ts
+
+      - name: Verify migration
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+
+          REPORT="migration-report.txt"
+          echo "=== DATABASE MIGRATION VERIFICATION REPORT ===" > $REPORT
+          echo "Timestamp: $(date -u)" >> $REPORT
+          echo "" >> $REPORT
+
+          NEW_DB="postgresql://postgres:ifseKRIqZzsoBkgZZcquzpUomaGkoTDl@autorack.proxy.rlwy.net:35212/railway"
+          OLD_DB="postgresql://postgres:UHttzexcgHcuhvsIdiESHZCWwxckssfV@switchback.proxy.rlwy.net:59872/railway"
+
+          echo "=== NEW DATABASE (target) ===" >> $REPORT
+          echo "--- Tables ---" >> $REPORT
+          psql "$NEW_DB" -c "\dt" >> $REPORT 2>&1
+          echo "" >> $REPORT
+          echo "--- Users ---" >> $REPORT
+          psql "$NEW_DB" -c "SELECT id, full_name, email, role, created_at FROM users ORDER BY created_at;" >> $REPORT 2>&1
+          echo "" >> $REPORT
+          echo "--- Groups ---" >> $REPORT
+          psql "$NEW_DB" -c "SELECT id, company_name, contact_name, status, submitted_at FROM groups ORDER BY submitted_at;" >> $REPORT 2>&1
+          echo "" >> $REPORT
+          echo "--- Census entries count ---" >> $REPORT
+          psql "$NEW_DB" -c "SELECT count(*) as census_count FROM census_entries;" >> $REPORT 2>&1
+          echo "" >> $REPORT
+
+          echo "=== COMPARISON ===" >> $REPORT
+          OLD_USERS=$(psql "$OLD_DB" -t -c "SELECT count(*) FROM users;" 2>/dev/null | tr -d ' ')
+          NEW_USERS=$(psql "$NEW_DB" -t -c "SELECT count(*) FROM users;" 2>/dev/null | tr -d ' ')
+          echo "Users: OLD=$OLD_USERS NEW=$NEW_USERS" >> $REPORT
+
+          OLD_GROUPS=$(psql "$OLD_DB" -t -c "SELECT count(*) FROM groups;" 2>/dev/null | tr -d ' ')
+          NEW_GROUPS=$(psql "$NEW_DB" -t -c "SELECT count(*) FROM groups;" 2>/dev/null | tr -d ' ')
+          echo "Groups: OLD=$OLD_GROUPS NEW=$NEW_GROUPS" >> $REPORT
+
+          OLD_CENSUS=$(psql "$OLD_DB" -t -c "SELECT count(*) FROM census_entries;" 2>/dev/null | tr -d ' ')
+          NEW_CENSUS=$(psql "$NEW_DB" -t -c "SELECT count(*) FROM census_entries;" 2>/dev/null | tr -d ' ')
+          echo "Census: OLD=$OLD_CENSUS NEW=$NEW_CENSUS" >> $REPORT
+
+          echo "" >> $REPORT
+          if [ "$OLD_USERS" = "$NEW_USERS" ] && [ "$OLD_GROUPS" = "$NEW_GROUPS" ] && [ "$OLD_CENSUS" = "$NEW_CENSUS" ]; then
+            echo "RESULT: MIGRATION SUCCESSFUL - All counts match!" >> $REPORT
+          else
+            echo "RESULT: MIGRATION FAILED - Counts differ!" >> $REPORT
+          fi
+
+          cat $REPORT
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add migration-report.txt
+          git commit -m "Update migration verification report" || echo "No changes"
+          git push origin claude/fix-kennion-database-instance-ZThAG
