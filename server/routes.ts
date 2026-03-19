@@ -11,12 +11,16 @@ import {
   magicLinkVerifySchema,
   loginSchema,
   registerSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
   updateGroupStatusSchema,
 } from "@shared/schema";
 import ConnectPgSimple from "connect-pg-simple";
 import { log } from "./index";
 import { sendMagicLinkEmail } from "./email";
 import { pool, testConnection } from "./db";
+import { cleanCSVWithAI, generateValidationGuidance } from "./ai-csv-cleaner";
+import { generateActuarialAnalysis } from "./ai-analysis";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
@@ -27,6 +31,7 @@ declare module "express-session" {
       headers: string[];
       rows: any[];
       fileName: string;
+      aiCleaned?: any;
     };
   }
 }
@@ -54,8 +59,8 @@ async function requireAdmin(req: Request, res: Response, next: Function) {
 }
 
 function getBaseUrl(req: Request): string {
-  if (process.env.REPLIT_DEPLOYMENT_URL) {
-    return `https://${process.env.REPLIT_DEPLOYMENT_URL}`;
+  if (process.env.APP_URL) {
+    return process.env.APP_URL.replace(/\/$/, "");
   }
   const forwardedHost = req.headers["x-forwarded-host"] as string | undefined;
   if (forwardedHost) {
@@ -66,60 +71,95 @@ function getBaseUrl(req: Request): string {
   if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
     return `https://${host}`;
   }
-  if (process.env.REPLIT_DEV_DOMAIN) {
-    return `https://${process.env.REPLIT_DEV_DOMAIN}`;
-  }
   return `${req.protocol}://${host}`;
 }
 
-const REQUIRED_FIELDS = [
-  { key: "first_name", label: "First Name", aliases: ["first name", "firstname", "first", "fname", "given name", "given_name"] },
-  { key: "last_name", label: "Last Name", aliases: ["last name", "lastname", "last", "lname", "surname", "family name", "family_name"] },
-  { key: "type", label: "Type (EE/SP/DEP)", aliases: ["type", "relationship", "relation", "member type", "member_type", "coverage type", "coverage_type", "ee/sp/dep", "enrollment type", "enrollment_type", "subscriber type", "subscriber_type", "dependent type", "dependent_type"] },
-  { key: "date_of_birth", label: "Date of Birth", aliases: ["date of birth", "dob", "dateofbirth", "birth date", "birthdate", "birth_date", "birthday", "date_of_birth", "d.o.b.", "d.o.b"] },
-  { key: "gender", label: "Gender", aliases: ["gender", "sex", "m/f", "male/female"] },
-  { key: "zip_code", label: "Zip Code", aliases: ["zip code", "zipcode", "zip", "zip_code", "postal code", "postal_code", "postalcode"] },
+// STRICT: Require exact column names from template (no AI mapping)
+const REQUIRED_COLUMNS = [
+  "First Name",
+  "Last Name",
+  "Type",
+  "Date of Birth",
+  "Gender",
+  "Zip Code"
 ];
 
-function smartMatchHeaders(csvHeaders: string[]): Record<string, string | null> {
-  const mappings: Record<string, string | null> = {};
+/**
+ * Validates that CSV has exactly the required columns
+ * Returns error message if validation fails, null if valid
+ */
+function validateColumns(csvHeaders: string[]): string | null {
+  const trimmedHeaders = csvHeaders.map(h => h.trim());
 
-  for (const field of REQUIRED_FIELDS) {
-    let bestMatch: string | null = null;
-    let bestScore = 0;
+  // Check if all required columns are present
+  const missingColumns = REQUIRED_COLUMNS.filter(
+    required => !trimmedHeaders.includes(required)
+  );
 
-    for (const csvHeader of csvHeaders) {
-      const normalized = csvHeader.trim().toLowerCase().replace(/[_\-\.]/g, " ").replace(/\s+/g, " ");
-
-      if (normalized === field.key.replace(/_/g, " ")) {
-        bestMatch = csvHeader;
-        bestScore = 100;
-        break;
-      }
-
-      for (const alias of field.aliases) {
-        if (normalized === alias) {
-          bestMatch = csvHeader;
-          bestScore = 100;
-          break;
-        }
-        if (normalized.includes(alias) || alias.includes(normalized)) {
-          const score = Math.max(normalized.length, alias.length) > 0
-            ? (Math.min(normalized.length, alias.length) / Math.max(normalized.length, alias.length)) * 80
-            : 0;
-          if (score > bestScore) {
-            bestScore = score;
-            bestMatch = csvHeader;
-          }
-        }
-      }
-      if (bestScore === 100) break;
-    }
-
-    mappings[field.key] = bestScore >= 50 ? bestMatch : null;
+  if (missingColumns.length > 0) {
+    return `Missing required columns: ${missingColumns.join(", ")}. Please download and use our template with exact column names.`;
   }
 
-  return mappings;
+  // Check for extra columns (optional - could allow them)
+  const extraColumns = trimmedHeaders.filter(
+    header => header && !REQUIRED_COLUMNS.includes(header)
+  );
+
+  if (extraColumns.length > 0) {
+    return `Unexpected columns found: ${extraColumns.join(", ")}. Please use only the 6 required columns from our template.`;
+  }
+
+  return null; // Valid
+}
+
+// Demographic Risk Analysis lookup table based on age band and gender
+const DEMOGRAPHIC_RISK_TABLE: Record<string, { female: number; male: number }> = {
+  "0-4": { female: 0.35, male: 0.40 },
+  "5-9": { female: 0.30, male: 0.55 },
+  "10-14": { female: 0.37, male: 0.46 },
+  "15-19": { female: 0.62, male: 0.46 },
+  "20-24": { female: 0.80, male: 0.46 },
+  "25-29": { female: 0.92, male: 0.46 },
+  "30-34": { female: 0.88, male: 0.45 },
+  "35-39": { female: 0.81, male: 0.52 },
+  "40-44": { female: 1.18, male: 0.77 },
+  "45-49": { female: 1.03, male: 0.67 },
+  "50-54": { female: 1.43, male: 1.20 },
+  "55-59": { female: 1.22, male: 1.52 },
+  "60-64": { female: 1.49, male: 1.99 },
+  "65-69": { female: 3.81, male: 1.64 },
+  "70-Above": { female: 10.36, male: 2.78 },
+};
+
+function getAgeBand(age: number): string {
+  if (age < 5) return "0-4";
+  if (age < 10) return "5-9";
+  if (age < 15) return "10-14";
+  if (age < 20) return "15-19";
+  if (age < 25) return "20-24";
+  if (age < 30) return "25-29";
+  if (age < 35) return "30-34";
+  if (age < 40) return "35-39";
+  if (age < 45) return "40-44";
+  if (age < 50) return "45-49";
+  if (age < 55) return "50-54";
+  if (age < 60) return "55-59";
+  if (age < 65) return "60-64";
+  if (age < 70) return "65-69";
+  return "70-Above";
+}
+
+function getRiskScoreForPerson(age: number, gender: string): number {
+  const ageBand = getAgeBand(age);
+  const riskData = DEMOGRAPHIC_RISK_TABLE[ageBand];
+
+  if (!riskData) {
+    // Fallback to default average if age band not found
+    return gender.toLowerCase() === "female" || gender.toLowerCase() === "f" ? 0.97 : 0.80;
+  }
+
+  const isFemale = gender.toLowerCase() === "female" || gender.toLowerCase() === "f";
+  return isFemale ? riskData.female : riskData.male;
 }
 
 function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relationship: string }[]): {
@@ -135,11 +175,16 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
   let maleCount = 0;
   let femaleCount = 0;
   const eeAges: number[] = [];
+  let totalRiskScore = 0;
+  let validEntries = 0;
+
+  // Count by age band and gender for detailed distribution
+  const ageBandDistribution: Record<string, { female: number; male: number }> = {};
 
   for (const entry of entries) {
     let dob: Date | null = null;
     const dobStr = entry.dateOfBirth.trim();
-    
+
     const formats = [
       /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
       /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
@@ -170,6 +215,23 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
         if (rel === "EE" || rel === "EMPLOYEE") {
           eeAges.push(age);
         }
+
+        // Calculate risk score for this person using the lookup table
+        const personRiskScore = getRiskScoreForPerson(age, entry.gender);
+        totalRiskScore += personRiskScore;
+        validEntries++;
+
+        // Track age band distribution
+        const ageBand = getAgeBand(age);
+        if (!ageBandDistribution[ageBand]) {
+          ageBandDistribution[ageBand] = { female: 0, male: 0 };
+        }
+        const isFemale = entry.gender.toLowerCase() === "female" || entry.gender.toLowerCase() === "f";
+        if (isFemale) {
+          ageBandDistribution[ageBand].female++;
+        } else {
+          ageBandDistribution[ageBand].male++;
+        }
       }
     }
 
@@ -181,54 +243,113 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
   const avgAge = ages.length > 0 ? ages.reduce((a, b) => a + b, 0) / ages.length : 35;
   const avgEeAge = eeAges.length > 0 ? eeAges.reduce((a, b) => a + b, 0) / eeAges.length : avgAge;
 
-  let riskScore = 1.0;
+  // Calculate weighted average risk score based on the demographic lookup table
+  let riskScore = validEntries > 0 ? totalRiskScore / validEntries : 1.0;
 
-  if (avgEeAge < 30) riskScore -= 0.15;
-  else if (avgEeAge < 35) riskScore -= 0.08;
-  else if (avgEeAge < 40) riskScore += 0.0;
-  else if (avgEeAge < 45) riskScore += 0.08;
-  else if (avgEeAge < 50) riskScore += 0.15;
-  else if (avgEeAge < 55) riskScore += 0.22;
-  else riskScore += 0.30;
+  // Round to 2 decimal places
+  riskScore = Math.round(riskScore * 100) / 100;
 
-  const femaleRatio = entries.length > 0 ? femaleCount / entries.length : 0.5;
-  if (femaleRatio > 0.65) riskScore += 0.05;
-  else if (femaleRatio < 0.35) riskScore -= 0.03;
+  // CRITICAL: Risk tier categorization thresholds (DO NOT MODIFY without approval)
+  // Preferred Risk: < 1.0 (Below 1.0)
+  // Standard Risk: 1.0 - 1.49 (1.0 to less than 1.5)
+  // High Risk: >= 1.5 (1.5 and above)
+  let riskTier = "standard";
+  if (riskScore < 1.0) {
+    riskTier = "preferred";
+  } else if (riskScore >= 1.5) {
+    riskTier = "high";
+  }
 
   const eeCount = entries.filter(e => {
     const r = e.relationship.toUpperCase();
     return r === "EE" || r === "EMPLOYEE";
   }).length;
-  if (eeCount < 10) riskScore += 0.08;
-  else if (eeCount < 25) riskScore += 0.03;
-  else if (eeCount > 100) riskScore -= 0.05;
-
-  const olderEes = eeAges.filter(a => a > 55).length;
-  const olderRatio = eeAges.length > 0 ? olderEes / eeAges.length : 0;
-  if (olderRatio > 0.3) riskScore += 0.10;
-  else if (olderRatio > 0.15) riskScore += 0.05;
-
-  riskScore = Math.max(0.40, Math.min(2.0, Math.round(riskScore * 100) / 100));
-
-  let riskTier = "standard";
-  if (riskScore < 0.85) riskTier = "preferred";
-  else if (riskScore > 1.15) riskTier = "high";
 
   const ageRanges = {
-    "18-29": ages.filter(a => a >= 18 && a < 30).length,
-    "30-39": ages.filter(a => a >= 30 && a < 40).length,
-    "40-49": ages.filter(a => a >= 40 && a < 50).length,
-    "50-59": ages.filter(a => a >= 50 && a < 60).length,
-    "60+": ages.filter(a => a >= 60).length,
-    "Under 18": ages.filter(a => a < 18).length,
+    "0-4": ages.filter(a => a < 5).length,
+    "5-9": ages.filter(a => a >= 5 && a < 10).length,
+    "10-14": ages.filter(a => a >= 10 && a < 15).length,
+    "15-19": ages.filter(a => a >= 15 && a < 20).length,
+    "20-24": ages.filter(a => a >= 20 && a < 25).length,
+    "25-29": ages.filter(a => a >= 25 && a < 30).length,
+    "30-34": ages.filter(a => a >= 30 && a < 35).length,
+    "35-39": ages.filter(a => a >= 35 && a < 40).length,
+    "40-44": ages.filter(a => a >= 40 && a < 45).length,
+    "45-49": ages.filter(a => a >= 45 && a < 50).length,
+    "50-54": ages.filter(a => a >= 50 && a < 55).length,
+    "55-59": ages.filter(a => a >= 55 && a < 60).length,
+    "60-64": ages.filter(a => a >= 60 && a < 65).length,
+    "65-69": ages.filter(a => a >= 65 && a < 70).length,
+    "70+": ages.filter(a => a >= 70).length,
   };
+
+  const femaleRatio = entries.length > 0 ? femaleCount / entries.length : 0.5;
+  const olderEes = eeAges.filter(a => a > 55).length;
+  const olderRatio = eeAges.length > 0 ? olderEes / eeAges.length : 0;
+
+  // Calculate risk segments for individual members
+  let lowRisk = 0;
+  let avgRisk = 0;
+  let highRisk = 0;
+
+  for (const entry of entries) {
+    const dobStr = entry.dateOfBirth.trim();
+    let dob: Date | null = null;
+
+    const formats = [
+      /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
+      /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
+    ];
+
+    for (const fmt of formats) {
+      const m = dobStr.match(fmt);
+      if (m) {
+        if (fmt === formats[0]) {
+          dob = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+        } else {
+          dob = new Date(parseInt(m[3]), parseInt(m[1]) - 1, parseInt(m[2]));
+        }
+        break;
+      }
+    }
+
+    if (!dob || isNaN(dob.getTime())) {
+      dob = new Date(dobStr);
+    }
+
+    if (dob && !isNaN(dob.getTime())) {
+      const now = new Date();
+      const age = Math.floor((now.getTime() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+      if (age > 0 && age < 120) {
+        const personRiskScore = getRiskScoreForPerson(age, entry.gender);
+        if (personRiskScore < 1.0) lowRisk++;
+        else if (personRiskScore < 1.5) avgRisk++;
+        else highRisk++;
+      }
+    }
+  }
+
+  const total = lowRisk + avgRisk + highRisk || 1;
+  const lowRiskPct = Math.round((lowRisk / total) * 100);
+  const avgRiskPct = Math.round((avgRisk / total) * 100);
+  const highRiskPct = Math.round((highRisk / total) * 100);
 
   const characteristics = {
     ageDistribution: ageRanges,
+    ageBandDistribution,
     averageEmployeeAge: Math.round(avgEeAge * 10) / 10,
     dependencyRatio: eeCount > 0 ? Math.round(((entries.length - eeCount) / eeCount) * 100) / 100 : 0,
     groupSizeCategory: eeCount < 10 ? "Micro" : eeCount < 25 ? "Small" : eeCount < 50 ? "Mid-Size" : eeCount < 100 ? "Large" : "Enterprise",
     factors: [] as string[],
+    riskSegments: {
+      lowRisk,
+      avgRisk,
+      highRisk,
+      lowRiskPct,
+      avgRiskPct,
+      highRiskPct,
+    },
   };
 
   if (avgEeAge < 35) characteristics.factors.push("Young workforce (favorable)");
@@ -239,7 +360,8 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
   if (characteristics.dependencyRatio > 1.5) characteristics.factors.push("High dependency ratio");
   if (femaleRatio > 0.65) characteristics.factors.push("Female-dominant workforce");
 
-  const qualScore = Math.round(Math.max(0, Math.min(100, (2.0 - riskScore) / 1.6 * 100)));
+  // Calculate qualification score: lower risk = higher qualification score
+  const qualScore = Math.round(Math.max(0, Math.min(100, (2.0 - riskScore) / 2.0 * 100)));
 
   return {
     riskScore,
@@ -248,6 +370,104 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
     maleCount,
     femaleCount,
     characteristics: { ...characteristics, qualificationScore: qualScore },
+    ageBandDistribution, // Include this for validation
+  };
+}
+
+interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  matchRate: number;
+}
+
+function validateCensusData(
+  entries: { firstName: string; lastName: string; dateOfBirth: string; gender: string; zipCode: string; relationship: string }[],
+  analysis: ReturnType<typeof analyzeGroupRisk>
+): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  // Calculate Age Band table totals
+  const distribution = analysis.ageBandDistribution || {};
+  let tableTotalFemales = 0;
+  let tableTotalMales = 0;
+
+  Object.values(distribution).forEach((bandData: any) => {
+    const females = bandData.female || 0;
+    const males = bandData.male || 0;
+    tableTotalFemales += females;
+    tableTotalMales += males;
+  });
+  const tableTotalMembers = tableTotalFemales + tableTotalMales;
+
+  // Recalculate risk score for validation
+  let tableWeightedRiskSum = 0;
+  Object.entries(distribution).forEach(([band, bandData]: [string, any]) => {
+    const females = bandData.female || 0;
+    const males = bandData.male || 0;
+    const riskData = DEMOGRAPHIC_RISK_TABLE[band];
+    if (riskData) {
+      tableWeightedRiskSum += females * riskData.female + males * riskData.male;
+    }
+  });
+  const tableCalculatedRiskScore = tableTotalMembers > 0 ? Math.round((tableWeightedRiskSum / tableTotalMembers) * 100) / 100 : 0;
+
+  // Census Details values
+  const censusTotalMembers = entries.length;
+  const censusEmployees = entries.filter(e => e.relationship === "EE").length;
+  const censusSpouses = entries.filter(e => e.relationship === "SP").length;
+  const censusChildren = entries.filter(e => e.relationship === "CH").length;
+  const censusSumCheck = censusEmployees + censusSpouses + censusChildren;
+  const censusFemales = analysis.femaleCount || 0;
+  const censusMales = analysis.maleCount || 0;
+  const censusGenderTotal = censusFemales + censusMales;
+
+  // Validation checks
+  const totalLivesMatch = tableTotalMembers === censusTotalMembers && censusTotalMembers === censusSumCheck;
+  const genderTotalsMatch = tableTotalMembers === censusGenderTotal;
+  const genderBreakdownMatch = tableTotalFemales === censusFemales && tableTotalMales === censusMales;
+  const riskScoreExists = analysis.riskScore != null;
+  const riskScoreMatches = riskScoreExists && Math.abs(analysis.riskScore - tableCalculatedRiskScore) < 0.01;
+
+  // Risk tier validation
+  let riskTierCorrect = false;
+  if (riskScoreExists) {
+    if (analysis.riskScore < 1.0 && analysis.riskTier === 'preferred') riskTierCorrect = true;
+    else if (analysis.riskScore >= 1.0 && analysis.riskScore < 1.5 && analysis.riskTier === 'standard') riskTierCorrect = true;
+    else if (analysis.riskScore >= 1.5 && analysis.riskTier === 'high') riskTierCorrect = true;
+  }
+
+  // Build error messages
+  if (!totalLivesMatch) {
+    errors.push(`Total Lives Mismatch: Census (${censusTotalMembers}) ≠ Age Band Table (${tableTotalMembers}) ≠ Sum (${censusSumCheck}). Please ensure all employee records have valid dates of birth.`);
+  }
+
+  if (!genderTotalsMatch) {
+    errors.push(`Gender Total Mismatch: Age Band Table (${tableTotalMembers}) ≠ Gender Count (${censusGenderTotal}). Some records may have invalid gender values.`);
+  }
+
+  if (!genderBreakdownMatch) {
+    errors.push(`Gender Breakdown Mismatch: Table (${tableTotalFemales}F + ${tableTotalMales}M) ≠ Census (${censusFemales}F + ${censusMales}M). Check that all gender values are 'Male' or 'Female'.`);
+  }
+
+  if (!riskScoreMatches) {
+    errors.push(`Risk Score Calculation Error: Stored (${analysis.riskScore?.toFixed(3)}) ≠ Calculated (${tableCalculatedRiskScore.toFixed(3)}). Date of birth or gender data may be invalid.`);
+  }
+
+  if (!riskTierCorrect) {
+    errors.push(`Risk Tier Categorization Error: Score ${analysis.riskScore?.toFixed(3)} should be categorized as ${analysis.riskScore < 1.0 ? 'Preferred (<1.0)' : analysis.riskScore < 1.5 ? 'Standard (1.0-1.49)' : 'High (≥1.5)'}, but is marked as '${analysis.riskTier}'.`);
+  }
+
+  const allChecks = [totalLivesMatch, genderTotalsMatch, genderBreakdownMatch, riskScoreExists, riskScoreMatches, riskTierCorrect];
+  const passedChecks = allChecks.filter(Boolean).length;
+  const matchRate = Math.round((passedChecks / allChecks.length) * 100);
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+    matchRate,
   };
 }
 
@@ -261,27 +481,39 @@ export async function registerRoutes(
     console.error("WARNING: Starting server without verified database connection");
   }
 
-  const PgStore = ConnectPgSimple(session);
+  // Create session table manually (connect-pg-simple's createTableIfMissing
+  // reads a bundled .sql file that doesn't survive the Railway build).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS "session" (
+      "sid" varchar NOT NULL COLLATE "default",
+      "sess" json NOT NULL,
+      "expire" timestamp(6) NOT NULL,
+      CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE
+    );
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+  `);
 
-  const sessionStore = new PgStore({
-    pool: pool,
-    createTableIfMissing: true,
-    errorLog: (err: Error) => {
-      console.error("Session store error:", err.message);
-    },
-  });
+  const PgStore = ConnectPgSimple(session);
 
   app.use(
     session({
-      store: sessionStore,
+      store: new PgStore({
+        pool,
+        errorLog: (err: Error) => {
+          console.error("Session store error:", err.message);
+        },
+      }),
       secret: process.env.SESSION_SECRET || "kennion-secret-key",
       resave: false,
       saveUninitialized: false,
+      proxy: true,
       cookie: {
         maxAge: 7 * 24 * 60 * 60 * 1000,
         httpOnly: true,
         sameSite: "lax",
-        secure: false,
+        secure: process.env.NODE_ENV === "production",
       },
     })
   );
@@ -348,6 +580,12 @@ export async function registerRoutes(
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
       const data = registerSchema.parse(req.body);
+
+      // Validate access code
+      if (data.accessCode !== "8787") {
+        return res.status(400).json({ message: "Invalid access code. Please check your code and try again." });
+      }
+
       const fullName = `${data.firstName} ${data.lastName}`;
 
       const existing = await storage.getUserByEmail(data.email);
@@ -355,25 +593,29 @@ export async function registerRoutes(
         return res.status(400).json({ message: "An account with this email already exists. Please sign in instead." });
       }
 
-      const token = generateMagicToken();
-      const expiry = new Date(Date.now() + 15 * 60 * 1000);
+      // Hash password
+      const hashedPassword = await bcrypt.hash(data.password, 10);
 
+      // Create user as verified (access code grants instant access)
       const user = await storage.createUser({
         fullName,
         email: data.email,
         companyName: data.companyName,
         phone: data.phone,
-        password: null,
-        magicToken: token,
-        magicTokenExpiry: expiry,
+        password: hashedPassword,
+        verified: true,
+        magicToken: null,
+        magicTokenExpiry: null,
       });
 
-      const baseUrl = getBaseUrl(req);
-      const magicLinkUrl = `${baseUrl}/auth/verify?token=${token}`;
+      // Log user in immediately
+      req.session.userId = user.id;
 
-      await sendMagicLinkEmail(data.email, magicLinkUrl, fullName);
-
-      res.json({ message: "Sign-in link sent to your email", email: data.email });
+      res.json({
+        message: "Account created successfully",
+        email: data.email,
+        verified: true
+      });
     } catch (err: any) {
       log(`Registration error: ${err.message}`);
       res.status(400).json({ message: err.message || "Registration failed" });
@@ -401,12 +643,18 @@ export async function registerRoutes(
       });
 
       req.session.userId = user.id;
-      res.json({
-        id: user.id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-        companyName: user.companyName,
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          log(`Session save error: ${saveErr.message}`);
+          return res.status(500).json({ message: "Failed to create session. Please try again." });
+        }
+        res.json({
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+          companyName: user.companyName,
+        });
       });
     } catch (err: any) {
       res.status(400).json({ message: err.message || "Verification failed" });
@@ -440,6 +688,69 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/auth/forgot-password", async (req: Request, res: Response) => {
+    try {
+      const data = forgotPasswordSchema.parse(req.body);
+      const user = await storage.getUserByEmail(data.email);
+
+      // Always return success to prevent email enumeration
+      if (!user) {
+        return res.json({ message: "If an account exists, a password reset link has been sent" });
+      }
+
+      // Generate reset token
+      const resetToken = generateMagicToken();
+      const resetExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+      await storage.updateUser(user.id, {
+        magicToken: resetToken,
+        magicTokenExpiry: resetExpiry,
+      });
+
+      // Send reset email
+      const baseUrl = getBaseUrl(req);
+      const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
+
+      await sendMagicLinkEmail(data.email, resetUrl, user.fullName);
+
+      res.json({ message: "If an account exists, a password reset link has been sent" });
+    } catch (err: any) {
+      log(`Forgot password error: ${err.message}`);
+      res.status(400).json({ message: "Failed to process request" });
+    }
+  });
+
+  app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
+    try {
+      const data = resetPasswordSchema.parse(req.body);
+      const user = await storage.getUserByMagicToken(data.token);
+
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired reset link" });
+      }
+
+      if (!user.magicTokenExpiry || new Date() > user.magicTokenExpiry) {
+        await storage.updateUser(user.id, { magicToken: null, magicTokenExpiry: null });
+        return res.status(400).json({ message: "This reset link has expired. Please request a new one." });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+
+      // Update password and clear reset token
+      await storage.updateUser(user.id, {
+        password: hashedPassword,
+        magicToken: null,
+        magicTokenExpiry: null,
+      });
+
+      res.json({ message: "Password reset successfully. You can now log in with your new password." });
+    } catch (err: any) {
+      log(`Reset password error: ${err.message}`);
+      res.status(400).json({ message: err.message || "Failed to reset password" });
+    }
+  });
+
   app.get("/api/auth/me", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
@@ -462,6 +773,89 @@ export async function registerRoutes(
     });
   });
 
+  // User management endpoints
+  app.get("/api/admin/users", requireAdmin, async (_req: Request, res: Response) => {
+    const allUsers = await storage.getAllUsers();
+    res.json(allUsers);
+  });
+
+  app.patch("/api/admin/users/:id", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id;
+      const data = req.body;
+
+      // Build update object with only provided fields
+      const updates: any = {};
+      if (data.fullName !== undefined) updates.fullName = data.fullName;
+      if (data.email !== undefined) updates.email = data.email;
+      if (data.companyName !== undefined) updates.companyName = data.companyName;
+      if (data.phone !== undefined) updates.phone = data.phone;
+      if (data.role !== undefined) updates.role = data.role;
+      if (data.verified !== undefined) updates.verified = data.verified;
+
+      const updated = await storage.updateUser(id, updates);
+      if (!updated) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(updated);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Update failed" });
+    }
+  });
+
+  app.delete("/api/admin/users/:id", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id;
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Don't allow deleting yourself
+      if (req.session.userId === id) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+
+      await storage.deleteUser(id);
+      res.json({ message: "User deleted successfully" });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Delete failed" });
+    }
+  });
+
+  app.post("/api/admin/users/:id/reset-password", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id;
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Generate reset token
+      const resetToken = generateMagicToken();
+      const resetExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours for admin resets
+
+      await storage.updateUser(user.id, {
+        magicToken: resetToken,
+        magicTokenExpiry: resetExpiry,
+      });
+
+      // Send reset email
+      const baseUrl = getBaseUrl(req);
+      const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
+
+      await sendMagicLinkEmail(user.email, resetUrl, user.fullName);
+
+      res.json({
+        message: "Password reset email sent to user",
+        resetUrl: resetUrl // Include for admin to see/share if needed
+      });
+    } catch (err: any) {
+      log(`Admin password reset error: ${err.message}`);
+      res.status(500).json({ message: err.message || "Failed to send reset email" });
+    }
+  });
+
   app.post("/api/auth/logout", (req: Request, res: Response) => {
     req.session.destroy(() => {
       res.json({ message: "Logged out" });
@@ -469,7 +863,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/groups/template", (_req: Request, res: Response) => {
-    const csv = "First Name,Last Name,Type,Date of Birth,Gender,Zip Code\nJohn,Smith,EE,1985-03-15,Male,30301\nJane,Smith,SP,1987-08-22,Female,30301\nTommy,Smith,DEP,2015-01-10,Male,30301\nSarah,Johnson,EE,1990-06-12,Female,30301\nMike,Williams,EE,1978-11-03,Male,30302\n";
+    const csv = "First Name,Last Name,Type,Date of Birth,Gender,Zip Code\nJohn,Smith,EE,3/15/1985,Male,30301\nJane,Smith,SP,8/22/1987,Female,30301\nTommy,Smith,CH,1/10/2015,Male,30301\nSarah,Johnson,EE,6/12/1990,Female,30301\nMike,Williams,EE,11/3/1978,Male,30302\n";
     res.setHeader("Content-Type", "text/csv");
     res.setHeader("Content-Disposition", "attachment; filename=census_template.csv");
     res.send(csv);
@@ -477,11 +871,11 @@ export async function registerRoutes(
 
   app.get("/api/groups/sample", (_req: Request, res: Response) => {
     const sampleData = [
-      { "First Name": "John", "Last Name": "Smith", "Type": "EE", "Date of Birth": "1985-03-15", "Gender": "Male", "Zip Code": "30301" },
-      { "First Name": "Jane", "Last Name": "Smith", "Type": "SP", "Date of Birth": "1987-08-22", "Gender": "Female", "Zip Code": "30301" },
-      { "First Name": "Tommy", "Last Name": "Smith", "Type": "DEP", "Date of Birth": "2015-01-10", "Gender": "Male", "Zip Code": "30301" },
-      { "First Name": "Sarah", "Last Name": "Johnson", "Type": "EE", "Date of Birth": "1990-06-12", "Gender": "Female", "Zip Code": "30301" },
-      { "First Name": "Mike", "Last Name": "Williams", "Type": "EE", "Date of Birth": "1978-11-03", "Gender": "Male", "Zip Code": "30302" },
+      { "First Name": "John", "Last Name": "Smith", "Type": "EE", "Date of Birth": "3/15/1985", "Gender": "Male", "Zip Code": "30301" },
+      { "First Name": "Jane", "Last Name": "Smith", "Type": "SP", "Date of Birth": "8/22/1987", "Gender": "Female", "Zip Code": "30301" },
+      { "First Name": "Tommy", "Last Name": "Smith", "Type": "CH", "Date of Birth": "1/10/2015", "Gender": "Male", "Zip Code": "30301" },
+      { "First Name": "Sarah", "Last Name": "Johnson", "Type": "EE", "Date of Birth": "6/12/1990", "Gender": "Female", "Zip Code": "30301" },
+      { "First Name": "Mike", "Last Name": "Williams", "Type": "EE", "Date of Birth": "11/3/1978", "Gender": "Male", "Zip Code": "30302" },
     ];
     res.json(sampleData);
   });
@@ -510,51 +904,112 @@ export async function registerRoutes(
       }
 
       const headers = Object.keys(rows[0]).filter(h => h.trim() !== "");
-      const suggestedMappings = smartMatchHeaders(headers);
 
-      const previewRows = rows.slice(0, 5).map(row => {
-        const preview: Record<string, string> = {};
-        for (const h of headers) {
-          preview[h] = String(row[h] || "").substring(0, 50);
-        }
-        return preview;
+      log(`Found ${headers.length} columns: ${headers.join(", ")}`);
+
+      // Filter out completely empty rows (rows where all values are empty/null)
+      const nonEmptyRows = rows.filter(row => {
+        const values = Object.values(row);
+        return values.some(val => val != null && String(val).trim() !== "");
       });
 
+      log(`Filtered ${rows.length} rows down to ${nonEmptyRows.length} non-empty rows`);
+
+      if (nonEmptyRows.length === 0) {
+        return res.status(400).json({ message: "CSV file contains no valid data" });
+      }
+
+      // Detect column mapping with AI (don't clean data yet)
+      log("Detecting column mapping with AI...");
+      const aiResult = await cleanCSVWithAI(headers, nonEmptyRows);
+
+      // Store raw data and AI result in session
       req.session.pendingCensus = {
         headers,
-        rows,
+        rows: nonEmptyRows,
         fileName: req.file.originalname || "census.csv",
+        detectedMapping: aiResult.columnMapping
       };
 
+      // Return detected mapping and sample data for confirmation
+      const sampleRows = nonEmptyRows.slice(0, 3).map(row => {
+        const sample: Record<string, string> = {};
+        headers.forEach(h => {
+          sample[h] = row[h]?.toString() || "";
+        });
+        return sample;
+      });
+
       res.json({
-        headers,
         totalRows: rows.length,
-        suggestedMappings,
-        previewRows,
-        requiredFields: REQUIRED_FIELDS.map(f => ({ key: f.key, label: f.label })),
+        validRows: nonEmptyRows.length,
+        headers: headers,
+        columnMapping: aiResult.columnMapping,
+        sampleRows: sampleRows,
+        message: "Column mapping detected. Please confirm the mapping below."
       });
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Parse failed" });
     }
   });
 
+  app.post("/api/groups/apply-mapping", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const pendingCensus = req.session.pendingCensus;
+      if (!pendingCensus || !pendingCensus.headers || !pendingCensus.rows) {
+        return res.status(400).json({ message: "No pending census data. Please upload a file first." });
+      }
+
+      const { columnMapping } = req.body;
+      if (!columnMapping) {
+        return res.status(400).json({ message: "Column mapping is required" });
+      }
+
+      log("Applying user-confirmed column mapping and cleaning data...");
+
+      // Clean data with user-confirmed mapping
+      const aiResult = await cleanCSVWithAI(
+        pendingCensus.headers,
+        pendingCensus.rows,
+        columnMapping
+      );
+
+      // Convert cleaned data to preview format
+      const previewRows = aiResult.cleanedData.slice(0, 10).map(cleaned => ({
+        firstName: cleaned.firstName,
+        lastName: cleaned.lastName,
+        relationship: cleaned.relationship,
+        dob: cleaned.dob,
+        gender: cleaned.gender,
+        zip: cleaned.zip,
+        issues: cleaned.issues
+      }));
+
+      // Store cleaned data in session for submission
+      req.session.pendingCensus = {
+        ...pendingCensus,
+        aiCleaned: aiResult,
+        confirmedMapping: columnMapping
+      };
+
+      res.json({
+        totalRows: pendingCensus.rows.length,
+        cleanedRows: aiResult.cleanedData.length,
+        previewRows,
+        summary: aiResult.summary,
+        warnings: aiResult.warnings,
+        confidence: aiResult.confidence
+      });
+    } catch (err: any) {
+      log(`Apply mapping error: ${err.message}`);
+      res.status(500).json({ message: err.message || "Failed to apply column mapping" });
+    }
+  });
+
   app.post("/api/groups/confirm", requireAuth, async (req: Request, res: Response) => {
     try {
-      const { mappings } = req.body;
-
-      if (!mappings) {
-        return res.status(400).json({ message: "Column mappings are required" });
-      }
-
-      const missingFields = REQUIRED_FIELDS.filter(f => !mappings[f.key]);
-      if (missingFields.length > 0) {
-        return res.status(400).json({
-          message: `Missing mappings for: ${missingFields.map(f => f.label).join(", ")}`,
-        });
-      }
-
       const pendingCensus = req.session.pendingCensus;
-      if (!pendingCensus || !pendingCensus.rows || pendingCensus.rows.length === 0) {
+      if (!pendingCensus || !pendingCensus.aiCleaned) {
         return res.status(400).json({ message: "No pending census data. Please upload a file first." });
       }
 
@@ -563,47 +1018,89 @@ export async function registerRoutes(
         return res.status(401).json({ message: "User not found" });
       }
 
-      const entries = pendingCensus.rows.map((row: any) => {
-        const rel = (String(row[mappings.type] || "EE")).trim().toUpperCase();
-        let relationship = "EE";
-        if (["SP", "SPOUSE"].includes(rel)) relationship = "SP";
-        else if (["DEP", "DEPENDENT", "CHILD"].includes(rel)) relationship = "DEP";
-        else if (["EE", "EMPLOYEE"].includes(rel)) relationship = "EE";
+      const aiCleaned = pendingCensus.aiCleaned;
 
+      // Convert AI-cleaned data to storage format
+      interface CensusEntry {
+        firstName: string;
+        lastName: string;
+        dateOfBirth: string;
+        gender: string;
+        zipCode: string;
+        relationship: string;
+      }
+
+      const entries: CensusEntry[] = aiCleaned.cleanedData.map((cleaned: any) => {
         return {
-          firstName: String(row[mappings.first_name] || "").trim(),
-          lastName: String(row[mappings.last_name] || "").trim(),
-          dateOfBirth: String(row[mappings.date_of_birth] || "").trim(),
-          gender: String(row[mappings.gender] || "").trim(),
-          zipCode: String(row[mappings.zip_code] || "").trim(),
-          relationship,
+          firstName: cleaned.firstName,
+          lastName: cleaned.lastName,
+          dateOfBirth: cleaned.dob,
+          gender: cleaned.gender,
+          zipCode: cleaned.zip,
+          relationship: cleaned.relationship, // Already in "EE"/"SP"/"CH" format from AI cleaner
         };
       });
 
       const invalid = entries.filter(
-        (e) => !e.firstName || !e.lastName || !e.dateOfBirth || !e.gender || !e.zipCode
+        (e: CensusEntry) => !e.firstName || !e.lastName || !e.dateOfBirth || !e.gender || !e.zipCode
       );
       if (invalid.length > 0) {
+        log(`Validation failed: ${invalid.length} invalid rows after AI cleaning`);
         return res.status(400).json({
-          message: `${invalid.length} row(s) have missing required fields. Please ensure all rows have First Name, Last Name, DOB, Gender, and Zip Code.`,
+          message: `${invalid.length} row(s) have missing required fields after AI processing. Please check your CSV file.`,
         });
       }
 
-      const employeeCount = entries.filter(e => e.relationship === "EE").length;
-      const spouseCount = entries.filter(e => e.relationship === "SP").length;
-      const dependentCount = entries.filter(e => e.relationship === "DEP" || e.relationship === "SP").length;
+      const employeeCount = entries.filter((e: CensusEntry) => e.relationship === "EE").length;
+      const spouseCount = entries.filter((e: CensusEntry) => e.relationship === "SP").length;
+      const childrenCount = entries.filter((e: CensusEntry) => e.relationship === "CH").length;
 
       const analysis = analyzeGroupRisk(entries);
+
+      // CRITICAL: Validate data integrity before saving
+      const validation = validateCensusData(entries, analysis);
+      if (!validation.valid) {
+        log(`Census validation failed: Match Rate ${validation.matchRate}%`);
+
+        // Generate AI-powered guidance to help users fix the issues
+        const guidance = await generateValidationGuidance(validation.errors, validation.matchRate);
+
+        return res.status(400).json({
+          message: "Census data validation failed",
+          guidance,
+          errors: validation.errors,
+          matchRate: validation.matchRate,
+          needsReupload: true,
+        });
+      }
+
+      log(`Census validation passed: Match Rate ${validation.matchRate}%`);
 
       const group = await storage.createGroup({
         userId: user.id,
         companyName: user.companyName || "Unnamed Company",
         contactName: user.fullName,
         contactEmail: user.email,
+        contactPhone: user.phone,
         employeeCount,
-        dependentCount,
+        childrenCount,
         spouseCount,
         totalLives: entries.length,
+      });
+
+      // Generate AI-powered actuarial analysis
+      const adminNotes = await generateActuarialAnalysis({
+        riskScore: analysis.riskScore,
+        riskTier: analysis.riskTier,
+        averageAge: analysis.averageAge,
+        employeeCount,
+        spouseCount,
+        childrenCount,
+        totalLives: entries.length,
+        maleCount: analysis.maleCount,
+        femaleCount: analysis.femaleCount,
+        characteristics: analysis.characteristics,
+        companyName: user.companyName || "Unnamed Company",
       });
 
       await storage.updateGroup(group.id, {
@@ -614,11 +1111,12 @@ export async function registerRoutes(
         femaleCount: analysis.femaleCount,
         groupCharacteristics: analysis.characteristics,
         score: analysis.characteristics.qualificationScore,
+        adminNotes,
         status: "analyzing",
       });
 
       await storage.createCensusEntries(
-        entries.map((e) => ({
+        entries.map((e: any) => ({
           groupId: group.id,
           firstName: e.firstName,
           lastName: e.lastName,
@@ -684,7 +1182,7 @@ export async function registerRoutes(
         const rel = (row.type || row.relationship || "EE").trim().toUpperCase();
         let relationship = "EE";
         if (["SP", "SPOUSE"].includes(rel)) relationship = "SP";
-        else if (["DEP", "DEPENDENT", "CHILD"].includes(rel)) relationship = "DEP";
+        else if (["CH", "CHILD", "CHILDREN", "DEP", "DEPENDENT"].includes(rel)) relationship = "CH";
 
         return {
           firstName: (row.first_name || "").trim(),
@@ -707,19 +1205,54 @@ export async function registerRoutes(
 
       const employeeCount = entries.filter(e => e.relationship === "EE").length;
       const spouseCount = entries.filter(e => e.relationship === "SP").length;
-      const dependentCount = entries.filter(e => e.relationship === "DEP" || e.relationship === "SP").length;
+      const childrenCount = entries.filter(e => e.relationship === "CH").length;
 
       const analysis = analyzeGroupRisk(entries);
+
+      // CRITICAL: Validate data integrity before saving
+      const validation = validateCensusData(entries, analysis);
+      if (!validation.valid) {
+        log(`Census validation failed (legacy upload): Match Rate ${validation.matchRate}%`);
+
+        // Generate AI-powered guidance to help users fix the issues
+        const guidance = await generateValidationGuidance(validation.errors, validation.matchRate);
+
+        return res.status(400).json({
+          message: "Census data validation failed",
+          guidance,
+          errors: validation.errors,
+          matchRate: validation.matchRate,
+          needsReupload: true,
+        });
+      }
+
+      log(`Census validation passed (legacy upload): Match Rate ${validation.matchRate}%`);
 
       const group = await storage.createGroup({
         userId: user.id,
         companyName: user.companyName || "Unnamed Company",
         contactName: user.fullName,
         contactEmail: user.email,
+        contactPhone: user.phone,
         employeeCount,
-        dependentCount,
+        childrenCount,
         spouseCount,
         totalLives: entries.length,
+      });
+
+      // Generate AI-powered actuarial analysis
+      const adminNotes = await generateActuarialAnalysis({
+        riskScore: analysis.riskScore,
+        riskTier: analysis.riskTier,
+        averageAge: analysis.averageAge,
+        employeeCount,
+        spouseCount,
+        childrenCount,
+        totalLives: entries.length,
+        maleCount: analysis.maleCount,
+        femaleCount: analysis.femaleCount,
+        characteristics: analysis.characteristics,
+        companyName: user.companyName || "Unnamed Company",
       });
 
       await storage.updateGroup(group.id, {
@@ -730,11 +1263,12 @@ export async function registerRoutes(
         femaleCount: analysis.femaleCount,
         groupCharacteristics: analysis.characteristics,
         score: analysis.characteristics.qualificationScore,
+        adminNotes,
         status: "analyzing",
       });
 
       await storage.createCensusEntries(
-        entries.map((e) => ({
+        entries.map((e: any) => ({
           groupId: group.id,
           firstName: e.firstName,
           lastName: e.lastName,
@@ -757,7 +1291,10 @@ export async function registerRoutes(
   });
 
   app.get("/api/groups", requireAuth, async (req: Request, res: Response) => {
+    log(`📋 /api/groups called - Session userId: ${req.session.userId}`);
     const userGroups = await storage.getGroupsByUserId(req.session.userId!);
+    log(`📋 Found ${userGroups.length} groups for user ${req.session.userId}`);
+    log(`📋 First group userId (if any): ${userGroups[0]?.userId}`);
     res.json(userGroups);
   });
 
@@ -832,6 +1369,21 @@ export async function registerRoutes(
       res.json(updated);
     } catch (err: any) {
       res.status(400).json({ message: err.message || "Update failed" });
+    }
+  });
+
+  app.delete("/api/admin/groups/:id", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const group = await storage.getGroup(id);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      await storage.deleteCensusByGroupId(id);
+      await storage.deleteGroup(id);
+      res.json({ message: "Group deleted successfully" });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Delete failed" });
     }
   });
 

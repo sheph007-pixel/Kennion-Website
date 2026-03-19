@@ -1,7 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/theme-toggle";
 import {
   TrendingDown,
   Users,
@@ -21,25 +20,62 @@ import { KennionLogo } from "@/components/kennion-logo";
 function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
-        <KennionLogo size="md" />
-        <div className="hidden md:flex items-center gap-6">
-          <a href="#how-it-works" className="text-sm text-muted-foreground transition-colors" data-testid="link-how-it-works">How It Works</a>
-          <a href="#features" className="text-sm text-muted-foreground transition-colors" data-testid="link-features">Platform</a>
-          <a href="#benefits" className="text-sm text-muted-foreground transition-colors" data-testid="link-benefits">Benefits</a>
+      <div className="mx-auto max-w-7xl px-6 relative">
+        {/* Main Header Row */}
+        <div className="flex items-center justify-between gap-6 py-3">
+          {/* Left: Logo */}
+          <KennionLogo size="md" />
+
+          {/* Center: Primary Navigation */}
+          <div className="hidden md:flex items-center gap-6">
+            <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-how-it-works">
+              How It Works
+            </a>
+            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-features">
+              Platform
+            </a>
+            <a href="#benefits" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-benefits">
+              Benefits
+            </a>
+          </div>
+
+          {/* Right: Client Links */}
+          <div className="hidden md:flex items-center gap-2">
+            <span className="text-xs text-muted-foreground font-medium">Existing Clients:</span>
+            <a
+              href="https://go.kennion.com/support"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground hover:text-primary transition-colors"
+            >
+              Support
+            </a>
+            <span className="text-muted-foreground/50">•</span>
+            <a
+              href="http://go.kennion.com/enroll"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground hover:text-primary transition-colors"
+            >
+              Login
+            </a>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <Link href="/login">
-            <Button variant="ghost" size="sm" data-testid="link-login">
-              Log In
-            </Button>
-          </Link>
-          <Link href="/register">
-            <Button size="sm" data-testid="link-register">
-              Get Started <ArrowRight className="ml-1 h-3.5 w-3.5" />
-            </Button>
-          </Link>
+
+        {/* Tab Section: CTAs sit on the border */}
+        <div className="absolute right-6 top-full z-10">
+          <div className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border bg-background shadow-md">
+            <Link href="/login">
+              <Button variant="ghost" size="default" data-testid="link-login">
+                Log In
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button size="default" className="font-semibold shadow-sm" data-testid="link-register">
+                Get Started <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </nav>
@@ -64,7 +100,7 @@ function HeroSection() {
           </h1>
           <p className="mt-6 text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
             Our proprietary underwriting platform analyzes your group's risk profile to unlock exclusive
-            employee benefits programs that deliver premium coverage at significantly reduced costs.
+            benefits programs that deliver premium coverage at significantly lower costs.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link href="/register">
@@ -100,7 +136,7 @@ function HeroSection() {
 
 function StatsBar() {
   const stats = [
-    { value: "2,400+", label: "Groups Analyzed" },
+    { value: "2,415+", label: "Groups Analyzed" },
     { value: "18%", label: "Avg. Rate Reduction" },
     { value: "$12M+", label: "Client Savings" },
     { value: "97%", label: "Retention Rate" },

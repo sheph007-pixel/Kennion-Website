@@ -25,7 +25,7 @@ export default function AuthVerifyPage() {
     verifyMagicLink(token)
       .then(() => {
         setStatus("success");
-        setTimeout(() => navigate("/dashboard"), 1500);
+        setTimeout(() => { window.location.href = "/dashboard"; }, 1500);
       })
       .catch((err: any) => {
         setStatus("error");

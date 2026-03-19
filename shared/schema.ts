@@ -23,11 +23,12 @@ export const groups = pgTable("groups", {
   companyName: text("company_name").notNull(),
   contactName: text("contact_name").notNull(),
   contactEmail: text("contact_email").notNull(),
+  contactPhone: text("contact_phone"),
   employeeCount: integer("employee_count").default(0),
-  dependentCount: integer("dependent_count").default(0),
+  childrenCount: integer("dependent_count").default(0),
   spouseCount: integer("spouse_count").default(0),
   totalLives: integer("total_lives").default(0),
-  status: text("status").default("pending_review").notNull(),
+  status: text("status").default("census_uploaded").notNull(),
   score: integer("score"),
   riskScore: real("risk_score"),
   riskTier: text("risk_tier"),
@@ -67,12 +68,48 @@ export const magicLinkRequestSchema = z.object({
   phone: z.string().optional(),
 });
 
+// Personal email domains blocklist
+const BLOCKED_EMAIL_DOMAINS = [
+  'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com',
+  'icloud.com', 'me.com', 'mac.com', 'live.com', 'msn.com',
+  'ymail.com', 'rocketmail.com', 'protonmail.com', 'mail.com',
+  'gmx.com', 'zoho.com', 'inbox.com', 'hey.com'
+];
+
+// Validate US phone number (accepts multiple formats)
+function isValidUSPhone(phone: string): boolean {
+  // Strip all non-digit characters
+  const digits = phone.replace(/\D/g, '');
+
+  // Accept 10 digits (e.g., 5551234567)
+  // Or 11 digits starting with 1 (e.g., 15551234567)
+  if (digits.length === 10) {
+    return true;
+  }
+  if (digits.length === 11 && digits[0] === '1') {
+    return true;
+  }
+
+  return false;
+}
+
 export const registerSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Valid email required"),
-  phone: z.string().min(7, "Valid phone number required"),
+  email: z.string().email("Valid email required").refine(
+    (email) => {
+      const domain = email.split('@')[1]?.toLowerCase();
+      return !BLOCKED_EMAIL_DOMAINS.includes(domain);
+    },
+    { message: "Please use your business email address (not Gmail, Yahoo, Hotmail, etc.)" }
+  ),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  phone: z.string().min(1, "Phone number is required").refine(
+    isValidUSPhone,
+    { message: "Please enter a valid US phone number (10 digits)" }
+  ),
   companyName: z.string().min(1, "Company name is required"),
+  accessCode: z.string().min(1, "Access code is required"),
 });
 
 export const magicLinkVerifySchema = z.object({
@@ -82,6 +119,15 @@ export const magicLinkVerifySchema = z.object({
 export const loginSchema = z.object({
   email: z.string().email("Valid email required"),
   password: z.string().min(1, "Password is required"),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Valid email required"),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Reset token is required"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 export const insertGroupSchema = createInsertSchema(groups).omit({
@@ -104,7 +150,7 @@ export const insertCensusEntrySchema = createInsertSchema(censusEntries).omit({
 });
 
 export const updateGroupStatusSchema = z.object({
-  status: z.enum(["pending_review", "under_review", "analyzing", "qualified", "not_qualified", "rates_available"]),
+  status: z.enum(["census_uploaded", "proposal_sent", "proposal_accepted", "client", "not_approved"]),
   score: z.number().min(0).max(100).optional(),
   riskScore: z.number().optional(),
   riskTier: z.enum(["preferred", "standard", "high"]).optional(),

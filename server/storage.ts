@@ -18,6 +18,8 @@ export interface IStorage {
   getUserByMagicToken(token: string): Promise<User | undefined>;
   createUser(user: Partial<InsertUser> & { fullName: string; email: string; magicToken?: string; magicTokenExpiry?: Date }): Promise<User>;
   updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
+  deleteUser(id: string): Promise<void>;
 
   getGroupsByUserId(userId: string): Promise<Group[]>;
   getAllGroups(): Promise<Group[]>;
@@ -57,8 +59,22 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
+  }
+
   async getGroupsByUserId(userId: string): Promise<Group[]> {
-    return db.select().from(groups).where(eq(groups.userId, userId)).orderBy(desc(groups.submittedAt));
+    console.log(`🔍 getGroupsByUserId called with userId: ${userId}`);
+    const result = await db.select().from(groups).where(eq(groups.userId, userId)).orderBy(desc(groups.submittedAt));
+    console.log(`🔍 Query returned ${result.length} groups`);
+    if (result.length > 0) {
+      console.log(`🔍 First group details:`, { id: result[0].id, userId: result[0].userId, companyName: result[0].companyName });
+    }
+    return result;
   }
 
   async getAllGroups(): Promise<Group[]> {

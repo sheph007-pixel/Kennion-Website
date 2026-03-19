@@ -8,6 +8,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import LandingPage from "@/pages/landing";
 import RegisterPage from "@/pages/register";
 import LoginPage from "@/pages/login";
+import ForgotPasswordPage from "@/pages/forgot-password";
+import ResetPasswordPage from "@/pages/reset-password";
 import AuthVerifyPage from "@/pages/auth-verify";
 import DashboardPage from "@/pages/dashboard";
 import AdminPage from "@/pages/admin";
@@ -66,6 +68,8 @@ function Router() {
       <Route path="/login">
         <PublicRoute component={LoginPage} />
       </Route>
+      <Route path="/forgot-password" component={ForgotPasswordPage} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
       <Route path="/auth/verify" component={AuthVerifyPage} />
       <Route path="/dashboard">
         <ProtectedRoute component={DashboardPage} />

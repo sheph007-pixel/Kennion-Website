@@ -26,4 +26,5 @@
 - `DATABASE_URL` (required) - PostgreSQL connection string
 - `SESSION_SECRET` - Express session secret
 - `RESEND_API_KEY` - Email service
+- `OPENAI_API_KEY` - Required for AI-powered CSV cleaning and data standardization
 - `PORT` - defaults to 5000
