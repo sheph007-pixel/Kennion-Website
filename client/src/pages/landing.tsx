@@ -90,7 +90,7 @@ function Navbar() {
   );
 }
 
-function VideoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function VideoModal({ open, onClose, videoId }: { open: boolean; onClose: () => void; videoId: string }) {
   if (!open) return null;
   return (
     <div
@@ -107,7 +107,7 @@ function VideoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
         </button>
         <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
           <iframe
-            src="https://player.vimeo.com/video/1004137913?autoplay=1"
+            src={`https://player.vimeo.com/video/${videoId}?autoplay=1`}
             className="absolute inset-0 w-full h-full rounded-lg"
             allow="autoplay; fullscreen; picture-in-picture"
             allowFullScreen
@@ -183,7 +183,7 @@ function HeroSection() {
           </div>
         </div>
       </div>
-      <VideoModal open={videoOpen} onClose={() => setVideoOpen(false)} />
+      <VideoModal open={videoOpen} onClose={() => setVideoOpen(false)} videoId="1004137913" />
     </section>
   );
 }
@@ -327,6 +327,7 @@ function FeaturesSection() {
 }
 
 function BenefitsSection() {
+  const [videoOpen, setVideoOpen] = useState(false);
   const benefits = [
     "Access to exclusive private benefit programs",
     "Average rate savings of 12-25% vs. market",
@@ -364,19 +365,42 @@ function BenefitsSection() {
               </Link>
             </div>
           </div>
+
+          {/* Video thumbnail replacing the static card */}
+          <div>
+            <button
+              onClick={() => setVideoOpen(true)}
+              className="group relative block w-full overflow-hidden rounded-xl border shadow-lg hover:shadow-xl transition-all"
+            >
+              <img
+                src="https://vumbnail.com/1060997796.jpg"
+                alt="See how Kennion benefits work"
+                className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary shadow-lg">
+                  <Play className="h-7 w-7 text-primary-foreground ml-1" />
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Plans summary bar below */}
+        <div className="mt-14">
           <Card className="p-8">
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-10">
+              <div className="flex items-center gap-4 shrink-0">
                 <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary">
                   <Shield className="h-6 w-6 text-primary-foreground" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-primary">Benefits Program</div>
+                  <div className="text-xl font-bold text-primary">Benefits Program</div>
                   <div className="text-sm text-muted-foreground">Group Health, Dental, Vision & More</div>
                 </div>
               </div>
-              <div className="h-px bg-border" />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="hidden md:block w-px h-12 bg-border" />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 flex-1">
                 <div>
                   <div className="text-xl font-bold">Health</div>
                   <div className="text-sm text-muted-foreground">15+ Plans</div>
@@ -398,6 +422,7 @@ function BenefitsSection() {
           </Card>
         </div>
       </div>
+      <VideoModal open={videoOpen} onClose={() => setVideoOpen(false)} videoId="1060997796" />
     </section>
   );
 }
