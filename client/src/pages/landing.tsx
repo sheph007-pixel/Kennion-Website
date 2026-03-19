@@ -19,10 +19,13 @@ import {
   MapPin,
   Play,
   X,
+  Menu,
 } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 
 function Navbar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="mx-auto max-w-7xl px-6 relative">
@@ -47,7 +50,7 @@ function Navbar() {
             </a>
           </div>
 
-          {/* Right: Client Links */}
+          {/* Right: Client Links (desktop) */}
           <div className="hidden md:flex items-center gap-2">
             <span className="text-xs text-muted-foreground font-medium">Existing Clients:</span>
             <a
@@ -68,10 +71,19 @@ function Navbar() {
               Login
             </a>
           </div>
+
+          {/* Mobile hamburger button */}
+          <button
+            className="md:hidden flex items-center justify-center h-10 w-10 rounded-md hover:bg-accent transition-colors"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
 
-        {/* Tab Section: CTAs sit on the border */}
-        <div className="absolute right-6 top-full z-10">
+        {/* Tab Section: CTAs sit on the border (desktop only) */}
+        <div className="hidden md:block absolute right-6 top-full z-10">
           <div className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border bg-background shadow-md">
             <Link href="/login">
               <Button variant="ghost" size="default" data-testid="link-login">
@@ -80,12 +92,68 @@ function Navbar() {
             </Link>
             <Link href="/register">
               <Button size="default" className="font-semibold shadow-sm" data-testid="link-register">
-                Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                Submit Your Group <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
         </div>
       </div>
+
+      {/* Mobile menu drawer */}
+      {mobileOpen && (
+        <div className="md:hidden border-t bg-background">
+          <div className="px-6 py-4 space-y-1">
+            <a href="#how-it-works" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors">
+              How It Works
+            </a>
+            <a href="#features" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors">
+              Platform
+            </a>
+            <a href="#benefits" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors">
+              Benefits
+            </a>
+            <a href="#contact" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors">
+              Contact
+            </a>
+
+            <div className="pt-3 border-t mt-3 space-y-2">
+              <Link href="/register" onClick={() => setMobileOpen(false)}>
+                <Button className="w-full font-semibold" size="default">
+                  Submit Your Group <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href="/login" onClick={() => setMobileOpen(false)}>
+                <Button variant="outline" className="w-full" size="default">
+                  Log In
+                </Button>
+              </Link>
+            </div>
+
+            <div className="pt-3 border-t mt-3">
+              <span className="text-xs text-muted-foreground font-medium">Existing Clients</span>
+              <div className="mt-1.5 flex items-center gap-3">
+                <a
+                  href="https://go.kennion.com/support"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Support
+                </a>
+                <span className="text-muted-foreground/50">•</span>
+                <a
+                  href="http://go.kennion.com/enroll"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Login
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
@@ -360,7 +428,7 @@ function BenefitsSection() {
             <div className="mt-8">
               <Link href="/register">
                 <Button data-testid="button-benefits-cta">
-                  Start Your Qualification <ArrowRight className="ml-1 h-4 w-4" />
+                  Submit Your Group <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </Link>
             </div>
@@ -448,7 +516,7 @@ function ContactSection() {
             <div className="mt-5">
               <Link href="/register">
                 <Button data-testid="button-contact-proposal">
-                  Request Proposal <ArrowRight className="ml-1 h-4 w-4" />
+                  Submit Your Group <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </Link>
             </div>
@@ -532,7 +600,7 @@ function CTASection() {
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link href="/register">
             <Button size="lg" variant="secondary" data-testid="button-cta-register">
-              Create Your Account <ArrowRight className="ml-1 h-4 w-4" />
+              Submit Your Group <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </Link>
         </div>
