@@ -84,17 +84,22 @@ function Navbar() {
 
         {/* Tab Section: Sales CTAs sit on the border (desktop only) */}
         <div className="hidden md:block absolute right-6 top-full z-10">
-          <div className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border bg-background shadow-md">
-            <Link href="/login">
-              <Button variant="ghost" size="default" data-testid="link-login">
-                Log In
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button size="default" className="font-semibold shadow-sm" data-testid="link-register">
-                Submit Your Group <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+          <div className="rounded-lg border border-border bg-background shadow-md overflow-hidden">
+            <div className="px-4 py-1.5 bg-muted/50 border-b border-border">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Interested in a proposal?</span>
+            </div>
+            <div className="flex items-center gap-3 px-4 py-2">
+              <Link href="/login">
+                <Button variant="ghost" size="default" data-testid="link-login">
+                  Log In
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button size="default" className="font-semibold shadow-sm" data-testid="link-register">
+                  Submit Your Group <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
