@@ -1528,12 +1528,13 @@ export async function registerRoutes(
 
       // Map census fields to likely column names
       const fieldMappings: Record<string, string[]> = {
-        firstName: ["first name", "firstname", "first", "first_name"],
-        lastName: ["last name", "lastname", "last", "last_name"],
+        firstName: ["first name", "firstname", "first", "first_name", "name first"],
+        lastName: ["last name", "lastname", "last", "last_name", "name last"],
         dateOfBirth: ["date of birth", "dob", "dateofbirth", "birth date", "birthdate", "date_of_birth"],
         gender: ["gender", "sex"],
         zipCode: ["zip code", "zipcode", "zip", "postal code", "zip_code"],
         relationship: ["relationship", "type", "relation", "coverage type", "member type", "dependent type"],
+        companyName: ["company name", "companyname", "company", "company_name", "group", "group name", "employer"],
       };
 
       const colMap: Record<string, number> = {};
@@ -1546,7 +1547,9 @@ export async function registerRoutes(
         }
       }
 
+      log(`Proposal: Headers found in template: ${JSON.stringify(headers)}`, "proposal");
       log(`Proposal: Mapped columns: ${JSON.stringify(colMap)} for sheet "${matchedSheet}"`, "proposal");
+      log(`Proposal: Census entries to inject: ${census.length}`, "proposal");
 
       // Clear existing data rows (row 2+) in the census range
       for (let r = 1; r <= range.e.r; r++) {
@@ -1561,7 +1564,7 @@ export async function registerRoutes(
         const r = index + 1; // row 0 = headers, row 1+ = data
 
         const writeCell = (col: number | undefined, value: string) => {
-          if (col === undefined) return;
+          if (col === undefined || value == null) return;
           const addr = XLSX.utils.encode_cell({ r, c: col });
           worksheet[addr] = { t: "s", v: value };
         };
@@ -1572,6 +1575,8 @@ export async function registerRoutes(
         writeCell(colMap.gender, entry.gender);
         writeCell(colMap.zipCode, entry.zipCode);
         writeCell(colMap.relationship, entry.relationship);
+        // Fill Company Name column with the group's company name for every row
+        writeCell(colMap.companyName, group.companyName);
       });
 
       // Update the sheet range to include new data
