@@ -26,6 +26,7 @@ import { cleanCSVWithAI, generateValidationGuidance } from "./ai-csv-cleaner";
 import { generateActuarialAnalysis } from "./ai-analysis";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const templateUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 declare module "express-session" {
   interface SessionData {
@@ -1420,7 +1421,7 @@ export async function registerRoutes(
   });
 
   // POST — upload an XLSM template
-  app.post("/api/admin/proposal/upload-template", requireAdmin, upload.single("template"), async (req: Request, res: Response) => {
+  app.post("/api/admin/proposal/upload-template", requireAdmin, templateUpload.single("template"), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
