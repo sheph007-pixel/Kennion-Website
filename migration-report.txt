@@ -1,0 +1,53 @@
+=== DATABASE MIGRATION VERIFICATION REPORT ===
+Timestamp: Thu Mar 19 15:29:12 UTC 2026
+
+=== NEW DATABASE (target) ===
+--- Tables ---
+Did not find any relations.
+
+--- Users ---
+ERROR:  relation "users" does not exist
+LINE 1: ...ELECT id, full_name, email, role, created_at FROM users ORDE...
+                                                             ^
+No users table
+
+--- Groups ---
+ERROR:  relation "groups" does not exist
+LINE 1: ...any_name, contact_name, status, submitted_at FROM groups ORD...
+                                                             ^
+No groups table
+
+--- Census entries count ---
+ERROR:  relation "census_entries" does not exist
+LINE 1: SELECT count(*) as census_count FROM census_entries;
+                                             ^
+No census_entries table
+
+=== OLD DATABASE (source) ===
+--- Users count ---
+ user_count 
+------------
+          5
+(1 row)
+
+
+--- Groups count ---
+ group_count 
+-------------
+          11
+(1 row)
+
+
+--- Census entries count ---
+ census_count 
+--------------
+          374
+(1 row)
+
+
+=== COMPARISON ===
+Users: OLD=5 NEW=
+Groups: OLD=11 NEW=
+Census: OLD=374 NEW=
+
+RESULT: MIGRATION INCOMPLETE - Counts differ. Railway may need DATABASE_URL updated to new instance.
