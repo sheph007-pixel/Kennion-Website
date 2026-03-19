@@ -1,8 +1,8 @@
-name: Merge to main
+name: Auto-merge Claude branches to main
 on:
   push:
     branches:
-      - 'claude/fix-kennion-database-instance-ZThAG'
+      - 'claude/**'
 
 permissions:
   contents: write
@@ -19,8 +19,9 @@ jobs:
 
       - name: Merge branch into main
         run: |
+          BRANCH="${GITHUB_REF#refs/heads/}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin claude/fix-kennion-database-instance-ZThAG
-          git merge origin/claude/fix-kennion-database-instance-ZThAG --no-edit -m "Merge: Clean up after successful database migration"
+          git fetch origin "$BRANCH"
+          git merge "origin/$BRANCH" --no-edit -m "Auto-merge $BRANCH into main"
           git push origin main
