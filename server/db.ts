@@ -2,20 +2,22 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "@shared/schema";
 
-const databaseUrl = process.env.DATABASE_URL || "";
+// Prefer private/internal URL for Railway same-project connections
+const databaseUrl = process.env.DATABASE_PRIVATE_URL || process.env.DATABASE_URL || "";
 
 // Log connection target (without credentials) for debugging
 try {
   const parsed = new URL(databaseUrl);
-  console.log(`Database target: ${parsed.hostname}:${parsed.port || 5432}${parsed.pathname}`);
+  const source = process.env.DATABASE_PRIVATE_URL ? "DATABASE_PRIVATE_URL" : "DATABASE_URL";
+  console.log(`Database [${source}]: ${parsed.hostname}:${parsed.port || 5432}${parsed.pathname}`);
 } catch {
-  console.error("DATABASE_URL is not set or invalid");
+  console.error("No valid database URL found. Check DATABASE_PRIVATE_URL or DATABASE_URL env vars.");
 }
 
-// SSL is only needed for external connections. Railway internal connections
-// (same project) don't support SSL and will ECONNRESET if SSL is attempted.
-// Use DATABASE_SSL=true to explicitly enable SSL for external databases.
-const useSSL = process.env.DATABASE_SSL === "true";
+// Internal Railway connections don't need SSL
+// Public connections (proxy.rlwy.net) need SSL
+const isInternalConnection = databaseUrl.includes(".railway.internal") || databaseUrl.includes("sslmode=disable");
+const useSSL = !isInternalConnection && (databaseUrl.includes("proxy.rlwy.net") || process.env.DATABASE_SSL === "true");
 
 export const pool = new pg.Pool({
   connectionString: databaseUrl,
