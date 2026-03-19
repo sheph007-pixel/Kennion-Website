@@ -2,21 +2,24 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "@shared/schema";
 
-const isProduction = process.env.NODE_ENV === "production";
 const databaseUrl = process.env.DATABASE_URL || "";
 
-// Railway internal connections use sslmode=disable in the URL
-// Only enable SSL if the URL doesn't explicitly disable it
-function getSslConfig(): boolean | { rejectUnauthorized: boolean } {
-  if (!isProduction) return false;
-  if (databaseUrl.includes("sslmode=disable")) return false;
-  if (databaseUrl.includes(".railway.internal")) return false;
-  return { rejectUnauthorized: false };
+// Log connection target (without credentials) for debugging
+try {
+  const parsed = new URL(databaseUrl);
+  console.log(`Database target: ${parsed.hostname}:${parsed.port || 5432}${parsed.pathname}`);
+} catch {
+  console.error("DATABASE_URL is not set or invalid");
 }
+
+// SSL is only needed for external connections. Railway internal connections
+// (same project) don't support SSL and will ECONNRESET if SSL is attempted.
+// Use DATABASE_SSL=true to explicitly enable SSL for external databases.
+const useSSL = process.env.DATABASE_SSL === "true";
 
 export const pool = new pg.Pool({
   connectionString: databaseUrl,
-  ssl: getSslConfig(),
+  ssl: useSSL ? { rejectUnauthorized: false } : false,
   max: 5,
   min: 1,
   idleTimeoutMillis: 30000,
@@ -36,7 +39,7 @@ export async function testConnection(retries = 5, delay = 2000): Promise<boolean
       const client = await pool.connect();
       await client.query("SELECT 1");
       client.release();
-      console.log("Database connection verified");
+      console.log("Database connection verified successfully");
       return true;
     } catch (err: any) {
       console.error(`Database connection attempt ${i + 1}/${retries} failed: ${err.message}`);
