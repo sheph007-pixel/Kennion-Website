@@ -91,7 +91,7 @@ function Navbar() {
             <div className="flex items-center gap-3 px-4 py-2">
               <Link href="/login">
                 <Button variant="ghost" size="default" data-testid="link-login">
-                  Log In
+                  Sign In
                 </Button>
               </Link>
               <Link href="/register">
@@ -121,39 +121,43 @@ function Navbar() {
               Contact
             </a>
 
-            {/* Get Started (sales) */}
-            <div className="pt-3 border-t mt-3 space-y-2">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Sales Portal</span>
-              <Link href="/register" onClick={() => setMobileOpen(false)}>
-                <Button className="w-full font-semibold" size="default">
-                  Submit Your Group <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/login" onClick={() => setMobileOpen(false)}>
-                <Button variant="outline" className="w-full" size="default">
-                  Log In
-                </Button>
-              </Link>
+            {/* Sales Portal section */}
+            <div className="mt-4 -mx-6 px-6 py-4 bg-primary/5 border-y border-primary/10">
+              <span className="text-[10px] uppercase tracking-widest text-primary font-bold">Sales Portal</span>
+              <p className="text-xs text-muted-foreground mt-0.5 mb-3">For groups in the proposal process.</p>
+              <div className="space-y-2">
+                <Link href="/register" onClick={() => setMobileOpen(false)}>
+                  <Button className="w-full font-semibold" size="default">
+                    Submit Your Group <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link href="/login" onClick={() => setMobileOpen(false)}>
+                  <Button variant="outline" className="w-full" size="default">
+                    Sign In
+                  </Button>
+                </Link>
+              </div>
             </div>
 
-            {/* Existing Clients */}
-            <div className="pt-3 border-t mt-3">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Existing Clients</span>
-              <div className="mt-2 flex items-center gap-3 px-1">
+            {/* Existing Clients section */}
+            <div className="mt-4 -mx-6 px-6 py-4 bg-muted/50 border-y border-border">
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Existing Clients</span>
+              <p className="text-xs text-muted-foreground mt-0.5 mb-3">Already a Kennion client or member?</p>
+              <div className="flex items-center gap-4">
                 <a
                   href="https://go.kennion.com/support"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
                 >
                   Support
                 </a>
-                <span className="text-muted-foreground/50">•</span>
+                <span className="text-muted-foreground/30">|</span>
                 <a
                   href="http://go.kennion.com/enroll"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
                 >
                   Enrollment
                 </a>
