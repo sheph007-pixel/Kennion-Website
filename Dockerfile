@@ -1,8 +1,9 @@
 FROM node:20-slim
 
-# Install LibreOffice Calc for XLSM processing and PDF export
+# Install LibreOffice Calc + Python3 for XLSM macro execution and PDF export
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice-calc \
+    python3 \
     fonts-liberation \
     fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
