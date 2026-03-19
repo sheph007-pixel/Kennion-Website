@@ -86,7 +86,7 @@ function Navbar() {
         <div className="hidden md:block absolute right-6 top-full z-10">
           <div className="rounded-lg border border-border bg-background shadow-md overflow-hidden">
             <div className="px-4 py-1.5 bg-muted/50 border-b border-border">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Interested in a proposal?</span>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Sales Portal</span>
             </div>
             <div className="flex items-center gap-3 px-4 py-2">
               <Link href="/login">
@@ -123,7 +123,7 @@ function Navbar() {
 
             {/* Get Started (sales) */}
             <div className="pt-3 border-t mt-3 space-y-2">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Get Started</span>
+              <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Sales Portal</span>
               <Link href="/register" onClick={() => setMobileOpen(false)}>
                 <Button className="w-full font-semibold" size="default">
                   Submit Your Group <ArrowRight className="ml-2 h-4 w-4" />
