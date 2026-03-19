@@ -20,10 +20,10 @@ export async function seedDatabase() {
         await storage.updateUser(admin.id, { verified: true, role: "admin" });
         log("Admin account created: admin@kennion.com / admin123");
       }
-    } else if (!existingAdmin.password) {
-      // Ensure admin has a password (may have been created via magic link)
+    } else {
+      // Always ensure admin has correct password, role, and is verified
       await storage.updateUser(existingAdmin.id, { password: hashedPassword, verified: true, role: "admin" });
-      log("Admin password reset: admin@kennion.com / admin123");
+      log("Admin account updated: admin@kennion.com / admin123");
     }
   } catch (err: any) {
     log(`Seed error: ${err.message}`);
