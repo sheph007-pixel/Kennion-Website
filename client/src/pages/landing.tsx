@@ -128,11 +128,6 @@ function HeroSection() {
       <div className="absolute bottom-0 left-0 w-72 h-72 bg-primary/3 rounded-full blur-3xl dark:bg-primary/8" />
       <div className="relative mx-auto max-w-7xl px-6 py-20 md:py-28 lg:py-32">
         <div className="mx-auto max-w-3xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-md border bg-card px-3 py-1.5">
-            <Activity className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs font-medium text-muted-foreground">AI-Powered Risk Analytics</span>
-          </div>
-
           {/* Video Thumbnail */}
           <div className="mb-8 mx-auto max-w-2xl">
             <button
