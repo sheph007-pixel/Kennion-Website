@@ -1101,21 +1101,31 @@ function ProposalGenerator() {
   const handleGenerate = async (groupId: string, companyName: string) => {
     setIsGenerating(groupId);
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
+
       const res = await fetch(`/api/admin/proposal/generate/${groupId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targetSheet: selectedSheet }),
         credentials: "include",
+        signal: controller.signal,
       });
 
+      clearTimeout(timeout);
+
       if (!res.ok) {
-        // Try to parse error JSON, fall back to status text
         let errorMsg = "Generation failed";
-        try {
-          const error = await res.json();
-          errorMsg = error.message || errorMsg;
-        } catch {
-          errorMsg = `Server error (${res.status})`;
+        const contentType = res.headers.get("Content-Type") || "";
+        if (contentType.includes("application/json")) {
+          try {
+            const error = await res.json();
+            errorMsg = error.message || errorMsg;
+          } catch {
+            errorMsg = `Server error (${res.status})`;
+          }
+        } else {
+          errorMsg = `Server error (${res.status}): ${res.statusText}`;
         }
         throw new Error(errorMsg);
       }
@@ -1139,7 +1149,9 @@ function ProposalGenerator() {
 
       toast({ title: "Proposal generated", description: `Downloaded proposal for ${companyName}` });
     } catch (err: any) {
-      toast({ title: "Generation failed", description: err.message, variant: "destructive" });
+      const msg = err.name === "AbortError" ? "Request timed out. The template may be too large." : (err.message || "Unknown error");
+      console.error("Proposal generation error:", err);
+      toast({ title: "Generation failed", description: msg, variant: "destructive" });
     } finally {
       setIsGenerating(null);
     }
