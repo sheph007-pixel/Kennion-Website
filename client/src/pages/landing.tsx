@@ -539,7 +539,7 @@ function ContactSection() {
           <div className="mt-10">
             <h3 className="text-xl font-bold">Current Client Or Member?</h3>
             <p className="mt-3 text-muted-foreground">
-              Please open a support ticket below — we're here to help.
+              Please open a support ticket below. We are here to help.
             </p>
             <div className="mt-5">
               <a href="https://go.kennion.com/support" target="_blank" rel="noopener noreferrer">
@@ -550,48 +550,37 @@ function ContactSection() {
             </div>
           </div>
 
-          <div className="mt-10 h-px bg-border" />
-
-          <div className="mt-10">
-            <h3 className="text-xl font-bold">Contact Information</h3>
-            <ul className="mt-4 space-y-3">
-              <li className="flex items-center gap-3">
-                <Mail className="h-4 w-4 shrink-0 text-primary" />
-                <span className="text-sm">
-                  <span className="font-medium">Email:</span>{" "}
-                  <a href="mailto:support@kennion.com" className="text-primary hover:underline">
-                    support@kennion.com
-                  </a>
-                </span>
-              </li>
-              <li className="flex items-center gap-3">
-                <MapPin className="h-4 w-4 shrink-0 text-primary" />
-                <span className="text-sm">
-                  <span className="font-medium">Address:</span> 2828 Old 280 Court, Suite 110, Vestavia, Alabama 35243
-                </span>
-              </li>
-            </ul>
-          </div>
         </div>
       </div>
 
-      {/* Full-width building banner */}
-      <div className="mt-20 relative overflow-hidden">
-        <div className="relative h-[400px] md:h-[500px]">
-          <img
-            src="https://images.squarespace-cdn.com/content/v1/650a374c4246d47a3dbe7afb/1695168363204-7SHD3HNS7AARCJU8LO2L/The%2BLindsey%2BBuilding-14.jpg"
-            alt="Kennion Benefit Advisors headquarters"
-            className="absolute inset-0 w-full h-full object-cover object-center"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-8 md:p-14">
-            <div className="mx-auto max-w-7xl">
-              <h3 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
-                Kennion Benefit Advisors
-              </h3>
-              <p className="mt-2 text-white/80 text-sm md:text-base">
-                Vestavia Hills, Alabama
-              </p>
+      {/* Building photo and company info */}
+      <div className="mt-16 mx-auto max-w-7xl px-6">
+        <div className="grid gap-8 md:grid-cols-2 items-center">
+          <div className="overflow-hidden rounded-xl border shadow-lg">
+            <img
+              src="https://images.squarespace-cdn.com/content/v1/650a374c4246d47a3dbe7afb/1695168363204-7SHD3HNS7AARCJU8LO2L/The%2BLindsey%2BBuilding-14.jpg"
+              alt="Kennion Benefit Advisors headquarters"
+              className="w-full aspect-[4/3] object-cover object-center"
+            />
+          </div>
+          <div>
+            <h3 className="text-2xl md:text-3xl font-bold tracking-tight">
+              Kennion Benefit Advisors
+            </h3>
+            <p className="mt-2 text-muted-foreground">
+              Vestavia Hills, Alabama
+            </p>
+            <div className="mt-6 space-y-3">
+              <div className="flex items-center gap-3">
+                <MapPin className="h-4 w-4 shrink-0 text-primary" />
+                <span className="text-sm">2828 Old 280 Court, Suite 110, Vestavia, Alabama 35243</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Mail className="h-4 w-4 shrink-0 text-primary" />
+                <a href="mailto:support@kennion.com" className="text-sm text-primary hover:underline">
+                  support@kennion.com
+                </a>
+              </div>
             </div>
           </div>
         </div>
