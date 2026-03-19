@@ -5,7 +5,7 @@
  *   3. Export the proposal sheets to PDF via LibreOffice
  */
 import XLSX from "xlsx";
-import { execSync, exec } from "child_process";
+import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import type { Group, CensusEntry } from "@shared/schema";
