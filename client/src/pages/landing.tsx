@@ -573,7 +573,7 @@ function ContactSection() {
             <div className="mt-6 space-y-3">
               <div className="flex items-center gap-3">
                 <MapPin className="h-4 w-4 shrink-0 text-primary" />
-                <span className="text-sm">2828 Old 280 Court, Suite 110, Vestavia, Alabama 35243</span>
+                <span className="text-sm">2828 Old 280 Court, Vestavia, Alabama 35243</span>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="h-4 w-4 shrink-0 text-primary" />
