@@ -9,6 +9,7 @@ import fs from "fs";
 import XLSX from "xlsx";
 import bcrypt from "bcryptjs";
 import { storage } from "./storage";
+import { generateProposal } from "./proposal-engine";
 import {
   magicLinkRequestSchema,
   magicLinkVerifySchema,
@@ -1471,19 +1472,12 @@ export async function registerRoutes(
     }
   });
 
-  // POST — generate proposal by injecting census data into the XLSM template
+  // POST — generate proposal: inject census → run LibreOffice → PDF → store
   app.post("/api/admin/proposal/generate/:groupId", requireAdmin, async (req: Request, res: Response) => {
     try {
       const groupId = req.params.groupId as string;
       const { targetSheet } = req.body as { targetSheet?: string };
 
-      // Find the template
-      const templates = fs.readdirSync(TEMPLATE_DIR).filter((f) => /\.xlsm$/i.test(f));
-      if (templates.length === 0) {
-        return res.status(400).json({ message: "No XLSM template uploaded. Please upload a template first." });
-      }
-
-      // Load group and census data
       const group = await storage.getGroup(groupId);
       if (!group) {
         return res.status(404).json({ message: "Group not found" });
@@ -1494,113 +1488,108 @@ export async function registerRoutes(
         return res.status(400).json({ message: "No census entries found for this group" });
       }
 
-      // Read the template with SheetJS — bookVBA preserves macros
-      const templatePath = path.join(TEMPLATE_DIR, templates[0]);
-      const fileBuffer = fs.readFileSync(templatePath);
-      const workbook = XLSX.read(fileBuffer, { type: "buffer", bookVBA: true });
+      // Run the full pipeline: inject census → LibreOffice macros → PDF
+      const result = await generateProposal(group, census, targetSheet || "Census");
 
-      // Find the target sheet (default: "Census")
-      const sheetName = targetSheet || "Census";
-      let matchedSheet = workbook.SheetNames.find((s) => s === sheetName);
-      if (!matchedSheet) {
-        matchedSheet = workbook.SheetNames.find((s) => s.toLowerCase() === sheetName.toLowerCase());
-      }
-
-      if (!matchedSheet) {
-        return res.status(400).json({
-          message: `Sheet "${sheetName}" not found in the template. Available sheets: ${workbook.SheetNames.join(", ")}`,
-          availableSheets: workbook.SheetNames,
-        });
-      }
-
-      const worksheet = workbook.Sheets[matchedSheet];
-
-      // Read header row (row 1) to find column mapping
-      const range = XLSX.utils.decode_range(worksheet["!ref"] || "A1");
-      const headers: Record<string, number> = {};
-      for (let col = range.s.c; col <= range.e.c; col++) {
-        const cellAddr = XLSX.utils.encode_cell({ r: 0, c: col });
-        const cell = worksheet[cellAddr];
-        if (cell && cell.v != null) {
-          headers[String(cell.v).trim().toLowerCase()] = col;
-        }
-      }
-
-      // Map census fields to likely column names
-      const fieldMappings: Record<string, string[]> = {
-        firstName: ["first name", "firstname", "first", "first_name", "name first"],
-        lastName: ["last name", "lastname", "last", "last_name", "name last"],
-        dateOfBirth: ["date of birth", "dob", "dateofbirth", "birth date", "birthdate", "date_of_birth"],
-        gender: ["gender", "sex"],
-        zipCode: ["zip code", "zipcode", "zip", "postal code", "zip_code"],
-        relationship: ["relationship", "type", "relation", "coverage type", "member type", "dependent type"],
-        companyName: ["company name", "companyname", "company", "company_name", "group", "group name", "employer"],
-      };
-
-      const colMap: Record<string, number> = {};
-      for (const [field, aliases] of Object.entries(fieldMappings)) {
-        for (const alias of aliases) {
-          if (headers[alias] !== undefined) {
-            colMap[field] = headers[alias];
-            break;
-          }
-        }
-      }
-
-      log(`Proposal: Headers found in template: ${JSON.stringify(headers)}`, "proposal");
-      log(`Proposal: Mapped columns: ${JSON.stringify(colMap)} for sheet "${matchedSheet}"`, "proposal");
-      log(`Proposal: Census entries to inject: ${census.length}`, "proposal");
-
-      // Clear existing data rows (row 2+) in the census range
-      for (let r = 1; r <= range.e.r; r++) {
-        for (let c = range.s.c; c <= range.e.c; c++) {
-          const addr = XLSX.utils.encode_cell({ r, c });
-          delete worksheet[addr];
-        }
-      }
-
-      // Write census data starting from row 2 (index 1)
-      census.forEach((entry, index) => {
-        const r = index + 1; // row 0 = headers, row 1+ = data
-
-        const writeCell = (col: number | undefined, value: string) => {
-          if (col === undefined || value == null) return;
-          const addr = XLSX.utils.encode_cell({ r, c: col });
-          worksheet[addr] = { t: "s", v: value };
-        };
-
-        writeCell(colMap.firstName, entry.firstName);
-        writeCell(colMap.lastName, entry.lastName);
-        writeCell(colMap.dateOfBirth, entry.dateOfBirth);
-        writeCell(colMap.gender, entry.gender);
-        writeCell(colMap.zipCode, entry.zipCode);
-        writeCell(colMap.relationship, entry.relationship);
-        // Fill Company Name column with the group's company name for every row
-        writeCell(colMap.companyName, group.companyName);
+      // Store proposal record in database
+      const proposal = await storage.createProposal({
+        groupId,
+        pdfPath: result.pdfPath,
+        fileName: result.fileName,
+        ratesData: result.ratesData,
       });
 
-      // Update the sheet range to include new data
-      const newEndRow = Math.max(range.e.r, census.length);
-      worksheet["!ref"] = XLSX.utils.encode_range({
-        s: { r: 0, c: range.s.c },
-        e: { r: newEndRow, c: range.e.c },
+      // Update group status to proposal_sent
+      await storage.updateGroup(groupId, { status: "proposal_sent" });
+
+      res.json({
+        message: "Proposal generated successfully",
+        proposalId: proposal.id,
+        fileName: result.fileName,
       });
-
-      // Write back as XLSM (bookType: "xlsm" preserves macros)
-      const outBuffer = XLSX.write(workbook, {
-        type: "buffer",
-        bookType: "xlsm",
-        bookVBA: true,
-      });
-
-      const outputName = `Proposal_${group.companyName.replace(/[^a-zA-Z0-9]/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsm`;
-
-      res.setHeader("Content-Type", "application/vnd.ms-excel.sheet.macroEnabled.12");
-      res.setHeader("Content-Disposition", `attachment; filename="${outputName}"`);
-      res.send(Buffer.from(outBuffer));
     } catch (err: any) {
       log(`Proposal generation error: ${err.message}`, "proposal");
       res.status(500).json({ message: err.message || "Failed to generate proposal" });
+    }
+  });
+
+  // GET — download proposal PDF (admin)
+  app.get("/api/admin/proposal/:proposalId/pdf", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const proposal = await storage.getProposal(req.params.proposalId);
+      if (!proposal) {
+        return res.status(404).json({ message: "Proposal not found" });
+      }
+
+      if (!fs.existsSync(proposal.pdfPath)) {
+        return res.status(404).json({ message: "PDF file not found on server" });
+      }
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="${proposal.fileName}"`);
+      const fileStream = fs.createReadStream(proposal.pdfPath);
+      fileStream.pipe(res);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Failed to serve PDF" });
+    }
+  });
+
+  // GET — list proposals for a group (admin)
+  app.get("/api/admin/proposal/group/:groupId", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const proposals = await storage.getProposalsByGroupId(req.params.groupId);
+      res.json(proposals);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Failed to fetch proposals" });
+    }
+  });
+
+  // GET — view proposal PDF (client — for their own group)
+  app.get("/api/proposals/:proposalId/pdf", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const proposal = await storage.getProposal(req.params.proposalId);
+      if (!proposal) {
+        return res.status(404).json({ message: "Proposal not found" });
+      }
+
+      // Verify the user owns this group
+      const group = await storage.getGroup(proposal.groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+
+      if (group.userId !== req.session.userId && req.session.role !== "admin") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      if (!fs.existsSync(proposal.pdfPath)) {
+        return res.status(404).json({ message: "PDF file not found" });
+      }
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="${proposal.fileName}"`);
+      fs.createReadStream(proposal.pdfPath).pipe(res);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Failed to serve PDF" });
+    }
+  });
+
+  // GET — list proposals for a group (client — for their own groups)
+  app.get("/api/groups/:groupId/proposals", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const group = await storage.getGroup(req.params.groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+
+      if (group.userId !== req.session.userId && req.session.role !== "admin") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const proposals = await storage.getProposalsByGroupId(req.params.groupId);
+      res.json(proposals);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Failed to fetch proposals" });
     }
   });
 

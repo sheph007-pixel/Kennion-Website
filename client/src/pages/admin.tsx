@@ -1019,6 +1019,34 @@ function EditUserDialog({
   );
 }
 
+function ProposalStatusCell({ groupId }: { groupId: string }) {
+  const { data: proposals } = useQuery<any[]>({
+    queryKey: ["/api/admin/proposal/group", groupId],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/proposal/group/${groupId}`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  if (!proposals || proposals.length === 0) {
+    return <span className="text-xs text-muted-foreground">No PDF</span>;
+  }
+
+  const latest = proposals[0];
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="gap-1.5 text-green-700 border-green-300 hover:bg-green-50"
+      onClick={() => window.open(`/api/admin/proposal/${latest.id}/pdf`, "_blank")}
+    >
+      <FileText className="h-3.5 w-3.5" />
+      View PDF
+    </Button>
+  );
+}
+
 function ProposalGenerator() {
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
@@ -1102,7 +1130,7 @@ function ProposalGenerator() {
     setIsGenerating(groupId);
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
+      const timeout = setTimeout(() => controller.abort(), 180000); // 3 min timeout for LibreOffice
 
       const res = await fetch(`/api/admin/proposal/generate/${groupId}`, {
         method: "POST",
@@ -1130,26 +1158,18 @@ function ProposalGenerator() {
         throw new Error(errorMsg);
       }
 
-      // Download the file
-      const blob = await res.blob();
-      if (blob.size === 0) {
-        throw new Error("Received empty file from server");
+      const data = await res.json();
+      toast({ title: "Proposal generated!", description: `PDF proposal created for ${companyName} and posted to their group.` });
+
+      // Refresh the groups list to show updated status
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/groups"] });
+
+      // Open the PDF in a new tab
+      if (data.proposalId) {
+        window.open(`/api/admin/proposal/${data.proposalId}/pdf`, "_blank");
       }
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      const disposition = res.headers.get("Content-Disposition");
-      const match = disposition?.match(/filename="(.+)"/);
-      a.download = match?.[1] || `Proposal_${companyName.replace(/[^a-zA-Z0-9]/g, "_")}.xlsm`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast({ title: "Proposal generated", description: `Downloaded proposal for ${companyName}` });
     } catch (err: any) {
-      const msg = err.name === "AbortError" ? "Request timed out. The template may be too large." : (err.message || "Unknown error");
+      const msg = err.name === "AbortError" ? "Request timed out. LibreOffice may need more time." : (err.message || "Unknown error");
       console.error("Proposal generation error:", err);
       toast({ title: "Generation failed", description: msg, variant: "destructive" });
     } finally {
@@ -1285,6 +1305,7 @@ function ProposalGenerator() {
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Contact</th>
                   <th className="px-4 py-3 text-center font-medium text-muted-foreground">Lives</th>
                   <th className="px-4 py-3 text-center font-medium text-muted-foreground">Status</th>
+                  <th className="px-4 py-3 text-center font-medium text-muted-foreground">Proposal</th>
                   <th className="px-4 py-3 text-center font-medium text-muted-foreground">Generate</th>
                 </tr>
               </thead>
@@ -1303,6 +1324,9 @@ function ProposalGenerator() {
                             {STATUS_OPTIONS.find((o) => o.value === g.status)?.label || g.status}
                           </span>
                         </div>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <ProposalStatusCell groupId={g.id} />
                       </td>
                       <td className="px-4 py-3 text-center">
                         <Button

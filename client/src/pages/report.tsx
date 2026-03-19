@@ -248,6 +248,16 @@ export default function ReportPage() {
     enabled: !!groupId,
   });
 
+  const { data: proposals } = useQuery<any[]>({
+    queryKey: ["/api/groups", groupId, "proposals"],
+    queryFn: async () => {
+      const res = await fetch(`/api/groups/${groupId}/proposals`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!groupId,
+  });
+
   // Helper function to calculate age from date of birth
   const calculateAge = (dateOfBirth: string): number => {
     const birthDate = new Date(dateOfBirth);
@@ -593,8 +603,39 @@ export default function ReportPage() {
             <Button variant="default" onClick={handlePrint} data-testid="button-download-report">
               <Printer className="mr-2 h-4 w-4" /> Print Report
             </Button>
+            {proposals && proposals.length > 0 && (
+              <Button
+                variant="default"
+                onClick={() => window.open(`/api/proposals/${proposals[0].id}/pdf`, "_blank")}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <FileDown className="mr-2 h-4 w-4" /> View Proposal PDF
+              </Button>
+            )}
           </div>
         </div>
+
+        {proposals && proposals.length > 0 && (
+          <Card className="p-4 mb-6 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800 print:hidden">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileDown className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <div>
+                  <h3 className="font-semibold text-blue-900 dark:text-blue-100">Proposal Ready</h3>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    Your benefits proposal has been generated and is ready to view.
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => window.open(`/api/proposals/${proposals[0].id}/pdf`, "_blank")}
+                className="bg-blue-600 hover:bg-blue-700 gap-2"
+              >
+                <FileDown className="h-4 w-4" /> View Proposal PDF
+              </Button>
+            </div>
+          </Card>
+        )}
 
         <div className="relative">
           <div className="absolute -top-8 right-0 flex items-center gap-1.5 bg-green-50 dark:bg-green-950/30 border border-green-500 dark:border-green-600 rounded-md px-2 py-1 shadow-sm print:hidden">

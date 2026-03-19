@@ -52,6 +52,16 @@ export const censusEntries = pgTable("census_entries", {
   relationship: text("relationship").default("EE").notNull(),
 });
 
+export const proposals = pgTable("proposals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  groupId: varchar("group_id").notNull().references(() => groups.id, { onDelete: "cascade" }),
+  pdfPath: text("pdf_path").notNull(),
+  fileName: text("file_name").notNull(),
+  ratesData: jsonb("rates_data"),
+  status: text("status").default("generated").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   verified: true,
@@ -163,3 +173,4 @@ export type Group = typeof groups.$inferSelect;
 export type InsertGroup = z.infer<typeof insertGroupSchema>;
 export type CensusEntry = typeof censusEntries.$inferSelect;
 export type InsertCensusEntry = z.infer<typeof insertCensusEntrySchema>;
+export type Proposal = typeof proposals.$inferSelect;

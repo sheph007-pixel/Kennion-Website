@@ -5,9 +5,11 @@ import {
   type InsertGroup,
   type CensusEntry,
   type InsertCensusEntry,
+  type Proposal,
   users,
   groups,
   censusEntries,
+  proposals,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -31,6 +33,11 @@ export interface IStorage {
   createCensusEntries(entries: InsertCensusEntry[]): Promise<CensusEntry[]>;
   deleteGroup(id: string): Promise<void>;
   deleteCensusByGroupId(groupId: string): Promise<void>;
+
+  getProposalsByGroupId(groupId: string): Promise<Proposal[]>;
+  getProposal(id: string): Promise<Proposal | undefined>;
+  createProposal(data: { groupId: string; pdfPath: string; fileName: string; ratesData?: any }): Promise<Proposal>;
+  deleteProposalsByGroupId(groupId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -115,6 +122,24 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCensusByGroupId(groupId: string): Promise<void> {
     await db.delete(censusEntries).where(eq(censusEntries.groupId, groupId));
+  }
+
+  async getProposalsByGroupId(groupId: string): Promise<Proposal[]> {
+    return db.select().from(proposals).where(eq(proposals.groupId, groupId)).orderBy(desc(proposals.createdAt));
+  }
+
+  async getProposal(id: string): Promise<Proposal | undefined> {
+    const [proposal] = await db.select().from(proposals).where(eq(proposals.id, id));
+    return proposal;
+  }
+
+  async createProposal(data: { groupId: string; pdfPath: string; fileName: string; ratesData?: any }): Promise<Proposal> {
+    const [created] = await db.insert(proposals).values(data).returning();
+    return created;
+  }
+
+  async deleteProposalsByGroupId(groupId: string): Promise<void> {
+    await db.delete(proposals).where(eq(proposals.groupId, groupId));
   }
 }
 
