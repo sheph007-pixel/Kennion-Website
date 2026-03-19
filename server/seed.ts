@@ -5,8 +5,8 @@ import { log } from "./index";
 export async function seedDatabase() {
   try {
     const existingAdmin = await storage.getUserByEmail("admin@kennion.com");
+    const hashedPassword = await bcrypt.hash("admin123", 10);
     if (!existingAdmin) {
-      const hashedPassword = await bcrypt.hash("admin123", 10);
       await storage.createUser({
         fullName: "Kennion Admin",
         email: "admin@kennion.com",
@@ -20,6 +20,10 @@ export async function seedDatabase() {
         await storage.updateUser(admin.id, { verified: true, role: "admin" });
         log("Admin account created: admin@kennion.com / admin123");
       }
+    } else if (!existingAdmin.password) {
+      // Ensure admin has a password (may have been created via magic link)
+      await storage.updateUser(existingAdmin.id, { password: hashedPassword, verified: true, role: "admin" });
+      log("Admin password reset: admin@kennion.com / admin123");
     }
   } catch (err: any) {
     log(`Seed error: ${err.message}`);
