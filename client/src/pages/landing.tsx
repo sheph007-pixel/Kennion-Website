@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,6 +17,8 @@ import {
   Shield,
   Mail,
   MapPin,
+  Play,
+  X,
 } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 
@@ -87,7 +90,37 @@ function Navbar() {
   );
 }
 
+function VideoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div className="relative w-full max-w-4xl mx-4" onClick={(e) => e.stopPropagation()}>
+        <button
+          onClick={onClose}
+          className="absolute -top-10 right-0 text-white hover:text-white/80 transition-colors"
+          aria-label="Close video"
+        >
+          <X className="h-6 w-6" />
+        </button>
+        <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+          <iframe
+            src="https://player.vimeo.com/video/1004137913?autoplay=1"
+            className="absolute inset-0 w-full h-full rounded-lg"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function HeroSection() {
+  const [videoOpen, setVideoOpen] = useState(false);
+
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/3 dark:from-primary/10 dark:to-primary/5" />
@@ -99,6 +132,26 @@ function HeroSection() {
             <Activity className="h-3.5 w-3.5 text-primary" />
             <span className="text-xs font-medium text-muted-foreground">AI-Powered Risk Analytics</span>
           </div>
+
+          {/* Video Thumbnail */}
+          <div className="mb-8 mx-auto max-w-2xl">
+            <button
+              onClick={() => setVideoOpen(true)}
+              className="group relative block w-full overflow-hidden rounded-xl border shadow-lg hover:shadow-xl transition-shadow"
+            >
+              <img
+                src="https://vumbnail.com/1004137913.jpg"
+                alt="Watch how Kennion works"
+                className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary shadow-lg">
+                  <Play className="h-7 w-7 text-primary-foreground ml-1" />
+                </div>
+              </div>
+            </button>
+          </div>
+
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
             Better Benefits.{" "}
             <span className="text-primary">Lower Rates.</span>
@@ -135,6 +188,7 @@ function HeroSection() {
           </div>
         </div>
       </div>
+      <VideoModal open={videoOpen} onClose={() => setVideoOpen(false)} />
     </section>
   );
 }
