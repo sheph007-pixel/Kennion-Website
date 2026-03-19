@@ -209,16 +209,6 @@ export default function LoginPage() {
                   </Link>
                 </p>
               </div>
-
-              <div className="text-center mt-4">
-                <button
-                  onClick={() => setShowAdminLogin(true)}
-                  className="text-xs text-muted-foreground"
-                  data-testid="button-admin-login-toggle"
-                >
-                  Admin login
-                </button>
-              </div>
             </>
           )}
         </div>
