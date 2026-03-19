@@ -84,17 +84,25 @@ function Navbar() {
 
         {/* Tab Section: CTAs sit on the border (desktop only) */}
         <div className="hidden md:block absolute right-6 top-full z-10">
-          <div className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border bg-background shadow-md">
-            <Link href="/login">
-              <Button variant="ghost" size="default" data-testid="link-login">
-                Log In
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button size="default" className="font-semibold shadow-sm" data-testid="link-register">
-                Submit Your Group <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+          <div className="flex items-center rounded-lg border border-border bg-background shadow-md overflow-hidden">
+            {/* Existing Clients side */}
+            <div className="flex flex-col items-center px-4 py-2 border-r border-border bg-muted/30">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Existing Clients</span>
+              <Link href="/login">
+                <Button variant="ghost" size="sm" data-testid="link-login">
+                  Log In
+                </Button>
+              </Link>
+            </div>
+            {/* New / Sales side */}
+            <div className="flex flex-col items-center px-4 py-2">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">New Groups</span>
+              <Link href="/register">
+                <Button size="sm" className="font-semibold shadow-sm" data-testid="link-register">
+                  Submit Your Group <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -116,39 +124,46 @@ function Navbar() {
               Contact
             </a>
 
-            <div className="pt-3 border-t mt-3 space-y-2">
-              <Link href="/register" onClick={() => setMobileOpen(false)}>
-                <Button className="w-full font-semibold" size="default">
-                  Submit Your Group <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/login" onClick={() => setMobileOpen(false)}>
-                <Button variant="outline" className="w-full" size="default">
-                  Log In
-                </Button>
-              </Link>
+            {/* New Groups section */}
+            <div className="pt-3 border-t mt-3">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">New Groups</span>
+              <div className="mt-2">
+                <Link href="/register" onClick={() => setMobileOpen(false)}>
+                  <Button className="w-full font-semibold" size="default">
+                    Submit Your Group <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
             </div>
 
+            {/* Existing Clients section */}
             <div className="pt-3 border-t mt-3">
-              <span className="text-xs text-muted-foreground font-medium">Existing Clients</span>
-              <div className="mt-1.5 flex items-center gap-3">
-                <a
-                  href="https://go.kennion.com/support"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Support
-                </a>
-                <span className="text-muted-foreground/50">•</span>
-                <a
-                  href="http://go.kennion.com/enroll"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Login
-                </a>
+              <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Existing Clients</span>
+              <div className="mt-2 space-y-2">
+                <Link href="/login" onClick={() => setMobileOpen(false)}>
+                  <Button variant="outline" className="w-full" size="default">
+                    Log In
+                  </Button>
+                </Link>
+                <div className="flex items-center gap-3 px-1">
+                  <a
+                    href="https://go.kennion.com/support"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Support
+                  </a>
+                  <span className="text-muted-foreground/50">•</span>
+                  <a
+                    href="http://go.kennion.com/enroll"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Enrollment
+                  </a>
+                </div>
               </div>
             </div>
           </div>
