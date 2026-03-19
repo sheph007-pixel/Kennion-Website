@@ -138,12 +138,13 @@ export default function LoginPage() {
           ) : (
             <>
               <div className="text-center mb-8">
+                <span className="inline-block text-[10px] uppercase tracking-widest text-primary font-bold bg-primary/10 px-3 py-1 rounded-full mb-4">Sales Portal</span>
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mx-auto mb-4">
                   <Lock className="h-6 w-6 text-primary" />
                 </div>
                 <h1 className="text-2xl font-bold tracking-tight" data-testid="text-sign-in-title">Sign In</h1>
                 <p className="text-muted-foreground mt-2">
-                  Enter your credentials to access your account
+                  For groups in the proposal process with Kennion
                 </p>
               </div>
 
