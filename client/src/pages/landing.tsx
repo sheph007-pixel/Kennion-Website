@@ -14,6 +14,8 @@ import {
   ChevronRight,
   Activity,
   Shield,
+  Mail,
+  MapPin,
 } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 
@@ -36,6 +38,9 @@ function Navbar() {
             </a>
             <a href="#benefits" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-benefits">
               Benefits
+            </a>
+            <a href="#contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-contact">
+              Contact
             </a>
           </div>
 
@@ -348,6 +353,77 @@ function BenefitsSection() {
   );
 }
 
+function ContactSection() {
+  return (
+    <section id="contact" className="py-20 md:py-24 bg-card/30">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="text-3xl font-bold tracking-tight">Contact Us</h2>
+          <p className="mt-3 text-muted-foreground">
+            Whether you're exploring options or already a client, our team is here to help.
+          </p>
+
+          <div className="mt-10 h-px bg-border" />
+
+          <div className="mt-10">
+            <h3 className="text-xl font-bold">For Employers Interested In A Proposal</h3>
+            <p className="mt-3 text-muted-foreground">
+              Want to see if we can lower your costs and improve your group benefits?
+              We'll show you what's possible.
+            </p>
+            <div className="mt-5">
+              <Link href="/register">
+                <Button data-testid="button-contact-proposal">
+                  Request Proposal <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-10 h-px bg-border" />
+
+          <div className="mt-10">
+            <h3 className="text-xl font-bold">Current Client Or Member?</h3>
+            <p className="mt-3 text-muted-foreground">
+              Please open a support ticket below — we're here to help.
+            </p>
+            <div className="mt-5">
+              <a href="https://go.kennion.com/support" target="_blank" rel="noopener noreferrer">
+                <Button data-testid="button-contact-support">
+                  Submit A Ticket <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+              </a>
+            </div>
+          </div>
+
+          <div className="mt-10 h-px bg-border" />
+
+          <div className="mt-10">
+            <h3 className="text-xl font-bold">Contact Information</h3>
+            <ul className="mt-4 space-y-3">
+              <li className="flex items-center gap-3">
+                <Mail className="h-4 w-4 shrink-0 text-primary" />
+                <span className="text-sm">
+                  <span className="font-medium">Email:</span>{" "}
+                  <a href="mailto:support@kennion.com" className="text-primary hover:underline">
+                    support@kennion.com
+                  </a>
+                </span>
+              </li>
+              <li className="flex items-center gap-3">
+                <MapPin className="h-4 w-4 shrink-0 text-primary" />
+                <span className="text-sm">
+                  <span className="font-medium">Address:</span> 2828 Old 280 Court, Suite 110, Vestavia, Alabama 35243
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function CTASection() {
   return (
     <section className="py-20 md:py-24 bg-primary text-primary-foreground">
@@ -393,6 +469,7 @@ export default function LandingPage() {
       <HowItWorksSection />
       <FeaturesSection />
       <BenefitsSection />
+      <ContactSection />
       <CTASection />
       <Footer />
     </div>
