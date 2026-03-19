@@ -80,7 +80,7 @@ function Navbar() {
             </Link>
             <Link href="/register">
               <Button size="default" className="font-semibold shadow-sm" data-testid="link-register">
-                Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                Submit Your Group <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
@@ -360,7 +360,7 @@ function BenefitsSection() {
             <div className="mt-8">
               <Link href="/register">
                 <Button data-testid="button-benefits-cta">
-                  Start Your Qualification <ArrowRight className="ml-1 h-4 w-4" />
+                  Submit Your Group <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </Link>
             </div>
@@ -448,7 +448,7 @@ function ContactSection() {
             <div className="mt-5">
               <Link href="/register">
                 <Button data-testid="button-contact-proposal">
-                  Request Proposal <ArrowRight className="ml-1 h-4 w-4" />
+                  Submit Your Group <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </Link>
             </div>
@@ -532,7 +532,7 @@ function CTASection() {
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link href="/register">
             <Button size="lg" variant="secondary" data-testid="button-cta-register">
-              Create Your Account <ArrowRight className="ml-1 h-4 w-4" />
+              Submit Your Group <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </Link>
         </div>
