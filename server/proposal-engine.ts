@@ -246,38 +246,34 @@ export function injectCensusData(
 
 // ─── LibreOffice Detection ────────────────────────────────────────────────
 
-let _libreOfficePath: string | null = null;
+let _libreOfficePath: string | null | undefined = undefined;
 
 function findLibreOffice(): string | null {
-  if (_libreOfficePath !== null) return _libreOfficePath;
+  if (_libreOfficePath !== undefined) return _libreOfficePath;
 
   const candidates = ["libreoffice", "soffice", "/usr/bin/libreoffice", "/usr/bin/soffice"];
   for (const cmd of candidates) {
     try {
-      execSync(`${cmd} --version`, { stdio: "pipe", timeout: 10000 });
+      const ver = execSync(`${cmd} --version 2>&1`, { stdio: "pipe", timeout: 10000 }).toString().trim();
       _libreOfficePath = cmd;
-      log(`LibreOffice found: ${cmd}`, "proposal");
+      log(`LibreOffice found: ${cmd} (${ver})`, "proposal");
       return cmd;
     } catch { /* try next */ }
   }
 
-  _libreOfficePath = "";
+  _libreOfficePath = null;
+  log("LibreOffice NOT found — will use pdfkit fallback", "proposal");
   return null;
 }
 
-// ─── LibreOffice Macro Execution + PDF Export ─────────────────────────────
+// ─── LibreOffice PDF Export ───────────────────────────────────────────────
 
 /**
- * Run LibreOffice headless to:
- * 1. Open the XLSM (triggers formula recalculation)
- * 2. Attempt to run the VBA RateCalcMacro
- * 3. Export to PDF
+ * Convert XLSM to PDF using LibreOffice headless.
  *
- * The actuary's VBA macro names (from Merlinos & Associates):
- *   - RateCalcMacro      — validates census, calls TableRefreshMacro
- *   - TableRefreshMacro   — refreshes pivot table, sorts dependent data
- *   - TimeStampMacro      — adds calculation timestamp
- *   - PrintCustomPDFs     — exports specific sheets as PDF
+ * LibreOffice recalculates ALL formulas when opening the file, so the
+ * rate tables in the actuary's template will compute automatically.
+ * No need to run VBA macros — the formulas ARE the rate engine.
  */
 export function runLibreOfficeExportPDF(xlsmPath: string, groupId: string): string {
   const loCmd = findLibreOffice();
@@ -288,98 +284,49 @@ export function runLibreOfficeExportPDF(xlsmPath: string, groupId: string): stri
   const pdfFileName = `${groupId}_${Date.now()}.pdf`;
   const pdfPath = path.join(PROPOSALS_DIR, pdfFileName);
 
-  // Kill any leftover LibreOffice processes that might block us
-  try { execSync("pkill -f soffice 2>/dev/null || true", { stdio: "pipe", timeout: 5000 }); } catch { /* ok */ }
+  // Kill any stale LibreOffice processes that would block the lock file
+  try { execSync("pkill -9 -f soffice 2>/dev/null || true", { stdio: "pipe", timeout: 3000 }); } catch { /* ok */ }
 
-  // Step 1: Try running the actual VBA macro from the template
-  // The macro module is typically "Module1" inside VBAProject
-  const macroAttempts = [
-    // Document-level VBA macros (XLSM embedded)
-    `"macro://./VBAProject.Module1.RateCalcMacro"`,
-    `"macro://./VBAProject.ThisWorkbook.RateCalcMacro"`,
-    // LibreOffice Standard library
-    `"macro:///Standard.Module1.RateCalcMacro"`,
-  ];
-
-  for (const macroRef of macroAttempts) {
-    try {
-      log(`Attempting macro: ${macroRef}`, "proposal");
-      execSync(
-        `${loCmd} --headless --norestore --calc ${profileArg} ` +
-        `--infilter="MS Excel 2007 XML" ${macroRef} "${xlsmPath}" 2>&1`,
-        { timeout: 120000, stdio: "pipe" }
-      );
-      log(`Macro executed successfully: ${macroRef}`, "proposal");
-      break;
-    } catch (err: any) {
-      const msg = err.stdout?.toString?.()?.substring(0, 200) || err.message?.substring(0, 200) || "";
-      log(`Macro attempt failed: ${msg}`, "proposal");
-    }
-  }
-
-  // Step 2: Force formula recalculation by opening and re-saving
-  // LibreOffice recalculates all formulas when opening a file
+  // Single step: open XLSM → formulas recalculate → export PDF
+  log(`Converting ${path.basename(xlsmPath)} to PDF...`, "proposal");
   try {
-    log("Opening file to trigger formula recalculation...", "proposal");
-    execSync(
-      `${loCmd} --headless --norestore --calc ${profileArg} ` +
-      `--infilter="MS Excel 2007 XML" ` +
-      `--convert-to "xlsm:Calc MS Excel 2007 VBA XML" ` +
-      `--outdir "${TEMP_DIR}" "${xlsmPath}" 2>&1`,
-      { timeout: 120000, stdio: "pipe" }
-    );
-
-    // Check if a recalculated file was produced
-    const baseName = path.basename(xlsmPath, ".xlsm");
-    const recalcFile = path.join(TEMP_DIR, `${baseName}.xlsm`);
-    if (fs.existsSync(recalcFile) && recalcFile !== xlsmPath) {
-      // Use the recalculated file for PDF export
-      fs.copyFileSync(recalcFile, xlsmPath);
-      try { fs.unlinkSync(recalcFile); } catch { /* ok */ }
-      log("Formula recalculation complete", "proposal");
-    }
-  } catch (err: any) {
-    log(`Formula recalc step note: ${err.message?.substring(0, 100)}`, "proposal");
-  }
-
-  // Step 3: Export to PDF
-  try {
-    log(`Exporting PDF from ${xlsmPath}`, "proposal");
-
-    // Kill any leftover processes
-    try { execSync("pkill -f soffice 2>/dev/null || true", { stdio: "pipe", timeout: 5000 }); } catch { /* ok */ }
-
-    execSync(
+    const output = execSync(
       `${loCmd} --headless --norestore --calc ${profileArg} ` +
       `--convert-to pdf --outdir "${PROPOSALS_DIR}" "${xlsmPath}" 2>&1`,
-      { timeout: 120000, stdio: "pipe" }
-    );
-
-    // LibreOffice names the output based on the input filename
-    const baseName = path.basename(xlsmPath, ".xlsm");
-    const generatedPdf = path.join(PROPOSALS_DIR, `${baseName}.pdf`);
-
-    if (fs.existsSync(generatedPdf)) {
-      fs.renameSync(generatedPdf, pdfPath);
-      log(`PDF exported: ${pdfPath} (${(fs.statSync(pdfPath).size / 1024).toFixed(0)} KB)`, "proposal");
-    } else {
-      // Check for any newly created PDF
-      const pdfFiles = fs.readdirSync(PROPOSALS_DIR)
-        .filter(f => f.endsWith(".pdf"))
-        .map(f => ({ name: f, time: fs.statSync(path.join(PROPOSALS_DIR, f)).mtimeMs }))
-        .sort((a, b) => b.time - a.time);
-
-      if (pdfFiles.length > 0) {
-        const newest = path.join(PROPOSALS_DIR, pdfFiles[0].name);
-        fs.renameSync(newest, pdfPath);
-        log(`PDF found as ${pdfFiles[0].name}, renamed to ${pdfPath}`, "proposal");
-      } else {
-        throw new Error("LibreOffice did not produce a PDF file");
-      }
-    }
+      { timeout: 90000, stdio: "pipe" }
+    ).toString();
+    log(`LibreOffice output: ${output.substring(0, 300)}`, "proposal");
   } catch (err: any) {
-    log(`LibreOffice PDF export failed: ${err.message}`, "proposal");
-    throw new Error(`PDF export failed: ${err.message}`);
+    const stderr = err.stderr?.toString?.()?.substring(0, 300) || "";
+    const stdout = err.stdout?.toString?.()?.substring(0, 300) || "";
+    log(`LibreOffice convert failed: ${stdout} ${stderr}`, "proposal");
+    throw new Error(`LibreOffice PDF conversion failed. ${stdout || err.message}`);
+  }
+
+  // LibreOffice names output based on input filename
+  const baseName = path.basename(xlsmPath, ".xlsm");
+  const generatedPdf = path.join(PROPOSALS_DIR, `${baseName}.pdf`);
+
+  if (fs.existsSync(generatedPdf)) {
+    fs.renameSync(generatedPdf, pdfPath);
+    const sizeKB = (fs.statSync(pdfPath).size / 1024).toFixed(0);
+    log(`PDF created: ${pdfPath} (${sizeKB} KB)`, "proposal");
+  } else {
+    // Scan for any newly created PDF
+    const pdfFiles = fs.readdirSync(PROPOSALS_DIR)
+      .filter(f => f.endsWith(".pdf"))
+      .map(f => ({ name: f, time: fs.statSync(path.join(PROPOSALS_DIR, f)).mtimeMs }))
+      .sort((a, b) => b.time - a.time);
+
+    log(`Looking for PDF output. Files in dir: ${pdfFiles.map(f => f.name).join(", ")}`, "proposal");
+
+    if (pdfFiles.length > 0 && Date.now() - pdfFiles[0].time < 60000) {
+      const newest = path.join(PROPOSALS_DIR, pdfFiles[0].name);
+      fs.renameSync(newest, pdfPath);
+      log(`PDF found as ${pdfFiles[0].name}`, "proposal");
+    } else {
+      throw new Error("LibreOffice did not produce a PDF file");
+    }
   }
 
   return pdfPath;
