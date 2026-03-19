@@ -6,7 +6,7 @@ import Papa from "papaparse";
 import crypto from "crypto";
 import path from "path";
 import fs from "fs";
-import ExcelJS from "exceljs";
+import XLSX from "xlsx";
 import bcrypt from "bcryptjs";
 import { storage } from "./storage";
 import {
@@ -1403,7 +1403,7 @@ export async function registerRoutes(
   // GET  — check if a template has been uploaded
   app.get("/api/admin/proposal/template-info", requireAdmin, async (_req: Request, res: Response) => {
     try {
-      const files = fs.readdirSync(TEMPLATE_DIR).filter((f) => f.endsWith(".xlsm"));
+      const files = fs.readdirSync(TEMPLATE_DIR).filter((f) => /\.xlsm$/i.test(f));
       if (files.length === 0) {
         return res.json({ uploaded: false });
       }
@@ -1433,7 +1433,7 @@ export async function registerRoutes(
       }
 
       // Clear any existing templates
-      const existing = fs.readdirSync(TEMPLATE_DIR).filter((f) => f.endsWith(".xlsm"));
+      const existing = fs.readdirSync(TEMPLATE_DIR).filter((f) => /\.xlsm$/i.test(f));
       for (const f of existing) {
         fs.unlinkSync(path.join(TEMPLATE_DIR, f));
       }
@@ -1443,10 +1443,9 @@ export async function registerRoutes(
       const destPath = path.join(TEMPLATE_DIR, safeName);
       fs.writeFileSync(destPath, req.file.buffer);
 
-      // Validate it's a valid Excel file and find sheet names
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.readFile(destPath);
-      const sheetNames = workbook.worksheets.map((ws) => ws.name);
+      // Validate with SheetJS (preserves VBA/macros)
+      const workbook = XLSX.read(req.file.buffer, { type: "buffer", bookVBA: true });
+      const sheetNames = workbook.SheetNames;
 
       res.json({
         message: "Template uploaded successfully",
@@ -1462,7 +1461,7 @@ export async function registerRoutes(
   // DELETE — remove the uploaded template
   app.delete("/api/admin/proposal/template", requireAdmin, async (_req: Request, res: Response) => {
     try {
-      const files = fs.readdirSync(TEMPLATE_DIR).filter((f) => f.endsWith(".xlsm"));
+      const files = fs.readdirSync(TEMPLATE_DIR).filter((f) => /\.xlsm$/i.test(f));
       for (const f of files) {
         fs.unlinkSync(path.join(TEMPLATE_DIR, f));
       }
@@ -1479,7 +1478,7 @@ export async function registerRoutes(
       const { targetSheet } = req.body as { targetSheet?: string };
 
       // Find the template
-      const templates = fs.readdirSync(TEMPLATE_DIR).filter((f) => f.endsWith(".xlsm"));
+      const templates = fs.readdirSync(TEMPLATE_DIR).filter((f) => /\.xlsm$/i.test(f));
       if (templates.length === 0) {
         return res.status(400).json({ message: "No XLSM template uploaded. Please upload a template first." });
       }
@@ -1490,42 +1489,42 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Group not found" });
       }
 
-      const censusEntries = await storage.getCensusByGroupId(groupId);
-      if (censusEntries.length === 0) {
+      const census = await storage.getCensusByGroupId(groupId);
+      if (census.length === 0) {
         return res.status(400).json({ message: "No census entries found for this group" });
       }
 
-      // Read the template workbook
+      // Read the template with SheetJS — bookVBA preserves macros
       const templatePath = path.join(TEMPLATE_DIR, templates[0]);
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.readFile(templatePath);
+      const fileBuffer = fs.readFileSync(templatePath);
+      const workbook = XLSX.read(fileBuffer, { type: "buffer", bookVBA: true });
 
       // Find the target sheet (default: "Census")
       const sheetName = targetSheet || "Census";
-      let worksheet = workbook.getWorksheet(sheetName);
-
-      if (!worksheet) {
-        // Try case-insensitive match
-        worksheet = workbook.worksheets.find(
-          (ws) => ws.name.toLowerCase() === sheetName.toLowerCase()
-        );
+      let matchedSheet = workbook.SheetNames.find((s) => s === sheetName);
+      if (!matchedSheet) {
+        matchedSheet = workbook.SheetNames.find((s) => s.toLowerCase() === sheetName.toLowerCase());
       }
 
-      if (!worksheet) {
-        const available = workbook.worksheets.map((ws) => ws.name);
+      if (!matchedSheet) {
         return res.status(400).json({
-          message: `Sheet "${sheetName}" not found in the template. Available sheets: ${available.join(", ")}`,
-          availableSheets: available,
+          message: `Sheet "${sheetName}" not found in the template. Available sheets: ${workbook.SheetNames.join(", ")}`,
+          availableSheets: workbook.SheetNames,
         });
       }
 
-      // Determine the header row — read row 1 to find column mapping
-      const headerRow = worksheet.getRow(1);
+      const worksheet = workbook.Sheets[matchedSheet];
+
+      // Read header row (row 1) to find column mapping
+      const range = XLSX.utils.decode_range(worksheet["!ref"] || "A1");
       const headers: Record<string, number> = {};
-      headerRow.eachCell({ includeEmpty: false }, (cell, colNumber) => {
-        const val = String(cell.value || "").trim().toLowerCase();
-        headers[val] = colNumber;
-      });
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const cellAddr = XLSX.utils.encode_cell({ r: 0, c: col });
+        const cell = worksheet[cellAddr];
+        if (cell && cell.v != null) {
+          headers[String(cell.v).trim().toLowerCase()] = col;
+        }
+      }
 
       // Map census fields to likely column names
       const fieldMappings: Record<string, string[]> = {
@@ -1537,7 +1536,6 @@ export async function registerRoutes(
         relationship: ["relationship", "type", "relation", "coverage type", "member type", "dependent type"],
       };
 
-      // Find column index for each census field
       const colMap: Record<string, number> = {};
       for (const [field, aliases] of Object.entries(fieldMappings)) {
         for (const alias of aliases) {
@@ -1548,38 +1546,53 @@ export async function registerRoutes(
         }
       }
 
-      // Write census data starting from row 2
-      censusEntries.forEach((entry, index) => {
-        const rowNum = index + 2; // Row 1 is headers
-        const row = worksheet!.getRow(rowNum);
+      log(`Proposal: Mapped columns: ${JSON.stringify(colMap)} for sheet "${matchedSheet}"`, "proposal");
 
-        if (colMap.firstName) row.getCell(colMap.firstName).value = entry.firstName;
-        if (colMap.lastName) row.getCell(colMap.lastName).value = entry.lastName;
-        if (colMap.dateOfBirth) row.getCell(colMap.dateOfBirth).value = entry.dateOfBirth;
-        if (colMap.gender) row.getCell(colMap.gender).value = entry.gender;
-        if (colMap.zipCode) row.getCell(colMap.zipCode).value = entry.zipCode;
-        if (colMap.relationship) row.getCell(colMap.relationship).value = entry.relationship;
-
-        row.commit();
-      });
-
-      // Clear any leftover rows below the new data (if template had sample data)
-      const lastDataRow = censusEntries.length + 1;
-      for (let r = lastDataRow + 1; r <= lastDataRow + 100; r++) {
-        const row = worksheet.getRow(r);
-        const hasData = row.values && (row.values as any[]).some((v) => v !== null && v !== undefined && v !== "");
-        if (!hasData) break;
-        row.values = [];
-        row.commit();
+      // Clear existing data rows (row 2+) in the census range
+      for (let r = 1; r <= range.e.r; r++) {
+        for (let c = range.s.c; c <= range.e.c; c++) {
+          const addr = XLSX.utils.encode_cell({ r, c });
+          delete worksheet[addr];
+        }
       }
 
-      // Generate the file as buffer and send back
-      const buffer = await workbook.xlsx.writeBuffer();
+      // Write census data starting from row 2 (index 1)
+      census.forEach((entry, index) => {
+        const r = index + 1; // row 0 = headers, row 1+ = data
+
+        const writeCell = (col: number | undefined, value: string) => {
+          if (col === undefined) return;
+          const addr = XLSX.utils.encode_cell({ r, c: col });
+          worksheet[addr] = { t: "s", v: value };
+        };
+
+        writeCell(colMap.firstName, entry.firstName);
+        writeCell(colMap.lastName, entry.lastName);
+        writeCell(colMap.dateOfBirth, entry.dateOfBirth);
+        writeCell(colMap.gender, entry.gender);
+        writeCell(colMap.zipCode, entry.zipCode);
+        writeCell(colMap.relationship, entry.relationship);
+      });
+
+      // Update the sheet range to include new data
+      const newEndRow = Math.max(range.e.r, census.length);
+      worksheet["!ref"] = XLSX.utils.encode_range({
+        s: { r: 0, c: range.s.c },
+        e: { r: newEndRow, c: range.e.c },
+      });
+
+      // Write back as XLSM (bookType: "xlsm" preserves macros)
+      const outBuffer = XLSX.write(workbook, {
+        type: "buffer",
+        bookType: "xlsm",
+        bookVBA: true,
+      });
+
       const outputName = `Proposal_${group.companyName.replace(/[^a-zA-Z0-9]/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsm`;
 
       res.setHeader("Content-Type", "application/vnd.ms-excel.sheet.macroEnabled.12");
       res.setHeader("Content-Disposition", `attachment; filename="${outputName}"`);
-      res.send(Buffer.from(buffer));
+      res.send(Buffer.from(outBuffer));
     } catch (err: any) {
       log(`Proposal generation error: ${err.message}`, "proposal");
       res.status(500).json({ message: err.message || "Failed to generate proposal" });
@@ -1589,14 +1602,13 @@ export async function registerRoutes(
   // GET — list sheet names in the uploaded template
   app.get("/api/admin/proposal/sheets", requireAdmin, async (_req: Request, res: Response) => {
     try {
-      const templates = fs.readdirSync(TEMPLATE_DIR).filter((f) => f.endsWith(".xlsm"));
+      const templates = fs.readdirSync(TEMPLATE_DIR).filter((f) => /\.xlsm$/i.test(f));
       if (templates.length === 0) {
         return res.json({ sheets: [] });
       }
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.readFile(path.join(TEMPLATE_DIR, templates[0]));
-      const sheets = workbook.worksheets.map((ws) => ws.name);
-      res.json({ sheets });
+      const fileBuffer = fs.readFileSync(path.join(TEMPLATE_DIR, templates[0]));
+      const workbook = XLSX.read(fileBuffer, { type: "buffer", bookVBA: true });
+      res.json({ sheets: workbook.SheetNames });
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Failed to read sheets" });
     }

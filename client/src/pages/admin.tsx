@@ -1109,18 +1109,29 @@ function ProposalGenerator() {
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Generation failed");
+        // Try to parse error JSON, fall back to status text
+        let errorMsg = "Generation failed";
+        try {
+          const error = await res.json();
+          errorMsg = error.message || errorMsg;
+        } catch {
+          errorMsg = `Server error (${res.status})`;
+        }
+        throw new Error(errorMsg);
       }
 
       // Download the file
       const blob = await res.blob();
+      if (blob.size === 0) {
+        throw new Error("Received empty file from server");
+      }
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       const disposition = res.headers.get("Content-Disposition");
       const match = disposition?.match(/filename="(.+)"/);
-      a.download = match?.[1] || `Proposal_${companyName}.xlsm`;
+      a.download = match?.[1] || `Proposal_${companyName.replace(/[^a-zA-Z0-9]/g, "_")}.xlsm`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
