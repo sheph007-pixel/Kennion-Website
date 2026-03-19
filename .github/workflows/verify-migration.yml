@@ -1,0 +1,47 @@
+name: Verify database migration
+on:
+  push:
+    branches:
+      - 'claude/fix-kennion-database-instance-ZThAG'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Check new database for migrated data
+        run: |
+          echo "=== Checking new database ==="
+          NEW_DB="postgresql://postgres:ifseKRIqZzsoBkgZZcquzpUomaGkoTDl@autorack.proxy.rlwy.net:35212/railway"
+
+          echo "--- Tables ---"
+          psql "$NEW_DB" -c "\dt" 2>&1 || echo "FAILED to connect to new DB"
+
+          echo "--- Users count ---"
+          psql "$NEW_DB" -c "SELECT count(*) as user_count FROM users;" 2>&1 || echo "No users table"
+
+          echo "--- Users ---"
+          psql "$NEW_DB" -c "SELECT id, full_name, email, role, created_at FROM users;" 2>&1 || echo "Failed"
+
+          echo "--- Groups count ---"
+          psql "$NEW_DB" -c "SELECT count(*) as group_count FROM groups;" 2>&1 || echo "No groups table"
+
+          echo "--- Census entries count ---"
+          psql "$NEW_DB" -c "SELECT count(*) as census_count FROM census_entries;" 2>&1 || echo "No census_entries table"
+
+      - name: Check old database (source)
+        run: |
+          echo "=== Checking old database ==="
+          OLD_DB="postgresql://postgres:UHttzexcgHcuhvsIdiESHZCWwxckssfV@switchback.proxy.rlwy.net:59872/railway"
+
+          echo "--- Users count ---"
+          psql "$OLD_DB" -c "SELECT count(*) as user_count FROM users;" 2>&1 || echo "No users table or connection failed"
+
+          echo "--- Groups count ---"
+          psql "$OLD_DB" -c "SELECT count(*) as group_count FROM groups;" 2>&1 || echo "No groups table"
+
+          echo "--- Census entries count ---"
+          psql "$OLD_DB" -c "SELECT count(*) as census_count FROM census_entries;" 2>&1 || echo "No census_entries table"
