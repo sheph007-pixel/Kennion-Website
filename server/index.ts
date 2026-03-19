@@ -70,15 +70,22 @@ app.use((req, res, next) => {
   }
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    console.error("Internal Server Error:", err);
-
     if (res.headersSent) {
       return next(err);
     }
 
+    const isDbError = err.code === "ECONNRESET" || err.code === "ECONNREFUSED" ||
+      err.message?.includes("ECONNRESET") || err.message?.includes("ECONNREFUSED") ||
+      err.message?.includes("Connection terminated");
+
+    if (isDbError) {
+      console.error("Database connection error:", err.message);
+      return res.status(503).json({ message: "Service temporarily unavailable. Please try again." });
+    }
+
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    console.error("Internal Server Error:", err);
     return res.status(status).json({ message });
   });
 

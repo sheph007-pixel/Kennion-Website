@@ -16,7 +16,7 @@ import {
 import ConnectPgSimple from "connect-pg-simple";
 import { log } from "./index";
 import { sendMagicLinkEmail } from "./email";
-import { pool } from "./db";
+import { pool, testConnection } from "./db";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
@@ -255,14 +255,25 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Test database connection before starting
+  const dbConnected = await testConnection();
+  if (!dbConnected) {
+    console.error("WARNING: Starting server without verified database connection");
+  }
+
   const PgStore = ConnectPgSimple(session);
+
+  const sessionStore = new PgStore({
+    pool: pool,
+    createTableIfMissing: true,
+    errorLog: (err: Error) => {
+      console.error("Session store error:", err.message);
+    },
+  });
 
   app.use(
     session({
-      store: new PgStore({
-        pool: pool,
-        createTableIfMissing: true,
-      }),
+      store: sessionStore,
       secret: process.env.SESSION_SECRET || "kennion-secret-key",
       resave: false,
       saveUninitialized: false,
@@ -274,6 +285,23 @@ export async function registerRoutes(
       },
     })
   );
+
+  // Health check endpoint (no DB required)
+  app.get("/api/health", (_req: Request, res: Response) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // DB health check endpoint
+  app.get("/api/health/db", async (_req: Request, res: Response) => {
+    try {
+      const client = await pool.connect();
+      await client.query("SELECT 1");
+      client.release();
+      res.json({ status: "ok", database: "connected" });
+    } catch (err: any) {
+      res.status(503).json({ status: "error", database: err.message });
+    }
+  });
 
   app.post("/api/auth/magic-link", async (req: Request, res: Response) => {
     try {
