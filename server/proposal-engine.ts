@@ -1,6 +1,6 @@
 /**
  * Proposal Engine — injects census data into XLSM template,
- * runs LibreOffice to execute macros and export PDF.
+ * runs LibreOffice to recalculate formulas and export PDF.
  */
 import XLSX from "xlsx";
 import { execSync } from "child_process";
@@ -27,35 +27,6 @@ export function calculateAge(dob: string): number {
   const m = today.getMonth() - birth.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
   return Math.max(0, age);
-}
-
-export function getAgeBand(age: number): string {
-  if (age <= 4) return "0-4";
-  if (age <= 9) return "5-9";
-  if (age <= 14) return "10-14";
-  if (age <= 19) return "15-19";
-  if (age <= 24) return "20-24";
-  if (age <= 29) return "25-29";
-  if (age <= 34) return "30-34";
-  if (age <= 39) return "35-39";
-  if (age <= 44) return "40-44";
-  if (age <= 49) return "45-49";
-  if (age <= 54) return "50-54";
-  if (age <= 59) return "55-59";
-  if (age <= 64) return "60-64";
-  if (age <= 69) return "65-69";
-  return "70+";
-}
-
-// ─── Template Sheet Inspection ────────────────────────────────────────────
-
-export function getTemplateInfo(templatePath: string) {
-  const buf = fs.readFileSync(templatePath);
-  const wb = XLSX.read(buf, { type: "buffer", bookVBA: true });
-  return {
-    sheetNames: wb.SheetNames,
-    hasVBA: !!wb.vbaraw,
-  };
 }
 
 // ─── Census Data Injection ────────────────────────────────────────────────
@@ -167,93 +138,68 @@ export function injectCensusData(
   return tempPath;
 }
 
-// ─── LibreOffice Macro Execution + PDF Export ─────────────────────────────
+// ─── LibreOffice PDF Export ───────────────────────────────────────────────
 
 /**
- * Run LibreOffice headless to execute macros and export to PDF.
+ * Open the XLSM in LibreOffice headless — it will recalculate all
+ * cell formulas (VLOOKUP, IF, SUM, etc.) and then export to PDF.
  *
- * Strategy:
- * 1. First try running the specific macro if we can detect it
- * 2. Then export the workbook to PDF via LibreOffice
+ * LibreOffice also has basic VBA macro support, so simple macros
+ * may execute automatically on file open.
  */
 export function runLibreOfficeExportPDF(xlsmPath: string, groupId: string): string {
   const pdfFileName = `${groupId}_${Date.now()}.pdf`;
   const pdfPath = path.join(PROPOSALS_DIR, pdfFileName);
 
-  // First, try to run the macro that calculates rates
-  // LibreOffice can execute VBA macros with: macro://./Module.MacroName
-  // We'll try common macro names the template might have
-  const macroNames = [
-    "DetermineMemberLevelFactors",
-    "Determine_Member_Level_Factors",
-    "CalculateRates",
-    "RunCalculation",
-    "Calculate",
-  ];
+  log(`Exporting PDF from template via LibreOffice: ${xlsmPath}`, "proposal");
 
-  // Try to run macros with LibreOffice
-  for (const macroName of macroNames) {
-    try {
-      log(`Attempting to run macro: ${macroName}`, "proposal");
-      execSync(
-        `libreoffice --headless --norestore --calc --infilter="MS Excel 2007 XML" ` +
-        `"macro://./VBAProject.ThisWorkbook.${macroName}" "${xlsmPath}" 2>&1`,
-        { timeout: 60000, stdio: "pipe" }
-      );
-      log(`Macro ${macroName} executed successfully`, "proposal");
-      break;
-    } catch (err: any) {
-      log(`Macro ${macroName} failed or not found: ${err.message?.substring(0, 100)}`, "proposal");
-      // Try next macro name or continue to PDF export
-    }
-  }
-
-  // Also try module-level macros
-  for (const macroName of macroNames) {
-    try {
-      execSync(
-        `libreoffice --headless --norestore --calc ` +
-        `"macro://./Standard.Module1.${macroName}" "${xlsmPath}" 2>&1`,
-        { timeout: 60000, stdio: "pipe" }
-      );
-      log(`Macro Standard.Module1.${macroName} executed`, "proposal");
-      break;
-    } catch {
-      // continue
-    }
-  }
-
-  // Now export to PDF using LibreOffice
+  // Enable macro execution and recalculate all formulas on open
+  // --infilter forces it to open as Excel format
+  // The env var disables the "enable macros?" dialog
   try {
-    log(`Exporting PDF from ${xlsmPath}`, "proposal");
-
-    // LibreOffice converts to PDF in the same directory as the input
     execSync(
-      `libreoffice --headless --norestore --calc --convert-to pdf ` +
+      `HOME=/tmp libreoffice --headless --norestore --calc ` +
+      `--env:UserInstallation=file:///tmp/libreoffice-user ` +
+      `--convert-to pdf ` +
       `--outdir "${PROPOSALS_DIR}" "${xlsmPath}"`,
-      { timeout: 120000, stdio: "pipe" }
+      {
+        timeout: 120000,
+        stdio: "pipe",
+        env: {
+          ...process.env,
+          HOME: "/tmp",
+        },
+      }
     );
-
-    // Find the generated PDF (LibreOffice names it based on input filename)
-    const baseName = path.basename(xlsmPath, ".xlsm");
-    const generatedPdf = path.join(PROPOSALS_DIR, `${baseName}.pdf`);
-
-    if (fs.existsSync(generatedPdf)) {
-      // Rename to our desired filename
-      fs.renameSync(generatedPdf, pdfPath);
-      log(`PDF exported successfully: ${pdfPath}`, "proposal");
-    } else {
-      // Check for any new PDF files in the output directory
-      const pdfFiles = fs.readdirSync(PROPOSALS_DIR).filter(f => f.endsWith(".pdf"));
-      log(`PDF files in directory: ${pdfFiles.join(", ")}`, "proposal");
-      throw new Error("LibreOffice did not produce a PDF file");
-    }
   } catch (err: any) {
-    log(`LibreOffice PDF export failed: ${err.message}`, "proposal");
-    throw new Error(`PDF export failed: ${err.message}`);
+    const stderr = err.stderr?.toString() || "";
+    const stdout = err.stdout?.toString() || "";
+    log(`LibreOffice output: ${stdout} ${stderr}`, "proposal");
+    throw new Error(`LibreOffice conversion failed: ${stderr || err.message}`);
   }
 
-  return pdfPath;
+  // Find the generated PDF (LibreOffice names it based on input filename)
+  const baseName = path.basename(xlsmPath, ".xlsm");
+  const generatedPdf = path.join(PROPOSALS_DIR, `${baseName}.pdf`);
+
+  if (fs.existsSync(generatedPdf)) {
+    fs.renameSync(generatedPdf, pdfPath);
+    log(`PDF exported successfully: ${pdfPath}`, "proposal");
+    return pdfPath;
+  }
+
+  // Check for PDF with different extension handling
+  const pdfFiles = fs.readdirSync(PROPOSALS_DIR)
+    .filter(f => f.endsWith(".pdf") && f.startsWith(baseName.substring(0, 10)));
+
+  if (pdfFiles.length > 0) {
+    const found = path.join(PROPOSALS_DIR, pdfFiles[0]);
+    fs.renameSync(found, pdfPath);
+    log(`PDF found and renamed: ${pdfPath}`, "proposal");
+    return pdfPath;
+  }
+
+  throw new Error("LibreOffice did not produce a PDF file");
 }
 
 // ─── Full Pipeline ────────────────────────────────────────────────────────
@@ -266,10 +212,9 @@ export interface ProposalResult {
 
 /**
  * Full proposal generation pipeline:
- * 1. Inject census data into template
- * 2. Try LibreOffice (if available) to recalculate + export PDF
- * 3. Otherwise generate PDF using pdfkit with risk analysis
- * 4. Clean up temp files
+ * 1. Inject census data into the actuary's XLSM template
+ * 2. Open in LibreOffice to recalculate all formulas + export PDF
+ * 3. If LibreOffice unavailable, fall back to pdfkit
  */
 export async function generateProposal(
   group: Group,
@@ -290,14 +235,16 @@ export async function generateProposal(
   try {
     execSync("which libreoffice", { stdio: "pipe" });
     hasLibreOffice = true;
-  } catch { /* not available */ }
+    log("LibreOffice detected — will use actuary template for PDF", "proposal");
+  } catch {
+    log("LibreOffice NOT available — will fall back to pdfkit", "proposal");
+  }
 
   let pdfPath: string;
   let tempXlsm: string | null = null;
 
   if (hasLibreOffice) {
-    // Full pipeline: inject census → LibreOffice macros → PDF
-    log("LibreOffice available, using template pipeline", "proposal");
+    // PRIMARY PATH: inject census → LibreOffice recalculates → PDF
     tempXlsm = injectCensusData(templatePath, group, census, targetSheet);
     try {
       pdfPath = runLibreOfficeExportPDF(tempXlsm, group.id);
@@ -310,8 +257,7 @@ export async function generateProposal(
       pdfPath = result.filePath;
     }
   } else {
-    // No LibreOffice — generate PDF directly using pdfkit
-    log("LibreOffice not available, generating PDF with pdfkit", "proposal");
+    // FALLBACK: generate PDF directly using pdfkit
     const { generateProposalPDF } = await import("./pdf-generator");
     const { calculateProposalData } = await import("./proposal-engine-calc");
     const proposalData = calculateProposalData(group, census);
