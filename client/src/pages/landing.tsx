@@ -494,6 +494,28 @@ function ContactSection() {
           </div>
         </div>
       </div>
+
+      {/* Full-width building banner */}
+      <div className="mt-20 relative overflow-hidden">
+        <div className="relative h-[400px] md:h-[500px]">
+          <img
+            src="/kennion-building.jpg"
+            alt="Kennion Benefit Advisors headquarters"
+            className="absolute inset-0 w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-8 md:p-14">
+            <div className="mx-auto max-w-7xl">
+              <h3 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+                Kennion Benefit Advisors
+              </h3>
+              <p className="mt-2 text-white/80 text-sm md:text-base">
+                Vestavia Hills, Alabama
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
