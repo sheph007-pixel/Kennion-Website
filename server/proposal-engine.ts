@@ -267,8 +267,8 @@ export interface ProposalResult {
 /**
  * Full proposal generation pipeline:
  * 1. Inject census data into template
- * 2. Run LibreOffice to execute macros + recalculate
- * 3. Export to PDF
+ * 2. Try LibreOffice (if available) to recalculate + export PDF
+ * 3. Otherwise generate PDF using pdfkit with risk analysis
  * 4. Clean up temp files
  */
 export async function generateProposal(
@@ -285,37 +285,53 @@ export async function generateProposal(
   const templatePath = path.join(TEMPLATE_DIR, templates[0]);
   log(`Starting proposal generation for ${group.companyName} (${census.length} members)`, "proposal");
 
-  // Step 1: Inject census data
-  const tempXlsm = injectCensusData(templatePath, group, census, targetSheet);
-
+  // Check if LibreOffice is available
+  let hasLibreOffice = false;
   try {
-    let pdfPath: string;
+    execSync("which libreoffice", { stdio: "pipe" });
+    hasLibreOffice = true;
+  } catch { /* not available */ }
 
-    // Try LibreOffice first (preserves template formatting + runs macros)
+  let pdfPath: string;
+  let tempXlsm: string | null = null;
+
+  if (hasLibreOffice) {
+    // Full pipeline: inject census → LibreOffice macros → PDF
+    log("LibreOffice available, using template pipeline", "proposal");
+    tempXlsm = injectCensusData(templatePath, group, census, targetSheet);
     try {
       pdfPath = runLibreOfficeExportPDF(tempXlsm, group.id);
     } catch (loErr: any) {
       log(`LibreOffice failed, falling back to pdfkit: ${loErr.message}`, "proposal");
-      // Fallback: generate PDF using pdfkit
       const { generateProposalPDF } = await import("./pdf-generator");
       const { calculateProposalData } = await import("./proposal-engine-calc");
       const proposalData = calculateProposalData(group, census);
       const result = await generateProposalPDF(proposalData);
       pdfPath = result.filePath;
     }
+  } else {
+    // No LibreOffice — generate PDF directly using pdfkit
+    log("LibreOffice not available, generating PDF with pdfkit", "proposal");
+    const { generateProposalPDF } = await import("./pdf-generator");
+    const { calculateProposalData } = await import("./proposal-engine-calc");
+    const proposalData = calculateProposalData(group, census);
+    const result = await generateProposalPDF(proposalData);
+    pdfPath = result.filePath;
+  }
 
-    // Build summary data
-    const ratesData = buildSummaryData(group, census);
-
-    const companySlug = group.companyName.replace(/[^a-zA-Z0-9]/g, "_");
-    const dateStr = new Date().toISOString().slice(0, 10);
-    const fileName = `Proposal_${companySlug}_${dateStr}.pdf`;
-
-    return { pdfPath, fileName, ratesData };
-  } finally {
-    // Clean up temp file
+  // Clean up temp file
+  if (tempXlsm) {
     try { fs.unlinkSync(tempXlsm); } catch { /* ignore */ }
   }
+
+  // Build summary data
+  const ratesData = buildSummaryData(group, census);
+
+  const companySlug = group.companyName.replace(/[^a-zA-Z0-9]/g, "_");
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const fileName = `Proposal_${companySlug}_${dateStr}.pdf`;
+
+  return { pdfPath, fileName, ratesData };
 }
 
 /**
