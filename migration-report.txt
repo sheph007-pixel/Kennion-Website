@@ -1,41 +1,43 @@
 === DATABASE MIGRATION VERIFICATION REPORT ===
-Timestamp: Thu Mar 19 15:31:00 UTC 2026
+Timestamp: Thu Mar 19 15:34:29 UTC 2026
 
 === NEW DATABASE (target) ===
 --- Tables ---
-Did not find any relations.
+             List of relations
+ Schema |      Name      | Type  |  Owner   
+--------+----------------+-------+----------
+ public | census_entries | table | postgres
+ public | groups         | table | postgres
+ public | users          | table | postgres
+(3 rows)
+
 
 --- Users ---
-ERROR:  relation "users" does not exist
-LINE 1: ...ELECT id, full_name, email, role, created_at FROM users ORDE...
-                                                             ^
-No users table
+                  id                  |    full_name    |       email        |  role  |       created_at        
+--------------------------------------+-----------------+--------------------+--------+-------------------------
+ 47a9e587-949f-43b5-a533-3580ea7f21cf | Kennion Admin   | admin@kennion.com  | admin  | 2026-02-17 20:22:06.343
+ 6af39ecb-cbd7-436d-bf2c-daa69bc0672a | Test Guy        | sheph007@gmail.com | client | 2026-02-17 20:23:41.432
+ 4aba8f2a-06f3-49d1-b925-0a6fc9323adc | Test User       | test@kennion.com   | client | 2026-03-16 13:28:24.908
+ 4cd4fef5-e025-4d2e-9e37-e0633fd64f22 | Hunter Smith    | hunter@kennion.com | client | 2026-03-16 14:00:06.683
+ 1f9c6c91-ab83-4531-8ec6-d990d915e9a4 | Wilson Shepherd | Hal@kennion.com    | client | 2026-03-16 16:34:29.07
+(5 rows)
+
 
 --- Groups ---
-ERROR:  relation "groups" does not exist
-LINE 1: ...any_name, contact_name, status, submitted_at FROM groups ORD...
-                                                             ^
-No groups table
-
---- Census entries count ---
-ERROR:  relation "census_entries" does not exist
-LINE 1: SELECT count(*) as census_count FROM census_entries;
-                                             ^
-No census_entries table
-
-=== OLD DATABASE (source) ===
---- Users count ---
- user_count 
-------------
-          5
-(1 row)
-
-
---- Groups count ---
- group_count 
--------------
-          11
-(1 row)
+                  id                  |       company_name        |  contact_name   |  status   |      submitted_at       
+--------------------------------------+---------------------------+-----------------+-----------+-------------------------
+ 77d54f6f-08dc-42e2-9c0c-ad329a77e904 | Test                      | Test Guy        | analyzing | 2026-03-13 14:12:00.953
+ cea447aa-f4a9-466b-9b12-816fd0b93979 | Test                      | Test Guy        | analyzing | 2026-03-13 14:15:37.91
+ f90920cd-0377-4750-8eb0-16e4b08a16ff | Test                      | Test Guy        | analyzing | 2026-03-13 14:19:54.207
+ a1774db5-d9b1-4cdf-9691-ed152b801f01 | Test                      | Test Guy        | analyzing | 2026-03-13 14:29:59.324
+ be5d2816-4e01-440b-af9e-05aadee309b5 | Test                      | Test Guy        | analyzing | 2026-03-13 14:34:39.306
+ b627f708-1035-4a53-b696-ffa6771af3a9 | Test                      | Test Guy        | analyzing | 2026-03-13 14:38:55.616
+ 7766d4ab-8153-45d6-a0c8-3c0632d47447 | Test                      | Test Guy        | analyzing | 2026-03-13 14:41:22.668
+ e973dfe5-b4e9-4a4c-bc83-23ae418e4a29 | Test                      | Test Guy        | analyzing | 2026-03-13 14:54:16.752
+ 748bfbd6-eed5-414b-9981-0b02d242cf9c | Test                      | Test Guy        | analyzing | 2026-03-13 14:56:05.421
+ 2d0e1915-2f2c-4001-a4d3-1021761a9bc2 | Eager Corp ATL            | Hunter Smith    | analyzing | 2026-03-16 14:10:07.908
+ 47733767-7a56-40ec-9236-7c8675cfd7c3 | Faith Presbyterian Church | Wilson Shepherd | analyzing | 2026-03-16 16:35:19.334
+(11 rows)
 
 
 --- Census entries count ---
@@ -46,8 +48,8 @@ No census_entries table
 
 
 === COMPARISON ===
-Users: OLD=5 NEW=
-Groups: OLD=11 NEW=
-Census: OLD=374 NEW=
+Users: OLD=5 NEW=5
+Groups: OLD=11 NEW=11
+Census: OLD=374 NEW=374
 
-RESULT: MIGRATION INCOMPLETE - Counts differ. Railway may need DATABASE_URL updated to new instance.
+RESULT: MIGRATION SUCCESSFUL - All counts match!
