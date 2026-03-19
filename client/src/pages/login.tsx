@@ -144,7 +144,7 @@ export default function LoginPage() {
                 </div>
                 <h1 className="text-2xl font-bold tracking-tight" data-testid="text-sign-in-title">Sign In</h1>
                 <p className="text-muted-foreground mt-2">
-                  For groups in the proposal process with Kennion
+                  For groups in the proposal process with Kennion.
                 </p>
               </div>
 

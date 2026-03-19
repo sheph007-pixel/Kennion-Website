@@ -145,7 +145,7 @@ export default function RegisterPage() {
                 </div>
                 <h1 className="text-2xl font-bold tracking-tight" data-testid="text-register-title">Submit Your Group</h1>
                 <p className="text-muted-foreground mt-2">
-                  Start your proposal — see if your group qualifies for better rates
+                  Start your proposal and see if your group qualifies for better rates.
                 </p>
               </div>
 
