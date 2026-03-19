@@ -1,8 +1,6 @@
 /**
- * Proposal Engine — drives the actuary's XLSM template:
- *   1. Inject census data into the Census sheet
- *   2. Run "Determine Member Level Factors" macro (calculates rates)
- *   3. Export the proposal sheets to PDF via LibreOffice
+ * Proposal Engine — injects census data into XLSM template,
+ * runs LibreOffice to execute macros and export PDF.
  */
 import XLSX from "xlsx";
 import { execSync } from "child_process";
@@ -14,50 +12,58 @@ import { log } from "./index";
 const PROPOSALS_DIR = path.join(process.cwd(), "uploads", "proposals");
 const TEMPLATE_DIR = path.join(process.cwd(), "uploads", "templates");
 const TEMP_DIR = path.join(process.cwd(), "uploads", "temp");
-const LO_PROFILE = path.join(process.cwd(), "uploads", "lo-profile");
 
 // Ensure directories exist
-for (const dir of [PROPOSALS_DIR, TEMP_DIR, LO_PROFILE]) {
-  fs.mkdirSync(dir, { recursive: true });
+fs.mkdirSync(PROPOSALS_DIR, { recursive: true });
+fs.mkdirSync(TEMP_DIR, { recursive: true });
+
+// ─── Age Calculation ──────────────────────────────────────────────────────
+
+export function calculateAge(dob: string): number {
+  const birth = new Date(dob);
+  if (isNaN(birth.getTime())) return 30;
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return Math.max(0, age);
 }
 
-// ─── LibreOffice Setup ────────────────────────────────────────────────────
-
-/**
- * Create a LibreOffice user profile that allows macros to run
- * without security prompts (headless mode).
- */
-function ensureLoProfile() {
-  const regFile = path.join(LO_PROFILE, "user", "registrymodifications.xcu");
-  if (fs.existsSync(regFile)) return;
-
-  fs.mkdirSync(path.join(LO_PROFILE, "user"), { recursive: true });
-  fs.writeFileSync(regFile, `<?xml version="1.0" encoding="UTF-8"?>
-<oor:items xmlns:oor="http://openoffice.org/2001/registry"
-           xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <item oor:path="/org.openoffice.Office.Common/Security/Scripting">
-    <prop oor:name="MacroSecurityLevel" oor:op="fuse">
-      <value>0</value>
-    </prop>
-  </item>
-  <item oor:path="/org.openoffice.Office.Common/Security/Scripting">
-    <prop oor:name="DisableMacrosExecution" oor:op="fuse">
-      <value>false</value>
-    </prop>
-  </item>
-</oor:items>`);
-  log("Created LibreOffice profile with macros enabled", "proposal");
+export function getAgeBand(age: number): string {
+  if (age <= 4) return "0-4";
+  if (age <= 9) return "5-9";
+  if (age <= 14) return "10-14";
+  if (age <= 19) return "15-19";
+  if (age <= 24) return "20-24";
+  if (age <= 29) return "25-29";
+  if (age <= 34) return "30-34";
+  if (age <= 39) return "35-39";
+  if (age <= 44) return "40-44";
+  if (age <= 49) return "45-49";
+  if (age <= 54) return "50-54";
+  if (age <= 59) return "55-59";
+  if (age <= 64) return "60-64";
+  if (age <= 69) return "65-69";
+  return "70+";
 }
 
-function loCmd(args: string): string {
-  ensureLoProfile();
-  return `libreoffice --headless --norestore ` +
-    `--env:UserInstallation=file://${LO_PROFILE} ${args}`;
+// ─── Template Sheet Inspection ────────────────────────────────────────────
+
+export function getTemplateInfo(templatePath: string) {
+  const buf = fs.readFileSync(templatePath);
+  const wb = XLSX.read(buf, { type: "buffer", bookVBA: true });
+  return {
+    sheetNames: wb.SheetNames,
+    hasVBA: !!wb.vbaraw,
+  };
 }
 
 // ─── Census Data Injection ────────────────────────────────────────────────
 
+/**
+ * Inject census data into the XLSM template's Census sheet.
+ * Returns the path to the modified temp file.
+ */
 export function injectCensusData(
   templatePath: string,
   group: Group,
@@ -68,7 +74,7 @@ export function injectCensusData(
   const wb = XLSX.read(buf, { type: "buffer", bookVBA: true });
 
   // Find target sheet (case-insensitive)
-  const sheetName = wb.SheetNames.find(s => s === targetSheet)
+  let sheetName = wb.SheetNames.find(s => s === targetSheet)
     || wb.SheetNames.find(s => s.toLowerCase() === targetSheet.toLowerCase());
 
   if (!sheetName) {
@@ -87,7 +93,7 @@ export function injectCensusData(
     }
   }
 
-  log(`Template headers: ${JSON.stringify(headers)}`, "proposal");
+  log(`Template headers found: ${JSON.stringify(headers)}`, "proposal");
 
   // Map census fields to template columns
   const fieldMappings: Record<string, string[]> = {
@@ -112,13 +118,14 @@ export function injectCensusData(
 
   log(`Column mapping: ${JSON.stringify(colMap)}`, "proposal");
 
-  // Clear existing data rows (keep headers)
+  // Clear existing data rows (row 1+)
   for (let r = 1; r <= range.e.r; r++) {
     for (let c = range.s.c; c <= range.e.c; c++) {
       delete ws[XLSX.utils.encode_cell({ r, c })];
     }
   }
 
+  // Normalize relationship values to what the template expects
   function normalizeRelationship(rel: string): string {
     const upper = rel.toUpperCase().trim();
     if (upper === "EE" || upper === "EMPLOYEE") return "Employee";
@@ -127,9 +134,10 @@ export function injectCensusData(
     return rel;
   }
 
-  // Inject census data
+  // Inject census data starting at row 1
   census.forEach((entry, i) => {
     const r = i + 1;
+
     const write = (col: number | undefined, val: string) => {
       if (col === undefined || val == null) return;
       ws[XLSX.utils.encode_cell({ r, c: col })] = { t: "s", v: val };
@@ -144,118 +152,108 @@ export function injectCensusData(
     write(colMap.companyName, group.companyName);
   });
 
-  // Update range
+  // Update sheet range
   ws["!ref"] = XLSX.utils.encode_range({
     s: { r: 0, c: range.s.c },
     e: { r: Math.max(range.e.r, census.length), c: range.e.c },
   });
 
-  // Write temp file (preserving VBA macros)
+  // Write to temp file
   const tempPath = path.join(TEMP_DIR, `${group.id}_${Date.now()}.xlsm`);
   const outBuf = XLSX.write(wb, { type: "buffer", bookType: "xlsm", bookVBA: true });
   fs.writeFileSync(tempPath, outBuf);
 
-  log(`Injected ${census.length} rows into "${sheetName}"`, "proposal");
+  log(`Injected ${census.length} rows into "${sheetName}", saved to ${tempPath}`, "proposal");
   return tempPath;
 }
 
-// ─── Macro Execution ──────────────────────────────────────────────────────
+// ─── LibreOffice Macro Execution + PDF Export ─────────────────────────────
 
 /**
- * Create a LibreOffice Basic script that:
- *   1. Opens the XLSM
- *   2. Runs the rate calculation VBA macro
- *   3. Saves the file (so calculated values persist)
- *   4. Exports specific sheets to PDF
+ * Run LibreOffice headless to execute macros and export to PDF.
  *
- * This script runs inside LibreOffice, so it has full access to the
- * workbook's VBA macros and can control the PDF export path.
+ * Strategy:
+ * 1. First try running the specific macro if we can detect it
+ * 2. Then export the workbook to PDF via LibreOffice
  */
-function createRunnerScript(xlsmPath: string, pdfPath: string): string {
-  const scriptPath = path.join(TEMP_DIR, `runner_${Date.now()}.py`);
+export function runLibreOfficeExportPDF(xlsmPath: string, groupId: string): string {
+  const pdfFileName = `${groupId}_${Date.now()}.pdf`;
+  const pdfPath = path.join(PROPOSALS_DIR, pdfFileName);
 
-  // Use a Python macro (LibreOffice supports Python macros natively)
-  // This opens the file, runs the VBA macro, and exports to PDF
-  fs.writeFileSync(scriptPath, `
-import subprocess
-import os
-import sys
-import time
+  // First, try to run the macro that calculates rates
+  // LibreOffice can execute VBA macros with: macro://./Module.MacroName
+  // We'll try common macro names the template might have
+  const macroNames = [
+    "DetermineMemberLevelFactors",
+    "Determine_Member_Level_Factors",
+    "CalculateRates",
+    "RunCalculation",
+    "Calculate",
+  ];
 
-xlsm_path = "${xlsmPath.replace(/\\/g, "/")}"
-pdf_path = "${pdfPath.replace(/\\/g, "/")}"
-proposals_dir = "${PROPOSALS_DIR.replace(/\\/g, "/")}"
-lo_profile = "${LO_PROFILE.replace(/\\/g, "/")}"
+  // Try to run macros with LibreOffice
+  for (const macroName of macroNames) {
+    try {
+      log(`Attempting to run macro: ${macroName}`, "proposal");
+      execSync(
+        `libreoffice --headless --norestore --calc --infilter="MS Excel 2007 XML" ` +
+        `"macro://./VBAProject.ThisWorkbook.${macroName}" "${xlsmPath}" 2>&1`,
+        { timeout: 60000, stdio: "pipe" }
+      );
+      log(`Macro ${macroName} executed successfully`, "proposal");
+      break;
+    } catch (err: any) {
+      log(`Macro ${macroName} failed or not found: ${err.message?.substring(0, 100)}`, "proposal");
+      // Try next macro name or continue to PDF export
+    }
+  }
 
-def run_lo(args, timeout=120):
-    """Run a LibreOffice command and return (returncode, stdout, stderr)."""
-    cmd = (
-        f"libreoffice --headless --norestore "
-        f"--env:UserInstallation=file://{lo_profile} "
-        f"{args}"
-    )
-    try:
-        result = subprocess.run(
-            cmd, shell=True, capture_output=True, text=True, timeout=timeout
-        )
-        return result.returncode, result.stdout, result.stderr
-    except subprocess.TimeoutExpired:
-        return -1, "", "Timeout"
+  // Also try module-level macros
+  for (const macroName of macroNames) {
+    try {
+      execSync(
+        `libreoffice --headless --norestore --calc ` +
+        `"macro://./Standard.Module1.${macroName}" "${xlsmPath}" 2>&1`,
+        { timeout: 60000, stdio: "pipe" }
+      );
+      log(`Macro Standard.Module1.${macroName} executed`, "proposal");
+      break;
+    } catch {
+      // continue
+    }
+  }
 
-# Step 1: Try running the rate calculation macro
-# Try different possible module/macro name combinations
-macro_names = [
-    "VBAProject.ThisWorkbook.DetermineMemberLevelFactors",
-    "VBAProject.Module1.DetermineMemberLevelFactors",
-    "VBAProject.ThisWorkbook.Determine_Member_Level_Factors",
-    "VBAProject.Module1.Determine_Member_Level_Factors",
-    "VBAProject.ThisWorkbook.CalculateRates",
-    "VBAProject.Module1.CalculateRates",
-]
+  // Now export to PDF using LibreOffice
+  try {
+    log(`Exporting PDF from ${xlsmPath}`, "proposal");
 
-macro_ran = False
-for macro in macro_names:
-    print(f"Trying macro: {macro}")
-    rc, out, err = run_lo(
-        f'--calc "macro://./{ macro }" "{ xlsm_path }"',
-        timeout=90
-    )
-    print(f"  rc={rc} out={out[:200]} err={err[:200]}")
-    if rc == 0:
-        macro_ran = True
-        print(f"  SUCCESS: {macro}")
-        break
+    // LibreOffice converts to PDF in the same directory as the input
+    execSync(
+      `libreoffice --headless --norestore --calc --convert-to pdf ` +
+      `--outdir "${PROPOSALS_DIR}" "${xlsmPath}"`,
+      { timeout: 120000, stdio: "pipe" }
+    );
 
-if not macro_ran:
-    print("WARNING: No rate calculation macro found/ran, formulas may recalculate on open")
+    // Find the generated PDF (LibreOffice names it based on input filename)
+    const baseName = path.basename(xlsmPath, ".xlsm");
+    const generatedPdf = path.join(PROPOSALS_DIR, `${baseName}.pdf`);
 
-# Small delay to let LibreOffice release file locks
-time.sleep(1)
+    if (fs.existsSync(generatedPdf)) {
+      // Rename to our desired filename
+      fs.renameSync(generatedPdf, pdfPath);
+      log(`PDF exported successfully: ${pdfPath}`, "proposal");
+    } else {
+      // Check for any new PDF files in the output directory
+      const pdfFiles = fs.readdirSync(PROPOSALS_DIR).filter(f => f.endsWith(".pdf"));
+      log(`PDF files in directory: ${pdfFiles.join(", ")}`, "proposal");
+      throw new Error("LibreOffice did not produce a PDF file");
+    }
+  } catch (err: any) {
+    log(`LibreOffice PDF export failed: ${err.message}`, "proposal");
+    throw new Error(`PDF export failed: ${err.message}`);
+  }
 
-# Step 2: Export to PDF using --convert-to
-# LibreOffice will recalculate all cell formulas when opening
-print(f"Exporting PDF...")
-rc, out, err = run_lo(
-    f'--calc --convert-to pdf --outdir "{proposals_dir}" "{xlsm_path}"'
-)
-print(f"PDF export: rc={rc} out={out[:200]} err={err[:200]}")
-
-# Find the generated PDF
-base = os.path.splitext(os.path.basename(xlsm_path))[0]
-generated = os.path.join(proposals_dir, base + ".pdf")
-
-if os.path.exists(generated):
-    os.rename(generated, pdf_path)
-    print(f"PDF saved to: {pdf_path}")
-    sys.exit(0)
-else:
-    # Check for any new PDF
-    pdfs = [f for f in os.listdir(proposals_dir) if f.endswith(".pdf")]
-    print(f"PDF files found: {pdfs}")
-    sys.exit(1)
-`);
-
-  return scriptPath;
+  return pdfPath;
 }
 
 // ─── Full Pipeline ────────────────────────────────────────────────────────
@@ -266,6 +264,13 @@ export interface ProposalResult {
   ratesData: any;
 }
 
+/**
+ * Full proposal generation pipeline:
+ * 1. Inject census data into template
+ * 2. Try LibreOffice (if available) to recalculate + export PDF
+ * 3. Otherwise generate PDF using pdfkit with risk analysis
+ * 4. Clean up temp files
+ */
 export async function generateProposal(
   group: Group,
   census: CensusEntry[],
@@ -278,7 +283,7 @@ export async function generateProposal(
   }
 
   const templatePath = path.join(TEMPLATE_DIR, templates[0]);
-  log(`Starting proposal for ${group.companyName} (${census.length} members)`, "proposal");
+  log(`Starting proposal generation for ${group.companyName} (${census.length} members)`, "proposal");
 
   // Check if LibreOffice is available
   let hasLibreOffice = false;
@@ -287,102 +292,58 @@ export async function generateProposal(
     hasLibreOffice = true;
   } catch { /* not available */ }
 
-  const companySlug = group.companyName.replace(/[^a-zA-Z0-9]/g, "_");
-  const dateStr = new Date().toISOString().slice(0, 10);
-  const fileName = `Proposal_${companySlug}_${dateStr}.pdf`;
-  const pdfPath = path.join(PROPOSALS_DIR, `${group.id}_${Date.now()}.pdf`);
+  let pdfPath: string;
+  let tempXlsm: string | null = null;
 
   if (hasLibreOffice) {
-    log("LibreOffice available — using actuary template", "proposal");
-
-    // Step 1: Inject census data into template
-    const tempXlsm = injectCensusData(templatePath, group, census, targetSheet);
-
+    // Full pipeline: inject census → LibreOffice macros → PDF
+    log("LibreOffice available, using template pipeline", "proposal");
+    tempXlsm = injectCensusData(templatePath, group, census, targetSheet);
     try {
-      // Step 2: Run the Python script that handles macro execution + PDF export
-      const scriptPath = createRunnerScript(tempXlsm, pdfPath);
-
-      try {
-        const output = execSync(`python3 "${scriptPath}"`, {
-          timeout: 180000,
-          stdio: "pipe",
-          env: { ...process.env, HOME: "/tmp" },
-        });
-        log(`Runner output: ${output.toString().substring(0, 500)}`, "proposal");
-      } catch (runErr: any) {
-        const stdout = runErr.stdout?.toString() || "";
-        const stderr = runErr.stderr?.toString() || "";
-        log(`Runner error: ${stdout} ${stderr}`, "proposal");
-
-        // If Python script failed, try direct LibreOffice conversion as fallback
-        if (!fs.existsSync(pdfPath)) {
-          log("Falling back to direct LibreOffice PDF conversion", "proposal");
-          ensureLoProfile();
-          try {
-            execSync(
-              `libreoffice --headless --norestore ` +
-              `--env:UserInstallation=file://${LO_PROFILE} ` +
-              `--calc --convert-to pdf ` +
-              `--outdir "${PROPOSALS_DIR}" "${tempXlsm}"`,
-              { timeout: 120000, stdio: "pipe", env: { ...process.env, HOME: "/tmp" } }
-            );
-
-            // Find and rename the PDF
-            const baseName = path.basename(tempXlsm, ".xlsm");
-            const generated = path.join(PROPOSALS_DIR, `${baseName}.pdf`);
-            if (fs.existsSync(generated)) {
-              fs.renameSync(generated, pdfPath);
-            }
-          } catch (loErr: any) {
-            log(`Direct LO conversion also failed: ${loErr.message}`, "proposal");
-          }
-        }
-      } finally {
-        // Clean up temp files
-        try { fs.unlinkSync(tempXlsm); } catch { /* ignore */ }
-      }
-
-      if (!fs.existsSync(pdfPath)) {
-        throw new Error("Failed to generate PDF from template. Check LibreOffice logs.");
-      }
-    } catch (err: any) {
-      if (!fs.existsSync(pdfPath)) {
-        // Final fallback: pdfkit
-        log(`All LibreOffice methods failed, using pdfkit fallback: ${err.message}`, "proposal");
-        const { generateProposalPDF } = await import("./pdf-generator");
-        const { calculateProposalData } = await import("./proposal-engine-calc");
-        const proposalData = calculateProposalData(group, census);
-        const result = await generateProposalPDF(proposalData);
-        // Move to expected path
-        fs.renameSync(result.filePath, pdfPath);
-      }
+      pdfPath = runLibreOfficeExportPDF(tempXlsm, group.id);
+    } catch (loErr: any) {
+      log(`LibreOffice failed, falling back to pdfkit: ${loErr.message}`, "proposal");
+      const { generateProposalPDF } = await import("./pdf-generator");
+      const { calculateProposalData } = await import("./proposal-engine-calc");
+      const proposalData = calculateProposalData(group, census);
+      const result = await generateProposalPDF(proposalData);
+      pdfPath = result.filePath;
     }
   } else {
-    // No LibreOffice — pdfkit fallback
-    log("LibreOffice not available, using pdfkit", "proposal");
+    // No LibreOffice — generate PDF directly using pdfkit
+    log("LibreOffice not available, generating PDF with pdfkit", "proposal");
     const { generateProposalPDF } = await import("./pdf-generator");
     const { calculateProposalData } = await import("./proposal-engine-calc");
     const proposalData = calculateProposalData(group, census);
     const result = await generateProposalPDF(proposalData);
-    fs.renameSync(result.filePath, pdfPath);
+    pdfPath = result.filePath;
   }
 
+  // Clean up temp file
+  if (tempXlsm) {
+    try { fs.unlinkSync(tempXlsm); } catch { /* ignore */ }
+  }
+
+  // Build summary data
   const ratesData = buildSummaryData(group, census);
+
+  const companySlug = group.companyName.replace(/[^a-zA-Z0-9]/g, "_");
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const fileName = `Proposal_${companySlug}_${dateStr}.pdf`;
+
   return { pdfPath, fileName, ratesData };
 }
 
+/**
+ * Build summary data for storage alongside the proposal.
+ */
 function buildSummaryData(group: Group, census: CensusEntry[]) {
   let employees = 0, spouses = 0, children = 0;
   let totalAge = 0;
 
   for (const entry of census) {
-    const birth = new Date(entry.dateOfBirth);
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-    totalAge += Math.max(0, age);
-
+    const age = calculateAge(entry.dateOfBirth);
+    totalAge += age;
     const rel = entry.relationship.toUpperCase();
     if (rel === "EE" || rel === "EMPLOYEE") employees++;
     else if (rel === "SP" || rel === "SPOUSE") spouses++;
@@ -391,7 +352,9 @@ function buildSummaryData(group: Group, census: CensusEntry[]) {
 
   return {
     totalLives: census.length,
-    employees, spouses, children,
+    employees,
+    spouses,
+    children,
     averageAge: census.length > 0 ? totalAge / census.length : 0,
     generatedAt: new Date().toISOString(),
   };
