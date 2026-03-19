@@ -25,6 +25,11 @@ import {
   Trash2,
   ArrowUpDown,
   KeyRound,
+  FileSpreadsheet,
+  Upload,
+  Download,
+  FileText,
+  X,
 } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
@@ -1014,6 +1019,300 @@ function EditUserDialog({
   );
 }
 
+function ProposalGenerator() {
+  const { toast } = useToast();
+  const [isUploading, setIsUploading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState<string | null>(null);
+  const [selectedSheet, setSelectedSheet] = useState("Census");
+
+  // Fetch template info
+  const { data: templateInfo, isLoading: templateLoading } = useQuery<{
+    uploaded: boolean;
+    fileName?: string;
+    fileSize?: number;
+    uploadedAt?: string;
+  }>({
+    queryKey: ["/api/admin/proposal/template-info"],
+  });
+
+  // Fetch sheet names if template is uploaded
+  const { data: sheetsData } = useQuery<{ sheets: string[] }>({
+    queryKey: ["/api/admin/proposal/sheets"],
+    enabled: !!templateInfo?.uploaded,
+  });
+
+  // Fetch all groups
+  const { data: groups } = useQuery<Group[]>({
+    queryKey: ["/api/admin/groups"],
+  });
+
+  const handleUploadTemplate = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".xlsm")) {
+      toast({ title: "Invalid file", description: "Please upload a .xlsm file", variant: "destructive" });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("template", file);
+
+      const res = await fetch("/api/admin/proposal/upload-template", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Upload failed");
+      }
+
+      const data = await res.json();
+      toast({ title: "Template uploaded", description: `${data.fileName} — ${data.sheetNames.length} sheets found` });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/proposal/template-info"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/proposal/sheets"] });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleDeleteTemplate = async () => {
+    try {
+      const res = await fetch("/api/admin/proposal/template", {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete template");
+      toast({ title: "Template removed" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/proposal/template-info"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/proposal/sheets"] });
+    } catch (err: any) {
+      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleGenerate = async (groupId: string, companyName: string) => {
+    setIsGenerating(groupId);
+    try {
+      const res = await fetch(`/api/admin/proposal/generate/${groupId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetSheet: selectedSheet }),
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Generation failed");
+      }
+
+      // Download the file
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const disposition = res.headers.get("Content-Disposition");
+      const match = disposition?.match(/filename="(.+)"/);
+      a.download = match?.[1] || `Proposal_${companyName}.xlsm`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({ title: "Proposal generated", description: `Downloaded proposal for ${companyName}` });
+    } catch (err: any) {
+      toast({ title: "Generation failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsGenerating(null);
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Template Upload Section */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+          <FileSpreadsheet className="h-5 w-5 text-primary" />
+          XLSM Template
+        </h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Upload the actuary's XLSM document. Census data will be injected into the designated sheet to generate proposals.
+        </p>
+
+        {templateLoading ? (
+          <Skeleton className="h-20 w-full" />
+        ) : templateInfo?.uploaded ? (
+          <div className="flex items-center justify-between bg-muted/30 p-4 rounded-lg border">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-green-500/10">
+                <FileSpreadsheet className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">{templateInfo.fileName}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatFileSize(templateInfo.fileSize || 0)} — Uploaded {templateInfo.uploadedAt
+                    ? format(new Date(templateInfo.uploadedAt), "MMM d, yyyy 'at' h:mm a")
+                    : ""}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <label>
+                <input
+                  type="file"
+                  accept=".xlsm"
+                  onChange={handleUploadTemplate}
+                  className="hidden"
+                  disabled={isUploading}
+                />
+                <Button variant="outline" size="sm" asChild disabled={isUploading}>
+                  <span className="cursor-pointer">
+                    <Upload className="h-3.5 w-3.5 mr-1.5" />
+                    Replace
+                  </span>
+                </Button>
+              </label>
+              <Button variant="ghost" size="sm" onClick={handleDeleteTemplate}>
+                <X className="h-3.5 w-3.5 text-destructive" />
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <label className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 cursor-pointer hover:border-primary/50 hover:bg-muted/20 transition-colors">
+            <input
+              type="file"
+              accept=".xlsm"
+              onChange={handleUploadTemplate}
+              className="hidden"
+              disabled={isUploading}
+            />
+            {isUploading ? (
+              <>
+                <Loader2 className="h-8 w-8 text-muted-foreground mb-2 animate-spin" />
+                <p className="text-sm font-medium">Uploading...</p>
+              </>
+            ) : (
+              <>
+                <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                <p className="text-sm font-medium">Click to upload XLSM template</p>
+                <p className="text-xs text-muted-foreground mt-1">Accepts .xlsm files with macros</p>
+              </>
+            )}
+          </label>
+        )}
+
+        {/* Sheet selector */}
+        {sheetsData && sheetsData.sheets.length > 0 && (
+          <div className="mt-4">
+            <Label className="text-sm font-medium mb-1.5 block">Target sheet for census data</Label>
+            <Select value={selectedSheet} onValueChange={setSelectedSheet}>
+              <SelectTrigger className="w-64">
+                <SelectValue placeholder="Select sheet" />
+              </SelectTrigger>
+              <SelectContent>
+                {sheetsData.sheets.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </Card>
+
+      {/* Generate Proposals Section */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+          <FileBarChart className="h-5 w-5 text-primary" />
+          Generate Proposals
+        </h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Select a group below to inject its census data into the template and download the generated proposal.
+        </p>
+
+        {!templateInfo?.uploaded ? (
+          <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed">
+            <FileSpreadsheet className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">Upload a template first</p>
+            <p className="text-xs text-muted-foreground mt-1">You need to upload an XLSM template before generating proposals.</p>
+          </div>
+        ) : !groups || groups.length === 0 ? (
+          <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed">
+            <Building2 className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">No groups available</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/30">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Company</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Contact</th>
+                  <th className="px-4 py-3 text-center font-medium text-muted-foreground">Lives</th>
+                  <th className="px-4 py-3 text-center font-medium text-muted-foreground">Status</th>
+                  <th className="px-4 py-3 text-center font-medium text-muted-foreground">Generate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groups.map((g) => {
+                  const StatusIcon = STATUS_ICONS[g.status] || Clock;
+                  return (
+                    <tr key={g.id} className="border-b hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3 font-medium">{g.companyName}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{g.contactName}</td>
+                      <td className="px-4 py-3 text-center">{g.totalLives}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <StatusIcon className={`h-3.5 w-3.5 ${STATUS_COLORS[g.status] || ""}`} />
+                          <span className={`text-xs ${STATUS_COLORS[g.status] || ""}`}>
+                            {STATUS_OPTIONS.find((o) => o.value === g.status)?.label || g.status}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <Button
+                          size="sm"
+                          onClick={() => handleGenerate(g.id, g.companyName)}
+                          disabled={isGenerating === g.id}
+                          className="gap-1.5"
+                        >
+                          {isGenerating === g.id ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="h-3.5 w-3.5" />
+                              Generate
+                            </>
+                          )}
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -1121,6 +1420,10 @@ export default function AdminPage() {
               <Users className="h-4 w-4" />
               Users
             </TabsTrigger>
+            <TabsTrigger value="proposals" className="flex items-center gap-2">
+              <FileSpreadsheet className="h-4 w-4" />
+              Proposal Generator
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="groups" className="mt-0">
@@ -1210,6 +1513,10 @@ export default function AdminPage() {
 
           <TabsContent value="users" className="mt-0">
             <UserManagement />
+          </TabsContent>
+
+          <TabsContent value="proposals" className="mt-0">
+            <ProposalGenerator />
           </TabsContent>
         </Tabs>
       </div>

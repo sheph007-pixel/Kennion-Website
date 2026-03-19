@@ -4,6 +4,9 @@ import session from "express-session";
 import multer from "multer";
 import Papa from "papaparse";
 import crypto from "crypto";
+import path from "path";
+import fs from "fs";
+import ExcelJS from "exceljs";
 import bcrypt from "bcryptjs";
 import { storage } from "./storage";
 import {
@@ -1384,6 +1387,217 @@ export async function registerRoutes(
       res.json({ message: "Group deleted successfully" });
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Delete failed" });
+    }
+  });
+
+  // ============================================================
+  // Proposal Generator — XLSM template upload & census injection
+  // ============================================================
+
+  const TEMPLATE_DIR = path.join(process.cwd(), "uploads", "templates");
+
+  // Ensure template directory exists
+  fs.mkdirSync(TEMPLATE_DIR, { recursive: true });
+
+  // GET  — check if a template has been uploaded
+  app.get("/api/admin/proposal/template-info", requireAdmin, async (_req: Request, res: Response) => {
+    try {
+      const files = fs.readdirSync(TEMPLATE_DIR).filter((f) => f.endsWith(".xlsm"));
+      if (files.length === 0) {
+        return res.json({ uploaded: false });
+      }
+      const fileName = files[0];
+      const stat = fs.statSync(path.join(TEMPLATE_DIR, fileName));
+      res.json({
+        uploaded: true,
+        fileName,
+        fileSize: stat.size,
+        uploadedAt: stat.mtime.toISOString(),
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Failed to check template" });
+    }
+  });
+
+  // POST — upload an XLSM template
+  app.post("/api/admin/proposal/upload-template", requireAdmin, upload.single("template"), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const originalName = req.file.originalname;
+      if (!originalName.toLowerCase().endsWith(".xlsm")) {
+        return res.status(400).json({ message: "Only .xlsm files are accepted" });
+      }
+
+      // Clear any existing templates
+      const existing = fs.readdirSync(TEMPLATE_DIR).filter((f) => f.endsWith(".xlsm"));
+      for (const f of existing) {
+        fs.unlinkSync(path.join(TEMPLATE_DIR, f));
+      }
+
+      // Save the new template
+      const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const destPath = path.join(TEMPLATE_DIR, safeName);
+      fs.writeFileSync(destPath, req.file.buffer);
+
+      // Validate it's a valid Excel file and find sheet names
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(destPath);
+      const sheetNames = workbook.worksheets.map((ws) => ws.name);
+
+      res.json({
+        message: "Template uploaded successfully",
+        fileName: safeName,
+        fileSize: req.file.size,
+        sheetNames,
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Upload failed" });
+    }
+  });
+
+  // DELETE — remove the uploaded template
+  app.delete("/api/admin/proposal/template", requireAdmin, async (_req: Request, res: Response) => {
+    try {
+      const files = fs.readdirSync(TEMPLATE_DIR).filter((f) => f.endsWith(".xlsm"));
+      for (const f of files) {
+        fs.unlinkSync(path.join(TEMPLATE_DIR, f));
+      }
+      res.json({ message: "Template removed" });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Delete failed" });
+    }
+  });
+
+  // POST — generate proposal by injecting census data into the XLSM template
+  app.post("/api/admin/proposal/generate/:groupId", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const groupId = req.params.groupId as string;
+      const { targetSheet } = req.body as { targetSheet?: string };
+
+      // Find the template
+      const templates = fs.readdirSync(TEMPLATE_DIR).filter((f) => f.endsWith(".xlsm"));
+      if (templates.length === 0) {
+        return res.status(400).json({ message: "No XLSM template uploaded. Please upload a template first." });
+      }
+
+      // Load group and census data
+      const group = await storage.getGroup(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+
+      const censusEntries = await storage.getCensusByGroupId(groupId);
+      if (censusEntries.length === 0) {
+        return res.status(400).json({ message: "No census entries found for this group" });
+      }
+
+      // Read the template workbook
+      const templatePath = path.join(TEMPLATE_DIR, templates[0]);
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(templatePath);
+
+      // Find the target sheet (default: "Census")
+      const sheetName = targetSheet || "Census";
+      let worksheet = workbook.getWorksheet(sheetName);
+
+      if (!worksheet) {
+        // Try case-insensitive match
+        worksheet = workbook.worksheets.find(
+          (ws) => ws.name.toLowerCase() === sheetName.toLowerCase()
+        );
+      }
+
+      if (!worksheet) {
+        const available = workbook.worksheets.map((ws) => ws.name);
+        return res.status(400).json({
+          message: `Sheet "${sheetName}" not found in the template. Available sheets: ${available.join(", ")}`,
+          availableSheets: available,
+        });
+      }
+
+      // Determine the header row — read row 1 to find column mapping
+      const headerRow = worksheet.getRow(1);
+      const headers: Record<string, number> = {};
+      headerRow.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+        const val = String(cell.value || "").trim().toLowerCase();
+        headers[val] = colNumber;
+      });
+
+      // Map census fields to likely column names
+      const fieldMappings: Record<string, string[]> = {
+        firstName: ["first name", "firstname", "first", "first_name"],
+        lastName: ["last name", "lastname", "last", "last_name"],
+        dateOfBirth: ["date of birth", "dob", "dateofbirth", "birth date", "birthdate", "date_of_birth"],
+        gender: ["gender", "sex"],
+        zipCode: ["zip code", "zipcode", "zip", "postal code", "zip_code"],
+        relationship: ["relationship", "type", "relation", "coverage type", "member type", "dependent type"],
+      };
+
+      // Find column index for each census field
+      const colMap: Record<string, number> = {};
+      for (const [field, aliases] of Object.entries(fieldMappings)) {
+        for (const alias of aliases) {
+          if (headers[alias] !== undefined) {
+            colMap[field] = headers[alias];
+            break;
+          }
+        }
+      }
+
+      // Write census data starting from row 2
+      censusEntries.forEach((entry, index) => {
+        const rowNum = index + 2; // Row 1 is headers
+        const row = worksheet!.getRow(rowNum);
+
+        if (colMap.firstName) row.getCell(colMap.firstName).value = entry.firstName;
+        if (colMap.lastName) row.getCell(colMap.lastName).value = entry.lastName;
+        if (colMap.dateOfBirth) row.getCell(colMap.dateOfBirth).value = entry.dateOfBirth;
+        if (colMap.gender) row.getCell(colMap.gender).value = entry.gender;
+        if (colMap.zipCode) row.getCell(colMap.zipCode).value = entry.zipCode;
+        if (colMap.relationship) row.getCell(colMap.relationship).value = entry.relationship;
+
+        row.commit();
+      });
+
+      // Clear any leftover rows below the new data (if template had sample data)
+      const lastDataRow = censusEntries.length + 1;
+      for (let r = lastDataRow + 1; r <= lastDataRow + 100; r++) {
+        const row = worksheet.getRow(r);
+        const hasData = row.values && (row.values as any[]).some((v) => v !== null && v !== undefined && v !== "");
+        if (!hasData) break;
+        row.values = [];
+        row.commit();
+      }
+
+      // Generate the file as buffer and send back
+      const buffer = await workbook.xlsx.writeBuffer();
+      const outputName = `Proposal_${group.companyName.replace(/[^a-zA-Z0-9]/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsm`;
+
+      res.setHeader("Content-Type", "application/vnd.ms-excel.sheet.macroEnabled.12");
+      res.setHeader("Content-Disposition", `attachment; filename="${outputName}"`);
+      res.send(Buffer.from(buffer));
+    } catch (err: any) {
+      log(`Proposal generation error: ${err.message}`, "proposal");
+      res.status(500).json({ message: err.message || "Failed to generate proposal" });
+    }
+  });
+
+  // GET — list sheet names in the uploaded template
+  app.get("/api/admin/proposal/sheets", requireAdmin, async (_req: Request, res: Response) => {
+    try {
+      const templates = fs.readdirSync(TEMPLATE_DIR).filter((f) => f.endsWith(".xlsm"));
+      if (templates.length === 0) {
+        return res.json({ sheets: [] });
+      }
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(path.join(TEMPLATE_DIR, templates[0]));
+      const sheets = workbook.worksheets.map((ws) => ws.name);
+      res.json({ sheets });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Failed to read sheets" });
     }
   });
 
