@@ -36,7 +36,7 @@ export interface IStorage {
 
   getProposalsByGroupId(groupId: string): Promise<Proposal[]>;
   getProposal(id: string): Promise<Proposal | undefined>;
-  createProposal(data: { groupId: string; pdfPath: string; fileName: string; ratesData?: any }): Promise<Proposal>;
+  createProposal(data: { groupId: string; pdfPath: string; pdfBase64?: string; fileName: string; ratesData?: any }): Promise<Proposal>;
   deleteProposalsByGroupId(groupId: string): Promise<void>;
 }
 
@@ -133,7 +133,7 @@ export class DatabaseStorage implements IStorage {
     return proposal;
   }
 
-  async createProposal(data: { groupId: string; pdfPath: string; fileName: string; ratesData?: any }): Promise<Proposal> {
+  async createProposal(data: { groupId: string; pdfPath: string; pdfBase64?: string; fileName: string; ratesData?: any }): Promise<Proposal> {
     const [created] = await db.insert(proposals).values(data).returning();
     return created;
   }

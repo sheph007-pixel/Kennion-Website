@@ -1161,8 +1161,9 @@ function ProposalGenerator() {
       const data = await res.json();
       toast({ title: "Proposal generated!", description: `PDF proposal created for ${companyName} and posted to their group.` });
 
-      // Refresh the groups list to show updated status
+      // Refresh the groups list and the proposal status for this group
       queryClient.invalidateQueries({ queryKey: ["/api/admin/groups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/proposal/group", groupId] });
 
       // Open the PDF in a new tab
       if (data.proposalId) {

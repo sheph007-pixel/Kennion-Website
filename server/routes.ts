@@ -1488,13 +1488,21 @@ export async function registerRoutes(
         return res.status(400).json({ message: "No census entries found for this group" });
       }
 
-      // Run the full pipeline: inject census → LibreOffice macros → PDF
+      // Run the full pipeline: inject census → LibreOffice/pdfkit → PDF
       const result = await generateProposal(group, census, targetSheet || "Census");
+
+      // Read PDF bytes and store as base64 in DB (survives Railway redeploys)
+      let pdfBase64: string | undefined;
+      try {
+        const pdfBuffer = fs.readFileSync(result.pdfPath);
+        pdfBase64 = pdfBuffer.toString("base64");
+      } catch { /* file read failed, store without base64 */ }
 
       // Store proposal record in database
       const proposal = await storage.createProposal({
         groupId,
         pdfPath: result.pdfPath,
+        pdfBase64,
         fileName: result.fileName,
         ratesData: result.ratesData,
       });
@@ -1521,14 +1529,19 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Proposal not found" });
       }
 
-      if (!fs.existsSync(proposal.pdfPath)) {
-        return res.status(404).json({ message: "PDF file not found on server" });
-      }
-
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `inline; filename="${proposal.fileName}"`);
-      const fileStream = fs.createReadStream(proposal.pdfPath);
-      fileStream.pipe(res);
+
+      // Try filesystem first, fall back to DB-stored base64
+      if (fs.existsSync(proposal.pdfPath)) {
+        fs.createReadStream(proposal.pdfPath).pipe(res);
+      } else if (proposal.pdfBase64) {
+        const buffer = Buffer.from(proposal.pdfBase64, "base64");
+        res.setHeader("Content-Length", buffer.length);
+        res.end(buffer);
+      } else {
+        return res.status(404).json({ message: "PDF file not found — please regenerate this proposal" });
+      }
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Failed to serve PDF" });
     }
@@ -1562,13 +1575,18 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Access denied" });
       }
 
-      if (!fs.existsSync(proposal.pdfPath)) {
-        return res.status(404).json({ message: "PDF file not found" });
-      }
-
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `inline; filename="${proposal.fileName}"`);
-      fs.createReadStream(proposal.pdfPath).pipe(res);
+
+      if (fs.existsSync(proposal.pdfPath)) {
+        fs.createReadStream(proposal.pdfPath).pipe(res);
+      } else if (proposal.pdfBase64) {
+        const buffer = Buffer.from(proposal.pdfBase64, "base64");
+        res.setHeader("Content-Length", buffer.length);
+        res.end(buffer);
+      } else {
+        return res.status(404).json({ message: "PDF file not found" });
+      }
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Failed to serve PDF" });
     }

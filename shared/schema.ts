@@ -56,6 +56,7 @@ export const proposals = pgTable("proposals", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   groupId: varchar("group_id").notNull().references(() => groups.id, { onDelete: "cascade" }),
   pdfPath: text("pdf_path").notNull(),
+  pdfBase64: text("pdf_base64"),
   fileName: text("file_name").notNull(),
   ratesData: jsonb("rates_data"),
   status: text("status").default("generated").notNull(),
