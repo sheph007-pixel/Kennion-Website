@@ -821,6 +821,14 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Cannot delete your own account" });
       }
 
+      // Cascade delete: first remove all groups belonging to this user
+      // (groups have FK to users; census and proposals cascade with groups)
+      const userGroups = await storage.getGroupsByUserId(id);
+      for (const group of userGroups) {
+        await storage.deleteCensusByGroupId(group.id);
+        await storage.deleteGroup(group.id);
+      }
+
       await storage.deleteUser(id);
       res.json({ message: "User deleted successfully" });
     } catch (err: any) {
