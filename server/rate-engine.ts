@@ -246,11 +246,14 @@ export function priceGroup(
 
   const avgAge = members.reduce((s, m) => s + ageAsOf(m._dob, eff), 0) / members.length;
 
-  const plan_rates: Record<string, PlanRate> = {};
+    // Fixed-expense grossup: final rate = base / (1 - fixed_expense_pct)
+  // matches actuary Rate Summary All\!J68 formula.
+  const grossup = 1 / (1 - (tables.fixed_expense_pct ?? 0.2905));
+const plan_rates: Record<string, PlanRate> = {};
   for (const [plan, comps] of Object.entries(tables.plan_base_pmpm_6to1)) {
     const base = comps.total_margin;
     if (typeof base !== "number" || !(base > 0)) continue;
-    const ee = base * groupEEAgeFactor * areaF * trend;
+    const ee = base * groupEEAgeFactor * areaF * trend * grossup;
     plan_rates[plan] = {
       EE: round2(ee),
       EC: round2(ee * tier.ECH),
@@ -260,7 +263,7 @@ export function priceGroup(
   }
 
   return {
-    engine_version: "1.0",
+    engine_version: "1.1",
     factor_tables_version: tables.version,
     factor_tables_sha256: tables.source_sha256,
     group: input.group,

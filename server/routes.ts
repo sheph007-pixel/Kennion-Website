@@ -1610,65 +1610,9 @@ export async function registerRoutes(
         group: group.companyName,
       });
 
-      // Now override plan_rates with the actuary's xlsm-computed values.
-      // The xlsm is the pricing source-of-truth — we shell out to LibreOffice
-      // headless via scripts/xlsm_rate.py to recalc it on the exact census.
-      // On any failure (libreoffice missing, recalc timeout, etc.) we log and
-      // fall back to the in-process rates so proposal generation never breaks.
-      try {
-        const { priceGroupViaXlsm } = await import("./xlsm-rate-engine");
-        const xlsmResult = await priceGroupViaXlsm({
-          census: members.map((m) => ({
-            relationship: m.relationship,
-            firstName: m.firstName ?? "",
-            lastName: m.lastName ?? "",
-            dob: m.dob as string,
-            sex: m.sex ?? null,
-            zip: m.zip ?? null,
-          })),
-          effectiveDate,
-          ratingArea,
-          admin: administrator,
-          group: group.companyName,
-        });
+      // Rate calculation is fully in-process via priceGroup() above.
+      // (Historical xlsm-recalc fallback removed 2026-04-21 for reliability.)
 
-        // Merge: replace plan_rates with xlsm values (keep casing from xlsm).
-        // Safety: only override if the xlsm actually produced numeric rates.
-        // If LibreOffice failed to recalc, every tier comes back null/zero —
-        // we must NOT clobber the in-process fallback with zeros.
-        const mergedPlanRates: typeof pricing.plan_rates = {};
-        let numValidPlans = 0;
-        for (const [name, tiers] of Object.entries(xlsmResult.plan_rates)) {
-          const ee = tiers.EE ?? 0;
-          const ec = tiers.EC ?? 0;
-          const es = tiers.ES ?? 0;
-          const ef = tiers.EF ?? 0;
-          mergedPlanRates[name] = { EE: ee, EC: ec, ES: es, EF: ef };
-          if (ee > 0 || ec > 0 || es > 0 || ef > 0) numValidPlans++;
-        }
-        const xlsmDiag = (xlsmResult as any).diagnostics
-          ? ` diag=${JSON.stringify((xlsmResult as any).diagnostics).slice(0, 400)}`
-          : "";
-        if (Object.keys(mergedPlanRates).length > 0 && numValidPlans > 0) {
-          pricing.plan_rates = mergedPlanRates;
-          pricing.engine_version = `${pricing.engine_version}+xlsm`;
-          log(
-            `xlsm rate recalc OK for group ${group.id} (${numValidPlans}/${Object.keys(mergedPlanRates).length} non-zero plans, ` +
-            `total ${xlsmResult.timings_sec?.total ?? "?"}s)${xlsmDiag}`,
-            "proposal",
-          );
-        } else {
-          pricing.engine_version = `${pricing.engine_version}+xlsm-zeros`;
-          log(
-            `xlsm rate recalc produced all-zero/no rates for group ${group.id} — keeping in-process rates.${xlsmDiag}`,
-            "proposal",
-          );
-        }
-      } catch (xErr: any) {
-        const shortErr = String(xErr?.message || xErr).slice(0, 80).replace(/[^A-Za-z0-9._:-]+/g, "_");
-        pricing.engine_version = `${pricing.engine_version}+xlsm-err:${shortErr}`;
-        log(`xlsm rate recalc FAILED for group ${group.id}: ${xErr?.message || xErr} — using in-process rates`, "proposal");
-      }
 
       // Render the proposal PDF with pdfkit (native, no LibreOffice dependency).
       const { renderProposalPdf } = await import("./proposal-pdf");
