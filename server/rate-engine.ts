@@ -86,6 +86,7 @@ export interface PricingResult {
   avg_age: number;
   group_age_factor_ee: number;
   all_member_avg_age_factor: number;
+  effective_age_factor: number;
   tier_factors: { EE: number; ECH: number; ESP: number; FAM: number };
   plan_rates: Record<string, PlanRate>;
 }
@@ -238,22 +239,60 @@ export function priceGroup(
     throw new Error("Census has no employees; cannot compute composite rate");
   }
 
+  // EE-only age factors (informational)
   const eeAgeFactors = employees.map(m => ageFactor(tables, ageAsOf(m._dob, eff)));
   const groupEEAgeFactor = eeAgeFactors.reduce((s, x) => s + x, 0) / eeAgeFactors.length;
 
+  // All-member age factors
   const allFactors = members.map(m => ageFactor(tables, ageAsOf(m._dob, eff)));
   const allAvgFactor = allFactors.reduce((s, x) => s + x, 0) / allFactors.length;
 
   const avgAge = members.reduce((s, m) => s + ageAsOf(m._dob, eff), 0) / members.length;
 
-    // Fixed-expense grossup: final rate = base / (1 - fixed_expense_pct)
-  // matches actuary Rate Summary All\!J68 formula.
+  // Household tier assignment. Each Employee opens a household; subsequent
+  // non-Employee rows belong to the previous Employee household. Matches the
+  // xlsm 'Member Rates' sheet aggregation (sum_all_members / sum_employee_tier_factors).
+  type Household = { tierFactor: number };
+  const households: Household[] = [];
+  let curHH: typeof members = [];
+  const closeHH = () => {
+    if (!curHH.length) return;
+    const ee = curHH.find(x => x._rel === "EE");
+    if (!ee) return;
+    const hasSP = curHH.some(x => x._rel === "SP");
+    const hasCH = curHH.some(x => x._rel === "CH");
+    let tf: number;
+    if (hasSP && hasCH) tf = tier.FAM;
+    else if (hasSP)     tf = tier.ESP;
+    else if (hasCH)     tf = tier.ECH;
+    else                tf = tier.EE;
+    households.push({ tierFactor: tf });
+  };
+  for (const m of members) {
+    if (m._rel === "EE") { closeHH(); curHH = [m]; }
+    else curHH.push(m);
+  }
+  closeHH();
+
+  const sumTierFactors = households.reduce((s, h) => s + h.tierFactor, 0) || 1;
+  const sumAllMemberAgeFactors = allFactors.reduce((s, x) => s + x, 0);
+
+  // Composite age factor matches actuary xlsm 'Member Rates' F6 = D6/E6:
+  //   numerator   = sum_over_all_members(age_factor × area_factor × claims_adj)
+  //   denominator = sum_over_employees(household tier_factor)
+  // With area uniform across census (typical), area factors out and we compute:
+  //   effective_age_factor = sum_all_age_factors / sum_employee_tier_factors
+  const effectiveAgeFactor = sumAllMemberAgeFactors / sumTierFactors;
+
+  // Fixed-expense grossup matches actuary Rate Summary All formula:
+  //   rate = (claims + SL) / (1 - fixed_expense_pct)
   const grossup = 1 / (1 - (tables.fixed_expense_pct ?? 0.2905));
-const plan_rates: Record<string, PlanRate> = {};
+
+  const plan_rates: Record<string, PlanRate> = {};
   for (const [plan, comps] of Object.entries(tables.plan_base_pmpm_6to1)) {
     const base = comps.total_margin;
     if (typeof base !== "number" || !(base > 0)) continue;
-    const ee = base * groupEEAgeFactor * areaF * trend * grossup;
+    const ee = base * effectiveAgeFactor * areaF * trend * grossup;
     plan_rates[plan] = {
       EE: round2(ee),
       EC: round2(ee * tier.ECH),
@@ -263,7 +302,7 @@ const plan_rates: Record<string, PlanRate> = {};
   }
 
   return {
-    engine_version: "1.1",
+    engine_version: "1.2",
     factor_tables_version: tables.version,
     factor_tables_sha256: tables.source_sha256,
     group: input.group,
@@ -277,6 +316,7 @@ const plan_rates: Record<string, PlanRate> = {};
     avg_age: round2(avgAge),
     group_age_factor_ee: round5(groupEEAgeFactor),
     all_member_avg_age_factor: round5(allAvgFactor),
+    effective_age_factor: round5(effectiveAgeFactor),
     tier_factors: tier,
     plan_rates,
   };
