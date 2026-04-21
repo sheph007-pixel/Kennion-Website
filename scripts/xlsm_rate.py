@@ -4,8 +4,6 @@
 Injects census + inputs into a copy of Kennion Actuarial Rater.xlsm, runs
 LibreOffice headless to recalculate, and reads back the final rates from the
 '3. Rate Sheet - HDV' tab (the actuary's customer-facing output).
-
-Invoked via stdin/stdout JSON from server/rate-engine.ts.
 """
 from __future__ import annotations
 import json, os, shutil, subprocess, sys, tempfile, time, uuid
@@ -21,18 +19,13 @@ except ImportError:
 
 CENSUS_FIRST_ROW = 18
 CENSUS_MAX_ROWS = 300
-INP_GROUP_NAME = "B4"
-INP_EFF_DATE = "B5"
-INP_RATING_AREA = "B7"
-INP_ADMIN = "E7"
-
+INP_GROUP_NAME, INP_EFF_DATE, INP_RATING_AREA, INP_ADMIN = "B4", "B5", "B7", "E7"
 CEN_SSN, CEN_REL, CEN_FN, CEN_LN, CEN_DOB = 3, 4, 5, 6, 7
 CEN_COMPANY, CEN_PLAN, CEN_COV, CEN_COST = 8, 9, 10, 11
-
-# Plan rows on '3. Rate Sheet - HDV'. Col A=name, B=EE, C=EC, D=ES, E=EF
-HDV_PLAN_ROWS = list(range(11, 23))
+HDV_PLAN_ROWS = list(range(11, 23))   # A=plan, B=EE, C=EC, D=ES, E=EF
 
 
+# ─── utility ────────────────────────────────────────────────────────────────
 def _fail(msg: str, extra: dict | None = None) -> None:
     out = {"error": msg}
     if extra: out.update(extra)
@@ -51,21 +44,19 @@ def _parse_dob(s: str) -> datetime:
     for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%m/%d/%y", "%Y/%m/%d"):
         try: return datetime.strptime(s, fmt)
         except ValueError: continue
-    # Last-resort: split
-    raise ValueError(f"Unparseable DOB: {s!r}")
+    raise ValueError(f"Unparseable DOB: {repr(s)}")
 
 
 def _parse_eff(s: str) -> datetime:
-    s = (s or "").strip()
     for fmt in ("%Y-%m-%d", "%m/%d/%Y"):
-        try: return datetime.strptime(s, fmt)
+        try: return datetime.strptime((s or "").strip(), fmt)
         except ValueError: continue
-    raise ValueError(f"Unparseable effective_date: {s!r}")
+    raise ValueError(f"Unparseable effective_date: {repr(s)}")
 
 
 def _admin_cell(admin: str) -> str:
     a = (admin or "").strip().upper()
-    if a == "EBPA": return "EBPA "  # template dropdown has trailing space
+    if a == "EBPA": return "EBPA "
     if "HEALTHEZ" in a and "RBP" in a: return "HEALTHEZ (RBP)"
     if a.replace("_", "") == "HEALTHEZ": return "HEALTHEZ (RBP)"
     if a in ("CBA BLUE", "CBA", "CBA_BLUE"): return "CBA BLUE"
@@ -75,15 +66,14 @@ def _admin_cell(admin: str) -> str:
 
 
 def _area_cell(area: str) -> str:
-    m = {
-        "birmingham": "Birmingham", "huntsville": "Huntsville",
-        "montgomery": "Montgomery", "alabama other area": "Alabama Other Area",
-        "al other": "Alabama Other Area", "out-of-state": "Out-of-State",
-        "out of state": "Out-of-State", "oos": "Out-of-State",
-    }
+    m = {"birmingham": "Birmingham", "huntsville": "Huntsville",
+         "montgomery": "Montgomery", "alabama other area": "Alabama Other Area",
+         "al other": "Alabama Other Area", "out-of-state": "Out-of-State",
+         "out of state": "Out-of-State", "oos": "Out-of-State"}
     return m.get((area or "").strip().lower(), area or "Birmingham")
 
 
+# ─── xlsm mutation ─────────────────────────────────────────────────────────
 def inject(xlsm: Path, out: Path, group: str, eff: datetime, area: str, admin: str,
            census: list[dict[str, Any]]) -> None:
     wb = load_workbook(xlsm, keep_vba=False, data_only=False, keep_links=False)
@@ -94,7 +84,6 @@ def inject(xlsm: Path, out: Path, group: str, eff: datetime, area: str, admin: s
     inp[INP_ADMIN] = _admin_cell(admin)
 
     cen = wb["Census"]
-    # Clear existing rows
     for r in range(CENSUS_FIRST_ROW, CENSUS_FIRST_ROW + CENSUS_MAX_ROWS):
         for c in (CEN_SSN, CEN_REL, CEN_FN, CEN_LN, CEN_DOB, CEN_COMPANY, CEN_PLAN, CEN_COV, CEN_COST):
             cen.cell(r, c).value = None
@@ -111,9 +100,52 @@ def inject(xlsm: Path, out: Path, group: str, eff: datetime, area: str, admin: s
     wb.save(out)
 
 
+# ─── LibreOffice recalc ─────────────────────────────────────────────────────
+_RECALC_XCU = '''<?xml version="1.0" encoding="UTF-8"?>
+<oor:items xmlns:oor="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+ <item oor:path="/org.openoffice.Office.Calc/Formula/Load"><prop oor:name="OOXMLRecalcMode" oor:op="fuse"><value>1</value></prop></item>
+ <item oor:path="/org.openoffice.Office.Calc/Formula/Load"><prop oor:name="ODFRecalcMode" oor:op="fuse"><value>1</value></prop></item>
+ <item oor:path="/org.openoffice.Office.Calc/Formula/Calculation"><prop oor:name="IterativeReference" oor:op="fuse"><value>true</value></prop></item>
+</oor:items>
+'''
+
+
+def _write_recalc_profile(profile_dir: Path) -> None:
+    """Configure LibreOffice user profile to force full recalc on open.
+
+    OOXMLRecalcMode: 0=never, 1=always, 2=prompt  →  set to 1.
+    Same for ODF.  This is the only reliable way to make --headless
+    --convert-to xlsx actually recompute formulas (default behavior keeps
+    cached values from the source file).
+    """
+    user_dir = profile_dir / "user"
+    user_dir.mkdir(parents=True, exist_ok=True)
+    (user_dir / "registrymodifications.xcu").write_text(_RECALC_XCU)
+
+
+def _recalc_via_macro(in_xlsx: Path, profile_dir: Path, timeout: int) -> None:
+    """Fallback: open file via macro, force recalculate hard, save as xlsx."""
+    bas = profile_dir / "recalc.bas"
+    bas.write_text(
+        'Sub RecalcAndSave(sUrl As String)\n'
+        '  Dim oDoc As Object\n'
+        '  Dim oArgs(0) As New com.sun.star.beans.PropertyValue\n'
+        '  oArgs(0).Name = "Hidden" : oArgs(0).Value = True\n'
+        '  oDoc = StarDesktop.loadComponentFromURL(sUrl, "_blank", 0, oArgs())\n'
+        '  oDoc.calculateAll()\n'
+        '  Dim oSave(0) As New com.sun.star.beans.PropertyValue\n'
+        '  oSave(0).Name = "FilterName" : oSave(0).Value = "Calc Office Open XML"\n'
+        '  oDoc.store()\n'
+        '  oDoc.close(True)\n'
+        'End Sub\n'
+    )
+
+
 def recalc(in_xlsx: Path, out_dir: Path, timeout: int = 150) -> Path:
     profile = out_dir / ("sofp_" + uuid.uuid4().hex[:8])
     profile.mkdir(parents=True, exist_ok=True)
+    _write_recalc_profile(profile)
+
     cmd = [
         "soffice", "--headless", "--calc",
         "--nologo", "--nofirststartwizard", "--nocrashreport", "--nodefault",
@@ -125,28 +157,26 @@ def recalc(in_xlsx: Path, out_dir: Path, timeout: int = 150) -> Path:
         raise RuntimeError(f"soffice rc={proc.returncode} stderr={proc.stderr.decode(errors='replace')[-500:]}")
     out_xlsx = out_dir / (in_xlsx.stem + ".xlsx")
     if not out_xlsx.exists():
-        # Fall back to whatever xlsx it produced
         xlsxs = [f for f in out_dir.iterdir() if f.suffix.lower() == ".xlsx" and f.stem == in_xlsx.stem]
         if not xlsxs: raise RuntimeError(f"no xlsx produced in {out_dir}")
         out_xlsx = xlsxs[0]
     return out_xlsx
 
 
+# ─── extraction ─────────────────────────────────────────────────────────────
 def extract(recalced: Path) -> dict[str, dict[str, float | None]]:
     wb = load_workbook(recalced, data_only=True, read_only=True, keep_links=False)
     ws = wb["3. Rate Sheet - HDV"]
     out: dict[str, dict[str, float | None]] = {}
+    def n(v: Any) -> float | None:
+        if isinstance(v, (int, float)) and v == v: return round(float(v), 2)
+        return None
     for r in HDV_PLAN_ROWS:
         name = ws.cell(r, 1).value
         if not name or not isinstance(name, str) or not name.strip(): continue
-        def n(v: Any) -> float | None:
-            if isinstance(v, (int, float)): return round(float(v), 2)
-            return None
         out[name.strip()] = {
-            "EE": n(ws.cell(r, 2).value),
-            "EC": n(ws.cell(r, 3).value),
-            "ES": n(ws.cell(r, 4).value),
-            "EF": n(ws.cell(r, 5).value),
+            "EE": n(ws.cell(r, 2).value), "EC": n(ws.cell(r, 3).value),
+            "ES": n(ws.cell(r, 4).value), "EF": n(ws.cell(r, 5).value),
         }
     return out
 
@@ -166,8 +196,7 @@ def summary(census: list[dict[str, Any]], eff: datetime) -> dict[str, Any]:
 
 
 def main() -> None:
-    try:
-        req = json.loads(sys.stdin.read() or "{}")
+    try: req = json.loads(sys.stdin.read() or "{}")
     except Exception as e: _fail(f"bad stdin json: {e}")
 
     tpl = req.get("template_path")
@@ -205,12 +234,9 @@ def main() -> None:
 
     sys.stdout.write(json.dumps({
         "engine_version": "xlsm-1.0",
-        "group": group,
-        "effective_date": eff.strftime("%Y-%m-%d"),
-        "rating_area": _area_cell(area),
-        "admin": admin,
-        **summary(census, eff),
-        "plan_rates": rates,
+        "group": group, "effective_date": eff.strftime("%Y-%m-%d"),
+        "rating_area": _area_cell(area), "admin": admin,
+        **summary(census, eff), "plan_rates": rates,
         "timings_sec": {"inject": round(t_inj,2), "recalc": round(t_rec,2), "extract": round(t_ex,2)},
     }) + "\n")
 
