@@ -12,7 +12,6 @@ import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import AuthVerifyPage from "@/pages/auth-verify";
 import DashboardPage from "@/pages/dashboard";
-import AdminPage from "@/pages/admin";
 import AdminDashboardPage from "@/pages/admin/dashboard";
 import AdminGroupsListPage from "@/pages/admin/groups-list";
 import AdminGroupDetailPage from "@/pages/admin/group-detail";
@@ -83,9 +82,6 @@ function Router() {
       </Route>
       <Route path="/admin">
         <Redirect to="/admin/dashboard" />
-      </Route>
-      <Route path="/admin/legacy">
-        <ProtectedRoute component={AdminPage} adminOnly />
       </Route>
       <Route path="/admin/dashboard">
         <ProtectedRoute component={AdminDashboardPage} adminOnly />
