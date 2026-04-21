@@ -549,6 +549,42 @@ export async function registerRoutes(
     }
   });
 
+  // xlsm rate-engine diagnostic endpoint — surfaces which python is resolved,
+  // whether uno/openpyxl/soffice are importable/present, and the last run's
+  // stderr log. No auth (read-only environment info only). Use ?run=1 to
+  // force a live invocation with a tiny hardcoded census.
+  app.get("/api/_diag/xlsm", async (req: Request, res: Response) => {
+    try {
+      const mod = await import("./xlsm-rate-engine");
+      const env = await mod.probeXlsmEnv();
+      let pipeline: unknown = null;
+      if (req.query.run === "1") {
+        try {
+          pipeline = await mod.priceGroupViaXlsm({
+            group: "__diag__",
+            effectiveDate: "2026-04-01",
+            ratingArea: "Birmingham",
+            admin: "EBPA",
+            census: [
+              { relationship: "Employee", firstName: "Diag", lastName: "Test",
+                dob: "1988-07-31", sex: "F", zip: "35243" },
+              { relationship: "Spouse", firstName: "Diag", lastName: "Spouse",
+                dob: "1990-01-01", sex: "M", zip: "35243" },
+              { relationship: "Child", firstName: "Diag", lastName: "Kid",
+                dob: "2015-06-01", sex: "F", zip: "35243" },
+            ],
+          });
+        } catch (e: any) {
+          pipeline = { error: e && e.message ? e.message : String(e) };
+        }
+      }
+      res.json({ env, pipeline, now: new Date().toISOString() });
+    } catch (err: any) {
+      res.status(500).json({ error: err && err.message ? err.message : String(err) });
+    }
+  });
+
+
   app.post("/api/auth/magic-link", async (req: Request, res: Response) => {
     try {
       const data = magicLinkRequestSchema.parse(req.body);
