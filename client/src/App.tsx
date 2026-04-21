@@ -82,6 +82,9 @@ function Router() {
         <ProtectedRoute component={DashboardPage} />
       </Route>
       <Route path="/admin">
+        <Redirect to="/admin/dashboard" />
+      </Route>
+      <Route path="/admin/legacy">
         <ProtectedRoute component={AdminPage} adminOnly />
       </Route>
       <Route path="/admin/dashboard">
