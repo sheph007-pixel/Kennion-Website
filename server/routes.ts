@@ -11,6 +11,16 @@ import bcrypt from "bcryptjs";
 import { storage } from "./storage";
 import { generateProposal } from "./proposal-engine";
 import {
+  priceGroup,
+  inferRatingAreaFromCensus,
+  censusEntriesToMembers,
+  loadFactorTables,
+  reloadFactorTables,
+  type CensusMember,
+  type RatingArea,
+  type Admin,
+} from "./rate-engine";
+import {
   magicLinkRequestSchema,
   magicLinkVerifySchema,
   loginSchema,
@@ -1631,6 +1641,122 @@ export async function registerRoutes(
       res.json({ sheets: workbook.SheetNames });
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Failed to read sheets" });
+    }
+  });
+
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Rate engine endpoints — price a census through the actuary's rater math.
+  // Factor tables live in server/factor-tables.json, synced from
+  // Kennion Actuarial Rater.xlsm via scripts/sync-rater.py.
+  // ──────────────────────────────────────────────────────────────────────
+
+  // Public factor table metadata (no auth — so the UI can show "rater v1.0
+  // synced at 2026-04-21" without revealing factor values).
+  app.get("/api/rate/tables", (_req: Request, res: Response) => {
+    try {
+      const t = loadFactorTables();
+      res.json({
+        version: t.version,
+        source_file: t.source_file,
+        source_sha256: t.source_sha256,
+        synced_at: t.synced_at,
+        n_plans: Object.keys(t.plan_base_pmpm_6to1).length,
+        n_age_factors: Object.keys(t.age_factors).length,
+        area_factors: t.area_factors,
+        tier_factors: t.tier_factors_default,
+        trend_rate: t.trend_rate,
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Factor tables not loaded" });
+    }
+  });
+
+  // Reload factor tables from disk — admin only. Use after replacing
+  // server/factor-tables.json (e.g. after the actuary updates the xlsm).
+  app.post("/api/rate/reload", requireAdmin, (_req: Request, res: Response) => {
+    try {
+      const t = reloadFactorTables();
+      res.json({ ok: true, version: t.version, sha256: t.source_sha256, synced_at: t.synced_at });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Reload failed" });
+    }
+  });
+
+  // Price an arbitrary census (JSON body) — for ad-hoc quoting or tests.
+  app.post("/api/rate/price", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const {
+        census,
+        effective_date,
+        rating_area,
+        admin,
+        group,
+      } = req.body as {
+        census: CensusMember[];
+        effective_date: string;
+        rating_area?: RatingArea;
+        admin?: Admin;
+        group?: string;
+      };
+      if (!Array.isArray(census) || census.length === 0) {
+        return res.status(400).json({ message: "census is required" });
+      }
+      if (!effective_date) {
+        return res.status(400).json({ message: "effective_date is required" });
+      }
+      const result = priceGroup({
+        census,
+        effectiveDate: effective_date,
+        ratingArea: rating_area,
+        admin,
+        group,
+      });
+      res.json(result);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Pricing failed" });
+    }
+  });
+
+  // Price a stored group's census (looks up group + census_entries by groupId).
+  // This is the endpoint the proposal flow should call.
+  app.post("/api/rate/price-group/:groupId", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const groupId = req.params.groupId as string;
+      const group = await storage.getGroup(groupId);
+      if (!group) return res.status(404).json({ message: "Group not found" });
+
+      const rows = await storage.getCensusByGroupId(groupId);
+      if (rows.length === 0) {
+        return res.status(400).json({ message: "No census entries for this group" });
+      }
+
+      const members = censusEntriesToMembers(rows);
+      const {
+        effective_date = new Date().toISOString().slice(0, 10),
+        rating_area,
+        admin,
+      } = (req.body || {}) as {
+        effective_date?: string;
+        rating_area?: RatingArea;
+        admin?: Admin;
+      };
+
+      const area: RatingArea = rating_area && rating_area !== "auto"
+        ? rating_area
+        : inferRatingAreaFromCensus(members);
+
+      const result = priceGroup({
+        census: members,
+        effectiveDate: effective_date,
+        ratingArea: area,
+        admin: admin ?? "EBPA",
+        group: group.companyName,
+      });
+      res.json(result);
+    } catch (err: any) {
+      log(`Rate pricing error: ${err.message}`, "rate");
+      res.status(500).json({ message: err.message || "Pricing failed" });
     }
   });
 
