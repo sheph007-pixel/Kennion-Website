@@ -13,6 +13,13 @@ import ResetPasswordPage from "@/pages/reset-password";
 import AuthVerifyPage from "@/pages/auth-verify";
 import DashboardPage from "@/pages/dashboard";
 import AdminPage from "@/pages/admin";
+import AdminDashboardPage from "@/pages/admin/dashboard";
+import AdminGroupsListPage from "@/pages/admin/groups-list";
+import AdminGroupDetailPage from "@/pages/admin/group-detail";
+import AdminUsersPage from "@/pages/admin/users";
+import AdminGeneratorPage from "@/pages/admin/generator";
+import AdminTemplatesPage from "@/pages/admin/templates";
+import AdminSettingsPage from "@/pages/admin/settings";
 import ReportPage from "@/pages/report";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
@@ -76,6 +83,27 @@ function Router() {
       </Route>
       <Route path="/admin">
         <ProtectedRoute component={AdminPage} adminOnly />
+      </Route>
+      <Route path="/admin/dashboard">
+        <ProtectedRoute component={AdminDashboardPage} adminOnly />
+      </Route>
+      <Route path="/admin/groups">
+        <ProtectedRoute component={AdminGroupsListPage} adminOnly />
+      </Route>
+      <Route path="/admin/groups/:id">
+        <ProtectedRoute component={AdminGroupDetailPage} adminOnly />
+      </Route>
+      <Route path="/admin/users">
+        <ProtectedRoute component={AdminUsersPage} adminOnly />
+      </Route>
+      <Route path="/admin/generator">
+        <ProtectedRoute component={AdminGeneratorPage} adminOnly />
+      </Route>
+      <Route path="/admin/templates">
+        <ProtectedRoute component={AdminTemplatesPage} adminOnly />
+      </Route>
+      <Route path="/admin/settings">
+        <ProtectedRoute component={AdminSettingsPage} adminOnly />
       </Route>
       <Route path="/report/:id">
         <ProtectedRoute component={ReportPage} />
