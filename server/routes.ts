@@ -1658,12 +1658,15 @@ export async function registerRoutes(
             "proposal",
           );
         } else {
+          pricing.engine_version = `${pricing.engine_version}+xlsm-zeros`;
           log(
             `xlsm rate recalc produced all-zero/no rates for group ${group.id} — keeping in-process rates.${xlsmDiag}`,
             "proposal",
           );
         }
       } catch (xErr: any) {
+        const shortErr = String(xErr?.message || xErr).slice(0, 80).replace(/[^A-Za-z0-9._:-]+/g, "_");
+        pricing.engine_version = `${pricing.engine_version}+xlsm-err:${shortErr}`;
         log(`xlsm rate recalc FAILED for group ${group.id}: ${xErr?.message || xErr} — using in-process rates`, "proposal");
       }
 
