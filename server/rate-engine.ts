@@ -146,8 +146,11 @@ function ageAsOf(dob: Date, eff: Date): number {
 
 function relCode(rel: string): "EE" | "SP" | "CH" {
   const r = (rel || "").trim().toLowerCase();
-  if (r.startsWith("emp")) return "EE";
-  if (r.startsWith("sp")) return "SP";
+  // Employee: "ee", "employee", "subscriber", "self", "emp", "primary"
+  if (r === "ee" || r.startsWith("emp") || r === "subscriber" || r === "self" || r === "primary") return "EE";
+  // Spouse: "sp", "spouse", "domestic partner", "partner"
+  if (r === "sp" || r.startsWith("spo") || r.includes("partner")) return "SP";
+  // Everyone else ("ch", "child", "children", "dep", "dependent", "son", "daughter") → child tier
   return "CH";
 }
 
