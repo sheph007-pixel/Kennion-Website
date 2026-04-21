@@ -1597,26 +1597,35 @@ export async function registerRoutes(
         });
 
         // Merge: replace plan_rates with xlsm values (keep casing from xlsm).
+        // Safety: only override if the xlsm actually produced numeric rates.
+        // If LibreOffice failed to recalc, every tier comes back null/zero —
+        // we must NOT clobber the in-process fallback with zeros.
         const mergedPlanRates: typeof pricing.plan_rates = {};
+        let numValidPlans = 0;
         for (const [name, tiers] of Object.entries(xlsmResult.plan_rates)) {
-          mergedPlanRates[name] = {
-            EE: tiers.EE ?? 0,
-            EC: tiers.EC ?? 0,
-            ES: tiers.ES ?? 0,
-            EF: tiers.EF ?? 0,
-          };
+          const ee = tiers.EE ?? 0;
+          const ec = tiers.EC ?? 0;
+          const es = tiers.ES ?? 0;
+          const ef = tiers.EF ?? 0;
+          mergedPlanRates[name] = { EE: ee, EC: ec, ES: es, EF: ef };
+          if (ee > 0 || ec > 0 || es > 0 || ef > 0) numValidPlans++;
         }
-        if (Object.keys(mergedPlanRates).length > 0) {
+        const xlsmDiag = (xlsmResult as any).diagnostics
+          ? ` diag=${JSON.stringify((xlsmResult as any).diagnostics).slice(0, 400)}`
+          : "";
+        if (Object.keys(mergedPlanRates).length > 0 && numValidPlans > 0) {
           pricing.plan_rates = mergedPlanRates;
           pricing.engine_version = `${pricing.engine_version}+xlsm`;
           log(
-            `xlsm rate recalc OK for group ${group.id} (${Object.keys(mergedPlanRates).length} plans, ` +
-            `inject ${xlsmResult.timings_sec?.inject}s / recalc ${xlsmResult.timings_sec?.recalc}s / ` +
-            `extract ${xlsmResult.timings_sec?.extract}s)`,
+            `xlsm rate recalc OK for group ${group.id} (${numValidPlans}/${Object.keys(mergedPlanRates).length} non-zero plans, ` +
+            `total ${xlsmResult.timings_sec?.total ?? "?"}s)${xlsmDiag}`,
             "proposal",
           );
         } else {
-          log(`xlsm rate recalc returned no plans for group ${group.id} — using in-process rates`, "proposal");
+          log(
+            `xlsm rate recalc produced all-zero/no rates for group ${group.id} — keeping in-process rates.${xlsmDiag}`,
+            "proposal",
+          );
         }
       } catch (xErr: any) {
         log(`xlsm rate recalc FAILED for group ${group.id}: ${xErr?.message || xErr} — using in-process rates`, "proposal");

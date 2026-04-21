@@ -48,7 +48,8 @@ export interface XlsmRateResult {
   n_employees: number;
   avg_age: number;
   plan_rates: Record<string, { EE: number | null; EC: number | null; ES: number | null; EF: number | null }>;
-  timings_sec?: { inject: number; recalc: number; extract: number };
+  timings_sec?: { total?: number; inject?: number; recalc?: number; extract?: number };
+  diagnostics?: Record<string, unknown>;
 }
 
 function isoDate(d: string | Date): string {
@@ -120,6 +121,11 @@ function runPy(req: unknown): Promise<string> {
     py.stderr.on("data", (b: Buffer) => { stderr += b.toString(); });
     py.on("error", (e) => reject(new Error(`spawn python3 failed: ${e.message}`)));
     py.on("close", (code) => {
+      if (stderr) {
+        for (const line of stderr.split(/\r?\n/)) {
+          if (line.trim()) console.log(`[xlsm_rate.py] ${line}`);
+        }
+      }
       if (code !== 0) {
         reject(new Error(`python3 exit=${code} stderr=${stderr.slice(-500)} stdout=${stdout.slice(-300)}`));
         return;
