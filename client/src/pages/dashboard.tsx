@@ -84,8 +84,15 @@ function DashboardNav() {
             <KennionLogo size="md" />
           </div>
           <div className="h-4 w-px bg-border hidden sm:block" />
-          <div className="hidden sm:flex items-center gap-2 text-sm">
+          <div className="hidden sm:flex items-center gap-4 text-sm">
             <span className="font-medium text-foreground">Dashboard</span>
+            <button
+              onClick={() => navigate("/proposals")}
+              className="text-muted-foreground hover:text-foreground"
+              data-testid="nav-proposals"
+            >
+              Proposals
+            </button>
           </div>
         </div>
         <div className="flex items-center gap-4">

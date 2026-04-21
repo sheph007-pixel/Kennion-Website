@@ -161,7 +161,7 @@ export const insertCensusEntrySchema = createInsertSchema(censusEntries).omit({
 });
 
 export const updateGroupStatusSchema = z.object({
-  status: z.enum(["census_uploaded", "proposal_sent", "proposal_accepted", "client", "not_approved"]),
+  status: z.enum(["census_uploaded", "approved", "proposal_sent", "proposal_accepted", "client", "not_approved"]),
   score: z.number().min(0).max(100).optional(),
   riskScore: z.number().optional(),
   riskTier: z.enum(["preferred", "standard", "high"]).optional(),

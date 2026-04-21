@@ -7,7 +7,14 @@ import {
   Mail,
   User,
   Loader2,
+  ThumbsUp,
+  FileText,
+  RefreshCw,
 } from "lucide-react";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -31,6 +38,147 @@ import { ActivityTab } from "./tabs/activity-tab";
 
 function censusId(id: string): string {
   return `KBA-${id.substring(0, 8).toUpperCase()}`;
+}
+
+
+type GroupLike = {
+  id: string;
+  companyName: string;
+  contactEmail: string;
+  status: string;
+};
+
+function ProposalActions({ group }: { group: GroupLike }) {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [effectiveDate, setEffectiveDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 60);
+    return d.toISOString().slice(0, 10);
+  });
+
+  const approveMut = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", `/api/admin/groups/${group.id}/approve`);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/groups"] });
+      qc.invalidateQueries({ queryKey: ["/api/groups", group.id] });
+      toast({ title: "Group approved", description: "You can now generate a proposal." });
+    },
+    onError: (err: any) =>
+      toast({ title: "Approve failed", description: err?.message || "Error", variant: "destructive" }),
+  });
+
+  const generateMut = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", `/api/admin/proposal/generate/${group.id}`, {
+        effectiveDate,
+        admin: "EBPA",
+      });
+    },
+    onSuccess: async (res: any) => {
+      const json = await res.json().catch(() => ({}));
+      qc.invalidateQueries({ queryKey: ["/api/admin/groups"] });
+      qc.invalidateQueries({ queryKey: ["/api/groups", group.id] });
+      qc.invalidateQueries({ queryKey: ["/api/groups", group.id, "proposals"] });
+      toast({
+        title: "Proposal generated",
+        description: `${json.planCount ?? ""} plans for ${json.ratingArea ?? "group"} (eff. ${json.effectiveDate ?? effectiveDate}).`,
+      });
+    },
+    onError: (err: any) =>
+      toast({ title: "Generation failed", description: err?.message || "Error", variant: "destructive" }),
+  });
+
+  const viewLatestProposal = async () => {
+    try {
+      const res = await apiRequest("GET", `/api/admin/proposal/group/${group.id}`);
+      const list = await res.json();
+      const items = Array.isArray(list) ? list : list?.proposals ?? [];
+      if (!items.length) {
+        toast({ title: "No proposal yet", description: "Generate one first." });
+        return;
+      }
+      const latest = items[0];
+      window.open(`/api/admin/proposal/${latest.id}/pdf`, "_blank");
+    } catch (err: any) {
+      toast({ title: "Failed to open proposal", description: err?.message || "Error", variant: "destructive" });
+    }
+  };
+
+  if (group.status === "census_uploaded") {
+    return (
+      <Button
+        size="sm"
+        className="gap-1.5"
+        disabled={approveMut.isPending}
+        onClick={() => approveMut.mutate()}
+        data-testid="button-approve-group"
+      >
+        {approveMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ThumbsUp className="h-3.5 w-3.5" />}
+        Approve Group
+      </Button>
+    );
+  }
+
+  if (group.status === "approved") {
+    return (
+      <div className="flex items-center gap-2">
+        <label className="flex items-center gap-1 text-xs text-muted-foreground">
+          Effective
+          <input
+            type="date"
+            value={effectiveDate}
+            onChange={(e) => setEffectiveDate(e.target.value)}
+            className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+            data-testid="input-effective-date"
+          />
+        </label>
+        <Button
+          size="sm"
+          className="gap-1.5"
+          disabled={generateMut.isPending}
+          onClick={() => generateMut.mutate()}
+          data-testid="button-generate-proposal"
+        >
+          {generateMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileBarChart className="h-3.5 w-3.5" />}
+          Generate Proposal
+        </Button>
+      </div>
+    );
+  }
+
+  if (group.status === "proposal_sent" || group.status === "proposal_accepted" || group.status === "client") {
+    return (
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={viewLatestProposal}
+          data-testid="button-view-proposal"
+        >
+          <FileText className="h-3.5 w-3.5" />
+          View Proposal
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          disabled={generateMut.isPending}
+          onClick={() => generateMut.mutate()}
+          data-testid="button-regenerate-proposal"
+        >
+          {generateMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+          Regenerate
+        </Button>
+      </div>
+    );
+  }
+
+  // not_approved or unknown
+  return null;
 }
 
 export default function AdminGroupDetailPage() {
@@ -132,16 +280,7 @@ export default function AdminGroupDetailPage() {
                   <Download className="h-3.5 w-3.5" />
                   Export
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => navigate("/admin/generator")}
-                  data-testid="button-generate-proposal"
-                >
-                  <FileBarChart className="h-3.5 w-3.5" />
-                  Generate Proposal
-                </Button>
+                <ProposalActions group={group} />
                 <Button
                   size="sm"
                   className="gap-1.5"

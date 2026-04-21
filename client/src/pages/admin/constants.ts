@@ -4,11 +4,13 @@ import {
   CheckCircle2,
   TrendingUp,
   XCircle,
+  ThumbsUp,
   type LucideIcon,
 } from "lucide-react";
 
 export type StatusValue =
   | "census_uploaded"
+  | "approved"
   | "proposal_sent"
   | "proposal_accepted"
   | "client"
@@ -22,6 +24,7 @@ export const STATUS_OPTIONS: ReadonlyArray<{
   icon: LucideIcon;
 }> = [
   { value: "census_uploaded", label: "Census Uploaded", icon: Clock },
+  { value: "approved", label: "Approved", icon: ThumbsUp },
   { value: "proposal_sent", label: "Proposal Sent", icon: AlertCircle },
   { value: "proposal_accepted", label: "Proposal Accepted", icon: CheckCircle2 },
   { value: "client", label: "Client", icon: TrendingUp },
@@ -30,6 +33,7 @@ export const STATUS_OPTIONS: ReadonlyArray<{
 
 export const STATUS_COLORS: Record<StatusValue, string> = {
   census_uploaded: "text-blue-700 dark:text-blue-400",
+  approved: "text-emerald-700 dark:text-emerald-400",
   proposal_sent: "text-purple-700 dark:text-purple-400",
   proposal_accepted: "text-green-700 dark:text-green-400",
   client: "text-green-700 dark:text-green-400",
@@ -38,6 +42,7 @@ export const STATUS_COLORS: Record<StatusValue, string> = {
 
 export const STATUS_BG: Record<StatusValue, string> = {
   census_uploaded: "bg-blue-500/10",
+  approved: "bg-emerald-500/10",
   proposal_sent: "bg-purple-500/10",
   proposal_accepted: "bg-green-500/10",
   client: "bg-green-500/10",
