@@ -217,6 +217,16 @@ function EditUserDialog({
 }
 
 export default function AdminUsersPage() {
+  return (
+    <AdminLayout
+      crumbs={[{ label: "Admin", href: "/admin/dashboard" }, { label: "Users" }]}
+    >
+      <UsersPageContent />
+    </AdminLayout>
+  );
+}
+
+function UsersPageContent() {
   const { toast } = useToast();
   const { data: users, isLoading } = useUsers();
   const { searchRef } = useGroupsFocus();
@@ -277,9 +287,7 @@ export default function AdminUsersPage() {
   }, [users, searchValue]);
 
   return (
-    <AdminLayout
-      crumbs={[{ label: "Admin", href: "/admin/dashboard" }, { label: "Users" }]}
-    >
+    <>
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-[-0.02em]">Users</h1>
@@ -414,6 +422,6 @@ export default function AdminUsersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </>
   );
 }

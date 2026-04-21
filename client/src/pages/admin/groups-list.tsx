@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 import {
@@ -125,6 +125,19 @@ type RowRef = {
 };
 
 export default function AdminGroupsListPage() {
+  return (
+    <AdminLayout
+      crumbs={[
+        { label: "Admin", href: "/admin/dashboard" },
+        { label: "Groups" },
+      ]}
+    >
+      <GroupsListContent />
+    </AdminLayout>
+  );
+}
+
+function GroupsListContent() {
   const { data: groups, isLoading } = useGroups();
   const [, navigate] = useLocation();
   const { registerHandlers, unregisterHandlers, searchRef } = useGroupsFocus();
@@ -238,12 +251,7 @@ export default function AdminGroupsListPage() {
   }
 
   return (
-    <AdminLayout
-      crumbs={[
-        { label: "Admin", href: "/admin/dashboard" },
-        { label: "Groups" },
-      ]}
-    >
+    <>
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-[-0.02em]">Groups</h1>
@@ -342,9 +350,8 @@ export default function AdminGroupsListPage() {
                     const companyIdx = flatIdx;
                     const tier = tierConfig(latest.riskTier);
                     return (
-                      <>
+                      <Fragment key={`company-${companyName}`}>
                         <tr
-                          key={`company-${companyName}`}
                           ref={(el) => {
                             if (el) rowRefs.current.set(companyIdx, el);
                             else rowRefs.current.delete(companyIdx);
@@ -488,7 +495,7 @@ export default function AdminGroupsListPage() {
                               </tr>
                             );
                           })}
-                      </>
+                      </Fragment>
                     );
                   });
                 })()}
@@ -505,6 +512,6 @@ export default function AdminGroupsListPage() {
         <kbd className="rounded border bg-muted px-1 font-mono">Enter</kbd> to open, and{" "}
         <kbd className="rounded border bg-muted px-1 font-mono">/</kbd> to jump to search.
       </p>
-    </AdminLayout>
+    </>
   );
 }
