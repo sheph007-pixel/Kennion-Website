@@ -12,6 +12,7 @@ import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import AuthVerifyPage from "@/pages/auth-verify";
 import DashboardPage from "@/pages/dashboard";
+import ProposalsPage from "@/pages/proposals";
 import AdminDashboardPage from "@/pages/admin/dashboard";
 import AdminGroupsListPage from "@/pages/admin/groups-list";
 import AdminGroupDetailPage from "@/pages/admin/group-detail";
@@ -79,6 +80,9 @@ function Router() {
       <Route path="/auth/verify" component={AuthVerifyPage} />
       <Route path="/dashboard">
         <ProtectedRoute component={DashboardPage} />
+      </Route>
+      <Route path="/proposals">
+        <ProtectedRoute component={ProposalsPage} />
       </Route>
       <Route path="/admin">
         <Redirect to="/admin/dashboard" />

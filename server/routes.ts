@@ -9,7 +9,6 @@ import fs from "fs";
 import XLSX from "xlsx";
 import bcrypt from "bcryptjs";
 import { storage } from "./storage";
-import { generateProposal } from "./proposal-engine";
 import {
   priceGroup,
   inferRatingAreaFromCensus,
@@ -1395,6 +1394,42 @@ export async function registerRoutes(
     }
   });
 
+  // Admin approves a group for proposal generation
+  app.post("/api/admin/groups/:id/approve", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const group = await storage.getGroup(id);
+      if (!group) return res.status(404).json({ message: "Group not found" });
+      if (group.status !== "census_uploaded") {
+        return res.status(400).json({
+          message: `Cannot approve group from status "${group.status}" (must be "census_uploaded")`,
+        });
+      }
+      const updated = await storage.updateGroup(id, { status: "approved" });
+      res.json({ ok: true, group: updated });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Approve failed" });
+    }
+  });
+
+  // Admin un-approves a group (revert to census_uploaded)
+  app.post("/api/admin/groups/:id/unapprove", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const group = await storage.getGroup(id);
+      if (!group) return res.status(404).json({ message: "Group not found" });
+      if (group.status !== "approved") {
+        return res.status(400).json({
+          message: `Cannot unapprove group from status "${group.status}" (must be "approved")`,
+        });
+      }
+      const updated = await storage.updateGroup(id, { status: "census_uploaded" });
+      res.json({ ok: true, group: updated });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Unapprove failed" });
+    }
+  });
+
   app.delete("/api/admin/groups/:id", requireAdmin, async (req: Request, res: Response) => {
     try {
       const id = req.params.id as string;
@@ -1494,11 +1529,16 @@ export async function registerRoutes(
   app.post("/api/admin/proposal/generate/:groupId", requireAdmin, async (req: Request, res: Response) => {
     try {
       const groupId = req.params.groupId as string;
-      const { targetSheet } = req.body as { targetSheet?: string };
-
       const group = await storage.getGroup(groupId);
       if (!group) {
         return res.status(404).json({ message: "Group not found" });
+      }
+
+      // Group must be approved (or census_uploaded during transition) before proposal generation.
+      if (group.status !== "approved" && group.status !== "census_uploaded" && group.status !== "proposal_sent") {
+        return res.status(400).json({
+          message: `Group must be approved before generating a proposal (current status: ${group.status}).`,
+        });
       }
 
       const census = await storage.getCensusByGroupId(groupId);
@@ -1506,32 +1546,60 @@ export async function registerRoutes(
         return res.status(400).json({ message: "No census entries found for this group" });
       }
 
-      // Run the full pipeline: inject census → LibreOffice/pdfkit → PDF
-      const result = await generateProposal(group, census, targetSheet || "Census");
+      // Parse optional request body overrides.
+      const body = (req.body || {}) as {
+        effectiveDate?: string;
+        ratingArea?: string;
+        admin?: string;
+      };
+      const effectiveDate =
+        body.effectiveDate ||
+        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const administrator = (body.admin as Admin | undefined) || "EBPA";
 
-      // Read PDF bytes and store as base64 in DB (survives Railway redeploys)
-      let pdfBase64: string | undefined;
-      try {
-        const pdfBuffer = fs.readFileSync(result.pdfPath);
-        pdfBase64 = pdfBuffer.toString("base64");
-      } catch { /* file read failed, store without base64 */ }
+      // Convert stored census rows into the engine's CensusMember shape.
+      const members: CensusMember[] = censusEntriesToMembers(census);
+      const ratingArea: RatingArea =
+        body.ratingArea && body.ratingArea !== "auto"
+          ? (body.ratingArea as RatingArea)
+          : inferRatingAreaFromCensus(members);
 
-      // Store proposal record in database
-      const proposal = await storage.createProposal({
-        groupId,
-        pdfPath: result.pdfPath,
-        pdfBase64,
-        fileName: result.fileName,
-        ratesData: result.ratesData,
+      // Run the deterministic pricing engine.
+      const pricing = priceGroup({
+        census: members,
+        effectiveDate,
+        ratingArea,
+        admin: administrator,
+        group: group.companyName,
       });
 
-      // Update group status to proposal_sent
-      await storage.updateGroup(groupId, { status: "proposal_sent" });
+      // Render the proposal PDF with pdfkit (native, no LibreOffice dependency).
+      const { renderProposalPdf } = await import("./proposal-pdf");
+      const { pdfBuffer, fileName } = await renderProposalPdf(group, pricing, members.length);
+
+      // Persist to proposals table. pdfBase64 is used by the PDF download
+      // endpoints so the file survives Railway redeploys (ephemeral fs).
+      const proposal = await storage.createProposal({
+        groupId,
+        pdfPath: `proposals/${fileName}`,
+        pdfBase64: pdfBuffer.toString("base64"),
+        fileName,
+        ratesData: pricing,
+      });
+
+      // Advance group status (safe to call even if already proposal_sent).
+      const curStatus: string = group.status;
+      if (curStatus !== "proposal_sent" && curStatus !== "proposal_accepted" && curStatus !== "client") {
+        await storage.updateGroup(groupId, { status: "proposal_sent" });
+      }
 
       res.json({
         message: "Proposal generated successfully",
         proposalId: proposal.id,
-        fileName: result.fileName,
+        fileName,
+        planCount: Object.keys(pricing.plan_rates).length,
+        ratingArea: pricing.rating_area,
+        effectiveDate: pricing.effective_date,
       });
     } catch (err: any) {
       log(`Proposal generation error: ${err.message}`, "proposal");
