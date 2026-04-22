@@ -4,7 +4,6 @@ import { useMutation } from "@tanstack/react-query";
 import {
   ArrowLeft,
   ChevronDown,
-  FileText,
   MoreHorizontal,
   ShieldCheck,
   Trash2,
@@ -19,13 +18,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -38,8 +30,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAllUsers } from "@/hooks/use-admin";
-import { STATUS_OPTIONS } from "@/pages/admin/constants";
-import { GenerateProposalDialog } from "./generate-proposal-dialog";
 import { EditUserDialog } from "./edit-user-dialog";
 import type { Group } from "@shared/schema";
 
@@ -48,52 +38,19 @@ type Props = {
 };
 
 // Pinned below the top nav when an admin views a customer group. Shows
-// who they're viewing and the primary admin actions (approve, status,
-// generate, notes, delete). Keeps admin powers visible without
-// cluttering the customer-facing cockpit below it.
+// who they're viewing and keeps the essential admin actions (Edit user,
+// Delete group) tucked into an overflow menu so the bar stays quiet
+// above the cockpit. Primary workflow actions (approve, status,
+// generate proposal) were removed per product direction — add back
+// here if needed.
 export function AdminBanner({ group }: Props) {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const { data: users } = useAllUsers();
   const owner = users?.find((u) => u.id === group.userId);
 
-  const [generateOpen, setGenerateOpen] = useState(false);
   const [editUserOpen, setEditUserOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-
-  const isApproved = group.status === "approved" || group.status === "proposal_sent" ||
-    group.status === "proposal_accepted" || group.status === "client";
-
-  const toggleApprove = useMutation({
-    mutationFn: async () => {
-      const path = isApproved
-        ? `/api/admin/groups/${group.id}/unapprove`
-        : `/api/admin/groups/${group.id}/approve`;
-      await apiRequest("POST", path);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/groups"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/groups", group.id] });
-      toast({ title: isApproved ? "Group unapproved" : "Group approved" });
-    },
-    onError: (err: any) => {
-      toast({ title: "Action failed", description: err.message, variant: "destructive" });
-    },
-  });
-
-  const patchStatus = useMutation({
-    mutationFn: async (status: string) => {
-      await apiRequest("PATCH", `/api/admin/groups/${group.id}`, { status });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/groups"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/groups", group.id] });
-      toast({ title: "Status updated" });
-    },
-    onError: (err: any) => {
-      toast({ title: "Update failed", description: err.message, variant: "destructive" });
-    },
-  });
 
   const deleteGroup = useMutation({
     mutationFn: async () => {
@@ -138,70 +95,31 @@ export function AdminBanner({ group }: Props) {
           )}
           <div className="flex-1" />
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => toggleApprove.mutate()}
-              disabled={toggleApprove.isPending}
-              data-testid="button-toggle-approve"
-            >
-              {isApproved ? "Unapprove" : "Approve"}
-            </Button>
-
-            <Select
-              value={group.status ?? "census_uploaded"}
-              onValueChange={(v) => patchStatus.mutate(v)}
-            >
-              <SelectTrigger className="h-8 w-[170px] text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((s) => (
-                  <SelectItem key={s.value} value={s.value} className="text-xs">
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button
-              size="sm"
-              onClick={() => setGenerateOpen(true)}
-              className="gap-1.5"
-              data-testid="button-generate-proposal"
-            >
-              <FileText className="h-3.5 w-3.5" />
-              Generate Proposal
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="px-2" data-testid="button-admin-more">
-                  <MoreHorizontal className="h-4 w-4" />
-                  <ChevronDown className="ml-1 h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => setEditUserOpen(true)}>
-                  <UserCog className="mr-2 h-4 w-4" />
-                  Edit user
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onSelect={() => setConfirmDelete(true)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete group
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="px-2" data-testid="button-admin-more">
+                <MoreHorizontal className="h-4 w-4" />
+                <ChevronDown className="ml-1 h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => setEditUserOpen(true)}>
+                <UserCog className="mr-2 h-4 w-4" />
+                Edit user
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={() => setConfirmDelete(true)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete group
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      <GenerateProposalDialog group={group} open={generateOpen} onOpenChange={setGenerateOpen} />
       <EditUserDialog
         user={owner ?? null}
         open={editUserOpen}
