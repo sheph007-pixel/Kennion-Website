@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { ProposalNav } from "@/components/proposal/proposal-nav";
+import { ProposalFooter } from "@/components/proposal/proposal-footer";
 import { DENTAL_PLANS, VISION_PLANS, effectiveDateOptions, fmtLong, fmtMonthYear, money } from "@/lib/kennion-rates";
 import { useGroupRates } from "@/hooks/use-proposal";
 import type { Group } from "@shared/schema";
@@ -125,6 +126,7 @@ export function ProposalAccept({ group, onBack, onDone }: Props) {
             Back to proposal
           </Button>
         </div>
+        <ProposalFooter />
       </div>
     );
   }

@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { ClickToRevealPhone } from "@/components/click-to-reveal-phone";
 import { ProposalNav } from "@/components/proposal/proposal-nav";
+import { ProposalFooter } from "@/components/proposal/proposal-footer";
 import { Mail, Phone } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
@@ -39,6 +40,7 @@ export function ProposalHighRisk() {
           </div>
         </Card>
       </div>
+      <ProposalFooter />
     </div>
   );
 }

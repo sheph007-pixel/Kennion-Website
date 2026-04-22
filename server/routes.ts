@@ -914,6 +914,47 @@ export async function registerRoutes(
     }
   });
 
+  // User updates their own profile — name, company, phone. Email + role
+  // are deliberately not editable here (email changes need verification).
+  app.patch("/api/auth/me", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const data = req.body || {};
+      const updates: any = {};
+      if (typeof data.fullName === "string") updates.fullName = data.fullName.trim();
+      if (typeof data.companyName === "string") updates.companyName = data.companyName.trim();
+      if (typeof data.phone === "string") updates.phone = data.phone.trim();
+
+      if (updates.fullName !== undefined && updates.fullName.length < 1) {
+        return res.status(400).json({ message: "Name cannot be empty." });
+      }
+      if (updates.companyName !== undefined && updates.companyName.length < 1) {
+        return res.status(400).json({ message: "Company name cannot be empty." });
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update." });
+      }
+
+      const updated = await storage.updateUser(req.session.userId, updates);
+      if (!updated) return res.status(404).json({ message: "User not found" });
+      res.json({
+        id: updated.id,
+        fullName: updated.fullName,
+        email: updated.email,
+        role: updated.role,
+        companyName: updated.companyName,
+        phone: updated.phone,
+        verified: updated.verified,
+        createdAt: updated.createdAt,
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err?.message || "Profile update failed" });
+    }
+  });
+
   app.post("/api/auth/logout", (req: Request, res: Response) => {
     req.session.destroy(() => {
       res.json({ message: "Logged out" });

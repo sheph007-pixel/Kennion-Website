@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ProposalNav } from "@/components/proposal/proposal-nav";
+import { ProposalFooter } from "@/components/proposal/proposal-footer";
 import { queryClient } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
 import type { Group } from "@shared/schema";
@@ -88,6 +89,7 @@ export function ProposalAnalyzing({ onComplete }: Props) {
           </ul>
         </Card>
       </div>
+      <ProposalFooter />
 
       <style>{`
         @keyframes k-pulse {

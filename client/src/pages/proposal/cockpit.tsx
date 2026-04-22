@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Download, ExternalLink } from "lucide-react";
+import { ArrowRight, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProposalNav } from "@/components/proposal/proposal-nav";
+import { ProposalFooter } from "@/components/proposal/proposal-footer";
 import { useToast } from "@/hooks/use-toast";
 import { useGroupRates, useGroupCensus, useReplaceCensus, censusToMix } from "@/hooks/use-proposal";
 import {
@@ -151,15 +152,6 @@ export function ProposalCockpit({ group, onReplaceCensus, onAcceptProposal }: Pr
                     Supplemental
                   </TabPill>
                 </TabsList>
-                <div className="flex-1" />
-                <a
-                  href="https://KennionProgram.com"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  Plan details <ExternalLink className="h-3 w-3" />
-                </a>
               </div>
 
               <TabsContent value="medical" className="mt-5 min-h-[640px] space-y-4">
@@ -204,6 +196,7 @@ export function ProposalCockpit({ group, onReplaceCensus, onAcceptProposal }: Pr
           </main>
         </div>
       </div>
+      <ProposalFooter />
 
       <CensusModal
         open={censusOpen}

@@ -1,9 +1,10 @@
 import { useCallback, useRef, useState } from "react";
-import { Upload as UploadIcon, FileText, Sparkles, Loader2, Lock } from "lucide-react";
+import { Upload as UploadIcon, FileText, Sparkles, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ProposalNav } from "@/components/proposal/proposal-nav";
+import { ProposalFooter } from "@/components/proposal/proposal-footer";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
@@ -181,11 +182,8 @@ export function ProposalUpload({ onComplete }: Props) {
           </div>
         </Card>
 
-        <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-          <Lock className="h-3.5 w-3.5" />
-          SOC 2 Type II · Your census is encrypted and never shared.
-        </div>
       </div>
+      <ProposalFooter />
 
       <Dialog open={errorOpen} onOpenChange={setErrorOpen}>
         <DialogContent className="max-w-md">
