@@ -227,13 +227,6 @@ export function ScoreAuditDialog({ open, onOpenChange, group, census }: Props) {
             </div>
           </div>
         )}
-
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Risk scores use Kennion's demographic actuarial table (same table used to price the
-          proposal). Thresholds: Preferred &lt; 1.00 · Standard 1.00 to 1.49 · High ≥ 1.50. The
-          audit ID is a fingerprint of this group's roster at the time of review; it changes when
-          the census changes so later reconciliation is possible.
-        </p>
       </DialogContent>
     </Dialog>
   );
