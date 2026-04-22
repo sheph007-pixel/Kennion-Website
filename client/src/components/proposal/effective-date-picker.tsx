@@ -19,17 +19,14 @@ export function EffectiveDatePicker({ value, onChange }: Props) {
             type="button"
             onClick={() => onChange(d)}
             className={cn(
-              "flex items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition",
+              "w-full rounded-md border px-3 py-2 text-left text-sm font-semibold transition",
               active
-                ? "border-primary bg-primary/10 text-primary font-semibold"
+                ? "border-primary bg-primary/10 text-primary"
                 : "border-border bg-card text-foreground hover-elevate",
             )}
             data-testid={`option-effective-${iso}`}
           >
-            <span>{fmtMonthYear(d)}</span>
-            <span className="text-xs text-muted-foreground">
-              {d.toLocaleDateString("en-US", { weekday: "short" })}
-            </span>
+            {fmtMonthYear(d)}
           </button>
         );
       })}
