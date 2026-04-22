@@ -152,8 +152,8 @@ function TierHead({ children }: { children: React.ReactNode }) {
 
 function TierCell({ value }: { value: number | undefined }) {
   return (
-    <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground">
-      {value != null ? money(value) : <span className="opacity-40">·</span>}
+    <TableCell className="text-right font-mono text-sm tabular-nums">
+      {value != null ? money(value) : <span className="text-muted-foreground/50">·</span>}
     </TableCell>
   );
 }

@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowRight, Download, LogOut, User, ExternalLink, RefreshCw } from "lucide-react";
+import { ArrowRight, Download, LogOut, User, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { KennionLogo } from "@/components/kennion-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth";
@@ -122,6 +121,10 @@ export function ProposalCockpit({ group, onReplaceCensus, onAcceptProposal }: Pr
             <GroupHeader
               companyName={group.companyName}
               tier={group.riskTier as any}
+              riskScore={group.riskScore}
+              factors={
+                (group.groupCharacteristics as { factors?: string[] } | null)?.factors ?? []
+              }
               employees={group.employeeCount ?? 0}
               spouses={group.spouseCount ?? 0}
               children={group.childrenCount ?? 0}
@@ -166,12 +169,6 @@ export function ProposalCockpit({ group, onReplaceCensus, onAcceptProposal }: Pr
                       Rates recalculated for <strong>{group.companyName}</strong> · effective{" "}
                       <strong>{fmtLong(effDate)}</strong>. Select a plan below to see your monthly total.
                     </>
-                  }
-                  badge={
-                    <Badge variant="secondary" className="gap-1">
-                      <RefreshCw className="h-3 w-3" />
-                      Live rates
-                    </Badge>
                   }
                 />
                 {ratesQuery.isLoading && <div className="text-sm text-muted-foreground">Pricing…</div>}
@@ -260,19 +257,14 @@ function TabPill({
 function SectionHeader({
   title,
   subtitle,
-  badge,
 }: {
   title: string;
   subtitle: React.ReactNode;
-  badge?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4">
-      <div>
-        <h2 className="text-xl font-bold tracking-tight">{title}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
-      </div>
-      {badge}
+    <div>
+      <h2 className="text-xl font-bold tracking-tight">{title}</h2>
+      <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
     </div>
   );
 }

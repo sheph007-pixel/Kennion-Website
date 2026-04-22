@@ -38,11 +38,35 @@ export function useGroupCensus(groupId: string | undefined) {
   });
 }
 
+// Canonical display order + metadata for the medical plans we surface in
+// the customer proposal. The server rate engine returns many plans (some
+// legacy / admin-only — e.g. Virtual_RBP variants), so we filter to this
+// list in this exact order. Keys are the plan names as they appear in the
+// actuary's workbook; if the actuary renames a plan the match will fall
+// through and the plan simply won't render until the map is updated.
+const MEDICAL_PLAN_ORDER: { serverName: string; displayName?: string; tier: string; note?: string }[] = [
+  { serverName: "Deluxe Platinum", tier: "Platinum" },
+  { serverName: "Choice Gold", tier: "Gold" },
+  { serverName: "Basic Gold", tier: "Gold" },
+  { serverName: "Preferred Silver", tier: "Silver" },
+  { serverName: "Enhanced Silver", tier: "Silver" },
+  { serverName: "Classic Silver", tier: "Silver" },
+  { serverName: "Saver HSA", tier: "Silver", note: "Health Savings Account" },
+  { serverName: "Elite Health Plan", displayName: "Elite Health", tier: "Bronze" },
+  { serverName: "Premier Health Plan", displayName: "Premier Health", tier: "Bronze" },
+  { serverName: "Select Health Plan", displayName: "Select Health", tier: "Bronze" },
+  { serverName: "Core Health Plan", displayName: "Core Health", tier: "Bronze" },
+  { serverName: "Freedom Platinum", tier: "Generic Rx", note: "Generic Rx" },
+  { serverName: "Freedom Gold", tier: "Generic Rx", note: "Generic Rx" },
+  { serverName: "Freedom Silver", tier: "Generic Rx", note: "Generic Rx" },
+  { serverName: "Freedom Bronze", tier: "Generic Rx", note: "Generic Rx" },
+];
+
 // Live-priced medical plans for a group at a given effective date. The
 // server returns `plan_rates: { planName: { EE, EC, ES, EF } }` where keys
-// correspond to EE / EE+CH / EE+SP / EE+FAM. Normalize to the client's
-// tier shape and produce a list ordered by EE rate (most expensive first,
-// matching the design's default sort).
+// correspond to EE / EE+CH / EE+SP / EE+FAM. We filter to MEDICAL_PLAN_ORDER
+// and render in that exact sequence — any plan the engine returns that
+// isn't in the list (admin-only / legacy plans) is suppressed.
 export function useGroupRates(groupId: string | undefined, effectiveDate: string | null) {
   return useQuery<{ plans: MedicalPlan[]; result: RateEngineResult }>({
     queryKey: ["/api/rate/price-group", groupId, effectiveDate],
@@ -51,18 +75,23 @@ export function useGroupRates(groupId: string | undefined, effectiveDate: string
         effective_date: effectiveDate,
       });
       const result = (await res.json()) as RateEngineResult;
-      const plans: MedicalPlan[] = Object.entries(result.plan_rates)
-        .map(([name, r]) => ({
-          id: slugifyPlanName(name),
-          name,
+      const plans: MedicalPlan[] = [];
+      for (const entry of MEDICAL_PLAN_ORDER) {
+        const r = result.plan_rates[entry.serverName];
+        if (!r) continue;
+        plans.push({
+          id: slugifyPlanName(entry.serverName),
+          name: entry.displayName ?? entry.serverName,
+          tier: entry.tier,
+          note: entry.note,
           base: {
             EE: r.EE,
             EE_CH: r.EC,
             EE_SP: r.ES,
             EE_FAM: r.EF,
           } as Record<TierKey, number>,
-        }))
-        .sort((a, b) => b.base.EE - a.base.EE);
+        });
+      }
       return { plans, result };
     },
     enabled: Boolean(groupId && effectiveDate),
