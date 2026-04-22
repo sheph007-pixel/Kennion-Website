@@ -55,6 +55,50 @@ export function useCurrentGroup() {
   return { group, isLoading, groups };
 }
 
+// Proposal row shape returned by /api/groups/:groupId/proposals.
+type ProposalRow = {
+  id: string;
+  groupId: string;
+  fileName: string;
+  createdAt: string;
+};
+
+// Downloads the most recent proposal PDF for a group. Surfaces a clean
+// "not ready" error if no proposal has been generated yet so the
+// caller can show a friendly toast rather than a network failure.
+export function useDownloadProposal(groupId: string | undefined) {
+  return useMutation({
+    mutationFn: async () => {
+      if (!groupId) throw new Error("groupId required");
+      const listRes = await apiRequest("GET", `/api/groups/${groupId}/proposals`);
+      const proposals = (await listRes.json()) as ProposalRow[];
+      if (!proposals.length) {
+        throw new Error(
+          "Your proposal hasn't been prepared yet. Your Kennion advisor will have it ready shortly.",
+        );
+      }
+      // /api/groups/:groupId/proposals is not guaranteed to be sorted —
+      // pick the most recent deterministically here.
+      const latest = proposals.reduce((a, b) =>
+        new Date(a.createdAt).getTime() >= new Date(b.createdAt).getTime() ? a : b,
+      );
+      const pdfRes = await apiRequest("GET", `/api/proposals/${latest.id}/pdf`);
+      const blob = await pdfRes.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = latest.fileName || "proposal.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // Release the blob URL on the next tick — immediate revoke can
+      // race with the browser's download pickup in Safari.
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      return latest;
+    },
+  });
+}
+
 // Replaces the entire roster for a group. On success, refreshes every
 // query that derives from the census — the group record (for stat cards +
 // tier + score), the census entries (modal), and the medical rates

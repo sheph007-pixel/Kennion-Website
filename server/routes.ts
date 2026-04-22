@@ -1993,7 +1993,7 @@ export async function registerRoutes(
 
       // Render the proposal PDF with pdfkit (native, no LibreOffice dependency).
       const { renderProposalPdf } = await import("./proposal-pdf");
-      const { pdfBuffer, fileName } = await renderProposalPdf(group, pricing, members.length);
+      const { pdfBuffer, fileName } = await renderProposalPdf(group, pricing, census);
 
       // Persist to proposals table. pdfBase64 is used by the PDF download
       // endpoints so the file survives Railway redeploys (ephemeral fs).

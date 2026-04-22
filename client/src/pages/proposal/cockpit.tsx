@@ -6,7 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProposalNav } from "@/components/proposal/proposal-nav";
 import { ProposalFooter } from "@/components/proposal/proposal-footer";
 import { useToast } from "@/hooks/use-toast";
-import { useGroupRates, useGroupCensus, useReplaceCensus, censusToMix } from "@/hooks/use-proposal";
+import {
+  useGroupRates,
+  useGroupCensus,
+  useReplaceCensus,
+  useDownloadProposal,
+  censusToMix,
+} from "@/hooks/use-proposal";
 import {
   DENTAL_PLANS,
   VISION_PLANS,
@@ -53,6 +59,7 @@ export function ProposalCockpit({
   const ratesQuery = useGroupRates(group.id, toIsoDate(effDate));
   const censusQuery = useGroupCensus(group.id);
   const replaceCensus = useReplaceCensus(group.id);
+  const downloadProposal = useDownloadProposal(group.id);
   const plans = ratesQuery.data?.plans ?? [];
   const fileName = censusFileName(group);
 
@@ -121,9 +128,24 @@ export function ProposalCockpit({
                 Accept Proposal
                 <ArrowRight className="h-4 w-4" />
               </Button>
-              <Button variant="outline" className="w-full justify-center gap-1.5">
+              <Button
+                variant="outline"
+                className="w-full justify-center gap-1.5"
+                onClick={() => {
+                  downloadProposal.mutate(undefined, {
+                    onError: (err: any) => {
+                      toast({
+                        title: "Not available yet",
+                        description: err?.message ?? "Please try again later.",
+                      });
+                    },
+                  });
+                }}
+                disabled={downloadProposal.isPending}
+                data-testid="button-download-pdf"
+              >
                 <Download className="h-4 w-4" />
-                Download PDF
+                {downloadProposal.isPending ? "Preparing…" : "Download PDF"}
               </Button>
             </div>
           </aside>
