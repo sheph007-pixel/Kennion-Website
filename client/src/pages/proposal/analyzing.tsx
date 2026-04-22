@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Brain, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { KennionLogo } from "@/components/kennion-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { queryClient } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
 import type { Group } from "@shared/schema";
 
 type Props = {
@@ -12,44 +12,34 @@ type Props = {
   onComplete: () => void;
 };
 
-const MESSAGES = [
-  { text: "Parsing census data", pct: 8 },
-  { text: "Validating employee records", pct: 18 },
-  { text: "Analyzing age distribution", pct: 28 },
-  { text: "Evaluating demographic risk factors", pct: 38 },
-  { text: "Running actuarial models", pct: 52 },
-  { text: "Cross-referencing regional data", pct: 66 },
-  { text: "Applying underwriting criteria", pct: 78 },
-  { text: "Determining qualification tier", pct: 90 },
-  { text: "Finalizing Kennion Score", pct: 98 },
-  { text: "Analysis complete", pct: 100 },
+const STEPS = [
+  "Parsing census file",
+  "Detecting columns & validating employee records",
+  "Scoring group risk profile",
+  "Calculating medical rates for effective dates",
+  "Assembling your proposal",
 ];
 
-export function ProposalAnalyzing({ group, onComplete }: Props) {
+export function ProposalAnalyzing({ onComplete }: Props) {
   const [idx, setIdx] = useState(0);
-  const [pct, setPct] = useState(0);
 
   useEffect(() => {
     const total = 18000;
-    const step = total / MESSAGES.length;
+    const step = total / STEPS.length;
     let i = 0;
     const id = setInterval(() => {
       i++;
-      if (i >= MESSAGES.length) {
+      if (i >= STEPS.length) {
         clearInterval(id);
-        setIdx(MESSAGES.length - 1);
-        setPct(100);
+        setIdx(STEPS.length);
         queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
         setTimeout(onComplete, 700);
         return;
       }
       setIdx(i);
-      setPct(MESSAGES[i].pct);
     }, step);
     return () => clearInterval(id);
   }, [onComplete]);
-
-  const msg = MESSAGES[idx];
 
   return (
     <div className="min-h-screen bg-background">
@@ -57,46 +47,58 @@ export function ProposalAnalyzing({ group, onComplete }: Props) {
         <KennionLogo size="md" />
         <ThemeToggle />
       </nav>
-      <div className="mx-auto max-w-xl px-6 py-16">
-        <Card className="p-8 text-center">
-          <div className="mx-auto flex h-16 w-16 animate-pulse items-center justify-center rounded-full bg-primary/10">
-            <Brain className="h-8 w-8 text-primary" />
-          </div>
-          <h2 className="mt-5 text-xl font-bold tracking-tight">Analyzing Your Census</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Our AI underwriting engine is evaluating your group's risk profile.
-          </p>
+      <div className="mx-auto max-w-xl px-6 py-16 text-center">
+        <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-full border border-border">
+          <div
+            className="h-28 w-28 rounded-full bg-primary"
+            style={{ animation: "k-pulse 1.8s ease-in-out infinite" }}
+          />
+        </div>
 
-          <div className="mx-auto mt-6 max-w-sm">
-            <Progress value={pct} className="h-2.5" />
-            <div className="mt-2 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 animate-pulse text-primary" />
-                <span className="font-medium text-muted-foreground">{msg.text}</span>
-              </div>
-              <span className="font-mono tabular-nums text-muted-foreground">{Math.round(pct)}%</span>
-            </div>
-          </div>
+        <h2 className="mt-8 text-3xl font-bold tracking-tight">Analyzing your group</h2>
+        <p className="mt-2 text-sm text-muted-foreground">Usually takes under a minute.</p>
 
-          <div className="mx-auto mt-6 grid max-w-md grid-cols-4 gap-3 border-t pt-6">
-            <Stat label="Employees" value={group?.employeeCount} />
-            <Stat label="Spouses" value={group?.spouseCount} />
-            <Stat label="Children" value={group?.childrenCount} />
-            <Stat label="Total" value={group?.totalLives} />
-          </div>
+        <Card className="mx-auto mt-8 max-w-md p-5 text-left">
+          <ul className="space-y-2.5">
+            {STEPS.map((label, i) => {
+              const done = i < idx;
+              const active = i === idx;
+              return (
+                <li
+                  key={i}
+                  className={cn(
+                    "flex items-center justify-between gap-3 font-mono text-sm transition-colors",
+                    done && "text-green-700 dark:text-green-400",
+                    active && "text-foreground",
+                    !done && !active && "text-muted-foreground/60",
+                  )}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className={cn(
+                        "h-1.5 w-1.5 rounded-full",
+                        done && "bg-green-600 dark:bg-green-400",
+                        active && "bg-foreground",
+                        !done && !active && "bg-muted-foreground/40",
+                      )}
+                      aria-hidden
+                    />
+                    <span>{label}</span>
+                  </div>
+                  {done && <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />}
+                </li>
+              );
+            })}
+          </ul>
         </Card>
       </div>
-    </div>
-  );
-}
 
-function Stat({ label, value }: { label: string; value: number | null | undefined }) {
-  return (
-    <div>
-      <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-        {label}
-      </div>
-      <div className="mt-0.5 text-lg font-bold tabular-nums">{value ?? "…"}</div>
+      <style>{`
+        @keyframes k-pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.12); opacity: 0.85; }
+        }
+      `}</style>
     </div>
   );
 }

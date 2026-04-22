@@ -57,11 +57,8 @@ export function MedicalTable({ plans, selectedId, onSelect }: Props) {
                       <div className={cn("truncate font-semibold", selected && "text-primary")}>
                         {plan.name}
                       </div>
-                      {plan.tier && (
-                        <div className="text-xs text-muted-foreground">
-                          {plan.tier}
-                          {plan.note ? ` · ${plan.note}` : ""}
-                        </div>
+                      {plan.note && (
+                        <div className="text-xs text-muted-foreground">{plan.note}</div>
                       )}
                     </div>
                   </div>

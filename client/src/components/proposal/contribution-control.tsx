@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
-import { money0 } from "@/lib/kennion-rates";
 
 export type ContribMode = "percent" | "dollar";
 
@@ -67,10 +66,6 @@ export function ContributionControl({ mode, value, eeRate, onChange }: Props) {
         <div className="min-w-[70px] text-right font-mono text-xl font-semibold tabular-nums">
           {display}
         </div>
-      </div>
-
-      <div className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-        Toward EE-only medical. Min 50%. {mode === "dollar" && `(~${money0(Math.min(value, eeRate))} per employee)`}
       </div>
     </Card>
   );
