@@ -22,12 +22,16 @@ export default function DashboardPage() {
   const hasGroup = Boolean(group);
   const riskReady = Boolean(group?.riskTier);
 
-  // Force to upload when the user has no group. Do NOT snap back to
-  // "proposal" when the user explicitly chose to Replace — let them stay
-  // on upload until they actually upload something.
+  // Force to upload only once the query has actually resolved and there
+  // really is no group. Skipping the isLoading tick prevents the screen
+  // from briefly flipping to "upload" on first load before the /api/groups
+  // response arrives. We also never override "analyzing" (mid-flow) or
+  // an explicit user-triggered "upload" (Replace) — if a group already
+  // exists at that point, we just leave the screen where the user put it.
   useEffect(() => {
+    if (isLoading) return;
     if (!hasGroup) setScreen((s) => (s === "analyzing" ? s : "upload"));
-  }, [hasGroup]);
+  }, [isLoading, hasGroup]);
 
   if (isLoading) {
     return (
