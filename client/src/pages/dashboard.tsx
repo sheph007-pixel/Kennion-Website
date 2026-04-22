@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { ProposalUpload } from "@/pages/proposal/upload";
 import { ProposalAnalyzing } from "@/pages/proposal/analyzing";
 import { ProposalHighRisk } from "@/pages/proposal/high-risk";
 import { ProposalAccept } from "@/pages/proposal/accept";
+import { NewGroupDetails } from "@/pages/proposal/new-group";
 import { ProposalNav } from "@/components/proposal/proposal-nav";
 
 // URL-driven screen router. The URL + server group state are the single
@@ -52,13 +53,12 @@ export default function DashboardPage() {
     );
   }
 
-  // Explicit "upload a new group" path.
+  // Explicit "upload a new group" path. If the user already has at
+  // least one group, they first fill in the new group's name, state,
+  // and ZIP — we only skip that form for the initial group, which
+  // inherits the details they entered at signup.
   if (isNewRoute) {
-    return (
-      <ProposalUpload
-        onComplete={(g) => navigate(`/dashboard/${g.id}`, { replace: true })}
-      />
-    );
+    return <NewGroupUploadFlow hasExistingGroups={groups.length > 0} />;
   }
 
   // No groups yet → upload is the landing screen. Same behavior as before
@@ -124,6 +124,25 @@ export default function DashboardPage() {
       onAcceptProposal={() =>
         navigate(`/dashboard/${selectedGroup.id}?accept=1`)
       }
+    />
+  );
+}
+
+// Small 2-step flow wrapped into the /dashboard/new route: first the
+// group identity form (skipped on very first upload), then the census
+// upload. Once upload completes we route to /dashboard/:newId and the
+// parent dashboard takes over.
+function NewGroupUploadFlow({ hasExistingGroups }: { hasExistingGroups: boolean }) {
+  const [, navigate] = useLocation();
+  const [detailsDone, setDetailsDone] = useState(!hasExistingGroups);
+
+  if (!detailsDone) {
+    return <NewGroupDetails onContinue={() => setDetailsDone(true)} />;
+  }
+
+  return (
+    <ProposalUpload
+      onComplete={(g) => navigate(`/dashboard/${g.id}`, { replace: true })}
     />
   );
 }

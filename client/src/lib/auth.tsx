@@ -9,7 +9,17 @@ interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
   requestMagicLink: (data: { email: string; fullName?: string; companyName?: string }) => Promise<{ message: string; email?: string; needsSignup?: boolean }>;
-  register: (data: { firstName: string; lastName: string; email: string; phone: string; companyName: string; accessCode: string }) => Promise<{ message: string; email: string; verified?: boolean }>;
+  register: (data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    phone: string;
+    companyName: string;
+    state: string;
+    zipCode: string;
+    accessCode: string;
+  }) => Promise<{ message: string; email: string; verified?: boolean }>;
   verifyMagicLink: (token: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -39,7 +49,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return await res.json();
   }, []);
 
-  const register = useCallback(async (data: { firstName: string; lastName: string; email: string; phone: string; companyName: string; accessCode: string }) => {
+  const register = useCallback(async (data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    phone: string;
+    companyName: string;
+    state: string;
+    zipCode: string;
+    accessCode: string;
+  }) => {
     const res = await apiRequest("POST", "/api/auth/register", data);
     const result = await res.json();
     // If user is verified, invalidate the query to fetch the new user

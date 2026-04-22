@@ -12,6 +12,7 @@ import { storage } from "./storage";
 import {
   priceGroup,
   inferRatingAreaFromCensus,
+  inferRatingArea,
   censusEntriesToMembers,
   loadFactorTables,
   reloadFactorTables,
@@ -24,6 +25,7 @@ import {
   magicLinkVerifySchema,
   loginSchema,
   registerSchema,
+  newGroupDetailsSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   updateGroupStatusSchema,
@@ -46,6 +48,16 @@ declare module "express-session" {
       rows: any[];
       fileName: string;
       aiCleaned?: any;
+    };
+    // Set by POST /api/groups/pending-details when a user chooses
+    // "New Group" for a second or later group. Consumed by the
+    // confirm endpoint so the new group record carries the correct
+    // companyName / state / zipCode rather than inheriting the
+    // account's defaults.
+    pendingGroupDetails?: {
+      companyName: string;
+      state: string;
+      zipCode: string;
     };
   }
 }
@@ -652,6 +664,8 @@ export async function registerRoutes(
         email: data.email,
         companyName: data.companyName,
         phone: data.phone,
+        state: data.state,
+        zipCode: data.zipCode,
         password: hashedPassword,
         verified: true,
         magicToken: null,
@@ -1105,6 +1119,24 @@ export async function registerRoutes(
     }
   });
 
+  // Capture the group's identity (company name + state + zip) for a
+  // second or later group. Stashed in session and consumed by the
+  // confirm endpoint below. First-time users skip this — their first
+  // group inherits the account's registered defaults.
+  app.post("/api/groups/pending-details", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const parsed = newGroupDetailsSchema.parse(req.body);
+      req.session.pendingGroupDetails = {
+        companyName: parsed.companyName,
+        state: parsed.state,
+        zipCode: parsed.zipCode,
+      };
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(400).json({ message: err?.message || "Invalid group details" });
+    }
+  });
+
   app.post("/api/groups/confirm", requireAuth, async (req: Request, res: Response) => {
     try {
       const pendingCensus = req.session.pendingCensus;
@@ -1175,17 +1207,31 @@ export async function registerRoutes(
 
       log(`Census validation passed: Match Rate ${validation.matchRate}%`);
 
+      // Prefer the new-group details from the session when the user
+      // is creating a second or later group; fall back to the account's
+      // registered details for the first one.
+      const pendingDetails = req.session.pendingGroupDetails;
+      const groupCompanyName = pendingDetails?.companyName || user.companyName || "Unnamed Company";
+      const groupState = pendingDetails?.state || user.state || null;
+      const groupZipCode = pendingDetails?.zipCode || user.zipCode || null;
+
       const group = await storage.createGroup({
         userId: user.id,
-        companyName: user.companyName || "Unnamed Company",
+        companyName: groupCompanyName,
         contactName: user.fullName,
         contactEmail: user.email,
         contactPhone: user.phone,
+        state: groupState,
+        zipCode: groupZipCode,
         employeeCount,
         childrenCount,
         spouseCount,
         totalLives: entries.length,
       });
+
+      // Consume the one-shot details so the next upload on this
+      // session doesn't reuse them.
+      delete req.session.pendingGroupDetails;
 
       // Generate AI-powered actuarial analysis
       const adminNotes = await generateActuarialAnalysis({
@@ -2182,9 +2228,18 @@ export async function registerRoutes(
         admin?: Admin;
       };
 
+      // The group's registered state + ZIP takes priority over any
+      // per-employee census zips — it's the business's own address,
+      // entered at signup or on the "New Group" form, and is the
+      // canonical input for the rating area. Fall back to the
+      // explicit request hint, then to the census inference.
+      const fromGroup =
+        group.state || group.zipCode
+          ? inferRatingArea(group.state, group.zipCode)
+          : null;
       const area: RatingArea = rating_area && rating_area !== "auto"
         ? rating_area
-        : inferRatingAreaFromCensus(members);
+        : fromGroup ?? inferRatingAreaFromCensus(members);
 
       const result = priceGroup({
         census: members,

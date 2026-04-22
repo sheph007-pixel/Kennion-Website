@@ -10,6 +10,8 @@ export const users = pgTable("users", {
   password: text("password"),
   companyName: text("company_name"),
   phone: text("phone"),
+  state: text("state"),
+  zipCode: text("zip_code"),
   verified: boolean("verified").default(false).notNull(),
   magicToken: text("magic_token"),
   magicTokenExpiry: timestamp("magic_token_expiry"),
@@ -37,6 +39,12 @@ export const groups = pgTable("groups", {
   femaleCount: integer("female_count").default(0),
   groupCharacteristics: jsonb("group_characteristics"),
   adminNotes: text("admin_notes"),
+  // Two-letter state (e.g. "AL") + ZIP that identifies this group's
+  // primary business address. Used as the authoritative input to the
+  // rate engine's rating-area inference, overriding per-employee
+  // census zips.
+  state: text("state"),
+  zipCode: text("zip_code"),
   // When true, the owner can no longer edit or replace the census —
   // the proposal is frozen as-is. Only admins can toggle this.
   locked: boolean("locked").default(false).notNull(),
@@ -107,6 +115,13 @@ function isValidUSPhone(phone: string): boolean {
   return false;
 }
 
+const US_STATE_CODES = new Set([
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN",
+  "IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV",
+  "NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN",
+  "TX","UT","VT","VA","WA","WV","WI","WY","DC",
+]);
+
 export const registerSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -123,7 +138,30 @@ export const registerSchema = z.object({
     { message: "Please enter a valid US phone number (10 digits)" }
   ),
   companyName: z.string().min(1, "Company name is required"),
+  state: z
+    .string()
+    .transform((s) => s.trim().toUpperCase())
+    .refine((s) => US_STATE_CODES.has(s), { message: "Enter a valid 2-letter state (e.g. AL)" }),
+  zipCode: z
+    .string()
+    .transform((s) => s.trim())
+    .refine((s) => /^\d{5}(-\d{4})?$/.test(s), { message: "Enter a 5-digit ZIP (or ZIP+4)" }),
   accessCode: z.string().min(1, "Access code is required"),
+});
+
+// Required details when creating an additional group under an existing
+// login. Reused by the server's pending-group-details session stash
+// and by the confirm endpoint.
+export const newGroupDetailsSchema = z.object({
+  companyName: z.string().min(1, "Company name is required"),
+  state: z
+    .string()
+    .transform((s) => s.trim().toUpperCase())
+    .refine((s) => US_STATE_CODES.has(s), { message: "Enter a valid 2-letter state" }),
+  zipCode: z
+    .string()
+    .transform((s) => s.trim())
+    .refine((s) => /^\d{5}(-\d{4})?$/.test(s), { message: "Enter a 5-digit ZIP" }),
 });
 
 export const magicLinkVerifySchema = z.object({

@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
-import { ArrowRight, Loader2, UserPlus, Mail, Building2, Phone, User, Key, Lock } from "lucide-react";
+import { ArrowRight, Loader2, UserPlus, Mail, Building2, MapPin, Phone, User, Key, Lock } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -54,6 +54,14 @@ const registerFormSchema = z.object({
     { message: "Please enter a valid US phone number (10 digits)" }
   ),
   companyName: z.string().min(1, "Company name is required"),
+  state: z
+    .string()
+    .min(2, "2-letter state required")
+    .max(2, "Use the 2-letter state code")
+    .transform((s) => s.trim().toUpperCase()),
+  zipCode: z.string().refine((s) => /^\d{5}(-\d{4})?$/.test(s.trim()), {
+    message: "Enter a 5-digit ZIP",
+  }),
 });
 
 export default function RegisterPage() {
@@ -66,7 +74,17 @@ export default function RegisterPage() {
 
   const form = useForm<z.infer<typeof registerFormSchema>>({
     resolver: zodResolver(registerFormSchema),
-    defaultValues: { accessCode: "", firstName: "", lastName: "", email: "", password: "", phone: "", companyName: "" },
+    defaultValues: {
+      accessCode: "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      phone: "",
+      companyName: "",
+      state: "",
+      zipCode: "",
+    },
   });
 
   async function onSubmit(data: z.infer<typeof registerFormSchema>) {
@@ -273,6 +291,38 @@ export default function RegisterPage() {
                     {form.formState.errors.companyName && (
                       <p className="text-xs text-destructive">{form.formState.errors.companyName.message}</p>
                     )}
+                  </div>
+
+                  <div className="grid grid-cols-[1fr_1.4fr] gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="state">State</Label>
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="state"
+                          placeholder="AL"
+                          maxLength={2}
+                          className="pl-9 uppercase"
+                          {...form.register("state")}
+                          data-testid="input-state"
+                        />
+                      </div>
+                      {form.formState.errors.state && (
+                        <p className="text-xs text-destructive">{form.formState.errors.state.message}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="zipCode">ZIP Code</Label>
+                      <Input
+                        id="zipCode"
+                        placeholder="35243"
+                        {...form.register("zipCode")}
+                        data-testid="input-zip-code"
+                      />
+                      {form.formState.errors.zipCode && (
+                        <p className="text-xs text-destructive">{form.formState.errors.zipCode.message}</p>
+                      )}
+                    </div>
                   </div>
 
                   <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-register">
