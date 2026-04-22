@@ -1,23 +1,21 @@
-import { ChevronDown, Building2 } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { useMyGroups } from "@/hooks/use-proposal";
 import { TIER_CONFIG, type RiskTier } from "@/pages/admin/constants";
 
-// Sits in the top nav just right of the logo. Shows the active group
-// (tier dot + company name) and navigates to /dashboard/groups on click
-// — the full groups gallery handles switching and creating new groups.
-// This was a dropdown before; we moved to a page because the dropdown
-// doesn't scale for brokers with many clients.
+// Sits in the top nav just right of the logo. Reads as a "you are
+// here" indicator: tier dot + bold company name for the active group.
+// Clicking it opens the full groups gallery (/dashboard/groups) where
+// switching + creating new groups happens. Hidden on the gallery page
+// itself (no active group) and on admin routes.
 export function GroupSwitcher() {
   const [location, navigate] = useLocation();
   const [, params] = useRoute("/dashboard/:groupId");
   const activeId = params?.groupId;
   const { groups } = useMyGroups();
 
-  // Hide entirely on admin routes — the admin cockpit is "viewing as
-  // customer", switching between the admin's OWN groups there would be
-  // confusing. Admin navigates groups via /admin.
   if (location.startsWith("/admin")) return null;
+  if (location.startsWith("/dashboard/groups")) return null;
   if (groups.length === 0) return null;
 
   const active = groups.find((g) => g.id === activeId) ?? groups[0];
@@ -28,7 +26,7 @@ export function GroupSwitcher() {
     <button
       type="button"
       onClick={() => navigate("/dashboard/groups")}
-      className="flex items-center gap-2 rounded-md border bg-card px-3 py-1.5 text-sm font-medium hover-elevate"
+      className="flex items-center gap-2 rounded-md border bg-card px-3 py-1.5 text-sm hover-elevate"
       data-testid="button-group-switcher"
       aria-label="View all groups"
     >
@@ -41,8 +39,7 @@ export function GroupSwitcher() {
       ) : (
         <Building2 className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
       )}
-      <span className="max-w-[180px] truncate">{active.companyName}</span>
-      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+      <span className="max-w-[200px] truncate font-bold">{active.companyName}</span>
     </button>
   );
 }

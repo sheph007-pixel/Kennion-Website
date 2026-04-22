@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, LogOut, UserCog } from "lucide-react";
+import { ChevronDown, LogOut, Plus, UserCog } from "lucide-react";
 import { useLocation } from "wouter";
 import { KennionLogo } from "@/components/kennion-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -10,6 +10,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth";
 import { ProfileDialog } from "./profile-dialog";
 import { GroupSwitcher } from "./group-switcher";
@@ -20,9 +25,13 @@ import { GroupSwitcher } from "./group-switcher";
 // and Log Out; "Program details" moved to the shared footer.
 export function ProposalNav() {
   const { user, logout } = useAuth();
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const [profileOpen, setProfileOpen] = useState(false);
   const initial = (user?.fullName || user?.email || "?").trim().charAt(0).toUpperCase();
+  // Hide the quick-new-group shortcut in contexts where it'd be noise:
+  // admin (has its own flows) and the new-group page itself.
+  const showNewGroupShortcut =
+    !location.startsWith("/admin") && location !== "/dashboard/new";
 
   async function handleLogout() {
     await logout();
@@ -38,6 +47,22 @@ export function ProposalNav() {
             <GroupSwitcher />
           </div>
           <div className="flex items-center gap-2">
+            {showNewGroupShortcut && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/dashboard/new")}
+                    className="flex h-9 w-9 items-center justify-center rounded-md border bg-card text-foreground hover-elevate"
+                    data-testid="button-nav-new-group"
+                    aria-label="New group"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>New group</TooltipContent>
+              </Tooltip>
+            )}
             <ThemeToggle />
             {user && (
               <DropdownMenu>
