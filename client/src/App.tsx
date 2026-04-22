@@ -12,6 +12,7 @@ import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import AuthVerifyPage from "@/pages/auth-verify";
 import DashboardPage from "@/pages/dashboard";
+import GroupsPage from "@/pages/groups";
 import AdminHome from "@/pages/admin";
 import AdminGroupViewPage from "@/pages/admin/group-view";
 import AdminTemplatesPage from "@/pages/admin/templates";
@@ -77,6 +78,9 @@ function Router() {
       </Route>
       <Route path="/dashboard/new">
         <ProtectedRoute component={DashboardPage} />
+      </Route>
+      <Route path="/dashboard/groups">
+        <ProtectedRoute component={GroupsPage} />
       </Route>
       <Route path="/dashboard/:groupId">
         <ProtectedRoute component={DashboardPage} />

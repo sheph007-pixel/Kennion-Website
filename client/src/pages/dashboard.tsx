@@ -83,7 +83,7 @@ export default function DashboardPage() {
 
   // /dashboard/:id where :id isn't one of the user's groups.
   if (!selectedGroup) {
-    return <NotFoundState onBack={() => navigate(`/dashboard/${groups[0].id}`)} />;
+    return <NotFoundState onBack={() => navigate("/dashboard/groups")} />;
   }
 
   // Still running the initial analysis — the group exists but hasn't been
