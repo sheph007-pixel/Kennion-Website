@@ -22,13 +22,37 @@ type RateEngineResult = {
   plan_rates: Record<string, RawPlanRate>;
 };
 
-// The user's group. Today the customer portal is "one group per user", so
-// we surface just the first entry. When the API grows a /api/groups/current
-// endpoint we should swap to that.
+// Every group the logged-in user owns, most-recent submission first.
+// Source of truth for the group-switcher dropdown and for picking a
+// group by URL param.
+export function useMyGroups() {
+  const query = useQuery<Group[]>({
+    queryKey: ["/api/groups"],
+    select: (rows) =>
+      [...(rows ?? [])].sort((a, b) => {
+        const aT = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+        const bT = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+        return bT - aT;
+      }),
+  });
+  return { ...query, groups: query.data ?? [] };
+}
+
+// Resolves a group by id from the user's list without making an extra
+// request. Returns null if the id isn't one of the user's groups
+// (wrong id, deleted, cross-user snooping attempt, etc).
+export function useGroupById(id: string | undefined) {
+  const { groups, isLoading } = useMyGroups();
+  const group = id ? groups.find((g) => g.id === id) ?? null : null;
+  return { group, isLoading, groups };
+}
+
+// Backward-compat: returns the most recent group. Still used on paths
+// that don't know a group id yet (initial redirect, legacy screens).
 export function useCurrentGroup() {
-  const query = useQuery<Group[]>({ queryKey: ["/api/groups"] });
-  const group = query.data?.[0] ?? null;
-  return { ...query, group };
+  const { groups, isLoading } = useMyGroups();
+  const group = groups[0] ?? null;
+  return { group, isLoading, groups };
 }
 
 // Replaces the entire roster for a group. On success, refreshes every

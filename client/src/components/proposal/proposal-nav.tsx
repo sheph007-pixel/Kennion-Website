@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth";
 import { ProfileDialog } from "./profile-dialog";
+import { GroupSwitcher } from "./group-switcher";
 
 // Single nav used across every customer proposal screen — upload,
 // analyzing, cockpit, accept, high-risk. Keeps the top strip visually
@@ -32,7 +33,10 @@ export function ProposalNav() {
     <>
       <nav className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-6 py-3">
-          <KennionLogo size="md" />
+          <div className="flex items-center gap-4">
+            <KennionLogo size="md" />
+            <GroupSwitcher />
+          </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             {user && (

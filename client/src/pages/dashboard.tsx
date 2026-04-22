@@ -1,37 +1,48 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import { useCurrentGroup } from "@/hooks/use-proposal";
+import { useLocation, useRoute } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { useMyGroups, useGroupById } from "@/hooks/use-proposal";
 import { ProposalCockpit } from "@/pages/proposal/cockpit";
 import { ProposalUpload } from "@/pages/proposal/upload";
 import { ProposalAnalyzing } from "@/pages/proposal/analyzing";
 import { ProposalHighRisk } from "@/pages/proposal/high-risk";
 import { ProposalAccept } from "@/pages/proposal/accept";
-import type { Group } from "@shared/schema";
+import { ProposalNav } from "@/components/proposal/proposal-nav";
 
-// Thin screen router. The customer's portal used to be wizard + list +
-// separate proposals + separate report pages. In the new design there is
-// "one group, one census, one proposal" so this page is a small state
-// machine over the group's lifecycle.
-type Screen = "upload" | "analyzing" | "proposal" | "accept";
-
+// URL-driven screen router. The URL + server group state are the single
+// source of truth — no local "screen" state — so refresh, back/forward,
+// and link-sharing all land in the right place.
+//
+//   /dashboard          → if no groups, upload. else redirect to most recent.
+//   /dashboard/new      → upload a new group, regardless of existing groups.
+//   /dashboard/:id      → cockpit / analyzing / high-risk for that group.
+//
+// An `?accept=1` query param on /dashboard/:id opens the Accept flow for
+// that group. Using a query param (rather than a fourth route) keeps the
+// back button natural: clicking Back from Accept returns to the cockpit.
 export default function DashboardPage() {
-  const { group, isLoading } = useCurrentGroup();
-  const [screen, setScreen] = useState<Screen>("proposal");
-  const [analyzingGroup, setAnalyzingGroup] = useState<Group | null>(null);
+  const [, navigate] = useLocation();
+  const [isNewRoute] = useRoute("/dashboard/new");
+  const [isGroupRoute, params] = useRoute("/dashboard/:groupId");
+  const groupId = isGroupRoute ? params?.groupId : undefined;
 
-  const hasGroup = Boolean(group);
-  const riskReady = Boolean(group?.riskTier);
+  const { groups, isLoading } = useMyGroups();
+  const { group: selectedGroup } = useGroupById(groupId);
 
-  // Force to upload only once the query has actually resolved and there
-  // really is no group. Skipping the isLoading tick prevents the screen
-  // from briefly flipping to "upload" on first load before the /api/groups
-  // response arrives. We also never override "analyzing" (mid-flow) or
-  // an explicit user-triggered "upload" (Replace) — if a group already
-  // exists at that point, we just leave the screen where the user put it.
+  // /dashboard with groups → redirect to the most recent.
+  const needsIndexRedirect = !isNewRoute && !isGroupRoute && !isLoading && groups.length > 0;
   useEffect(() => {
-    if (isLoading) return;
-    if (!hasGroup) setScreen((s) => (s === "analyzing" ? s : "upload"));
-  }, [isLoading, hasGroup]);
+    if (needsIndexRedirect) {
+      navigate(`/dashboard/${groups[0].id}`, { replace: true });
+    }
+  }, [needsIndexRedirect, groups, navigate]);
+
+  // Accept flow is keyed off ?accept=1 in the URL — read it lazily so we
+  // re-render when the query string changes without rearranging hooks.
+  const acceptOpen =
+    typeof window !== "undefined" && window.location.search.includes("accept=1");
 
   if (isLoading) {
     return (
@@ -41,50 +52,103 @@ export default function DashboardPage() {
     );
   }
 
-  if (screen === "upload" || !group) {
+  // Explicit "upload a new group" path.
+  if (isNewRoute) {
     return (
       <ProposalUpload
-        onComplete={(g) => {
-          setAnalyzingGroup(g);
-          setScreen("analyzing");
-        }}
+        onComplete={(g) => navigate(`/dashboard/${g.id}`, { replace: true })}
       />
     );
   }
 
-  if (screen === "analyzing") {
+  // No groups yet → upload is the landing screen. Same behavior as before
+  // the multi-group change.
+  if (groups.length === 0) {
+    return (
+      <ProposalUpload
+        onComplete={(g) => navigate(`/dashboard/${g.id}`, { replace: true })}
+      />
+    );
+  }
+
+  // /dashboard bare URL with groups in flight → the effect above redirects
+  // us on the next tick; render a spinner until it happens.
+  if (!isGroupRoute) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // /dashboard/:id where :id isn't one of the user's groups.
+  if (!selectedGroup) {
+    return <NotFoundState onBack={() => navigate(`/dashboard/${groups[0].id}`)} />;
+  }
+
+  // Still running the initial analysis — the group exists but hasn't been
+  // scored yet. We show the animated progress screen; when the server
+  // sets riskTier, useMyGroups re-fetches and we fall through to the
+  // proper view.
+  if (!selectedGroup.riskTier) {
     return (
       <ProposalAnalyzing
-        group={analyzingGroup ?? group}
+        group={selectedGroup}
         onComplete={() => {
-          setAnalyzingGroup(null);
-          setScreen("proposal");
+          // Stay on the same URL — the group record will have a tier
+          // now, so the next render will pick cockpit or high-risk.
         }}
       />
     );
   }
 
-  // Only Preferred + Standard groups see the proposal; High Risk groups
-  // get a polite "we'll reach out" screen and no rates.
-  if (riskReady && group.riskTier === "high") {
+  // High risk groups never see the proposal.
+  if (selectedGroup.riskTier === "high") {
     return <ProposalHighRisk />;
   }
 
-  if (screen === "accept") {
+  if (acceptOpen) {
     return (
       <ProposalAccept
-        group={group}
-        onBack={() => setScreen("proposal")}
-        onDone={() => setScreen("proposal")}
+        group={selectedGroup}
+        onBack={() => navigate(`/dashboard/${selectedGroup.id}`, { replace: true })}
+        onDone={() => navigate(`/dashboard/${selectedGroup.id}`, { replace: true })}
       />
     );
   }
 
   return (
     <ProposalCockpit
-      group={group}
-      onReplaceCensus={() => setScreen("upload")}
-      onAcceptProposal={() => setScreen("accept")}
+      group={selectedGroup}
+      onReplaceCensus={() => navigate("/dashboard/new")}
+      onAcceptProposal={() =>
+        navigate(`/dashboard/${selectedGroup.id}?accept=1`)
+      }
     />
+  );
+}
+
+function NotFoundState({ onBack }: { onBack: () => void }) {
+  return (
+    <div className="min-h-screen bg-background">
+      <ProposalNav />
+      <div className="mx-auto max-w-xl px-6 py-16">
+        <Card className="p-8">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+            Group not found
+          </div>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight">
+            We couldn't find that quote
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            The link may be out of date, or the quote may have been removed.
+            Head back to your groups to continue.
+          </p>
+          <Button className="mt-6" onClick={onBack}>
+            Back to your groups
+          </Button>
+        </Card>
+      </div>
+    </div>
   );
 }

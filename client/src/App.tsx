@@ -79,6 +79,12 @@ function Router() {
       <Route path="/dashboard">
         <ProtectedRoute component={DashboardPage} />
       </Route>
+      <Route path="/dashboard/new">
+        <ProtectedRoute component={DashboardPage} />
+      </Route>
+      <Route path="/dashboard/:groupId">
+        <ProtectedRoute component={DashboardPage} />
+      </Route>
       {/* Legacy customer routes now fold into /dashboard, which is the
           one living proposal page per the redesign. */}
       <Route path="/proposals">
