@@ -123,9 +123,11 @@ export function ProposalCockpit({ group, onReplaceCensus, onAcceptProposal }: Pr
               companyName={group.companyName}
               tier={group.riskTier as any}
               employees={group.employeeCount ?? 0}
-              coveredLives={group.totalLives ?? 0}
-              medianAge={group.averageAge != null ? Math.round(group.averageAge) : null}
-              censusFileName={`${group.companyName.toLowerCase().replace(/[^a-z0-9]+/g, "_")}_census.csv`}
+              spouses={group.spouseCount ?? 0}
+              children={group.childrenCount ?? 0}
+              totalLives={group.totalLives ?? 0}
+              censusId={group.id}
+              submittedAt={group.submittedAt}
               onViewCensus={() => setCensusOpen(true)}
             />
 

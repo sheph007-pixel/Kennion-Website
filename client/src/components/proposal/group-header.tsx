@@ -1,14 +1,19 @@
 import { FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { TierBadge } from "./tier-badge";
+import { cn } from "@/lib/utils";
 import type { RiskTier } from "@/pages/admin/constants";
 
 type Props = {
   companyName: string;
   tier: RiskTier | null | undefined;
   employees: number;
-  coveredLives: number;
-  medianAge: number | null;
-  censusFileName?: string | null;
+  spouses: number;
+  children: number;
+  totalLives: number;
+  censusId: string;
+  submittedAt?: Date | string | null;
   onViewCensus?: () => void;
 };
 
@@ -16,45 +21,94 @@ export function GroupHeader({
   companyName,
   tier,
   employees,
-  coveredLives,
-  medianAge,
-  censusFileName,
+  spouses,
+  children,
+  totalLives,
+  censusId,
+  submittedAt,
   onViewCensus,
 }: Props) {
+  const shortId = `KBA-${censusId.slice(0, 8).toUpperCase()}`;
+  const submitted =
+    submittedAt instanceof Date
+      ? submittedAt
+      : submittedAt
+        ? new Date(submittedAt)
+        : null;
+  const submittedLabel = submitted
+    ? submitted.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
+
   return (
     <div className="mb-6" data-testid="proposal-group-header">
       <TierBadge tier={tier} className="mb-3" />
       <h1
-        className="text-[34px] leading-tight font-bold tracking-tight text-foreground"
+        className="text-[34px] font-bold leading-tight tracking-tight text-foreground"
         data-testid="text-group-title"
       >
         {companyName}
       </h1>
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-        <span data-testid="text-employees">{employees} employees</span>
-        <span aria-hidden>·</span>
-        <span data-testid="text-lives">{coveredLives} covered lives</span>
-        {medianAge != null && (
-          <>
-            <span aria-hidden>·</span>
-            <span data-testid="text-median-age">Median age {medianAge}</span>
-          </>
-        )}
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <span
+            className="font-mono font-semibold tracking-wide text-foreground"
+            data-testid="text-census-id"
+          >
+            Census {shortId}
+          </span>
+          {submittedLabel && (
+            <>
+              <span aria-hidden>·</span>
+              <span data-testid="text-submitted-at">Submitted {submittedLabel}</span>
+            </>
+          )}
+        </div>
         {onViewCensus && (
-          <>
-            <span aria-hidden>·</span>
-            <button
-              type="button"
-              onClick={onViewCensus}
-              className="inline-flex items-center gap-1.5 text-primary font-medium hover:underline"
-              data-testid="button-view-census"
-            >
-              <FileText className="h-3.5 w-3.5" />
-              View census {censusFileName ? `(${censusFileName})` : ""}
-            </button>
-          </>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onViewCensus}
+            className="gap-1.5"
+            data-testid="button-view-census"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            View Census
+          </Button>
         )}
       </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat label="Employees" value={employees} testId="stat-employees" />
+        <Stat label="Spouses" value={spouses} testId="stat-spouses" />
+        <Stat label="Children" value={children} testId="stat-children" />
+        <Stat label="Total Lives" value={totalLives} emphasis testId="stat-total-lives" />
+      </div>
     </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  emphasis,
+  testId,
+}: {
+  label: string;
+  value: number;
+  emphasis?: boolean;
+  testId?: string;
+}) {
+  return (
+    <Card className={cn("p-3", emphasis && "border-primary/40 bg-primary/5")} data-testid={testId}>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-0.5 text-xl font-bold tabular-nums">{value ?? 0}</div>
+    </Card>
   );
 }
