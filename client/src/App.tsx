@@ -12,7 +12,6 @@ import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import AuthVerifyPage from "@/pages/auth-verify";
 import DashboardPage from "@/pages/dashboard";
-import ProposalsPage from "@/pages/proposals";
 import AdminDashboardPage from "@/pages/admin/dashboard";
 import AdminGroupsListPage from "@/pages/admin/groups-list";
 import AdminGroupDetailPage from "@/pages/admin/group-detail";
@@ -20,7 +19,6 @@ import AdminUsersPage from "@/pages/admin/users";
 import AdminGeneratorPage from "@/pages/admin/generator";
 import AdminTemplatesPage from "@/pages/admin/templates";
 import AdminSettingsPage from "@/pages/admin/settings";
-import ReportPage from "@/pages/report";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
 import { useLocation, Redirect } from "wouter";
@@ -81,8 +79,13 @@ function Router() {
       <Route path="/dashboard">
         <ProtectedRoute component={DashboardPage} />
       </Route>
+      {/* Legacy customer routes now fold into /dashboard, which is the
+          one living proposal page per the redesign. */}
       <Route path="/proposals">
-        <ProtectedRoute component={ProposalsPage} />
+        <Redirect to="/dashboard" />
+      </Route>
+      <Route path="/report/:id">
+        <Redirect to="/dashboard" />
       </Route>
       <Route path="/admin">
         <Redirect to="/admin/dashboard" />
@@ -107,9 +110,6 @@ function Router() {
       </Route>
       <Route path="/admin/settings">
         <ProtectedRoute component={AdminSettingsPage} adminOnly />
-      </Route>
-      <Route path="/report/:id">
-        <ProtectedRoute component={ReportPage} />
       </Route>
       <Route component={NotFound} />
     </Switch>

@@ -3,8 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
-import { ArrowRight, Loader2, Mail, Lock } from "lucide-react";
-import { KennionLogo } from "@/components/kennion-logo";
+import { ArrowRight, Loader2, Mail, Lock, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,17 +17,9 @@ const signInSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-const adminLoginSchema = z.object({
-  email: z.string().email("Valid email required"),
-  password: z.string().min(1, "Password is required"),
-});
-
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
-  const [sentToEmail, setSentToEmail] = useState("");
-  const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const { requestMagicLink, login } = useAuth();
+  const { login } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
@@ -37,180 +28,132 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "" },
   });
 
-  const adminForm = useForm<z.infer<typeof adminLoginSchema>>({
-    resolver: zodResolver(adminLoginSchema),
-    defaultValues: { email: "", password: "" },
-  });
-
   async function onSubmit(data: z.infer<typeof signInSchema>) {
     setIsLoading(true);
     try {
       await login(data.email, data.password);
-      navigate("/dashboard");
+      // Check role via /api/auth/me since login() doesn't return the user.
+      const me = await fetch("/api/auth/me", { credentials: "include" });
+      const user = me.ok ? await me.json() : null;
+      navigate(user?.role === "admin" ? "/admin" : "/dashboard");
     } catch (err: any) {
-      const errMsg = err.message || "";
-      const cleanMessage = errMsg.replace(/^\d+:\s*/, "").replace(/[{}"]|message:/g, "").trim() || "Invalid email or password.";
-      toast({
-        title: "Login failed",
-        description: cleanMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function onAdminLogin(data: z.infer<typeof adminLoginSchema>) {
-    setIsLoading(true);
-    try {
-      await login(data.email, data.password);
-      navigate("/admin");
-    } catch (err: any) {
-      toast({
-        title: "Login failed",
-        description: err.message || "Invalid email or password.",
-        variant: "destructive",
-      });
+      const errMsg = err?.message || "";
+      const clean =
+        errMsg.replace(/^\d+:\s*/, "").replace(/[{}"]|message:/g, "").trim() ||
+        "Invalid email or password.";
+      toast({ title: "Login failed", description: clean, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <div className="flex items-center justify-between px-6 py-3 border-b">
-        <Link href="/">
-          <KennionLogo size="md" />
-        </Link>
+    <div className="relative min-h-screen bg-background">
+      {/* Navy banner that the card overlaps */}
+      <div
+        className="absolute inset-x-0 top-0 h-[260px] bg-gradient-to-b text-white"
+        style={{
+          backgroundImage:
+            "linear-gradient(180deg, hsl(215 55% 22%) 0%, hsl(215 50% 18%) 100%)",
+        }}
+        aria-hidden
+      />
+      <div className="absolute right-6 top-3 z-10">
         <ThemeToggle />
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md">
-          {showAdminLogin ? (
-            <>
-              <div className="text-center mb-8">
-                <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary mx-auto mb-4">
-                  <Lock className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <h1 className="text-2xl font-bold tracking-tight" data-testid="text-admin-login-title">Admin Login</h1>
-                <p className="text-muted-foreground mt-2">Sign in with admin credentials</p>
+      <div className="relative mx-auto flex max-w-md flex-col items-center px-6 pt-16">
+        <div className="text-center text-white">
+          <div className="text-2xl font-bold tracking-tight">
+            Kennion Benefit Advisors
+          </div>
+          <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
+            Client & Group Portal
+          </div>
+        </div>
+
+        <Card className="mt-8 w-full p-7 shadow-lg" data-testid="card-sign-in">
+          <h1 className="text-xl font-bold tracking-tight" data-testid="text-sign-in-title">
+            Sign in to your account
+          </h1>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-5 space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@company.com"
+                  className="pl-9"
+                  {...form.register("email")}
+                  data-testid="input-email"
+                />
               </div>
+              {form.formState.errors.email && (
+                <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
+              )}
+            </div>
 
-              <Card className="p-6">
-                <form onSubmit={adminForm.handleSubmit(onAdminLogin)} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-email">Email</Label>
-                    <Input
-                      id="admin-email"
-                      type="email"
-                      placeholder="admin@kennion.com"
-                      {...adminForm.register("email")}
-                      data-testid="input-admin-email"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-password">Password</Label>
-                    <Input
-                      id="admin-password"
-                      type="password"
-                      placeholder="Enter password"
-                      {...adminForm.register("password")}
-                      data-testid="input-admin-password"
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-admin-login">
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
-                  </Button>
-                </form>
-              </Card>
-
-              <div className="text-center mt-4">
-                <button
-                  onClick={() => setShowAdminLogin(false)}
-                  className="text-sm text-muted-foreground"
-                  data-testid="button-back-to-magic-link"
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  href="/forgot-password"
+                  className="text-xs font-medium text-primary hover:underline"
+                  data-testid="link-forgot-password"
                 >
-                  Back to sign in
-                </button>
+                  Forgot password?
+                </Link>
               </div>
-            </>
-          ) : (
-            <>
-              <div className="text-center mb-8">
-                <span className="inline-block text-[10px] uppercase tracking-widest text-primary font-bold bg-primary/10 px-3 py-1 rounded-full mb-4">Sales Portal</span>
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mx-auto mb-4">
-                  <Lock className="h-6 w-6 text-primary" />
-                </div>
-                <h1 className="text-2xl font-bold tracking-tight" data-testid="text-sign-in-title">Sign In</h1>
-                <p className="text-muted-foreground mt-2">
-                  For groups in the proposal process with Kennion.
-                </p>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
+                  className="pl-9"
+                  {...form.register("password")}
+                  data-testid="input-password"
+                />
               </div>
+              {form.formState.errors.password && (
+                <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>
+              )}
+            </div>
 
-              <Card className="p-6">
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Business Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="you@company.com"
-                        className="pl-9"
-                        {...form.register("email")}
-                        data-testid="input-email"
-                      />
-                    </div>
-                    {form.formState.errors.email && (
-                      <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
-                    )}
-                  </div>
+            <Button
+              type="submit"
+              className="w-full gap-1.5"
+              disabled={isLoading}
+              data-testid="button-sign-in"
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  Sign In <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </form>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Password</Label>
-                      <Link href="/forgot-password" className="text-xs text-primary hover:underline" data-testid="link-forgot-password">
-                        Forgot password?
-                      </Link>
-                    </div>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="Enter your password"
-                        className="pl-9"
-                        {...form.register("password")}
-                        data-testid="input-password"
-                      />
-                    </div>
-                    {form.formState.errors.password && (
-                      <p className="text-sm text-destructive">{form.formState.errors.password.message}</p>
-                    )}
-                  </div>
+          <div className="mt-5 border-t pt-4 text-center text-xs text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/register" className="font-semibold text-primary hover:underline" data-testid="link-register">
+              Contact your advisor
+            </Link>
+          </div>
+        </Card>
 
-                  <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-sign-in">
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>Sign In <ArrowRight className="ml-1 h-4 w-4" /></>
-                    )}
-                  </Button>
-                </form>
-              </Card>
-
-              <div className="text-center mt-6">
-                <p className="text-sm">
-                  Don't have an account?{" "}
-                  <Link href="/register" className="font-medium text-primary" data-testid="link-register">
-                    Register Now
-                  </Link>
-                </p>
-              </div>
-            </>
-          )}
+        <div className="mt-6 flex items-center gap-2 text-[11px] text-muted-foreground">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          256-bit encryption · SOC 2 Type II
+        </div>
+        <div className="mt-2 text-[10px] text-muted-foreground">
+          © {new Date().getFullYear()} Kennion Benefit Advisors
         </div>
       </div>
     </div>
