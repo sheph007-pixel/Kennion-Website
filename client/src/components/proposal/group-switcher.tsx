@@ -18,11 +18,15 @@ import type { Group } from "@shared/schema";
 // employer (one group) and broker (many groups) accounts. The main
 // value for brokers is flipping between quotes with one click.
 export function GroupSwitcher() {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const [, params] = useRoute("/dashboard/:groupId");
   const activeId = params?.groupId;
   const { groups } = useMyGroups();
 
+  // Hide entirely on admin routes — the admin cockpit is "viewing as
+  // customer", switching between the admin's OWN groups there would be
+  // confusing. Admin navigates groups via /admin.
+  if (location.startsWith("/admin")) return null;
   if (groups.length === 0) return null;
 
   const active = groups.find((g) => g.id === activeId) ?? groups[0];

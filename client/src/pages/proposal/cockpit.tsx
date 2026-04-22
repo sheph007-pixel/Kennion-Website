@@ -30,9 +30,18 @@ type Props = {
   group: Group;
   onReplaceCensus?: () => void;
   onAcceptProposal?: () => void;
+  // Optional content rendered between the top nav and the main layout.
+  // Used by the admin view to overlay admin-only controls on top of
+  // the same cockpit the customer sees.
+  bannerSlot?: React.ReactNode;
 };
 
-export function ProposalCockpit({ group, onReplaceCensus, onAcceptProposal }: Props) {
+export function ProposalCockpit({
+  group,
+  onReplaceCensus,
+  onAcceptProposal,
+  bannerSlot,
+}: Props) {
   const [effDate, setEffDate] = useState(() => effectiveDateOptions()[0]);
   const [contribMode, setContribMode] = useState<ContribMode>("percent");
   const [contribValue, setContribValue] = useState(50);
@@ -71,6 +80,7 @@ export function ProposalCockpit({ group, onReplaceCensus, onAcceptProposal }: Pr
   return (
     <div className="min-h-screen bg-background">
       <ProposalNav />
+      {bannerSlot}
       <div className="mx-auto max-w-[1280px] px-6 py-6">
         <div className="grid grid-cols-[300px_1fr] gap-6">
           {/* LEFT RAIL */}
