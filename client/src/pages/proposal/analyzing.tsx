@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { KennionLogo } from "@/components/kennion-logo";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ProposalNav } from "@/components/proposal/proposal-nav";
 import { queryClient } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
 import type { Group } from "@shared/schema";
@@ -43,10 +42,7 @@ export function ProposalAnalyzing({ onComplete }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="flex items-center justify-between border-b px-6 py-3">
-        <KennionLogo size="md" />
-        <ThemeToggle />
-      </nav>
+      <ProposalNav />
       <div className="mx-auto max-w-xl px-6 py-16 text-center">
         <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-full border border-border">
           <div

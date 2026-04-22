@@ -1,11 +1,9 @@
 import { useCallback, useRef, useState } from "react";
-import { Upload as UploadIcon, FileText, ShieldCheck, Sparkles, Loader2 } from "lucide-react";
+import { Upload as UploadIcon, FileText, Sparkles, Loader2, Lock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { KennionLogo } from "@/components/kennion-logo";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ProposalNav } from "@/components/proposal/proposal-nav";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
@@ -18,7 +16,7 @@ type Props = {
 const REQUIRED_FIELDS = [
   "First Name",
   "Last Name",
-  "Type (EE / SP / CH)",
+  "Relationship (EE / SP / CH)",
   "Date of Birth",
   "Gender",
   "Zip Code",
@@ -43,8 +41,6 @@ export function ProposalUpload({ onComplete }: Props) {
       }
       setUploading(true);
       try {
-        // Parse + auto-map + confirm in one flow, since we no longer expose
-        // the mapping step in the UI.
         const form = new FormData();
         form.append("file", file);
         const parseRes = await fetch("/api/groups/parse", {
@@ -67,7 +63,7 @@ export function ProposalUpload({ onComplete }: Props) {
         const data = await confirm.json();
         await queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
         onComplete(data.group);
-      } catch (err) {
+      } catch {
         setErrorOpen(true);
       } finally {
         setUploading(false);
@@ -88,19 +84,16 @@ export function ProposalUpload({ onComplete }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopNav />
+      <ProposalNav />
       <div className="mx-auto max-w-2xl px-6 py-12">
         <div className="mb-6">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
-            Step 1 of 2
-          </div>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">
+          <h1 className="text-3xl font-bold tracking-tight text-primary">
             Upload Your Employee Census
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Include every <strong className="text-foreground">employee</strong> and{" "}
-            <strong className="text-foreground">family member</strong> (spouses and children) who will
-            be covered under your group health plan. Takes about 2 minutes.
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            You will need each <strong className="text-foreground">employee</strong> and all{" "}
+            <strong className="text-foreground">family members</strong> (i.e. spouses and children)
+            that will be covered under the group health plan.
           </p>
         </div>
 
@@ -113,8 +106,8 @@ export function ProposalUpload({ onComplete }: Props) {
           onDrop={onDrop}
           onClick={() => inputRef.current?.click()}
           className={cn(
-            "flex cursor-pointer flex-col items-center justify-center border-2 border-dashed px-6 py-14 text-center transition",
-            dragActive ? "border-primary bg-primary/5" : "border-border hover:border-primary/40",
+            "flex cursor-pointer flex-col items-center justify-center border-2 border-dashed px-6 py-16 text-center transition",
+            dragActive ? "border-primary bg-primary/5" : "border-border/80 hover:border-primary/40",
             uploading && "pointer-events-none opacity-60",
           )}
           data-testid="dropzone-census"
@@ -130,10 +123,12 @@ export function ProposalUpload({ onComplete }: Props) {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                 <UploadIcon className="h-6 w-6 text-primary" />
               </div>
-              <div className="mt-3 text-base font-semibold">
-                Drag and drop your CSV file here
+              <div className="mt-4 text-base font-semibold text-foreground">
+                Drag & drop your CSV file here
               </div>
-              <div className="text-sm text-muted-foreground">or click anywhere to browse</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                or click anywhere to browse · CSV up to 10MB
+              </div>
             </>
           )}
           <input
@@ -149,38 +144,34 @@ export function ProposalUpload({ onComplete }: Props) {
           />
         </Card>
 
-        <Card className="mt-4 border-primary/30 bg-primary/5 p-5">
+        <Card className="mt-4 border-primary/25 bg-primary/[0.04] p-5">
           <div className="flex items-start gap-3">
-            <div className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              <Sparkles className="h-3.5 w-3.5" />
+            <div className="mt-0.5 flex h-6 w-7 shrink-0 items-center justify-center rounded-[4px] bg-primary text-[10px] font-bold tracking-wide text-primary-foreground">
+              AI
             </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
-                  AI
-                </Badge>
-                <div className="text-sm font-semibold">
-                  AI detects columns and cleans data automatically
-                </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-foreground">
+                Just include these 6 fields (any column names work):
               </div>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                You don't need to format the file. We'll figure out what each column means.
-              </p>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {REQUIRED_FIELDS.map((f) => (
                   <span
                     key={f}
-                    className="rounded-full border bg-background px-2 py-0.5 text-[11px] font-medium text-foreground"
+                    className="rounded-md border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground"
                   >
                     {f}
                   </span>
                 ))}
               </div>
-              <div className="mt-3 text-xs">
+              <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                AI detects columns and cleans data automatically
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
                 Don't have a list?{" "}
                 <a
                   href="/api/groups/template"
-                  className="font-semibold text-primary hover:underline"
+                  className="font-semibold text-primary underline underline-offset-2"
                   data-testid="link-download-template"
                 >
                   Download example CSV
@@ -190,9 +181,9 @@ export function ProposalUpload({ onComplete }: Props) {
           </div>
         </Card>
 
-        <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
-          <ShieldCheck className="h-3.5 w-3.5" />
-          256-bit encryption · SOC 2 Type II · Your data never leaves our secure pipeline.
+        <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <Lock className="h-3.5 w-3.5" />
+          SOC 2 Type II · Your census is encrypted and never shared.
         </div>
       </div>
 
@@ -205,9 +196,8 @@ export function ProposalUpload({ onComplete }: Props) {
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Make sure it's a standard CSV with a header row. If you'd like help,
-            send your roster to{" "}
-            <a href="mailto:hunter@kennion.com" className="text-primary font-semibold">
+            Make sure it's a standard CSV with a header row. If you'd like help, send your roster to{" "}
+            <a href="mailto:hunter@kennion.com" className="font-semibold text-primary">
               hunter@kennion.com
             </a>{" "}
             and we'll get it loaded for you.
@@ -218,14 +208,5 @@ export function ProposalUpload({ onComplete }: Props) {
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-function TopNav() {
-  return (
-    <nav className="flex items-center justify-between border-b px-6 py-3">
-      <KennionLogo size="md" />
-      <ThemeToggle />
-    </nav>
   );
 }

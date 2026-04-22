@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { KennionLogo } from "@/components/kennion-logo";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ProposalNav } from "@/components/proposal/proposal-nav";
 import { DENTAL_PLANS, VISION_PLANS, effectiveDateOptions, fmtLong, fmtMonthYear, money } from "@/lib/kennion-rates";
 import { useGroupRates } from "@/hooks/use-proposal";
 import type { Group } from "@shared/schema";
@@ -112,7 +111,7 @@ export function ProposalAccept({ group, onBack, onDone }: Props) {
   if (submitted) {
     return (
       <div className="min-h-screen bg-background">
-        <Nav />
+        <ProposalNav />
         <div className="mx-auto max-w-xl px-6 py-16 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10">
             <CheckCircle2 className="h-8 w-8 text-green-700 dark:text-green-400" />
@@ -134,7 +133,7 @@ export function ProposalAccept({ group, onBack, onDone }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
-      <Nav />
+      <ProposalNav />
       <div className="mx-auto max-w-2xl px-6 pb-28 pt-10">
         <Progress value={((step + 1) / steps.length) * 100} className="mb-10 h-1" />
 
@@ -323,15 +322,6 @@ export function ProposalAccept({ group, onBack, onDone }: Props) {
         </div>
       </div>
     </div>
-  );
-}
-
-function Nav() {
-  return (
-    <nav className="flex items-center justify-between border-b px-6 py-3">
-      <KennionLogo size="md" />
-      <ThemeToggle />
-    </nav>
   );
 }
 

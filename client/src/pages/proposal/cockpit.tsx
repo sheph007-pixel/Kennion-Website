@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "wouter";
-import { ArrowRight, Download, LogOut, User, ExternalLink } from "lucide-react";
+import { ArrowRight, Download, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { KennionLogo } from "@/components/kennion-logo";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { useAuth } from "@/lib/auth";
+import { ProposalNav } from "@/components/proposal/proposal-nav";
 import { queryClient } from "@/lib/queryClient";
 import { useGroupRates, useGroupCensus, censusToMix } from "@/hooks/use-proposal";
 import {
@@ -68,7 +65,7 @@ export function ProposalCockpit({ group, onReplaceCensus, onAcceptProposal }: Pr
 
   return (
     <div className="min-h-screen bg-background">
-      <TopNav />
+      <ProposalNav />
       <div className="mx-auto max-w-[1280px] px-6 py-6">
         <div className="grid grid-cols-[300px_1fr] gap-6">
           {/* LEFT RAIL */}
@@ -269,34 +266,3 @@ function SectionHeader({
   );
 }
 
-function TopNav() {
-  const { user, logout } = useAuth();
-  const [, navigate] = useLocation();
-  async function handleLogout() {
-    await logout();
-    navigate("/");
-  }
-  return (
-    <nav className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
-      <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-6 py-3">
-        <KennionLogo size="md" />
-        <div className="flex items-center gap-3">
-          <div className="hidden items-center gap-3 rounded-md bg-muted/50 px-3 py-1.5 sm:flex">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-              <User className="h-4 w-4 text-primary" />
-            </div>
-            <div className="flex flex-col leading-tight">
-              <span className="text-sm font-medium">{user?.fullName}</span>
-              <span className="text-xs text-muted-foreground">{user?.email}</span>
-            </div>
-          </div>
-          <ThemeToggle />
-          <Button variant="outline" onClick={handleLogout} className="gap-2">
-            <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">Logout</span>
-          </Button>
-        </div>
-      </div>
-    </nav>
-  );
-}
