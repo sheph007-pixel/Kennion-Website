@@ -140,6 +140,9 @@ export const money0 = (n: number) =>
 export const fmtMonthYear = (d: Date) =>
   d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 
+export const fmtMonthYearLong = (d: Date) =>
+  d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
 export const fmtLong = (d: Date) =>
   d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
