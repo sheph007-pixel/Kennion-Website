@@ -348,7 +348,11 @@ function GroupRow({ group }: { group: Group }) {
 
   const tier = group.riskTier as RiskTier | null | undefined;
   const tierConfig = tier && TIER_CONFIG[tier];
-  const status = STATUS_OPTIONS.find((s) => s.value === group.status);
+  // High-risk groups are ineligible — display them as "Not Approved"
+  // regardless of whatever status is stored in the DB.
+  const storedStatus = STATUS_OPTIONS.find((s) => s.value === group.status);
+  const statusLabel =
+    tier === "high" ? "Not Approved" : storedStatus?.label ?? null;
   const submittedLabel = group.submittedAt
     ? format(new Date(group.submittedAt), "MMM d, yyyy")
     : null;
@@ -390,7 +394,7 @@ function GroupRow({ group }: { group: Group }) {
               )}
             </div>
             <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-              {status && <span>{status.label}</span>}
+              {statusLabel && <span>{statusLabel}</span>}
               <span aria-hidden>·</span>
               <span>{group.totalLives ?? 0} lives</span>
               {submittedLabel && (

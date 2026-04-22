@@ -6,10 +6,13 @@ type Props = {
   className?: string;
 };
 
-// Small eyebrow above the group name: green dot + "Approved · Preferred Risk".
+// Small eyebrow above the group name. High-risk groups read "Not
+// Approved" (the group is ineligible for a proposal); every other
+// tier reads "Approved · <tier label>".
 export function TierBadge({ tier, className }: Props) {
   if (!tier || !TIER_CONFIG[tier]) return null;
   const config = TIER_CONFIG[tier];
+  const label = tier === "high" ? "Not Approved" : `Approved · ${config.label}`;
   return (
     <div
       className={cn(
@@ -24,7 +27,7 @@ export function TierBadge({ tier, className }: Props) {
         style={{ backgroundColor: config.hsl, boxShadow: `0 0 0 4px ${config.hsl}22` }}
         aria-hidden
       />
-      <span>Approved · {config.label}</span>
+      <span>{label}</span>
     </div>
   );
 }

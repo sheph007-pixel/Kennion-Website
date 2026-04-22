@@ -110,6 +110,9 @@ export default function GroupsPage() {
 function GroupCard({ group, onOpen }: { group: Group; onOpen: () => void }) {
   const tier = group.riskTier as RiskTier | null;
   const tierConfig = tier && TIER_CONFIG[tier];
+  // High-risk groups read "Not Approved" — every other tier shows its
+  // own tier label. Matches the cockpit TierBadge wording.
+  const tierLabel = tier === "high" ? "Not Approved" : tierConfig?.label;
   const submitted = group.submittedAt ? new Date(group.submittedAt) : null;
   const submittedLabel = submitted
     ? submitted.toLocaleDateString("en-US", {
@@ -141,7 +144,7 @@ function GroupCard({ group, onOpen }: { group: Group; onOpen: () => void }) {
               aria-hidden
             />
             <span className={cn("text-xs font-medium", tierConfig?.className)}>
-              {tierConfig?.label ?? "Pending analysis"}
+              {tierLabel ?? "Pending analysis"}
             </span>
           </div>
           {submittedLabel && (
