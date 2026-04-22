@@ -23,8 +23,8 @@ type RateEngineResult = {
 };
 
 // Every group the logged-in user owns, most-recent submission first.
-// Source of truth for the group-switcher dropdown and for picking a
-// group by URL param.
+// Source of truth for the groups gallery, the nav profile menu, and
+// for resolving a group by URL param.
 export function useMyGroups() {
   const query = useQuery<Group[]>({
     queryKey: ["/api/groups"],
