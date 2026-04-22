@@ -31,6 +31,9 @@
 import fs from "fs";
 import path from "path";
 import type { CensusEntry } from "@shared/schema";
+import { inferRatingArea, type RatingArea } from "@shared/rating-area";
+
+export { inferRatingArea, type RatingArea };
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -64,11 +67,6 @@ export interface CensusMember {
   state?: string | null;
   zip?: string | null;
 }
-
-export type RatingArea =
-  | "Birmingham" | "Huntsville" | "Montgomery"
-  | "Alabama Other Area" | "Out-of-State"
-  | "auto";
 
 export type Admin =
   | "EBPA" | "HEALTHEZ" | "Virtual_RBP" | "Virtual_RBP_HEALTHEZ";
@@ -164,18 +162,6 @@ function relCode(rel: string): "EE" | "SP" | "CH" {
 }
 
 // ─── Area inference ────────────────────────────────────────────────────────
-
-export function inferRatingArea(state?: string | null, zip?: string | null): RatingArea {
-  const st = (state || "").trim().toUpperCase();
-  const z = (zip || "").trim().slice(0, 3);
-  if (st && st !== "AL") return "Out-of-State";
-  const z3 = parseInt(z, 10);
-  if (!st && (isNaN(z3) || z3 < 350 || z3 > 369)) return "Out-of-State";
-  if (["350", "351", "352"].includes(z)) return "Birmingham";
-  if (["358", "359"].includes(z)) return "Huntsville";
-  if (["360", "361"].includes(z)) return "Montgomery";
-  return "Alabama Other Area";
-}
 
 export function inferRatingAreaFromCensus(census: CensusMember[]): RatingArea {
   for (const m of census) {

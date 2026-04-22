@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { FileText, Lock, Sparkles } from "lucide-react";
+import { FileText, Lock, MapPin, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TierBadge } from "./tier-badge";
 import { ScoreAuditDialog } from "./score-audit-dialog";
 import { cn } from "@/lib/utils";
 import { TIER_CONFIG, type RiskTier } from "@/pages/admin/constants";
+import { inferRatingArea } from "@shared/rating-area";
 import type { Group, CensusEntry } from "@shared/schema";
 
 type Props = {
@@ -30,8 +31,20 @@ export function GroupHeader({ group, census, onViewCensus }: Props) {
   const tier = group.riskTier as RiskTier | null;
   const tierConfig = tier && TIER_CONFIG[tier];
 
+  // State + ZIP together drive the rating area, which is the actuarial
+  // cost center for this group. Showing all three together makes the
+  // pricing context obvious at a glance.
+  const stateZip =
+    group.state && group.zipCode
+      ? `${group.state} ${group.zipCode}`
+      : group.state || group.zipCode || null;
+  const ratingArea =
+    group.state || group.zipCode
+      ? inferRatingArea(group.state, group.zipCode)
+      : null;
+
   return (
-    <div className="mb-6" data-testid="proposal-group-header">
+    <Card className="mb-6 p-6" data-testid="proposal-group-header">
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <TierBadge tier={tier} />
         {group.riskScore != null && tierConfig && (
@@ -79,6 +92,22 @@ export function GroupHeader({ group, census, onViewCensus }: Props) {
               <span data-testid="text-submitted-at">Submitted {submittedLabel}</span>
             </>
           )}
+          {stateZip && (
+            <>
+              <span aria-hidden>·</span>
+              <span data-testid="text-state-zip">{stateZip}</span>
+            </>
+          )}
+          {ratingArea && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-foreground"
+              title="Rating area used to price this group"
+              data-testid="chip-rating-area"
+            >
+              <MapPin className="h-3 w-3 text-muted-foreground" aria-hidden />
+              {ratingArea}
+            </span>
+          )}
         </div>
         {onViewCensus && (
           <Button
@@ -107,7 +136,7 @@ export function GroupHeader({ group, census, onViewCensus }: Props) {
         group={group}
         census={census}
       />
-    </div>
+    </Card>
   );
 }
 
