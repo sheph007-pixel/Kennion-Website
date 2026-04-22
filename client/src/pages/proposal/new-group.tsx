@@ -1,14 +1,22 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowRight, Building2, Loader2, MapPin } from "lucide-react";
+import { ArrowRight, Building2, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ProposalNav } from "@/components/proposal/proposal-nav";
 import { ProposalFooter } from "@/components/proposal/proposal-footer";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { US_STATES } from "@shared/schema";
 
 type Props = {
   onContinue: () => void;
@@ -86,18 +94,18 @@ export function NewGroupDetails({ onContinue }: Props) {
             <div className="grid grid-cols-[1fr_1.4fr] gap-3">
               <div className="space-y-2">
                 <Label htmlFor="state">State</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="state"
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    placeholder="AL"
-                    maxLength={2}
-                    className="pl-9 uppercase"
-                    data-testid="input-new-group-state"
-                  />
-                </div>
+                <Select value={state} onValueChange={setState}>
+                  <SelectTrigger id="state" data-testid="input-new-group-state">
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {US_STATES.map((s) => (
+                      <SelectItem key={s.code} value={s.code}>
+                        {s.code} — {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="zipCode">ZIP code</Label>

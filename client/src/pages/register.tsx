@@ -3,12 +3,20 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
-import { ArrowRight, Loader2, UserPlus, Mail, Building2, MapPin, Phone, User, Key, Lock } from "lucide-react";
+import { ArrowRight, Loader2, UserPlus, Mail, Building2, Phone, User, Key, Lock } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { US_STATES } from "@shared/schema";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -296,17 +304,23 @@ export default function RegisterPage() {
                   <div className="grid grid-cols-[1fr_1.4fr] gap-3">
                     <div className="space-y-2">
                       <Label htmlFor="state">State</Label>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="state"
-                          placeholder="AL"
-                          maxLength={2}
-                          className="pl-9 uppercase"
-                          {...form.register("state")}
-                          data-testid="input-state"
-                        />
-                      </div>
+                      <Select
+                        value={form.watch("state") || ""}
+                        onValueChange={(v) =>
+                          form.setValue("state", v, { shouldValidate: true })
+                        }
+                      >
+                        <SelectTrigger id="state" data-testid="input-state">
+                          <SelectValue placeholder="Select state" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {US_STATES.map((s) => (
+                            <SelectItem key={s.code} value={s.code}>
+                              {s.code} — {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       {form.formState.errors.state && (
                         <p className="text-xs text-destructive">{form.formState.errors.state.message}</p>
                       )}
