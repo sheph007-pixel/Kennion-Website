@@ -68,7 +68,7 @@ export default function LoginPage() {
             Kennion Benefit Advisors
           </div>
           <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
-            Client & Group Portal
+            Sales Portal
           </div>
         </div>
 
@@ -143,7 +143,7 @@ export default function LoginPage() {
           <div className="mt-5 border-t pt-4 text-center text-xs text-muted-foreground">
             Don't have an account?{" "}
             <Link href="/register" className="font-semibold text-primary hover:underline" data-testid="link-register">
-              Contact your advisor
+              Create Account
             </Link>
           </div>
         </Card>
