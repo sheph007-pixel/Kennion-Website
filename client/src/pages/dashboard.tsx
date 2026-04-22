@@ -22,13 +22,12 @@ export default function DashboardPage() {
   const hasGroup = Boolean(group);
   const riskReady = Boolean(group?.riskTier);
 
+  // Force to upload when the user has no group. Do NOT snap back to
+  // "proposal" when the user explicitly chose to Replace — let them stay
+  // on upload until they actually upload something.
   useEffect(() => {
-    if (!hasGroup) {
-      setScreen("upload");
-    } else if (screen === "upload") {
-      setScreen("proposal");
-    }
-  }, [hasGroup, screen]);
+    if (!hasGroup) setScreen((s) => (s === "analyzing" ? s : "upload"));
+  }, [hasGroup]);
 
   if (isLoading) {
     return (

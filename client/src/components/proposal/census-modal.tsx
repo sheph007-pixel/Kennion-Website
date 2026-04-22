@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Pencil, Upload, Plus, Trash2, Info, Check } from "lucide-react";
+import { FileText, Pencil, Upload, Plus, Trash2, Info, Check, Download } from "lucide-react";
 import type { CensusEntry } from "@shared/schema";
 import { cn } from "@/lib/utils";
 
@@ -147,6 +147,31 @@ export function CensusModal({
 
   const rows = mode === "edit" ? draft : initial;
   const preview = mode === "edit" ? computePreviewStats(rows) : computePreviewStats(initial);
+
+  const downloadCsv = () => {
+    const header = ["First Name", "Last Name", "Relationship", "Date of Birth", "Gender", "Zip Code"];
+    const escape = (s: string) => {
+      const v = (s ?? "").toString();
+      return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+    };
+    const lines = [header.join(",")];
+    for (const r of initial) {
+      lines.push(
+        [r.firstName, r.lastName, relShort(r.relationship), r.dateOfBirth, r.gender, r.zipCode]
+          .map(escape)
+          .join(","),
+      );
+    }
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = censusFileName || "census.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
   const baseStats = computePreviewStats(initial);
   const submitted =
     submittedAt instanceof Date
@@ -182,7 +207,7 @@ export function CensusModal({
               </p>
             </div>
             {mode === "view" && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pr-8">
                 <Button
                   variant="outline"
                   size="sm"
@@ -293,9 +318,21 @@ export function CensusModal({
 
         <div className="flex items-center justify-end gap-2 pt-2">
           {mode === "view" ? (
-            <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close-census">
-              Close
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={downloadCsv}
+                className="gap-1.5"
+                data-testid="button-download-census"
+                disabled={initial.length === 0}
+              >
+                <Download className="h-4 w-4" />
+                Download CSV
+              </Button>
+              <Button onClick={() => onOpenChange(false)} data-testid="button-close-census">
+                Close
+              </Button>
+            </>
           ) : (
             <>
               <span className="mr-auto text-xs text-muted-foreground">
