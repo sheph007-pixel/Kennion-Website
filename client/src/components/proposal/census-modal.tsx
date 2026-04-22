@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Pencil, Upload, Plus, Trash2, Info, Check, Download } from "lucide-react";
+import { FileText, Pencil, Upload, Plus, Trash2, Info, Check, Download, Lock } from "lucide-react";
 import type { CensusEntry } from "@shared/schema";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +32,9 @@ type Props = {
   entries: CensusEntry[] | undefined;
   censusFileName?: string | null;
   submittedAt?: Date | string | null;
+  // When true, Edit and Replace are disabled (admin has frozen the
+  // proposal). View + Download still work.
+  locked?: boolean;
   onSave?: (rows: Omit<DraftRow, "_id">[]) => Promise<void> | void;
   onReplace?: () => void;
 };
@@ -81,6 +84,7 @@ export function CensusModal({
   entries,
   censusFileName,
   submittedAt,
+  locked,
   onSave,
   onReplace,
 }: Props) {
@@ -206,7 +210,7 @@ export function CensusModal({
                     : `${preview.ees} employees · ${preview.lives} lives`}
               </p>
             </div>
-            {mode === "view" && (
+            {mode === "view" && !locked && (
               <div className="flex items-center gap-2 pr-8">
                 <Button
                   variant="outline"
@@ -228,6 +232,12 @@ export function CensusModal({
                   <Upload className="h-3.5 w-3.5" />
                   Replace
                 </Button>
+              </div>
+            )}
+            {mode === "view" && locked && (
+              <div className="flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/5 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400 pr-8">
+                <Lock className="h-3 w-3" />
+                Locked by your advisor
               </div>
             )}
           </div>

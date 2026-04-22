@@ -204,6 +204,7 @@ export function ProposalCockpit({
         entries={censusQuery.data}
         censusFileName={fileName}
         submittedAt={group.submittedAt}
+        locked={group.locked}
         onReplace={() => onReplaceCensus?.()}
         onSave={async (rows) => {
           try {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Sparkles } from "lucide-react";
+import { FileText, Lock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TierBadge } from "./tier-badge";
@@ -46,6 +46,16 @@ export function GroupHeader({ group, census, onViewCensus }: Props) {
             <span className="text-muted-foreground">Kennion Score</span>
             <span style={{ color: tierConfig.hsl }}>{group.riskScore.toFixed(2)}</span>
           </button>
+        )}
+        {group.locked && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-400"
+            title="Locked by your Kennion advisor"
+            data-testid="badge-locked"
+          >
+            <Lock className="h-3 w-3" />
+            Locked
+          </span>
         )}
       </div>
       <h1

@@ -1439,11 +1439,18 @@ export async function registerRoutes(
       if (!group) {
         return res.status(404).json({ message: "Group not found" });
       }
-      if (group.userId !== req.session.userId) {
-        const user = await storage.getUser(req.session.userId!);
-        if (!user || user.role !== "admin") {
-          return res.status(403).json({ message: "Access denied" });
-        }
+      const caller = await storage.getUser(req.session.userId!);
+      const isAdmin = caller?.role === "admin";
+      if (group.userId !== req.session.userId && !isAdmin) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      // A locked group can only be edited by admins. Owners get a
+      // clear 423 (Locked) so the client can surface a friendly
+      // "contact your advisor" message rather than a generic failure.
+      if (group.locked && !isAdmin) {
+        return res.status(423).json({
+          message: "This proposal is locked. Contact your Kennion advisor to reopen it.",
+        });
       }
 
       const incoming = Array.isArray(req.body?.entries) ? req.body.entries : null;
@@ -1775,6 +1782,33 @@ export async function registerRoutes(
       res.json({ message: "Group deleted successfully" });
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Delete failed" });
+    }
+  });
+
+  // Lock / Unlock a group. Locked groups cannot be edited by their
+  // owner (POST /api/groups/:id/census below enforces this). Admin
+  // can still edit or replace a locked group's census.
+  app.post("/api/admin/groups/:id/lock", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const group = await storage.getGroup(id);
+      if (!group) return res.status(404).json({ message: "Group not found" });
+      const updated = await storage.updateGroup(id, { locked: true });
+      res.json({ ok: true, group: updated });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Lock failed" });
+    }
+  });
+
+  app.post("/api/admin/groups/:id/unlock", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const group = await storage.getGroup(id);
+      if (!group) return res.status(404).json({ message: "Group not found" });
+      const updated = await storage.updateGroup(id, { locked: false });
+      res.json({ ok: true, group: updated });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Unlock failed" });
     }
   });
 

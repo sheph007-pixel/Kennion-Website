@@ -3,7 +3,10 @@ import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
+  ChevronDown,
   ChevronRight,
+  Lock,
+  LockOpen,
   Mail,
   MoreHorizontal,
   Pencil,
@@ -34,6 +37,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAdminUsersWithGroups, type UserWithGroups } from "@/hooks/use-admin";
@@ -43,14 +51,11 @@ import { STATUS_OPTIONS, TIER_CONFIG, type RiskTier } from "./constants";
 import { cn } from "@/lib/utils";
 import type { Group, User } from "@shared/schema";
 
-// Single unified admin page. Shows every user with their groups nested
-// beneath. Clicking a group routes to /admin/groups/:id which renders
-// the same cockpit the customer sees, with an admin banner overlaid.
-// Replaces the old dashboard, groups-list, group-detail, users, and
-// generator pages.
+// Single unified admin page. Every user with their groups nested
+// (collapsed by default). Click a group row to open it in the
+// customer cockpit with the admin banner overlaid.
 export default function AdminHome() {
   const { toast } = useToast();
-  const [, navigate] = useLocation();
   const { users, isLoading } = useAdminUsersWithGroups();
   const [search, setSearch] = useState("");
   const [editUser, setEditUser] = useState<User | null>(null);
@@ -82,6 +87,13 @@ export default function AdminHome() {
     });
   }, [users, search]);
 
+  // When a search is active, auto-expand matching users so hits are
+  // discoverable without an extra click.
+  const forceOpenIds = useMemo(() => {
+    if (!search.trim()) return new Set<string>();
+    return new Set(filtered.map((u) => u.id));
+  }, [search, filtered]);
+
   const totalGroups = users.reduce((sum, u) => sum + u.groups.length, 0);
 
   return (
@@ -99,12 +111,10 @@ export default function AdminHome() {
               Click any group to open it in the customer view and take action.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="px-3 py-1">
-              {users.length} {users.length === 1 ? "user" : "users"} · {totalGroups}{" "}
-              {totalGroups === 1 ? "group" : "groups"}
-            </Badge>
-          </div>
+          <Badge variant="secondary" className="px-3 py-1">
+            {users.length} {users.length === 1 ? "user" : "users"} · {totalGroups}{" "}
+            {totalGroups === 1 ? "group" : "groups"}
+          </Badge>
         </div>
 
         <div className="mb-5">
@@ -136,7 +146,7 @@ export default function AdminHome() {
               <UserCard
                 key={u.id}
                 user={u}
-                onOpenGroup={(g) => navigate(`/admin/groups/${g.id}`)}
+                forceOpen={forceOpenIds.has(u.id)}
                 onEdit={() => setEditUser(u)}
                 onDelete={() => setDeleteUserId(u.id)}
               />
@@ -176,20 +186,36 @@ export default function AdminHome() {
 
 function UserCard({
   user,
-  onOpenGroup,
+  forceOpen,
   onEdit,
   onDelete,
 }: {
   user: UserWithGroups;
-  onOpenGroup: (g: Group) => void;
+  forceOpen: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const [userOpen, setUserOpen] = useState(false);
+  const open = userOpen || forceOpen;
   const initial = (user.fullName || user.email || "?").trim().charAt(0).toUpperCase();
+
   return (
     <Card data-testid={`card-user-${user.id}`} className="overflow-hidden">
-      <div className="flex items-center gap-4 border-b bg-muted/30 px-5 py-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+      <button
+        type="button"
+        onClick={() => setUserOpen(!userOpen)}
+        className="flex w-full items-center gap-4 border-b bg-muted/30 px-5 py-4 text-left hover-elevate"
+        aria-expanded={open}
+        data-testid={`button-expand-user-${user.id}`}
+      >
+        <ChevronRight
+          className={cn(
+            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+            open && "rotate-90",
+          )}
+          aria-hidden
+        />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
           {initial}
         </div>
         <div className="min-w-0 flex-1">
@@ -213,13 +239,10 @@ function UserCard({
             )}
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-            <a
-              href={`mailto:${user.email}`}
-              className="inline-flex items-center gap-1 hover:text-foreground"
-            >
+            <span className="inline-flex items-center gap-1">
               <Mail className="h-3 w-3" />
               {user.email}
-            </a>
+            </span>
             {user.companyName && (
               <>
                 <span aria-hidden>·</span>
@@ -240,9 +263,18 @@ function UserCard({
             )}
           </div>
         </div>
+        <Badge variant="outline" className="shrink-0 text-[10px]">
+          {user.groups.length} {user.groups.length === 1 ? "group" : "groups"}
+        </Badge>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" data-testid={`button-user-menu-${user.id}`}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 shrink-0 p-0"
+              onClick={(e) => e.stopPropagation()}
+              data-testid={`button-user-menu-${user.id}`}
+            >
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -265,24 +297,55 @@ function UserCard({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
+      </button>
 
-      {user.groups.length === 0 ? (
-        <div className="px-5 py-4 text-xs text-muted-foreground">
-          No groups yet.
-        </div>
-      ) : (
+      {open && (
         <div className="divide-y">
-          {user.groups.map((g) => (
-            <GroupRow key={g.id} group={g} onOpen={() => onOpenGroup(g)} />
-          ))}
+          {user.groups.length === 0 ? (
+            <div className="px-5 py-4 text-xs text-muted-foreground">No groups yet.</div>
+          ) : (
+            user.groups.map((g) => <GroupRow key={g.id} group={g} />)
+          )}
         </div>
       )}
     </Card>
   );
 }
 
-function GroupRow({ group, onOpen }: { group: Group; onOpen: () => void }) {
+function GroupRow({ group }: { group: Group }) {
+  const { toast } = useToast();
+  const [, navigate] = useLocation();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const toggleLock = useMutation({
+    mutationFn: async () => {
+      const path = group.locked
+        ? `/api/admin/groups/${group.id}/unlock`
+        : `/api/admin/groups/${group.id}/lock`;
+      await apiRequest("POST", path);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/groups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups", group.id] });
+      toast({ title: group.locked ? "Group unlocked" : "Group locked" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Action failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteGroup = useMutation({
+    mutationFn: async () => apiRequest("DELETE", `/api/admin/groups/${group.id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/groups"] });
+      toast({ title: "Group deleted" });
+      setConfirmDelete(false);
+    },
+    onError: (err: any) => {
+      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+    },
+  });
+
   const tier = group.riskTier as RiskTier | null | undefined;
   const tierConfig = tier && TIER_CONFIG[tier];
   const status = STATUS_OPTIONS.find((s) => s.value === group.status);
@@ -291,43 +354,115 @@ function GroupRow({ group, onOpen }: { group: Group; onOpen: () => void }) {
     : null;
 
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="flex w-full items-center gap-4 px-5 py-3 text-left transition hover-elevate"
-      data-testid={`row-group-${group.id}`}
-    >
-      {tierConfig ? (
-        <span
-          className="h-2 w-2 shrink-0 rounded-full"
-          style={{ background: tierConfig.hsl }}
-          aria-hidden
-        />
-      ) : (
-        <span className="h-2 w-2 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden />
-      )}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 truncate text-sm font-semibold">
-          {group.companyName}
-          {tierConfig && (
-            <span className={cn("text-[11px] font-semibold uppercase tracking-wide", tierConfig.className)}>
-              {tierConfig.label}
-            </span>
+    <>
+      <div
+        className="flex items-center gap-3 px-5 py-3 transition hover:bg-muted/30"
+        data-testid={`row-group-${group.id}`}
+      >
+        <button
+          type="button"
+          onClick={() => navigate(`/admin/groups/${group.id}`)}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+          data-testid={`button-open-group-${group.id}`}
+        >
+          {tierConfig ? (
+            <span
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ background: tierConfig.hsl }}
+              aria-hidden
+            />
+          ) : (
+            <span className="h-2 w-2 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden />
           )}
-        </div>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-          {status && <span>{status.label}</span>}
-          <span aria-hidden>·</span>
-          <span>{group.totalLives ?? 0} lives</span>
-          {submittedLabel && (
-            <>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 truncate text-sm font-semibold">
+              {group.companyName}
+              {tierConfig && (
+                <span className={cn("text-[11px] font-semibold uppercase tracking-wide", tierConfig.className)}>
+                  {tierConfig.label}
+                </span>
+              )}
+              {group.locked && (
+                <Badge variant="secondary" className="gap-1 text-[10px]">
+                  <Lock className="h-3 w-3" />
+                  Locked
+                </Badge>
+              )}
+            </div>
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+              {status && <span>{status.label}</span>}
               <span aria-hidden>·</span>
-              <span>Submitted {submittedLabel}</span>
-            </>
-          )}
+              <span>{group.totalLives ?? 0} lives</span>
+              {submittedLabel && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span>Submitted {submittedLabel}</span>
+                </>
+              )}
+            </div>
+          </div>
+        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => toggleLock.mutate()}
+                disabled={toggleLock.isPending}
+                aria-label={group.locked ? "Unlock group" : "Lock group"}
+                data-testid={`button-lock-${group.id}`}
+              >
+                {group.locked ? (
+                  <LockOpen className="h-3.5 w-3.5 text-primary" />
+                ) : (
+                  <Lock className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {group.locked ? "Unlock (owner can edit again)" : "Lock (freeze the proposal)"}
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                onClick={() => setConfirmDelete(true)}
+                aria-label="Delete group"
+                data-testid={`button-delete-${group.id}`}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Delete group</TooltipContent>
+          </Tooltip>
+          <ChevronDown className="ml-1 h-4 w-4 -rotate-90 text-muted-foreground" aria-hidden />
         </div>
       </div>
-      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-    </button>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {group.companyName}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Removes the census, proposals, and scoring data. The user's account is not affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteGroup.mutate()}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

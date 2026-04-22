@@ -37,6 +37,9 @@ export const groups = pgTable("groups", {
   femaleCount: integer("female_count").default(0),
   groupCharacteristics: jsonb("group_characteristics"),
   adminNotes: text("admin_notes"),
+  // When true, the owner can no longer edit or replace the census —
+  // the proposal is frozen as-is. Only admins can toggle this.
+  locked: boolean("locked").default(false).notNull(),
   submittedAt: timestamp("submitted_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
