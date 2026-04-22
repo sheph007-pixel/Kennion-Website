@@ -51,7 +51,10 @@ export function ProposalNav() {
     <>
       <nav className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-6 py-3">
-          <KennionLogo size="md" />
+          <KennionLogo
+            size="md"
+            linkTo={user?.role === "admin" ? "/admin" : "/dashboard"}
+          />
           <div className="flex items-center gap-2">
             <ThemeToggle />
             {user && (
