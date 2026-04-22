@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProposalNav } from "@/components/proposal/proposal-nav";
-import { queryClient } from "@/lib/queryClient";
-import { useGroupRates, useGroupCensus, censusToMix } from "@/hooks/use-proposal";
+import { useToast } from "@/hooks/use-toast";
+import { useGroupRates, useGroupCensus, useReplaceCensus, censusToMix } from "@/hooks/use-proposal";
 import {
   DENTAL_PLANS,
   VISION_PLANS,
@@ -13,6 +13,7 @@ import {
   effectiveDateOptions,
   fmtLong,
   toIsoDate,
+  censusFileName,
 } from "@/lib/kennion-rates";
 import { GroupHeader } from "@/components/proposal/group-header";
 import { EffectiveDatePicker } from "@/components/proposal/effective-date-picker";
@@ -38,9 +39,12 @@ export function ProposalCockpit({ group, onReplaceCensus, onAcceptProposal }: Pr
   const [activeTab, setActiveTab] = useState("medical");
   const [censusOpen, setCensusOpen] = useState(false);
 
+  const { toast } = useToast();
   const ratesQuery = useGroupRates(group.id, toIsoDate(effDate));
   const censusQuery = useGroupCensus(group.id);
+  const replaceCensus = useReplaceCensus(group.id);
   const plans = ratesQuery.data?.plans ?? [];
+  const fileName = censusFileName(group);
 
   // Auto-select the top (most expensive / Platinum-tier) plan on first load.
   useEffect(() => {
@@ -205,15 +209,24 @@ export function ProposalCockpit({ group, onReplaceCensus, onAcceptProposal }: Pr
         open={censusOpen}
         onOpenChange={setCensusOpen}
         entries={censusQuery.data}
-        censusFileName={`${group.companyName.toLowerCase().replace(/[^a-z0-9]+/g, "_")}_census.csv`}
+        censusFileName={fileName}
         submittedAt={group.submittedAt}
         onReplace={() => onReplaceCensus?.()}
-        // TODO: wire to PATCH /api/groups/:id/census when the endpoint ships.
-        onSave={async () => {
-          // Placeholder: invalidate queries so any server-side roster update
-          // flows into the UI. The PATCH wiring belongs on the server next.
-          await queryClient.invalidateQueries({ queryKey: ["/api/groups", group.id, "census"] });
-          await queryClient.invalidateQueries({ queryKey: ["/api/rate/price-group", group.id] });
+        onSave={async (rows) => {
+          try {
+            await replaceCensus.mutateAsync(rows);
+            toast({
+              title: "Census updated",
+              description: "Rates recalculated for the new roster.",
+            });
+          } catch (err: any) {
+            toast({
+              title: "Could not update census",
+              description: err?.message ?? "Please try again.",
+              variant: "destructive",
+            });
+            throw err;
+          }
         }}
       />
     </div>

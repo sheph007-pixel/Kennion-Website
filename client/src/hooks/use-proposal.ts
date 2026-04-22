@@ -1,7 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Group, CensusEntry } from "@shared/schema";
 import type { MedicalPlan, TierKey } from "@/lib/kennion-rates";
+
+type CensusRowInput = Pick<
+  CensusEntry,
+  "firstName" | "lastName" | "dateOfBirth" | "gender" | "zipCode" | "relationship"
+>;
 
 type RawPlanRate = { EE: number; EC: number; ES: number; EF: number };
 type RateEngineResult = {
@@ -24,6 +29,26 @@ export function useCurrentGroup() {
   const query = useQuery<Group[]>({ queryKey: ["/api/groups"] });
   const group = query.data?.[0] ?? null;
   return { ...query, group };
+}
+
+// Replaces the entire roster for a group. On success, refreshes every
+// query that derives from the census — the group record (for stat cards +
+// tier + score), the census entries (modal), and the medical rates
+// (since the per-tier mix drives Monthly Total).
+export function useReplaceCensus(groupId: string | undefined) {
+  return useMutation({
+    mutationFn: async (entries: CensusRowInput[]) => {
+      if (!groupId) throw new Error("groupId required");
+      const res = await apiRequest("POST", `/api/groups/${groupId}/census`, { entries });
+      return (await res.json()) as { group: Group; entries: CensusEntry[] };
+    },
+    onSuccess: () => {
+      if (!groupId) return;
+      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups", groupId, "census"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/rate/price-group", groupId] });
+    },
+  });
 }
 
 export function useGroupCensus(groupId: string | undefined) {

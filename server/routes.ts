@@ -1387,6 +1387,134 @@ export async function registerRoutes(
     res.json(census);
   });
 
+  // Replace the group's census with a new roster. Used by the in-app
+  // "Edit" census flow (see client/src/components/proposal/census-modal.tsx).
+  // Re-runs risk analysis so the tier, score, and per-count fields on the
+  // group match the new roster immediately.
+  app.post("/api/groups/:id/census", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const group = await storage.getGroup(id);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      if (group.userId !== req.session.userId) {
+        const user = await storage.getUser(req.session.userId!);
+        if (!user || user.role !== "admin") {
+          return res.status(403).json({ message: "Access denied" });
+        }
+      }
+
+      const incoming = Array.isArray(req.body?.entries) ? req.body.entries : null;
+      if (!incoming || incoming.length === 0) {
+        return res.status(400).json({ message: "Census must include at least one row" });
+      }
+
+      // Normalize inbound rows and validate required fields.
+      const entries = incoming.map((r: any) => ({
+        firstName: String(r.firstName || "").trim(),
+        lastName: String(r.lastName || "").trim(),
+        dateOfBirth: String(r.dateOfBirth || "").trim(),
+        gender: String(r.gender || "").trim(),
+        zipCode: String(r.zipCode || "").trim(),
+        relationship: String(r.relationship || "").trim(),
+      }));
+
+      const missingFields = entries.filter(
+        (e: any) => !e.firstName || !e.lastName || !e.dateOfBirth || !e.gender || !e.zipCode || !e.relationship,
+      );
+      if (missingFields.length > 0) {
+        return res.status(400).json({
+          message: `${missingFields.length} row(s) are missing required fields.`,
+        });
+      }
+
+      const hasEmployee = entries.some((e: any) => /^(ee|employee)$/i.test(e.relationship));
+      if (!hasEmployee) {
+        return res.status(400).json({ message: "Census needs at least one Employee row." });
+      }
+
+      // Canonicalize relationship codes (EE / SP / CH) before analysis.
+      for (const e of entries as any[]) {
+        const r = e.relationship.toLowerCase();
+        e.relationship = r === "ee" || r === "employee"
+          ? "EE"
+          : r === "sp" || r === "spouse"
+            ? "SP"
+            : "CH";
+      }
+
+      const analysis = analyzeGroupRisk(entries);
+      const validation = validateCensusData(entries, analysis);
+      if (!validation.valid) {
+        const guidance = await generateValidationGuidance(validation.errors, validation.matchRate);
+        return res.status(400).json({
+          message: "Census data validation failed",
+          guidance,
+          errors: validation.errors,
+          matchRate: validation.matchRate,
+        });
+      }
+
+      const employeeCount = entries.filter((e: any) => e.relationship === "EE").length;
+      const spouseCount = entries.filter((e: any) => e.relationship === "SP").length;
+      const childrenCount = entries.filter((e: any) => e.relationship === "CH").length;
+
+      // Replace the roster. No transaction wrapper in this codebase; the
+      // confirm endpoint takes the same tradeoff (brief window with an
+      // empty roster) and this is a low-traffic, single-user-per-group
+      // operation.
+      await storage.deleteCensusByGroupId(id);
+      await storage.createCensusEntries(
+        entries.map((e: any) => ({
+          groupId: id,
+          firstName: e.firstName,
+          lastName: e.lastName,
+          dateOfBirth: e.dateOfBirth,
+          gender: e.gender,
+          zipCode: e.zipCode,
+          relationship: e.relationship,
+        })),
+      );
+
+      const adminNotes = await generateActuarialAnalysis({
+        riskScore: analysis.riskScore,
+        riskTier: analysis.riskTier,
+        averageAge: analysis.averageAge,
+        employeeCount,
+        spouseCount,
+        childrenCount,
+        totalLives: entries.length,
+        maleCount: analysis.maleCount,
+        femaleCount: analysis.femaleCount,
+        characteristics: analysis.characteristics,
+        companyName: group.companyName,
+      });
+
+      await storage.updateGroup(id, {
+        employeeCount,
+        spouseCount,
+        childrenCount,
+        totalLives: entries.length,
+        riskScore: analysis.riskScore,
+        riskTier: analysis.riskTier,
+        averageAge: analysis.averageAge,
+        maleCount: analysis.maleCount,
+        femaleCount: analysis.femaleCount,
+        groupCharacteristics: analysis.characteristics,
+        score: analysis.characteristics.qualificationScore,
+        adminNotes,
+      });
+
+      const updatedGroup = await storage.getGroup(id);
+      const updatedEntries = await storage.getCensusByGroupId(id);
+      res.json({ group: updatedGroup, entries: updatedEntries });
+    } catch (err: any) {
+      log(`Census replace error: ${err.message}`, "routes");
+      res.status(500).json({ message: err.message || "Census update failed" });
+    }
+  });
+
   app.delete("/api/groups/:id", requireAuth, async (req: Request, res: Response) => {
     try {
       const id = req.params.id as string;

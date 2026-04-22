@@ -143,6 +143,28 @@ export const fmtMonthYear = (d: Date) =>
 export const fmtLong = (d: Date) =>
   d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
+// Deterministic, human-readable census filename. Uses the most recent
+// roster activity (updatedAt ?? submittedAt) so successive edits/uploads
+// produce unique filenames when downloaded.
+//
+// Example: ridgeline_coffee_roasters_20260422_1845.csv
+export function censusFileName(group: {
+  companyName: string;
+  updatedAt?: Date | string | null;
+  submittedAt?: Date | string | null;
+}) {
+  const stamp = group.updatedAt ?? group.submittedAt ?? null;
+  const d = stamp instanceof Date ? stamp : stamp ? new Date(stamp) : new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const slug = (group.companyName || "census")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
+  const date = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+  const time = `${pad(d.getHours())}${pad(d.getMinutes())}`;
+  return `${slug}_${date}_${time}.csv`;
+}
+
 // Monthly total math for a medical plan + group mix.
 // Mix keys: EE, EE_CH, EE_SP, EE_FAM (counts of employees in each tier).
 // contribMode "percent" (50..100) or "dollar" (fixed $ per EE-only).
