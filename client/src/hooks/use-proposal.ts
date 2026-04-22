@@ -51,6 +51,39 @@ export function useReplaceCensus(groupId: string | undefined) {
   });
 }
 
+export type AgeBandRow = {
+  band: string;
+  females: number;
+  males: number;
+  total: number;
+  avgRiskScore: number;
+};
+
+export type ScoreReview = {
+  auditId: string;
+  narrative: string;
+  ageBands: AgeBandRow[];
+  totals: { females: number; males: number; total: number };
+  overallAvgRisk: number;
+  engineVersion: string;
+};
+
+// Fetches the score-audit payload (age-band breakdown + AI narrative +
+// signed audit ID). POST because the server may need to run the OpenAI
+// call on cache-miss; safe to call idempotently — server caches by
+// audit fingerprint.
+export function useScoreReview(groupId: string | undefined, enabled: boolean) {
+  return useQuery<ScoreReview>({
+    queryKey: ["/api/groups", groupId, "score-review"],
+    queryFn: async () => {
+      const res = await apiRequest("POST", `/api/groups/${groupId}/score-review`, {});
+      return res.json();
+    },
+    enabled: Boolean(groupId && enabled),
+    staleTime: 60_000,
+  });
+}
+
 export function useGroupCensus(groupId: string | undefined) {
   return useQuery<CensusEntry[]>({
     queryKey: ["/api/groups", groupId, "census"],

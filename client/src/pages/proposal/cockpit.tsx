@@ -121,18 +121,8 @@ export function ProposalCockpit({ group, onReplaceCensus, onAcceptProposal }: Pr
           {/* MAIN */}
           <main className="min-w-0">
             <GroupHeader
-              companyName={group.companyName}
-              tier={group.riskTier as any}
-              riskScore={group.riskScore}
-              factors={
-                (group.groupCharacteristics as { factors?: string[] } | null)?.factors ?? []
-              }
-              employees={group.employeeCount ?? 0}
-              spouses={group.spouseCount ?? 0}
-              children={group.childrenCount ?? 0}
-              totalLives={group.totalLives ?? 0}
-              censusId={group.id}
-              submittedAt={group.submittedAt}
+              group={group}
+              census={censusQuery.data}
               onViewCensus={() => setCensusOpen(true)}
             />
 

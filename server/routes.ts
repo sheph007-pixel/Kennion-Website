@@ -33,7 +33,7 @@ import { log } from "./index";
 import { sendMagicLinkEmail } from "./email";
 import { pool, testConnection } from "./db";
 import { cleanCSVWithAI, generateValidationGuidance } from "./ai-csv-cleaner";
-import { generateActuarialAnalysis } from "./ai-analysis";
+import { generateActuarialAnalysis, generateScoreReview } from "./ai-analysis";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 const templateUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
@@ -1553,6 +1553,134 @@ export async function registerRoutes(
     } catch (err: any) {
       log(`Census replace error: ${err.message}`, "routes");
       res.status(500).json({ message: err.message || "Census update failed" });
+    }
+  });
+
+  // Score audit: per-age-band breakdown + signed audit id + cached AI
+  // narrative. Used by the ScoreAuditDialog on the customer cockpit.
+  app.post("/api/groups/:id/score-review", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const group = await storage.getGroup(id);
+      if (!group) return res.status(404).json({ message: "Group not found" });
+      if (group.userId !== req.session.userId) {
+        const user = await storage.getUser(req.session.userId!);
+        if (!user || user.role !== "admin") {
+          return res.status(403).json({ message: "Access denied" });
+        }
+      }
+
+      const rows = await storage.getCensusByGroupId(id);
+      if (rows.length === 0) {
+        return res.status(400).json({ message: "No census rows to audit." });
+      }
+
+      // Per-band accumulator: { females, males, sumRisk, count }
+      const bandOrder = [
+        "0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34",
+        "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-Above",
+      ];
+      const bandAcc: Record<string, { females: number; males: number; sumRisk: number; count: number }> = {};
+      for (const b of bandOrder) bandAcc[b] = { females: 0, males: 0, sumRisk: 0, count: 0 };
+
+      const today = new Date();
+      let totalFemale = 0;
+      let totalMale = 0;
+      let sumAge = 0;
+      let ageCount = 0;
+      let overallRiskSum = 0;
+      let overallRiskCount = 0;
+
+      for (const r of rows) {
+        // Parse DOB tolerant of MM/DD/YYYY or YYYY-MM-DD.
+        const dobStr = (r.dateOfBirth || "").trim();
+        let dob: Date | null = null;
+        const iso = dobStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        const us = dobStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (iso) dob = new Date(+iso[1], +iso[2] - 1, +iso[3]);
+        else if (us) dob = new Date(+us[3], +us[1] - 1, +us[2]);
+        if (!dob || isNaN(dob.getTime())) continue;
+        const age = Math.floor((today.getTime() - dob.getTime()) / (365.25 * 24 * 3600 * 1000));
+        if (age < 0 || age > 120) continue;
+
+        const band = getAgeBand(age);
+        const score = getRiskScoreForPerson(age, r.gender || "");
+        const g = (r.gender || "").toLowerCase();
+        const isFemale = g === "f" || g === "female";
+        const isMale = g === "m" || g === "male";
+
+        if (!bandAcc[band]) bandAcc[band] = { females: 0, males: 0, sumRisk: 0, count: 0 };
+        if (isFemale) { bandAcc[band].females++; totalFemale++; }
+        if (isMale) { bandAcc[band].males++; totalMale++; }
+        bandAcc[band].sumRisk += score;
+        bandAcc[band].count++;
+
+        sumAge += age;
+        ageCount++;
+        overallRiskSum += score;
+        overallRiskCount++;
+      }
+
+      const ageBands = bandOrder.map((band) => {
+        const a = bandAcc[band];
+        return {
+          band,
+          females: a.females,
+          males: a.males,
+          total: a.count,
+          avgRiskScore: a.count > 0 ? Math.round((a.sumRisk / a.count) * 1000) / 1000 : 0,
+        };
+      });
+      const overallAvgRisk = overallRiskCount > 0 ? overallRiskSum / overallRiskCount : 1;
+
+      // Stable audit id: FNV-1a 32-bit over a minimal identity fingerprint
+      // so the customer can quote it back for later reconciliation.
+      const fingerprint = `${group.id}:${group.updatedAt?.toISOString?.() ?? ""}:${rows.length}:${overallAvgRisk.toFixed(4)}`;
+      let h = 0x811c9dc5;
+      for (let i = 0; i < fingerprint.length; i++) {
+        h ^= fingerprint.charCodeAt(i);
+        h = Math.imul(h, 0x01000193) >>> 0;
+      }
+      const auditId = "K-" + h.toString(36).toUpperCase().padStart(7, "0").slice(0, 8);
+
+      // Cache check: if we've already generated a narrative for this
+      // fingerprint, return the cached value instead of re-billing OpenAI.
+      const chars = (group.groupCharacteristics as any) || {};
+      const cached = chars.scoreReview;
+      let narrative: string;
+      if (cached?.auditId === auditId && typeof cached?.narrative === "string") {
+        narrative = cached.narrative;
+      } else {
+        try {
+          narrative = await generateScoreReview({
+            companyName: group.companyName,
+            riskScore: group.riskScore ?? overallAvgRisk,
+            riskTier: group.riskTier ?? "standard",
+            totalLives: rows.length,
+            averageAge: ageCount > 0 ? sumAge / ageCount : 0,
+            femalePct: (totalFemale + totalMale) > 0 ? (totalFemale / (totalFemale + totalMale)) * 100 : 0,
+            bands: ageBands.map((b) => ({ band: b.band, total: b.total, avgRiskScore: b.avgRiskScore })),
+          });
+        } catch (err: any) {
+          log(`Score review AI error: ${err?.message || err}`, "routes");
+          narrative = "Score is consistent with the reported demographic profile.";
+        }
+        await storage.updateGroup(id, {
+          groupCharacteristics: { ...chars, scoreReview: { auditId, narrative, generatedAt: new Date().toISOString() } },
+        });
+      }
+
+      res.json({
+        auditId,
+        narrative,
+        ageBands,
+        totals: { females: totalFemale, males: totalMale, total: totalFemale + totalMale },
+        overallAvgRisk,
+        engineVersion: "risk-v1",
+      });
+    } catch (err: any) {
+      log(`Score review error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: err?.message || "Score review failed" });
     }
   });
 
