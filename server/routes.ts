@@ -497,6 +497,140 @@ function validateCensusData(
   };
 }
 
+// Shared replace-census pipeline used by both the direct-entries
+// endpoint (POST /api/groups/:id/census) and the session-pending
+// endpoint (POST /api/groups/:id/census/replace-from-pending). Runs
+// validation + re-underwriting + persistence in one place so the two
+// paths stay bit-for-bit consistent. Returns a discriminated union so
+// callers can surface validation guidance back to the client.
+type ReplaceCensusResult =
+  | {
+      ok: true;
+      group: any;
+      entries: any[];
+    }
+  | {
+      ok: false;
+      status: number;
+      body: Record<string, any>;
+    };
+
+async function replaceGroupCensus(
+  id: string,
+  group: { companyName: string },
+  incoming: any[],
+): Promise<ReplaceCensusResult> {
+  // Normalize inbound rows and validate required fields.
+  const entries = incoming.map((r: any) => ({
+    firstName: String(r.firstName || "").trim(),
+    lastName: String(r.lastName || "").trim(),
+    dateOfBirth: String(r.dateOfBirth || "").trim(),
+    gender: String(r.gender || "").trim(),
+    zipCode: String(r.zipCode || "").trim(),
+    relationship: String(r.relationship || "").trim(),
+  }));
+
+  const missingFields = entries.filter(
+    (e: any) => !e.firstName || !e.lastName || !e.dateOfBirth || !e.gender || !e.zipCode || !e.relationship,
+  );
+  if (missingFields.length > 0) {
+    return {
+      ok: false,
+      status: 400,
+      body: { message: `${missingFields.length} row(s) are missing required fields.` },
+    };
+  }
+
+  const hasEmployee = entries.some((e: any) => /^(ee|employee)$/i.test(e.relationship));
+  if (!hasEmployee) {
+    return {
+      ok: false,
+      status: 400,
+      body: { message: "Census needs at least one Employee row." },
+    };
+  }
+
+  // Canonicalize relationship codes (EE / SP / CH) before analysis.
+  for (const e of entries as any[]) {
+    const r = e.relationship.toLowerCase();
+    e.relationship = r === "ee" || r === "employee"
+      ? "EE"
+      : r === "sp" || r === "spouse"
+        ? "SP"
+        : "CH";
+  }
+
+  const analysis = analyzeGroupRisk(entries);
+  const validation = validateCensusData(entries, analysis);
+  if (!validation.valid) {
+    const guidance = await generateValidationGuidance(validation.errors, validation.matchRate);
+    return {
+      ok: false,
+      status: 400,
+      body: {
+        message: "Census data validation failed",
+        guidance,
+        errors: validation.errors,
+        matchRate: validation.matchRate,
+      },
+    };
+  }
+
+  const employeeCount = entries.filter((e: any) => e.relationship === "EE").length;
+  const spouseCount = entries.filter((e: any) => e.relationship === "SP").length;
+  const childrenCount = entries.filter((e: any) => e.relationship === "CH").length;
+
+  // Replace the roster. No transaction wrapper in this codebase; the
+  // confirm endpoint takes the same tradeoff (brief window with an
+  // empty roster) and this is a low-traffic, single-user-per-group
+  // operation.
+  await storage.deleteCensusByGroupId(id);
+  await storage.createCensusEntries(
+    entries.map((e: any) => ({
+      groupId: id,
+      firstName: e.firstName,
+      lastName: e.lastName,
+      dateOfBirth: e.dateOfBirth,
+      gender: e.gender,
+      zipCode: e.zipCode,
+      relationship: e.relationship,
+    })),
+  );
+
+  const adminNotes = await generateActuarialAnalysis({
+    riskScore: analysis.riskScore,
+    riskTier: analysis.riskTier,
+    averageAge: analysis.averageAge,
+    employeeCount,
+    spouseCount,
+    childrenCount,
+    totalLives: entries.length,
+    maleCount: analysis.maleCount,
+    femaleCount: analysis.femaleCount,
+    characteristics: analysis.characteristics,
+    companyName: group.companyName,
+  });
+
+  await storage.updateGroup(id, {
+    employeeCount,
+    spouseCount,
+    childrenCount,
+    totalLives: entries.length,
+    riskScore: analysis.riskScore,
+    riskTier: analysis.riskTier,
+    averageAge: analysis.averageAge,
+    maleCount: analysis.maleCount,
+    femaleCount: analysis.femaleCount,
+    groupCharacteristics: analysis.characteristics,
+    score: analysis.characteristics.qualificationScore,
+    adminNotes,
+  });
+
+  const updatedGroup = await storage.getGroup(id);
+  const updatedEntries = await storage.getCensusByGroupId(id);
+  return { ok: true, group: updatedGroup, entries: updatedEntries };
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -1553,107 +1687,65 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Census must include at least one row" });
       }
 
-      // Normalize inbound rows and validate required fields.
-      const entries = incoming.map((r: any) => ({
-        firstName: String(r.firstName || "").trim(),
-        lastName: String(r.lastName || "").trim(),
-        dateOfBirth: String(r.dateOfBirth || "").trim(),
-        gender: String(r.gender || "").trim(),
-        zipCode: String(r.zipCode || "").trim(),
-        relationship: String(r.relationship || "").trim(),
-      }));
-
-      const missingFields = entries.filter(
-        (e: any) => !e.firstName || !e.lastName || !e.dateOfBirth || !e.gender || !e.zipCode || !e.relationship,
-      );
-      if (missingFields.length > 0) {
-        return res.status(400).json({
-          message: `${missingFields.length} row(s) are missing required fields.`,
-        });
-      }
-
-      const hasEmployee = entries.some((e: any) => /^(ee|employee)$/i.test(e.relationship));
-      if (!hasEmployee) {
-        return res.status(400).json({ message: "Census needs at least one Employee row." });
-      }
-
-      // Canonicalize relationship codes (EE / SP / CH) before analysis.
-      for (const e of entries as any[]) {
-        const r = e.relationship.toLowerCase();
-        e.relationship = r === "ee" || r === "employee"
-          ? "EE"
-          : r === "sp" || r === "spouse"
-            ? "SP"
-            : "CH";
-      }
-
-      const analysis = analyzeGroupRisk(entries);
-      const validation = validateCensusData(entries, analysis);
-      if (!validation.valid) {
-        const guidance = await generateValidationGuidance(validation.errors, validation.matchRate);
-        return res.status(400).json({
-          message: "Census data validation failed",
-          guidance,
-          errors: validation.errors,
-          matchRate: validation.matchRate,
-        });
-      }
-
-      const employeeCount = entries.filter((e: any) => e.relationship === "EE").length;
-      const spouseCount = entries.filter((e: any) => e.relationship === "SP").length;
-      const childrenCount = entries.filter((e: any) => e.relationship === "CH").length;
-
-      // Replace the roster. No transaction wrapper in this codebase; the
-      // confirm endpoint takes the same tradeoff (brief window with an
-      // empty roster) and this is a low-traffic, single-user-per-group
-      // operation.
-      await storage.deleteCensusByGroupId(id);
-      await storage.createCensusEntries(
-        entries.map((e: any) => ({
-          groupId: id,
-          firstName: e.firstName,
-          lastName: e.lastName,
-          dateOfBirth: e.dateOfBirth,
-          gender: e.gender,
-          zipCode: e.zipCode,
-          relationship: e.relationship,
-        })),
-      );
-
-      const adminNotes = await generateActuarialAnalysis({
-        riskScore: analysis.riskScore,
-        riskTier: analysis.riskTier,
-        averageAge: analysis.averageAge,
-        employeeCount,
-        spouseCount,
-        childrenCount,
-        totalLives: entries.length,
-        maleCount: analysis.maleCount,
-        femaleCount: analysis.femaleCount,
-        characteristics: analysis.characteristics,
-        companyName: group.companyName,
-      });
-
-      await storage.updateGroup(id, {
-        employeeCount,
-        spouseCount,
-        childrenCount,
-        totalLives: entries.length,
-        riskScore: analysis.riskScore,
-        riskTier: analysis.riskTier,
-        averageAge: analysis.averageAge,
-        maleCount: analysis.maleCount,
-        femaleCount: analysis.femaleCount,
-        groupCharacteristics: analysis.characteristics,
-        score: analysis.characteristics.qualificationScore,
-        adminNotes,
-      });
-
-      const updatedGroup = await storage.getGroup(id);
-      const updatedEntries = await storage.getCensusByGroupId(id);
-      res.json({ group: updatedGroup, entries: updatedEntries });
+      const result = await replaceGroupCensus(id, group, incoming);
+      if (!result.ok) return res.status(result.status).json(result.body);
+      res.json({ group: result.group, entries: result.entries });
     } catch (err: any) {
       log(`Census replace error: ${err.message}`, "routes");
+      res.status(500).json({ message: err.message || "Census update failed" });
+    }
+  });
+
+  // Customer-facing "replace census" flow. The client uploads a CSV
+  // through /api/groups/parse + /api/groups/apply-mapping just like
+  // new-group creation, which leaves the AI-cleaned roster in
+  // req.session.pendingCensus. This endpoint is the terminal step for
+  // REPLACE mode — analogous to /api/groups/confirm for NEW mode.
+  // Reuses replaceGroupCensus() so the direct-entries endpoint above
+  // and this one stay bit-for-bit consistent.
+  app.post("/api/groups/:id/census/replace-from-pending", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const group = await storage.getGroup(id);
+      if (!group) return res.status(404).json({ message: "Group not found" });
+      const caller = await storage.getUser(req.session.userId!);
+      const isAdmin = caller?.role === "admin";
+      if (group.userId !== req.session.userId && !isAdmin) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      if (group.locked && !isAdmin) {
+        return res.status(423).json({
+          message: "This proposal is locked. Contact your Kennion advisor to reopen it.",
+        });
+      }
+
+      const pending = req.session.pendingCensus;
+      const aiCleaned: any = pending?.aiCleaned;
+      if (!aiCleaned?.cleanedData || !Array.isArray(aiCleaned.cleanedData) || aiCleaned.cleanedData.length === 0) {
+        return res.status(400).json({ message: "No pending census — upload a file first." });
+      }
+
+      // The AI cleaner emits `dob` / `zip` (short keys); normalize to
+      // the canonical CensusEntry shape that replaceGroupCensus expects.
+      const incoming = aiCleaned.cleanedData.map((c: any) => ({
+        firstName: c.firstName,
+        lastName: c.lastName,
+        dateOfBirth: c.dob,
+        gender: c.gender,
+        zipCode: c.zip,
+        relationship: c.relationship,
+      }));
+
+      const result = await replaceGroupCensus(id, group, incoming);
+      if (!result.ok) return res.status(result.status).json(result.body);
+
+      // Consume the one-shot pending row so the next upload on this
+      // session doesn't replay the same data.
+      delete req.session.pendingCensus;
+
+      res.json({ group: result.group, entries: result.entries });
+    } catch (err: any) {
+      log(`Census replace-from-pending error: ${err.message}`, "routes");
       res.status(500).json({ message: err.message || "Census update failed" });
     }
   });

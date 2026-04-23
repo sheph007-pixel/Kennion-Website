@@ -12,6 +12,10 @@ import type { Group } from "@shared/schema";
 
 type Props = {
   onComplete: (group: Group) => void;
+  // When set, this flow REPLACES the existing group's census instead
+  // of creating a new one. Same upload + AI-clean UX either way — only
+  // the terminal confirm step differs. Null/omitted = create new group.
+  replaceForGroupId?: string;
 };
 
 const REQUIRED_FIELDS = [
@@ -23,7 +27,7 @@ const REQUIRED_FIELDS = [
   "Zip Code",
 ];
 
-export function ProposalUpload({ onComplete }: Props) {
+export function ProposalUpload({ onComplete, replaceForGroupId }: Props) {
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -60,17 +64,48 @@ export function ProposalUpload({ onComplete }: Props) {
         });
         if (!mappingRes.ok) throw new Error("mapping-failed");
 
-        const confirm = await apiRequest("POST", "/api/groups/confirm", {});
+        // Branch on mode: replace the existing group's census OR create
+        // a new group from the pending session data. The server-side
+        // re-underwrite logic is identical either way.
+        const confirmUrl = replaceForGroupId
+          ? `/api/groups/${replaceForGroupId}/census/replace-from-pending`
+          : "/api/groups/confirm";
+        const confirm = await apiRequest("POST", confirmUrl, {});
         const data = await confirm.json();
+
+        // Refresh every cache that renders this group's data so the
+        // cockpit picks up the new stats, risk tier, and rates.
         await queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+        if (replaceForGroupId) {
+          queryClient.invalidateQueries({
+            queryKey: ["/api/groups", replaceForGroupId, "census"],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["/api/rate/price-group", replaceForGroupId],
+          });
+          queryClient.invalidateQueries({ queryKey: ["/api/admin/groups"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+        }
         onComplete(data.group);
-      } catch {
-        setErrorOpen(true);
+      } catch (err: any) {
+        // 423 Locked surfaces a targeted toast so the user understands
+        // they need to contact their advisor — other errors fall
+        // through to the generic "couldn't read that file" dialog.
+        const msg = err?.message || "";
+        if (/locked/i.test(msg)) {
+          toast({
+            title: "Proposal is locked",
+            description: "Contact your Kennion advisor to reopen it.",
+            variant: "destructive",
+          });
+        } else {
+          setErrorOpen(true);
+        }
       } finally {
         setUploading(false);
       }
     },
-    [onComplete, toast],
+    [onComplete, replaceForGroupId, toast],
   );
 
   const onDrop = useCallback(
@@ -89,12 +124,22 @@ export function ProposalUpload({ onComplete }: Props) {
       <div className="mx-auto max-w-2xl px-6 py-12">
         <div className="mb-6">
           <h1 className="text-3xl font-bold tracking-tight text-primary">
-            Upload Your Employee Census
+            {replaceForGroupId ? "Replace Your Census" : "Upload Your Employee Census"}
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            You will need each <strong className="text-foreground">employee</strong> and all{" "}
-            <strong className="text-foreground">family members</strong> (i.e. spouses and children)
-            that will be covered under the group health plan.
+            {replaceForGroupId ? (
+              <>
+                Upload a new CSV to replace the current roster. We'll re-run
+                underwriting and reprice your plans on the new census —
+                company, contacts, and rating area stay the same.
+              </>
+            ) : (
+              <>
+                You will need each <strong className="text-foreground">employee</strong> and all{" "}
+                <strong className="text-foreground">family members</strong> (i.e. spouses and children)
+                that will be covered under the group health plan.
+              </>
+            )}
           </p>
         </div>
 

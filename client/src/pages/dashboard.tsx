@@ -103,7 +103,7 @@ export default function DashboardPage() {
   return (
     <ProposalCockpit
       group={selectedGroup}
-      onReplaceCensus={() => navigate("/dashboard/new")}
+      onReplaceCensus={() => navigate(`/dashboard/${selectedGroup.id}/replace-census`)}
     />
   );
 }
