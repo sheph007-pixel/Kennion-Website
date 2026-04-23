@@ -14,6 +14,7 @@ import {
   censusToMix,
 } from "@/hooks/use-proposal";
 import { ProposalExportModal } from "@/components/proposal/proposal-export-modal";
+import { ProposalAcceptModal } from "@/components/proposal/proposal-accept-modal";
 import {
   DENTAL_PLANS,
   VISION_PLANS,
@@ -36,7 +37,6 @@ import type { Group } from "@shared/schema";
 type Props = {
   group: Group;
   onReplaceCensus?: () => void;
-  onAcceptProposal?: () => void;
   // Optional content rendered between the top nav and the main layout.
   // Used by the admin view to overlay admin-only controls on top of
   // the same cockpit the customer sees.
@@ -46,7 +46,6 @@ type Props = {
 export function ProposalCockpit({
   group,
   onReplaceCensus,
-  onAcceptProposal,
   bannerSlot,
 }: Props) {
   const [effDate, setEffDate] = useState(() => effectiveDateOptions()[0]);
@@ -55,6 +54,7 @@ export function ProposalCockpit({
   const [activeTab, setActiveTab] = useState("medical");
   const [censusOpen, setCensusOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [acceptOpen, setAcceptOpen] = useState(false);
 
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -119,7 +119,7 @@ export function ProposalCockpit({
             <div className="space-y-2">
               <Button
                 className="w-full justify-center gap-1.5"
-                onClick={onAcceptProposal}
+                onClick={() => setAcceptOpen(true)}
                 data-testid="button-accept-proposal"
               >
                 Accept Proposal
@@ -251,6 +251,13 @@ export function ProposalCockpit({
         group={group}
         effectiveDate={effDate}
         plans={plans}
+      />
+
+      <ProposalAcceptModal
+        open={acceptOpen}
+        onOpenChange={setAcceptOpen}
+        group={group}
+        preselectedPlan={selectedPlan?.name ?? null}
       />
     </div>
   );

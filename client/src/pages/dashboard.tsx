@@ -8,7 +8,6 @@ import { ProposalCockpit } from "@/pages/proposal/cockpit";
 import { ProposalUpload } from "@/pages/proposal/upload";
 import { ProposalAnalyzing } from "@/pages/proposal/analyzing";
 import { ProposalHighRisk } from "@/pages/proposal/high-risk";
-import { ProposalAccept } from "@/pages/proposal/accept";
 import { NewGroupDetails } from "@/pages/proposal/new-group";
 import { ProposalNav } from "@/components/proposal/proposal-nav";
 
@@ -20,9 +19,8 @@ import { ProposalNav } from "@/components/proposal/proposal-nav";
 //   /dashboard/new      → upload a new group, regardless of existing groups.
 //   /dashboard/:id      → cockpit / analyzing / high-risk for that group.
 //
-// An `?accept=1` query param on /dashboard/:id opens the Accept flow for
-// that group. Using a query param (rather than a fourth route) keeps the
-// back button natural: clicking Back from Accept returns to the cockpit.
+// The Accept flow is no longer URL-driven — it's a modal mounted inside
+// the cockpit. See ProposalAcceptModal.
 export default function DashboardPage() {
   const [, navigate] = useLocation();
   const [isNewRoute] = useRoute("/dashboard/new");
@@ -39,11 +37,6 @@ export default function DashboardPage() {
       navigate(`/dashboard/${groups[0].id}`, { replace: true });
     }
   }, [needsIndexRedirect, groups, navigate]);
-
-  // Accept flow is keyed off ?accept=1 in the URL — read it lazily so we
-  // re-render when the query string changes without rearranging hooks.
-  const acceptOpen =
-    typeof window !== "undefined" && window.location.search.includes("accept=1");
 
   if (isLoading) {
     return (
@@ -107,23 +100,10 @@ export default function DashboardPage() {
     return <ProposalHighRisk />;
   }
 
-  if (acceptOpen) {
-    return (
-      <ProposalAccept
-        group={selectedGroup}
-        onBack={() => navigate(`/dashboard/${selectedGroup.id}`, { replace: true })}
-        onDone={() => navigate(`/dashboard/${selectedGroup.id}`, { replace: true })}
-      />
-    );
-  }
-
   return (
     <ProposalCockpit
       group={selectedGroup}
       onReplaceCensus={() => navigate("/dashboard/new")}
-      onAcceptProposal={() =>
-        navigate(`/dashboard/${selectedGroup.id}?accept=1`)
-      }
     />
   );
 }

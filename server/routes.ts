@@ -32,7 +32,7 @@ import {
 } from "@shared/schema";
 import ConnectPgSimple from "connect-pg-simple";
 import { log } from "./index";
-import { sendMagicLinkEmail } from "./email";
+import { sendMagicLinkEmail, sendProposalAcceptanceEmail } from "./email";
 import { pool, testConnection } from "./db";
 import { cleanCSVWithAI, generateValidationGuidance } from "./ai-csv-cleaner";
 import { generateActuarialAnalysis, generateScoreReview } from "./ai-analysis";
@@ -1734,6 +1734,97 @@ export async function registerRoutes(
     } catch (err: any) {
       log(`Score review error: ${err?.message || err}`, "routes");
       res.status(500).json({ message: err?.message || "Score review failed" });
+    }
+  });
+
+  // Proposal acceptance — customer fills out the acceptance modal and
+  // submits their plan selections + company/contact info. We email
+  // hunter@kennion.com with the details and flip the group status to
+  // proposal_accepted. Owner-or-admin guard mirrors score-review.
+  //
+  // WARNING: body includes ssnLast4 / ssnLast4Verify. Never log the
+  // body or any field values. Only acknowledge by group id.
+  app.post("/api/groups/:id/accept", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const group = await storage.getGroup(id);
+      if (!group) return res.status(404).json({ message: "Group not found" });
+      if (group.userId !== req.session.userId) {
+        const user = await storage.getUser(req.session.userId!);
+        if (!user || user.role !== "admin") {
+          return res.status(403).json({ message: "Access denied" });
+        }
+      }
+
+      const body = (req.body ?? {}) as any;
+
+      // Shallow validation — the modal enforces most of this client-side,
+      // this is defense in depth so malformed payloads don't reach the
+      // email helper.
+      const healthPlans = Array.isArray(body?.plans?.health) ? body.plans.health.filter(Boolean) : [];
+      const dentalPlans = Array.isArray(body?.plans?.dental) ? body.plans.dental.filter(Boolean) : [];
+      const visionPlans = Array.isArray(body?.plans?.vision) ? body.plans.vision.filter(Boolean) : [];
+      if (healthPlans.length < 1 || healthPlans.length > 3) {
+        return res.status(400).json({ message: "Select 1–3 health plans." });
+      }
+      if (dentalPlans.length < 1 || dentalPlans.length > 2) {
+        return res.status(400).json({ message: "Select 1–2 dental plans." });
+      }
+      if (visionPlans.length < 1 || visionPlans.length > 2) {
+        return res.status(400).json({ message: "Select 1–2 vision plans." });
+      }
+      const ssn = String(body?.contact?.ssnLast4 ?? "");
+      const ssnVerify = String(body?.contact?.ssnLast4Verify ?? "");
+      if (!/^\d{4}$/.test(ssn)) {
+        return res.status(400).json({ message: "SSN last 4 must be 4 digits." });
+      }
+      if (ssn !== ssnVerify) {
+        return res.status(400).json({ message: "SSN confirmation does not match." });
+      }
+      const legalName = String(body?.company?.legalName ?? "").trim();
+      if (!legalName) {
+        return res.status(400).json({ message: "Company legal name is required." });
+      }
+
+      await sendProposalAcceptanceEmail("hunter@kennion.com", {
+        groupId: id,
+        submittedAt: new Date(),
+        plans: {
+          health: healthPlans.map(String),
+          dental: dentalPlans.map(String),
+          vision: visionPlans.map(String),
+          supplemental: String(body?.plans?.supplemental ?? ""),
+          employerPaidLife: String(body?.plans?.employerPaidLife ?? ""),
+        },
+        company: {
+          legalName,
+          taxId: String(body?.company?.taxId ?? ""),
+          streetAddress: String(body?.company?.streetAddress ?? ""),
+          cityStateZip: String(body?.company?.cityStateZip ?? ""),
+        },
+        contact: {
+          name: String(body?.contact?.name ?? ""),
+          workEmail: String(body?.contact?.workEmail ?? ""),
+          ssnLast4: ssn,
+          ssnLast4Verify: ssnVerify,
+          title: String(body?.contact?.title ?? ""),
+          phone: String(body?.contact?.phone ?? ""),
+          reason: String(body?.contact?.reason ?? ""),
+        },
+        acceptance: {
+          additionalComments: String(body?.acceptance?.additionalComments ?? ""),
+        },
+      });
+
+      // Flip group status so the admin list reflects acceptance. The
+      // status enum already includes "proposal_accepted" (shared/schema.ts).
+      await storage.updateGroup(id, { status: "proposal_accepted" });
+
+      log(`Proposal acceptance submitted for group ${id}`, "routes");
+      res.json({ ok: true });
+    } catch (err: any) {
+      log(`Proposal acceptance error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: err?.message || "Failed to submit acceptance." });
     }
   });
 

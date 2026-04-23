@@ -62,3 +62,152 @@ export async function sendMagicLinkEmail(
     throw new Error("Failed to send sign-in email. Please try again.");
   }
 }
+
+// Proposal-acceptance email sent to Kennion (hunter@kennion.com) when a
+// group owner submits the acceptance form. Body mirrors the exact
+// template the customer pasted when they specced this feature.
+// NOTE: the payload includes ssnLast4 — it's part of the email record
+// (legitimate business need for onboarding) but MUST NOT appear in
+// server logs. We never log the body.
+export type ProposalAcceptancePayload = {
+  groupId: string;
+  submittedAt: Date;
+  plans: {
+    health: string[];
+    dental: string[];
+    vision: string[];
+    supplemental: string;
+    employerPaidLife: string;
+  };
+  company: {
+    legalName: string;
+    taxId: string;
+    streetAddress: string;
+    cityStateZip: string;
+  };
+  contact: {
+    name: string;
+    workEmail: string;
+    ssnLast4: string;
+    ssnLast4Verify: string;
+    title: string;
+    phone: string;
+    reason: string;
+  };
+  acceptance: {
+    additionalComments: string;
+  };
+};
+
+export async function sendProposalAcceptanceEmail(
+  toEmail: string,
+  payload: ProposalAcceptancePayload,
+) {
+  const p = payload;
+  const subject = `New Group Sign Up — ${p.company.legalName || "Unnamed Company"}`;
+
+  // Plain-text body — the template the customer pasted verbatim. Resend
+  // accepts `text` alongside `html` and clients will show one or the
+  // other depending on preferences.
+  const text = [
+    "New Group Sign Up:",
+    "",
+    "STEP 1: SELECT YOUR PLANS",
+    "Health Plan(s) - Choose Up To 3",
+    joinOrDash(p.plans.health),
+    "",
+    "Dental Plan(s) - Choose Up To 2",
+    joinOrDash(p.plans.dental),
+    "",
+    "Vision Plan(s) - Choose Up To 2",
+    joinOrDash(p.plans.vision),
+    "",
+    "Supplemental Package - (Guardian)",
+    p.plans.supplemental || "—",
+    "",
+    "100% Employer Paid Life Insurance - Guardian",
+    p.plans.employerPaidLife || "—",
+    "",
+    "STEP 2: COMPANY INFO",
+    "Company Legal Name",
+    p.company.legalName,
+    "",
+    "Company Tax ID",
+    p.company.taxId,
+    "",
+    "Company Street Address",
+    p.company.streetAddress,
+    "",
+    "City, State & Zip",
+    p.company.cityStateZip,
+    "",
+    "STEP 3: CONTACT DETAILS",
+    "Contact Name",
+    p.contact.name,
+    "",
+    "Contact Work Email",
+    p.contact.workEmail,
+    "",
+    "Last 4 Of Social Security Number",
+    p.contact.ssnLast4,
+    "",
+    "Verify Last 4 Of Social Security Number",
+    p.contact.ssnLast4Verify,
+    "",
+    "Title",
+    p.contact.title,
+    "",
+    "Contact Phone Number",
+    p.contact.phone,
+    "",
+    "Why did you decide to move forward with Kennion and our Employee Benefits Program?",
+    p.contact.reason,
+    "",
+    "STEP 4: Acceptance",
+    "Do you have any additional comments or feedback for us?",
+    p.acceptance.additionalComments,
+    "",
+    "Acceptance",
+    "I ACCEPT",
+    "",
+    `Submitted: ${p.submittedAt.toISOString()}`,
+    `Group ID: ${p.groupId}`,
+  ].join("\n");
+
+  // Minimal HTML version preserves line breaks + section headings.
+  const html = `<pre style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.5; color: #1b1b1b; white-space: pre-wrap;">${escapeHtml(text)}</pre>`;
+
+  try {
+    const client = getResendClient();
+    const result = await client.emails.send({
+      from: FROM_EMAIL,
+      to: toEmail,
+      subject,
+      text,
+      html,
+    });
+    if (result.error) {
+      log(`[EMAIL ERROR] Acceptance email Resend error: ${JSON.stringify(result.error)}`);
+      throw new Error(`Email delivery failed: ${result.error.message}`);
+    }
+    // Deliberately don't log the body — it contains SSN last-4.
+    log(`[EMAIL SUCCESS] Acceptance email sent for group ${p.groupId} (id: ${result.data?.id})`);
+    return true;
+  } catch (err: any) {
+    log(`[EMAIL ERROR] Failed to send acceptance email for group ${p.groupId}: ${err.message}`);
+    throw new Error("Failed to send acceptance email. Please try again.");
+  }
+}
+
+function joinOrDash(items: string[]): string {
+  return items.length > 0 ? items.join(", ") : "—";
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
