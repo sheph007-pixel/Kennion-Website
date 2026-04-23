@@ -2146,10 +2146,21 @@ export async function registerRoutes(
         new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
       const members: CensusMember[] = censusEntriesToMembers(census);
+      // Match /api/rate/price-group's rating-area logic exactly so the
+      // PDF's numbers line up with what the customer sees in the grid.
+      // Group state+ZIP is the business's own address and takes priority
+      // over per-employee census zips; only fall back to census when the
+      // group doesn't have an address on file.
+      const fromGroup =
+        group.state || group.zipCode
+          ? inferRatingArea(group.state, group.zipCode)
+          : null;
+      const ratingArea = fromGroup ?? inferRatingAreaFromCensus(members);
+
       const pricing = priceGroup({
         census: members,
         effectiveDate,
-        ratingArea: inferRatingAreaFromCensus(members),
+        ratingArea,
         admin: "EBPA",
         group: group.companyName,
       });

@@ -1,15 +1,20 @@
 /**
  * server/proposal-pdf.ts
  *
- * Native PDF renderer for group proposals. Consumes the output of
- * `priceGroup()` (server/rate-engine.ts) and produces a multi-section PDF:
+ * Lean, native PDF renderer for group proposals. Consumes the output
+ * of `priceGroup()` (server/rate-engine.ts) plus the shared static
+ * dental / vision / supplemental tables, and produces exactly three
+ * sections:
  *
- *   1. Cover                         — Kennion letterhead, group facts, summary
- *   2. Medical Plans                 — traditional medical plan rates
- *   3. Supplemental & Virtual Care   — MEC + Virtual plan rates
- *   4. Census Roster                 — one row per enrolled member (paginated)
- *   5. Methodology                   — pricing formula + this group's factors
- *   6. Disclaimers                   — legal / actuarial caveats
+ *   Page 1   — Medical + Dental + Vision rates
+ *   Page 2   — Supplemental benefits
+ *   Page 3+  — Census roster in family order (employee, then the
+ *              employee's spouse/children beneath them)
+ *
+ * Intentionally no executive-summary, methodology, or disclaimers
+ * essays — the customer wants a clean rates sheet, not a whitepaper.
+ * A short "illustrative, subject to underwriting" line lives in the
+ * page footer.
  *
  * Zero runtime dependency on LibreOffice/Excel. Uses `pdfkit` only.
  */
@@ -17,14 +22,20 @@
 import PDFDocument from "pdfkit";
 import type { Group, CensusEntry } from "@shared/schema";
 import type { PricingResult } from "./rate-engine";
+import {
+  DENTAL_PLANS,
+  VISION_PLANS,
+  SUPPLEMENTAL,
+  type SimplePlan,
+  type TieredRates,
+  type SupplementalSection,
+} from "@shared/benefits-rates";
 
 // ── Kennion brand ─────────────────────────────────────────────────────────
 const NAVY = "#0B2545";
-const ACCENT = "#13315C";
 const GOLD = "#C9A961";
 const TEXT = "#1B1B1B";
 const MUTED = "#6B7280";
-const BORDER = "#D1D5DB";
 const ROW_ALT = "#F4F6FA";
 
 // ── Page geometry ─────────────────────────────────────────────────────────
@@ -32,45 +43,32 @@ const MARGIN_L = 48;
 const MARGIN_R = 48;
 const MARGIN_TOP = 48;
 const MARGIN_BOTTOM = 56;
-const HEADER_H = 62;
+const HEADER_H = 52;
 const FOOTER_BAND = 42;
 
-// ── Customer-facing plan names ────────────────────────────────────────────
-// Internal name (from factor-tables.json) → display name on proposal.
-// Any plan not in this map renders under its internal name.
+// ── Customer-facing medical plan names ────────────────────────────────────
 const PLAN_DISPLAY_MAP: Record<string, string> = {
-  "Deluxe Platinum": "Deluxe Platinum",
-  "Choice Gold": "Choice Gold",
-  "Basic Gold": "Basic Gold",
-  "Preferred Silver": "Preferred Silver",
-  "Enhanced Silver": "Enhanced Silver",
-  "Classic Silver": "Classic Silver",
   "Saver HSA": "Saver HSA (Health Savings Account)",
   "Elite Health Plan": "Elite Health",
   "Premier Health Plan": "Premier Health",
   "Select Health Plan": "Select Health",
   "Core Health Plan": "Core Health",
+  "Value Essential MEC": "Value Essential (MEC)",
   "Freedom Platinum": "Freedom Platinum (Generic Rx)",
   "Freedom Gold": "Freedom Gold (Generic Rx)",
   "Freedom Silver": "Freedom Silver (Generic Rx)",
   "Freedom Bronze": "Freedom Bronze (Generic Rx)",
-  "Value Essential MEC": "Value Essential (MEC)",
-  "AL Healthy 500": "AL Healthy 500",
-  "Platinum": "Platinum",
-  "Preferred Gold": "Preferred Gold",
-  "Virtual 1,000": "Virtual 1,000",
-  "Virtual 2,500": "Virtual 2,500",
-  "Virtual 5,000": "Virtual 5,000",
-  "Virtual 10,000": "Virtual 10,000",
 };
 
-// Traditional medical plans — page 1 of rates.
+// Medical plans — page 1. Mirrors the client's MEDICAL_PLAN_ORDER in
+// `use-proposal.ts` exactly so the PDF lists the same 15 plans the
+// customer sees under the Medical tab, in the same order. Virtual /
+// MEC / legacy plans are intentionally omitted from the proposal —
+// they're admin-only in the engine and don't appear in the UI.
 const MEDICAL_PLAN_ORDER = [
   "Deluxe Platinum",
-  "Platinum",
   "Choice Gold",
   "Basic Gold",
-  "Preferred Gold",
   "Preferred Silver",
   "Enhanced Silver",
   "Classic Silver",
@@ -83,17 +81,6 @@ const MEDICAL_PLAN_ORDER = [
   "Freedom Gold",
   "Freedom Silver",
   "Freedom Bronze",
-  "AL Healthy 500",
-];
-
-// Supplemental & Virtual Care — page 2 of rates. MEC + virtual-only plans
-// belong together since they're secondary / limited coverage offerings.
-const SUPPLEMENTAL_VIRTUAL_ORDER = [
-  "Value Essential MEC",
-  "Virtual 1,000",
-  "Virtual 2,500",
-  "Virtual 5,000",
-  "Virtual 10,000",
 ];
 
 // ── Formatting helpers ────────────────────────────────────────────────────
@@ -142,46 +129,29 @@ function contentWidth(doc: Doc): number {
   return doc.page.width - MARGIN_L - MARGIN_R;
 }
 
+// Slim branded header strip: logo + tagline on the left, section title
+// on the right. Same on every page so the document reads as one piece.
 function header(doc: Doc, title: string) {
   const pw = doc.page.width;
   doc.save();
   doc.rect(0, 0, pw, HEADER_H).fill(NAVY);
-  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(18)
-    .text("KENNION", MARGIN_L, 20, { continued: true })
-    .font("Helvetica").fontSize(11).fillColor(GOLD)
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(16)
+    .text("KENNION", MARGIN_L, 18, { continued: true })
+    .font("Helvetica").fontSize(10).fillColor(GOLD)
     .text("   Captive Health Solutions", { continued: false });
   doc.font("Helvetica").fontSize(10).fillColor("#E5E7EB")
-    .text(title, pw - 260, 24, { width: 220, align: "right" });
+    .text(title, pw - 280, 20, { width: 232, align: "right", lineBreak: false });
   doc.restore();
-  doc.y = HEADER_H + 28;
+  doc.y = HEADER_H + 18;
   doc.fillColor(TEXT);
 }
 
-function hr(doc: Doc, y?: number) {
-  const yy = y ?? doc.y;
-  doc.save().strokeColor(BORDER).lineWidth(0.5)
-    .moveTo(MARGIN_L, yy).lineTo(doc.page.width - MARGIN_R, yy).stroke().restore();
-  doc.y = yy + 8;
-}
-
-function sectionTitle(doc: Doc, title: string, subtitle?: string) {
-  doc.fillColor(NAVY).font("Helvetica-Bold").fontSize(20).text(title);
-  if (subtitle) {
-    doc.moveDown(0.2);
-    doc.fillColor(MUTED).font("Helvetica").fontSize(10).text(subtitle);
-  }
-  doc.moveDown(0.6);
-}
-
-// Page-footer band: a thin brand rule plus the "Kennion — …" tagline.
-// Rendered after layout on every page via doc.bufferedPageRange().
-// We zero the bottom margin while stamping — pdfkit's text pipeline
-// treats writes below the bottom margin as overflow and auto-injects
-// a new page, which would silently double the PDF length here.
 function renderFooterBand(doc: Doc, pageNum: number, totalPages: number) {
   const pw = doc.page.width;
   const ph = doc.page.height;
   const savedMarginBottom = doc.page.margins.bottom;
+  // pdfkit auto-paginates if text is drawn below the bottom margin;
+  // zero the margin while we stamp the footer so it stays on THIS page.
   doc.page.margins.bottom = 0;
   try {
     doc.save();
@@ -191,7 +161,7 @@ function renderFooterBand(doc: Doc, pageNum: number, totalPages: number) {
       .stroke();
     doc.fillColor(MUTED).font("Helvetica").fontSize(8)
       .text(
-        "Kennion — Captive Health Solutions  •  Rates are illustrative and subject to final underwriting approval.",
+        "Rates are illustrative and subject to final underwriting approval.",
         MARGIN_L, ph - 28,
         { width: pw - MARGIN_L - MARGIN_R, align: "left", lineBreak: false },
       );
@@ -205,218 +175,254 @@ function renderFooterBand(doc: Doc, pageNum: number, totalPages: number) {
   }
 }
 
-// ── Tables ────────────────────────────────────────────────────────────────
-// Shared rate-table renderer used by both Medical and Supplemental pages.
-// Draws the 5-column grid (plan / EE / EC / ES / EF) with alternating rows
-// and a navy header; paginates automatically with a continued-header.
-function renderRateTable(
-  doc: Doc,
-  plans: string[],
-  pricing: PricingResult,
-  contTitle: string,
-) {
+// Section header — small eyebrow title, no subtitle. Used inline on
+// page 1 to separate Medical / Dental / Vision blocks.
+function sectionHeader(doc: Doc, label: string) {
+  const y = doc.y;
+  doc.fillColor(NAVY).font("Helvetica-Bold").fontSize(11).text(
+    label,
+    MARGIN_L,
+    y,
+    { width: contentWidth(doc), lineBreak: false },
+  );
+  doc.y = y + 14;
+}
+
+// Shared tiered-rate table. `rows` is [displayName, note?, TieredRates].
+// Compact row height keeps 18 medical + 7 dental + 4 vision tables all
+// on one Letter page. Note column is optional and renders small-italic
+// beneath the plan name when present.
+type TableRow = {
+  name: string;
+  note?: string;
+  rates: { EE: number; EC: number; ES: number; EF: number };
+};
+
+function renderTieredTable(doc: Doc, rows: TableRow[], opts?: { rowH?: number; contTitle?: string }) {
   const pw = doc.page.width;
   const leftX = MARGIN_L;
   const rightX = pw - MARGIN_R;
-  // Wider tier columns so header labels never wrap. A wrapped text
-  // that overflows the page triggers pdfkit's continueOnNewPage
-  // auto-pagination, which silently injects blank pages.
-  const planColW = 196;
+  const planColW = 220;
   const tierColW = (rightX - leftX - planColW) / 4;
-  const rowH = 18;
+  const rowH = opts?.rowH ?? 16;
+  const headerH = 18;
 
   function drawHeaderBand() {
-    const y = doc.y;
+    const y0 = doc.y;
     doc.save();
-    doc.rect(leftX, y, rightX - leftX, rowH + 4).fill(NAVY);
-    doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(10);
-    doc.text("Plan", leftX + 8, y + 5, { width: planColW - 8, lineBreak: false });
+    doc.rect(leftX, y0, rightX - leftX, headerH).fill(NAVY);
+    doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(9);
+    doc.text("Plan", leftX + 8, y0 + 5, { width: planColW - 8, lineBreak: false });
     const tiers: string[] = ["EE Only", "+ Children", "+ Spouse", "+ Family"];
     tiers.forEach((label, i) => {
-      const tx = leftX + planColW + i * tierColW;
-      doc.text(label, tx, y + 5, {
-        width: tierColW,
-        align: "center",
-        lineBreak: false,
+      doc.text(label, leftX + planColW + i * tierColW, y0 + 5, {
+        width: tierColW, align: "center", lineBreak: false,
       });
     });
     doc.restore();
-    doc.y = y + rowH + 8;
-  }
-
-  function drawRow(planInternal: string, idx: number) {
-    const rate = pricing.plan_rates[planInternal];
-    if (!rate) return;
-    const y = doc.y;
-    if (idx % 2 === 0) {
-      doc.save().rect(leftX, y - 2, rightX - leftX, rowH).fill(ROW_ALT).restore();
-    }
-    doc.fillColor(TEXT).font("Helvetica").fontSize(10);
-    const display = PLAN_DISPLAY_MAP[planInternal] || planInternal;
-    doc.text(display, leftX + 8, y + 2, {
-      width: planColW - 8,
-      lineBreak: false,
-      ellipsis: true,
-    });
-    const values = [rate.EE, rate.EC, rate.ES, rate.EF];
-    values.forEach((v, i) => {
-      const tx = leftX + planColW + i * tierColW;
-      doc.text(fmtUSD(v), tx, y + 2, {
-        width: tierColW - 6,
-        align: "right",
-        lineBreak: false,
-      });
-    });
-    doc.y = y + rowH;
+    doc.y = y0 + headerH + 2;
   }
 
   drawHeaderBand();
-  plans.forEach((p, i) => {
-    if (doc.y > doc.page.height - FOOTER_BAND - 30) {
+
+  rows.forEach((r, idx) => {
+    // Manual pagination — pdfkit's auto-paginator would slip rows onto
+    // a new page without repeating the header band or respecting
+    // surrounding layout, so we handle it explicitly.
+    if (doc.y + rowH > doc.page.height - MARGIN_BOTTOM) {
       doc.addPage();
-      header(doc, contTitle);
+      if (opts?.contTitle) header(doc, opts.contTitle);
       drawHeaderBand();
     }
-    drawRow(p, i);
+    const y = doc.y;
+    if (idx % 2 === 0) {
+      doc.save().rect(leftX, y - 1, rightX - leftX, rowH).fill(ROW_ALT).restore();
+    }
+    doc.fillColor(TEXT).font("Helvetica").fontSize(9.5);
+    doc.text(r.name, leftX + 8, y + 2, {
+      width: planColW - 8, lineBreak: false, ellipsis: true,
+    });
+    const values = [r.rates.EE, r.rates.EC, r.rates.ES, r.rates.EF];
+    values.forEach((v, i) => {
+      doc.text(fmtUSD(v), leftX + planColW + i * tierColW, y + 2, {
+        width: tierColW - 6, align: "right", lineBreak: false,
+      });
+    });
+    doc.y = y + rowH;
   });
 }
 
-// ── 1 · Cover ─────────────────────────────────────────────────────────────
-function renderCover(doc: Doc, group: Group, pricing: PricingResult) {
-  header(doc, "Group Medical Proposal");
-
-  doc.moveDown(2);
-  doc.fillColor(NAVY).font("Helvetica-Bold").fontSize(28)
-    .text("Group Medical Proposal");
-  doc.moveDown(0.3);
-  doc.fillColor(ACCENT).font("Helvetica").fontSize(14).text("Prepared for");
-  doc.fillColor(TEXT).font("Helvetica-Bold").fontSize(22)
-    .text(group.companyName || "—");
-
-  doc.moveDown(1.5);
-  hr(doc);
-  doc.moveDown(0.5);
-
-  const labelW = 190;
-  const rows: Array<[string, string]> = [
-    ["Contact", group.contactName || "—"],
-    ["Contact Email", group.contactEmail || "—"],
-    ["Effective Date", fmtDateLong(pricing.effective_date)],
-    ["Lives", String(pricing.n_members)],
-    ["Employees", String(pricing.n_employees)],
-    ["Rating Area", pricing.rating_area],
-    ["Administrator", String(pricing.admin)],
-    ["Prepared", fmtDateLong(new Date().toISOString().slice(0, 10))],
-  ];
-  doc.fontSize(11);
-  for (const [k, v] of rows) {
+// ── Page 1 — Medical + Dental + Vision ───────────────────────────────────
+function renderMedicalDentalVision(
+  doc: Doc,
+  group: Group,
+  pricing: PricingResult,
+) {
+  // Top block: group name + effective/area meta
+  {
     const y = doc.y;
-    doc.fillColor(MUTED).font("Helvetica").text(k, MARGIN_L, y, { width: labelW });
-    doc.fillColor(TEXT).font("Helvetica-Bold").text(v, MARGIN_L + labelW, y);
-    doc.moveDown(0.3);
+    doc.fillColor(NAVY).font("Helvetica-Bold").fontSize(20).text(
+      group.companyName || "—",
+      MARGIN_L, y,
+      { width: contentWidth(doc), lineBreak: false },
+    );
+    doc.y = y + 24;
   }
-
-  doc.moveDown(1.5);
-  hr(doc);
-  doc.moveDown(0.5);
-
-  doc.fillColor(NAVY).font("Helvetica-Bold").fontSize(14).text("Executive Summary");
-  doc.moveDown(0.3);
-  doc.fillColor(TEXT).font("Helvetica").fontSize(11).text(
-    `This proposal presents level-funded medical plan options for ${group.companyName}, ` +
-    `covering ${pricing.n_members} covered lives (${pricing.n_employees} employees) with ` +
-    `an effective date of ${fmtDateLong(pricing.effective_date)}. Rates are calculated ` +
-    `using Kennion's composite rating engine, which applies the group's average employee ` +
-    `age factor (${pricing.group_age_factor_ee.toFixed(4)}), the ${pricing.rating_area} ` +
-    `area factor (${pricing.area_factor.toFixed(3)}), and an annualized trend adjustment ` +
-    `to the actuary-certified base PMPM for each plan.`,
-    { align: "left", lineGap: 2 },
+  doc.fillColor(MUTED).font("Helvetica").fontSize(10).text(
+    `Effective ${fmtDateLong(pricing.effective_date)}  •  ${pricing.rating_area}  •  ${pricing.n_members} lives · ${pricing.n_employees} employees`,
+    { lineBreak: false },
   );
-}
-
-// ── 2 · Medical Plans ─────────────────────────────────────────────────────
-function renderMedicalPlans(doc: Doc, group: Group, pricing: PricingResult) {
-  doc.addPage();
-  header(doc, "Medical Plans");
-
-  sectionTitle(
-    doc,
-    "Medical Plans — Monthly Rates",
-    `${group.companyName}  •  Effective ${fmtDateLong(pricing.effective_date)}  •  ${pricing.rating_area}  •  ${pricing.n_members} lives`,
-  );
+  doc.moveDown(0.8);
 
   const available = Object.keys(pricing.plan_rates);
-  const plans = MEDICAL_PLAN_ORDER.filter((p) => available.includes(p));
-  renderRateTable(doc, plans, pricing, "Medical Plans (cont.)");
+  const medicalRows: TableRow[] = MEDICAL_PLAN_ORDER.filter((p) =>
+    available.includes(p),
+  ).map((p) => ({
+    name: PLAN_DISPLAY_MAP[p] || p,
+    rates: pricing.plan_rates[p],
+  }));
 
-  doc.moveDown(0.8);
-  doc.fillColor(MUTED).font("Helvetica-Oblique").fontSize(9).text(
-    "All rates are monthly and include plan benefits, stop-loss, administration, " +
-    "and network access. Final rates are subject to completed underwriting, receipt " +
-    "of required documentation, and any applicable state or federal adjustments.",
-    { width: contentWidth(doc), align: "left" },
-  );
+  sectionHeader(doc, "Medical");
+  renderTieredTable(doc, medicalRows, { rowH: 15 });
+
+  doc.moveDown(0.9);
+  sectionHeader(doc, "Dental");
+  renderTieredTable(doc, toSimpleRows(DENTAL_PLANS), { rowH: 15 });
+
+  doc.moveDown(0.9);
+  sectionHeader(doc, "Vision");
+  renderTieredTable(doc, toSimpleRows(VISION_PLANS), { rowH: 15 });
 }
 
-// ── 3 · Supplemental & Virtual Care ──────────────────────────────────────
-function renderSupplementalVirtual(doc: Doc, group: Group, pricing: PricingResult) {
+function toSimpleRows(plans: SimplePlan[]): TableRow[] {
+  return plans.map((p) => ({
+    name: p.name,
+    rates: tieredToFour(p.rates),
+  }));
+}
+
+function tieredToFour(r: TieredRates): { EE: number; EC: number; ES: number; EF: number } {
+  return { EE: r.EE, EC: r.EE_CH, ES: r.EE_SP, EF: r.EE_FAM };
+}
+
+// ── Page 2 — Supplemental ────────────────────────────────────────────────
+function renderSupplemental(
+  doc: Doc,
+  group: Group,
+  pricing: PricingResult,
+) {
   doc.addPage();
-  header(doc, "Supplemental & Virtual Care");
+  header(doc, "Supplemental Benefits");
 
-  sectionTitle(
-    doc,
-    "Supplemental & Virtual Care — Monthly Rates",
-    `${group.companyName}  •  Effective ${fmtDateLong(pricing.effective_date)}  •  ${pricing.rating_area}`,
-  );
-
-  const available = Object.keys(pricing.plan_rates);
-  const supplemental = SUPPLEMENTAL_VIRTUAL_ORDER.filter((p) => available.includes(p));
-  const accountedFor = new Set([...MEDICAL_PLAN_ORDER, ...SUPPLEMENTAL_VIRTUAL_ORDER]);
-  const extras = available.filter((p) => !accountedFor.has(p)).sort();
-
-  if (supplemental.length > 0) {
-    renderRateTable(doc, supplemental, pricing, "Supplemental & Virtual Care (cont.)");
-  } else {
-    doc.fillColor(MUTED).font("Helvetica-Oblique").fontSize(11)
-      .text("No supplemental or virtual-care plans are quoted for this group.");
+  {
+    const y = doc.y;
+    doc.fillColor(NAVY).font("Helvetica-Bold").fontSize(20).text(
+      group.companyName || "—",
+      MARGIN_L, y,
+      { width: contentWidth(doc), lineBreak: false },
+    );
+    doc.y = y + 24;
   }
-
-  if (extras.length > 0) {
-    doc.moveDown(0.8);
-    doc.fillColor(ACCENT).font("Helvetica-Bold").fontSize(12).text("Additional Plans");
-    doc.moveDown(0.2);
-    renderRateTable(doc, extras, pricing, "Additional Plans (cont.)");
-  }
-
-  doc.moveDown(0.8);
-  doc.fillColor(MUTED).font("Helvetica-Oblique").fontSize(9).text(
-    "Value Essential (MEC) is a Minimum Essential Coverage plan and does not " +
-    "satisfy ACA Minimum Value. Virtual plans include unlimited virtual primary-care " +
-    "visits; see the plan summary for in-person benefit details.",
-    { width: contentWidth(doc), align: "left" },
+  doc.fillColor(MUTED).font("Helvetica").fontSize(10).text(
+    `Effective ${fmtDateLong(pricing.effective_date)}  •  Voluntary / employee-paid`,
+    { lineBreak: false },
   );
+  doc.y += 6;
+
+  // Voluntary benefits from the shared tables. Tight spacing so the
+  // six sections fit on one page — a Kennion supplemental proposal is
+  // expected to be exactly one page.
+  const sections = Object.values(SUPPLEMENTAL);
+  sections.forEach((section, idx) => {
+    renderSupplementalSection(doc, section);
+    if (idx < sections.length - 1) {
+      doc.y += 4;
+      // Safety paginate if content still overflows. Only happens if
+      // the SUPPLEMENTAL table gains new sections without tightening.
+      if (doc.y > doc.page.height - FOOTER_BAND - 60) {
+        doc.addPage();
+        header(doc, "Supplemental Benefits (cont.)");
+      }
+    }
+  });
 }
 
-// ── 4 · Census Roster ─────────────────────────────────────────────────────
+function renderSupplementalSection(doc: Doc, section: SupplementalSection) {
+  sectionHeader(doc, section.label);
+  if (section.note) {
+    const y = doc.y;
+    doc.fillColor(MUTED).font("Helvetica-Oblique").fontSize(9).text(
+      section.note,
+      MARGIN_L,
+      y,
+      { width: contentWidth(doc), lineBreak: false },
+    );
+    doc.y = y + 12;
+  }
+
+  if (section.kind === "flat") {
+    renderTieredTable(
+      doc,
+      [{ name: section.label, rates: tieredToFour(section.rates) }],
+      { rowH: 14 },
+    );
+    return;
+  }
+
+  if (section.kind === "plans") {
+    renderTieredTable(
+      doc,
+      section.plans.map((p) => ({ name: p.label, rates: tieredToFour(p.rates) })),
+      { rowH: 14 },
+    );
+    return;
+  }
+
+  // kind === "bands" — render a narrow table using band labels in the
+  // plan column. Some bands (e.g. STD) only fill EE; missing tiers show
+  // as "—".
+  const rows: TableRow[] = section.bands.map((b) => ({
+    name: b.label,
+    rates: {
+      EE: b.rates.EE ?? NaN,
+      EC: b.rates.EE_CH ?? NaN,
+      ES: b.rates.EE_SP ?? NaN,
+      EF: b.rates.EE_FAM ?? NaN,
+    },
+  }));
+  renderTieredTable(doc, rows, { rowH: 12 });
+}
+
+// ── Page 3+ — Census in family order ─────────────────────────────────────
 function renderCensus(doc: Doc, group: Group, census: CensusEntry[]) {
   doc.addPage();
   header(doc, "Census Roster");
 
-  sectionTitle(
-    doc,
-    "Census Roster",
-    `${group.companyName}  •  ${census.length} enrolled ${census.length === 1 ? "member" : "members"}`,
+  {
+    const y = doc.y;
+    doc.fillColor(NAVY).font("Helvetica-Bold").fontSize(20).text(
+      group.companyName || "—",
+      MARGIN_L, y,
+      { width: contentWidth(doc), lineBreak: false },
+    );
+    doc.y = y + 24;
+  }
+  doc.fillColor(MUTED).font("Helvetica").fontSize(10).text(
+    `${census.length} enrolled ${census.length === 1 ? "member" : "members"}`,
+    { lineBreak: false },
   );
+  doc.moveDown(0.8);
+
+  const ordered = orderByFamily(census);
 
   const pw = doc.page.width;
   const leftX = MARGIN_L;
   const rightX = pw - MARGIN_R;
 
-  // Columns: #, Name, Relationship, Date of Birth, Gender, ZIP
   const colNumW = 26;
-  const colRelW = 86;
-  const colDobW = 84;
-  const colGenderW = 60;
+  const colRelW = 82;
+  const colDobW = 82;
+  const colGenderW = 56;
   const colZipW = 60;
   const colNameW = rightX - leftX - colNumW - colRelW - colDobW - colGenderW - colZipW;
 
@@ -433,23 +439,36 @@ function renderCensus(doc: Doc, group: Group, census: CensusEntry[]) {
   function drawHeaderBand() {
     const y = doc.y;
     doc.save();
-    doc.rect(leftX, y, rightX - leftX, rowH + 4).fill(NAVY);
+    doc.rect(leftX, y, rightX - leftX, rowH + 2).fill(NAVY);
     doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(9);
     let x = leftX + 8;
     cols.forEach((c) => {
-      doc.text(c.key, x, y + 5, { width: c.w - 6, align: c.align, lineBreak: false });
+      doc.text(c.key, x, y + 4, { width: c.w - 6, align: c.align, lineBreak: false });
       x += c.w;
     });
     doc.restore();
-    doc.y = y + rowH + 8;
+    doc.y = y + rowH + 4;
   }
 
-  function drawRow(entry: CensusEntry, idx: number) {
-    const y = doc.y;
-    if (idx % 2 === 0) {
-      doc.save().rect(leftX, y - 2, rightX - leftX, rowH).fill(ROW_ALT).restore();
+  drawHeaderBand();
+  ordered.forEach((entry, idx) => {
+    if (doc.y > doc.page.height - FOOTER_BAND - 24) {
+      doc.addPage();
+      header(doc, "Census Roster (cont.)");
+      drawHeaderBand();
     }
-    doc.fillColor(TEXT).font("Helvetica").fontSize(9);
+    const y = doc.y;
+    // Shade employee rows more prominently so the start of each family
+    // is visible; keep dependents on a plain background so the visual
+    // grouping reads naturally.
+    const isEE = (entry.relationship || "").toUpperCase() === "EE";
+    if (isEE) {
+      doc.save().rect(leftX, y - 1, rightX - leftX, rowH).fill(ROW_ALT).restore();
+    }
+    doc
+      .fillColor(TEXT)
+      .font(isEE ? "Helvetica-Bold" : "Helvetica")
+      .fontSize(9);
     const values = [
       String(idx + 1),
       `${entry.firstName} ${entry.lastName}`.trim(),
@@ -461,151 +480,47 @@ function renderCensus(doc: Doc, group: Group, census: CensusEntry[]) {
     let x = leftX + 8;
     cols.forEach((c, i) => {
       doc.text(values[i], x, y + 3, {
-        width: c.w - 6,
-        align: c.align,
-        lineBreak: false,
-        ellipsis: true,
+        width: c.w - 6, align: c.align, lineBreak: false, ellipsis: true,
       });
       x += c.w;
     });
     doc.y = y + rowH;
-  }
-
-  // Sort: Employees first (EE), then dependents grouped beneath; stable
-  // within groups by last name. Makes the roster easy to scan family-by-family.
-  const sorted = [...census].sort((a, b) => {
-    const relOrder = (r: string) => (r === "EE" ? 0 : r === "SP" ? 1 : 2);
-    const byRel = relOrder(a.relationship) - relOrder(b.relationship);
-    if (byRel !== 0) return byRel;
-    return (a.lastName || "").localeCompare(b.lastName || "");
   });
+}
 
-  drawHeaderBand();
-  sorted.forEach((entry, i) => {
-    if (doc.y > doc.page.height - FOOTER_BAND - 30) {
-      doc.addPage();
-      header(doc, "Census Roster (cont.)");
-      drawHeaderBand();
+// Walk the roster in insertion order, grouping each Employee with the
+// Spouse/Child rows that appear beneath them in the source — matches
+// the census-modal's "Spouse/Child rows attach to the most recent
+// Employee above" convention. Orphaned dependents (no preceding EE)
+// fall to the end so nothing disappears from the roster.
+function orderByFamily(census: CensusEntry[]): CensusEntry[] {
+  const families: CensusEntry[][] = [];
+  const orphans: CensusEntry[] = [];
+  let current: CensusEntry[] | null = null;
+
+  for (const row of census) {
+    const rel = (row.relationship || "").toUpperCase();
+    if (rel === "EE") {
+      current = [row];
+      families.push(current);
+    } else if (current) {
+      current.push(row);
+    } else {
+      orphans.push(row);
     }
-    drawRow(entry, i);
-  });
-
-  doc.moveDown(0.8);
-  doc.fillColor(MUTED).font("Helvetica-Oblique").fontSize(9).text(
-    "Census as submitted for underwriting. Contains protected health information — " +
-    "handle in accordance with HIPAA. Treat this roster as confidential.",
-    { width: contentWidth(doc), align: "left" },
-  );
-}
-
-// ── 5 · Methodology ───────────────────────────────────────────────────────
-function renderMethodology(doc: Doc, pricing: PricingResult) {
-  doc.addPage();
-  header(doc, "Rating Methodology");
-
-  sectionTitle(doc, "How These Rates Were Calculated");
-
-  doc.fillColor(TEXT).font("Helvetica").fontSize(11).text(
-    "Kennion prices each plan using a deterministic, actuary-certified composite " +
-    "formula. The rate for an \"Employee Only\" tier is built from four components:",
-    { lineGap: 2 },
-  );
-  doc.moveDown(0.5);
-  doc.font("Courier").fontSize(10).fillColor(ACCENT).text(
-    "  EE rate  =  base_PMPM[plan]  ×  avg_EE_age_factor  ×  area_factor  ×  trend_adj",
-  );
-  doc.moveDown(0.3);
-  doc.font("Helvetica").fontSize(11).fillColor(TEXT).text(
-    "Dependent tiers (Employee + Children, Employee + Spouse, Employee + Family) " +
-    "are derived by applying the composite tier multipliers to the Employee Only rate:",
-    { lineGap: 2 },
-  );
-  doc.moveDown(0.4);
-  doc.font("Courier").fontSize(10).fillColor(ACCENT).text(
-    "  EC  =  EE × 1.85     ES  =  EE × 2.00     EF  =  EE × 2.85",
-  );
-  doc.moveDown(0.8);
-  hr(doc);
-  doc.moveDown(0.4);
-
-  doc.fillColor(NAVY).font("Helvetica-Bold").fontSize(14).text("Your Group's Factors");
-  doc.moveDown(0.3);
-
-  const factors: Array<[string, string]> = [
-    ["Rating Area", pricing.rating_area],
-    ["Area Factor", pricing.area_factor.toFixed(4)],
-    ["Average EE Age Factor", pricing.group_age_factor_ee.toFixed(5)],
-    ["All-Member Avg Age Factor", pricing.all_member_avg_age_factor.toFixed(5)],
-    ["Trend Adjustment", pricing.trend_adjustment.toFixed(4)],
-    ["Average Age (Employees)", pricing.avg_age.toFixed(1) + " yrs"],
-    ["Tier Multipliers", `EE ${pricing.tier_factors.EE} / ECH ${pricing.tier_factors.ECH} / ESP ${pricing.tier_factors.ESP} / FAM ${pricing.tier_factors.FAM}`],
-    ["Engine Version", pricing.engine_version],
-    ["Factor Tables Version / SHA", `${pricing.factor_tables_version} / ${pricing.factor_tables_sha256.slice(0, 16)}`],
-  ];
-  doc.fontSize(11);
-  const labelW = 230;
-  for (const [k, v] of factors) {
-    const y = doc.y;
-    doc.fillColor(MUTED).font("Helvetica").text(k, MARGIN_L, y, { width: labelW });
-    doc.fillColor(TEXT).font("Helvetica-Bold").text(v, MARGIN_L + labelW, y);
-    doc.moveDown(0.25);
   }
 
-  doc.moveDown(0.8);
-  hr(doc);
-  doc.moveDown(0.4);
-
-  doc.fillColor(NAVY).font("Helvetica-Bold").fontSize(14).text("Auditability");
-  doc.moveDown(0.3);
-  doc.fillColor(TEXT).font("Helvetica").fontSize(11).text(
-    "Every rate on this proposal is reproducible. Given the same census, the same " +
-    "effective date, and the same factor table version (identified by the SHA above), " +
-    "Kennion's rate engine will return byte-identical rates.",
-    { lineGap: 2 },
-  );
-}
-
-// ── 6 · Disclaimers ──────────────────────────────────────────────────────
-function renderDisclaimers(doc: Doc) {
-  doc.addPage();
-  header(doc, "Disclaimers & Terms");
-
-  sectionTitle(doc, "Disclaimers");
-
-  doc.fillColor(TEXT).font("Helvetica").fontSize(10).text(
-    "This proposal is presented for illustrative purposes and represents preliminary " +
-    "rate indications based on the census data provided. Rates are subject to the following " +
-    "terms and conditions:",
-    { lineGap: 2 },
-  );
-  doc.moveDown(0.5);
-
-  const items: string[] = [
-    "Final rates are contingent upon completed underwriting review, including receipt of any requested documentation, prior claims experience, and medical history where applicable.",
-    "Rate tables used in this proposal are maintained by a credentialed actuary and reviewed periodically. Kennion reserves the right to revise rates if the underlying actuarial tables are updated before policy issuance.",
-    "Proposed plans are offered through a level-funded arrangement. Employer reimbursement obligations, claims fund requirements, and stop-loss coverage are detailed in the accompanying plan documents and summary of benefits.",
-    "Rates quoted assume the census provided is complete and accurate as of the effective date. Material changes in group composition (greater than 10% change in enrolled lives or a material shift in dependent tiers) may trigger re-rating.",
-    "This proposal does not constitute an offer of insurance. Coverage is bound only upon execution of an approved enrollment package and receipt of the initial funding.",
-    "All rates exclude any applicable state premium taxes, assessments, or regulatory fees that may be charged in addition to the monthly rate.",
-    "Kennion and its affiliates are not acting as a fiduciary or providing legal, tax, or accounting advice. The employer should consult its own advisors regarding plan selection and regulatory compliance (ERISA, ACA, HIPAA, and applicable state law).",
-  ];
-
-  for (const it of items) {
-    doc.fillColor(NAVY).font("Helvetica-Bold").fontSize(11)
-      .text("•", MARGIN_L, doc.y, { continued: true, lineGap: 2 });
-    doc.fillColor(TEXT).font("Helvetica").fontSize(10).text("  " + it, { lineGap: 2 });
-    doc.moveDown(0.3);
+  const out: CensusEntry[] = [];
+  for (const fam of families) {
+    // Within a family: EE first (already), then Spouse, then Children.
+    const ee = fam[0];
+    const deps = fam.slice(1).sort((a, b) => {
+      const rank = (r: string) => ((r || "").toUpperCase() === "SP" ? 0 : 1);
+      return rank(a.relationship) - rank(b.relationship);
+    });
+    out.push(ee, ...deps);
   }
-
-  doc.moveDown(1);
-  hr(doc);
-  doc.moveDown(0.4);
-
-  doc.fillColor(MUTED).font("Helvetica-Oblique").fontSize(9).text(
-    "Questions about this proposal? Contact your Kennion representative. " +
-    "© Kennion Captive Health Solutions. All rights reserved.",
-    { align: "center" },
-  );
+  return [...out, ...orphans];
 }
 
 // ── Public entry point ────────────────────────────────────────────────────
@@ -631,9 +546,9 @@ export async function renderProposalPdf(
         },
         bufferPages: true,
         info: {
-          Title: `${group.companyName} — Group Medical Proposal`,
+          Title: `${group.companyName} — Group Benefits Proposal`,
           Author: "Kennion Captive Health Solutions",
-          Subject: "Group Medical Proposal",
+          Subject: "Group Benefits Proposal",
           Creator: "Kennion Rate Engine",
           Producer: `Kennion Rate Engine v${pricing.engine_version}`,
         },
@@ -650,16 +565,17 @@ export async function renderProposalPdf(
       });
       doc.on("error", reject);
 
-      renderCover(doc, group, pricing);
-      renderMedicalPlans(doc, group, pricing);
-      renderSupplementalVirtual(doc, group, pricing);
-      if (census.length > 0) renderCensus(doc, group, census);
-      renderMethodology(doc, pricing);
-      renderDisclaimers(doc);
+      // Page 1
+      header(doc, "Group Benefits Proposal");
+      renderMedicalDentalVision(doc, group, pricing);
 
-      // Stamp footers on every page now that layout is complete. Using
-      // bufferPages + bufferedPageRange lets us include the final total
-      // on the very first page.
+      // Page 2
+      renderSupplemental(doc, group, pricing);
+
+      // Page 3+
+      if (census.length > 0) renderCensus(doc, group, census);
+
+      // Stamp footers on every page now that layout is complete.
       const range = doc.bufferedPageRange();
       for (let i = 0; i < range.count; i++) {
         doc.switchToPage(range.start + i);
@@ -672,3 +588,4 @@ export async function renderProposalPdf(
     }
   });
 }
+
