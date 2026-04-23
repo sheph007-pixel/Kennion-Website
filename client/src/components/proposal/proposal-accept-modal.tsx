@@ -89,13 +89,18 @@ type AcceptState = {
   };
 };
 
-function initialState(group: Group, preselected: string | null): AcceptState {
+function initialState(group: Group, _preselected: string | null): AcceptState {
+  // Intentionally start every plan selection blank so the user has to
+  // actively pick their coverage on each question — carrying the
+  // cockpit's hover / quote selection over felt presumptuous. Company
+  // + contact info still seeds from the group record since those are
+  // facts we already know.
   return {
     plans: {
-      health: preselected && HEALTH_PLAN_OPTIONS.includes(preselected) ? [preselected] : [],
+      health: [],
       dental: [],
       vision: [],
-      supplemental: SUPPLEMENTAL_OPTION,
+      supplemental: "",
       employerPaidLife: "",
     },
     company: {
@@ -466,8 +471,19 @@ function Step3Contact({
           data-testid="input-contact-email"
         />
       </Field>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field id="ssn4" label="Last 4 of SSN" required subtitle="Used for compliance only">
+      {/* Single label+subtitle block above a clean two-input row so
+          both SSN inputs share the same baseline — a per-field
+          subtitle on only one side leaves the other input sitting
+          higher. */}
+      <div className="space-y-1.5">
+        <Label>
+          Last 4 of SSN
+          <span className="ml-0.5 text-destructive">*</span>
+        </Label>
+        <p className="text-xs text-muted-foreground">
+          Used for compliance only. Enter the same four digits in both fields.
+        </p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input
             id="ssn4"
             type="password"
@@ -475,12 +491,10 @@ function Step3Contact({
             autoComplete="off"
             value={state.contact.ssnLast4}
             onChange={ssnHandler("ssnLast4")}
-            placeholder="●●●●"
+            placeholder="Last 4 of SSN"
             maxLength={4}
             data-testid="input-ssn-last4"
           />
-        </Field>
-        <Field id="ssn4v" label="Verify Last 4 of SSN" required>
           <Input
             id="ssn4v"
             type="password"
@@ -488,11 +502,11 @@ function Step3Contact({
             autoComplete="off"
             value={state.contact.ssnLast4Verify}
             onChange={ssnHandler("ssnLast4Verify")}
-            placeholder="●●●●"
+            placeholder="Verify last 4"
             maxLength={4}
             data-testid="input-ssn-last4-verify"
           />
-        </Field>
+        </div>
       </div>
       <Field id="title" label="Title" required>
         <Input
