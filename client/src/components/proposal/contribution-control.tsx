@@ -40,7 +40,8 @@ export function ContributionControl({ value, eeRate, onChange }: Props) {
 
   return (
     <Card className="p-5" data-testid="card-contribution">
-      <p className="text-xs leading-relaxed text-muted-foreground">
+      <div className="text-base font-semibold">Monthly Budget</div>
+      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
         With Defined Contribution, you tell us how much you can spend per
         employee per month:
       </p>
@@ -55,7 +56,7 @@ export function ContributionControl({ value, eeRate, onChange }: Props) {
           className="flex-1"
           data-testid="slider-contribution"
         />
-        <div className="flex h-9 items-center rounded-md border bg-background px-2">
+        <div className="flex items-baseline rounded-md border bg-background px-2 py-1.5">
           <span className="mr-0.5 text-sm text-muted-foreground">$</span>
           <input
             type="text"
@@ -70,7 +71,7 @@ export function ContributionControl({ value, eeRate, onChange }: Props) {
               }
             }}
             aria-label="Dollar amount per employee per month"
-            className="w-12 bg-transparent text-right font-mono text-base font-semibold tabular-nums outline-none"
+            className="w-14 bg-transparent text-right font-mono text-2xl font-bold leading-none tabular-nums outline-none"
             data-testid="input-contribution"
           />
           <span className="ml-1 text-[10px] font-bold tracking-wider text-muted-foreground">
