@@ -672,8 +672,13 @@ export async function registerRoutes(
         magicTokenExpiry: null,
       });
 
-      // Log user in immediately
+      // Log user in immediately. Persist the session to the store
+      // before responding so follow-up requests see the userId; see
+      // /api/auth/login for the same rationale.
       req.session.userId = user.id;
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((saveErr) => (saveErr ? reject(saveErr) : resolve()));
+      });
 
       res.json({
         message: "Account created successfully",
@@ -740,12 +745,23 @@ export async function registerRoutes(
       }
 
       req.session.userId = user.id;
-      res.json({
-        id: user.id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-        companyName: user.companyName,
+      // Persist the session to Postgres before we respond. Without
+      // this, the response can go out before connect-pg-simple has
+      // written the session row — the client then fires its next
+      // request (e.g. /api/admin/users) and the server sees no
+      // userId, 401s, and the freshly logged-in user lands on an
+      // empty page until they refresh.
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          return res.status(500).json({ message: "Failed to create session. Please try again." });
+        }
+        res.json({
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+          companyName: user.companyName,
+        });
       });
     } catch (err: any) {
       res.status(400).json({ message: err.message || "Login failed" });

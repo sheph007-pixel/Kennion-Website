@@ -62,21 +62,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }) => {
     const res = await apiRequest("POST", "/api/auth/register", data);
     const result = await res.json();
-    // If verified, immediately seed the auth cache with whatever the
-    // server returned. Clearing + invalidating first would leave a
-    // window where `user` is null — the login/register page then sees
-    // isLoading=false, user=null and could redirect unexpectedly.
     if (result.verified) {
-      queryClient.clear();
       await primeAuthMe();
+      resetOtherCaches();
     }
     return result;
   }, []);
 
   const verifyMagicLink = useCallback(async (token: string) => {
     await apiRequest("POST", "/api/auth/verify-magic-link", { token });
-    queryClient.clear();
     await primeAuthMe();
+    resetOtherCaches();
   }, []);
 
   // Returns the user from the login response so callers can navigate
@@ -85,19 +81,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const res = await apiRequest("POST", "/api/auth/login", { email, password });
     const user = (await res.json()) as AuthUser;
-    // Wipe stale user-scoped caches from any prior session in this tab
-    // (e.g. /api/groups with the previous user's rows) before seeding
-    // the new user so DashboardPage doesn't render with the old data
-    // while auth is still resolving.
-    queryClient.clear();
+    // Seed the auth cache synchronously so every mounted useAuth()
+    // reader sees the new user on the very next render. Do NOT call
+    // queryClient.clear() first — that momentarily wipes the auth
+    // entry and can flash the app into a logged-out state while
+    // route guards re-evaluate. Clear *other* user-scoped caches
+    // with a predicate that explicitly skips auth/me.
     queryClient.setQueryData(["/api/auth/me"], user);
+    resetOtherCaches();
     return user;
   }, []);
 
   const logout = useCallback(async () => {
     await apiRequest("POST", "/api/auth/logout");
-    queryClient.clear();
     queryClient.setQueryData(["/api/auth/me"], null);
+    resetOtherCaches();
   }, []);
 
   // Fetch /api/auth/me and write the result directly into the cache.
@@ -111,6 +109,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       queryClient.setQueryData(["/api/auth/me"], null);
     }
+  }
+
+  // Drop every cached query EXCEPT /api/auth/me, so switching sessions
+  // in the same tab doesn't leak the previous user's groups / admin
+  // data / etc. into the new user's view. Using a predicate keeps the
+  // freshly-seeded auth entry intact.
+  function resetOtherCaches() {
+    queryClient.removeQueries({
+      predicate: (q) => {
+        const key = q.queryKey?.[0];
+        return typeof key !== "string" || key !== "/api/auth/me";
+      },
+    });
   }
 
   return (
