@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -96,9 +96,21 @@ export default function PlanDetailsPage() {
           </div>
         </div>
 
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold tracking-tight">Plan Details</h1>
-          <p className="mt-1 text-sm text-primary">{ALL_PLANS_INCLUDE}</p>
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Plan Details</h1>
+            <p className="mt-1 text-sm text-primary">{ALL_PLANS_INCLUDE}</p>
+          </div>
+          <a
+            href="https://www.kennionprogram.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover-elevate"
+            data-testid="link-program-website"
+          >
+            Program Website
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
