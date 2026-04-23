@@ -107,43 +107,48 @@ export function BenefitGrid<P extends { key: string; name: string }>({
     el.scrollBy({ left: step * direction, behavior: "smooth" });
   }
 
+  // One toolbar layout rendered twice — above the grid (sticky under
+  // the main nav so it follows you as you scroll) and below the grid
+  // so controls are within reach no matter where you are in a tall
+  // table. Pattern lifted from GitHub / Gmail / Salesforce pagination.
+  const renderToolbar = (position: "top" | "bottom") => (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-3 rounded-md border bg-background/95 px-3 py-2 shadow-sm backdrop-blur",
+        position === "top" ? "sticky top-14 z-30 mb-2" : "mt-2",
+      )}
+    >
+      <span className="text-xs text-muted-foreground">
+        {plans.length} {plans.length === 1 ? "plan" : "plans"} · scroll to compare
+      </span>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => scrollByColumn(-1)}
+          disabled={!canScrollLeft}
+          aria-label="Scroll to previous plan"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-card text-foreground hover-elevate disabled:cursor-not-allowed disabled:opacity-30"
+          data-testid={`button-grid-scroll-left-${position}`}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => scrollByColumn(1)}
+          disabled={!canScrollRight}
+          aria-label="Scroll to next plan"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-card text-foreground hover-elevate disabled:cursor-not-allowed disabled:opacity-30"
+          data-testid={`button-grid-scroll-right-${position}`}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="relative">
-      {/* Toolbar: chevron buttons that control horizontal scroll. Sticky
-          to the top of the viewport (under the nav) so they follow the
-          user down long tables and never end up below the fold. This is
-          the pattern Apple / Stripe / Linear use on their wide compare
-          tables — the scroll control is always within reach, not at the
-          vertical midpoint of whatever happens to be tall. */}
-      <div
-        className="sticky top-14 z-30 mb-2 flex items-center justify-between gap-3 rounded-md border bg-background/95 px-3 py-2 shadow-sm backdrop-blur"
-      >
-        <span className="text-xs text-muted-foreground">
-          {plans.length} {plans.length === 1 ? "plan" : "plans"} · scroll to compare
-        </span>
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => scrollByColumn(-1)}
-            disabled={!canScrollLeft}
-            aria-label="Scroll to previous plan"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-card text-foreground hover-elevate disabled:cursor-not-allowed disabled:opacity-30"
-            data-testid="button-grid-scroll-left"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollByColumn(1)}
-            disabled={!canScrollRight}
-            aria-label="Scroll to next plan"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-card text-foreground hover-elevate disabled:cursor-not-allowed disabled:opacity-30"
-            data-testid="button-grid-scroll-right"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+      {renderToolbar("top")}
 
       <div className="relative">
         <div
@@ -243,6 +248,8 @@ export function BenefitGrid<P extends { key: string; name: string }>({
           />
         )}
       </div>
+
+      {renderToolbar("bottom")}
     </div>
   );
 }
