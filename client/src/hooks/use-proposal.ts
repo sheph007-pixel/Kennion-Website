@@ -90,6 +90,24 @@ export function useDownloadProposal(groupId: string | undefined) {
   });
 }
 
+// Rename a group. On success, refreshes every cache that renders the
+// company name so the edit propagates across the cockpit, groups
+// gallery, admin list, and any open admin view-as-customer tab.
+export function useRenameGroup(groupId: string | undefined) {
+  return useMutation({
+    mutationFn: async (companyName: string) => {
+      if (!groupId) throw new Error("groupId required");
+      const res = await apiRequest("PATCH", `/api/groups/${groupId}`, { companyName });
+      return (await res.json()) as Group;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/groups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    },
+  });
+}
+
 // Replaces the entire roster for a group. On success, refreshes every
 // query that derives from the census — the group record (for stat cards +
 // tier + score), the census entries (modal), and the medical rates

@@ -1474,6 +1474,39 @@ export async function registerRoutes(
     res.json(group);
   });
 
+  // Customer-facing rename. Owner or admin can change the group's
+  // companyName. Deliberately narrow — we don't want this endpoint
+  // to become a backdoor for editing status / riskTier / admin
+  // fields. Admin-side wholesale updates still flow through
+  // PATCH /api/admin/groups/:id.
+  app.patch("/api/groups/:id", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const group = await storage.getGroup(id);
+      if (!group) return res.status(404).json({ message: "Group not found" });
+      if (group.userId !== req.session.userId) {
+        const user = await storage.getUser(req.session.userId!);
+        if (!user || user.role !== "admin") {
+          return res.status(403).json({ message: "Access denied" });
+        }
+      }
+      if (group.locked) {
+        return res.status(400).json({ message: "Group is locked by your advisor." });
+      }
+      const rawName = typeof req.body?.companyName === "string" ? req.body.companyName.trim() : "";
+      if (!rawName) {
+        return res.status(400).json({ message: "Company name is required." });
+      }
+      if (rawName.length > 120) {
+        return res.status(400).json({ message: "Company name is too long." });
+      }
+      const updated = await storage.updateGroup(id, { companyName: rawName });
+      res.json(updated);
+    } catch (err: any) {
+      res.status(500).json({ message: err?.message || "Update failed" });
+    }
+  });
+
   app.get("/api/groups/:id/census", requireAuth, async (req: Request, res: Response) => {
     const id = req.params.id as string;
     const group = await storage.getGroup(id);

@@ -1,17 +1,22 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  Check,
   ChevronDown,
   ChevronUp,
   FileText,
   Lock,
   MapPin,
+  Pencil,
   Sparkles,
   Users,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TierBadge } from "./tier-badge";
 import { ScoreAuditDialog } from "./score-audit-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { useRenameGroup } from "@/hooks/use-proposal";
 import { cn } from "@/lib/utils";
 import { TIER_CONFIG, type RiskTier } from "@/pages/admin/constants";
 import { inferRatingArea } from "@shared/rating-area";
@@ -37,6 +42,55 @@ function readInitialExpanded(): boolean {
 export function GroupHeader({ group, census, onViewCensus }: Props) {
   const [auditOpen, setAuditOpen] = useState(false);
   const [expanded, setExpanded] = useState<boolean>(readInitialExpanded);
+  const [editingName, setEditingName] = useState(false);
+  const [draftName, setDraftName] = useState(group.companyName);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const { toast } = useToast();
+  const rename = useRenameGroup(group.id);
+
+  // Keep the draft in sync when the group prop changes (e.g. after a
+  // successful save refetches the cached record).
+  useEffect(() => {
+    if (!editingName) setDraftName(group.companyName);
+  }, [group.companyName, editingName]);
+
+  useEffect(() => {
+    if (editingName) inputRef.current?.focus();
+  }, [editingName]);
+
+  function beginEdit() {
+    if (group.locked) return;
+    setDraftName(group.companyName);
+    setEditingName(true);
+  }
+  function cancelEdit() {
+    setDraftName(group.companyName);
+    setEditingName(false);
+  }
+  function commitEdit() {
+    const next = draftName.trim();
+    if (!next) {
+      toast({ title: "Name required", description: "Company name can't be empty.", variant: "destructive" });
+      return;
+    }
+    if (next === group.companyName) {
+      setEditingName(false);
+      return;
+    }
+    rename.mutate(next, {
+      onSuccess: () => {
+        setEditingName(false);
+        toast({ title: "Name updated" });
+      },
+      onError: (err: any) => {
+        toast({
+          title: "Couldn't rename",
+          description: err?.message ?? "Please try again.",
+          variant: "destructive",
+        });
+      },
+    });
+  }
 
   const shortId = `KBA-${group.id.slice(0, 8).toUpperCase()}`;
   const submitted = group.submittedAt ? new Date(group.submittedAt) : null;
@@ -204,12 +258,66 @@ export function GroupHeader({ group, census, onViewCensus }: Props) {
         </div>
         {ToggleBtn}
       </div>
-      <h1
-        className="mt-3 text-[34px] font-bold leading-tight tracking-tight text-foreground"
-        data-testid="text-group-title"
-      >
-        {group.companyName}
-      </h1>
+      <div className="mt-3 flex items-start gap-2">
+        {editingName ? (
+          <>
+            <input
+              ref={inputRef}
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitEdit();
+                else if (e.key === "Escape") cancelEdit();
+              }}
+              maxLength={120}
+              disabled={rename.isPending}
+              className="min-w-0 flex-1 rounded-md border bg-background px-2 py-1 text-[34px] font-bold leading-tight tracking-tight text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              data-testid="input-group-title"
+            />
+            <button
+              type="button"
+              onClick={commitEdit}
+              disabled={rename.isPending}
+              aria-label="Save name"
+              className="mt-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-primary text-primary-foreground hover-elevate disabled:opacity-50"
+              data-testid="button-save-group-name"
+            >
+              <Check className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={cancelEdit}
+              disabled={rename.isPending}
+              aria-label="Cancel"
+              className="mt-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-card text-foreground hover-elevate disabled:opacity-50"
+              data-testid="button-cancel-group-name"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </>
+        ) : (
+          <>
+            <h1
+              className="min-w-0 flex-1 break-words text-[34px] font-bold leading-tight tracking-tight text-foreground"
+              data-testid="text-group-title"
+            >
+              {group.companyName}
+            </h1>
+            {!group.locked && (
+              <button
+                type="button"
+                onClick={beginEdit}
+                aria-label="Edit company name"
+                title="Edit company name"
+                className="mt-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-card text-muted-foreground hover-elevate"
+                data-testid="button-edit-group-name"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            )}
+          </>
+        )}
+      </div>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
