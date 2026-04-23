@@ -109,11 +109,48 @@ export function BenefitGrid<P extends { key: string; name: string }>({
 
   return (
     <div className="relative">
+      {/* Toolbar: chevron buttons that control horizontal scroll. Sticky
+          to the top of the viewport (under the nav) so they follow the
+          user down long tables and never end up below the fold. This is
+          the pattern Apple / Stripe / Linear use on their wide compare
+          tables — the scroll control is always within reach, not at the
+          vertical midpoint of whatever happens to be tall. */}
       <div
-        ref={scrollRef}
-        className="w-full overflow-x-auto rounded-md border bg-card"
+        className="sticky top-14 z-30 mb-2 flex items-center justify-between gap-3 rounded-md border bg-background/95 px-3 py-2 shadow-sm backdrop-blur"
       >
-        <table ref={tableRef} className="w-full border-collapse text-sm">
+        <span className="text-xs text-muted-foreground">
+          {plans.length} {plans.length === 1 ? "plan" : "plans"} · scroll to compare
+        </span>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => scrollByColumn(-1)}
+            disabled={!canScrollLeft}
+            aria-label="Scroll to previous plan"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-card text-foreground hover-elevate disabled:cursor-not-allowed disabled:opacity-30"
+            data-testid="button-grid-scroll-left"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollByColumn(1)}
+            disabled={!canScrollRight}
+            aria-label="Scroll to next plan"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-card text-foreground hover-elevate disabled:cursor-not-allowed disabled:opacity-30"
+            data-testid="button-grid-scroll-right"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="relative">
+        <div
+          ref={scrollRef}
+          className="w-full overflow-x-auto rounded-md border bg-card"
+        >
+          <table ref={tableRef} className="w-full border-collapse text-sm">
           <colgroup>
             <col style={{ width: labelColWidth, minWidth: labelColWidth }} />
             {plans.map((p) => (
@@ -186,46 +223,26 @@ export function BenefitGrid<P extends { key: string; name: string }>({
             })}
           </tbody>
         </table>
-      </div>
+        </div>
 
-      {/* Edge fades + scroll affordances. The fades signal that the
-          table continues past the viewport; the chevron buttons give
-          keyboard/pointer users an explicit way to advance one plan at
-          a time. Both hide themselves once the user reaches that edge. */}
-      {canScrollLeft && (
-        <>
+        {/* Edge fade gradients — visual cue that the grid continues
+            past the viewport. Hide themselves once the user reaches
+            that edge. The scroll CONTROL lives in the sticky toolbar
+            above; these are just a supplementary hint so the cutoff
+            column doesn't look like a design mistake. */}
+        {canScrollLeft && (
           <div
             aria-hidden
             className="pointer-events-none absolute inset-y-0 left-0 w-12 rounded-l-md bg-gradient-to-r from-background to-transparent"
           />
-          <button
-            type="button"
-            onClick={() => scrollByColumn(-1)}
-            aria-label="Scroll left"
-            className="absolute left-2 top-1/2 z-40 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border bg-card text-foreground shadow-md hover-elevate"
-            data-testid="button-grid-scroll-left"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-        </>
-      )}
-      {canScrollRight && (
-        <>
+        )}
+        {canScrollRight && (
           <div
             aria-hidden
             className="pointer-events-none absolute inset-y-0 right-0 w-12 rounded-r-md bg-gradient-to-l from-background to-transparent"
           />
-          <button
-            type="button"
-            onClick={() => scrollByColumn(1)}
-            aria-label="Scroll right"
-            className="absolute right-2 top-1/2 z-40 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border bg-card text-foreground shadow-md hover-elevate"
-            data-testid="button-grid-scroll-right"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
