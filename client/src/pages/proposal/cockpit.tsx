@@ -11,9 +11,9 @@ import {
   useGroupRates,
   useGroupCensus,
   useReplaceCensus,
-  useDownloadProposal,
   censusToMix,
 } from "@/hooks/use-proposal";
+import { ProposalExportModal } from "@/components/proposal/proposal-export-modal";
 import {
   DENTAL_PLANS,
   VISION_PLANS,
@@ -54,13 +54,13 @@ export function ProposalCockpit({
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("medical");
   const [censusOpen, setCensusOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const ratesQuery = useGroupRates(group.id, toIsoDate(effDate));
   const censusQuery = useGroupCensus(group.id);
   const replaceCensus = useReplaceCensus(group.id);
-  const downloadProposal = useDownloadProposal(group.id);
   const plans = ratesQuery.data?.plans ?? [];
   const fileName = censusFileName(group);
 
@@ -128,22 +128,11 @@ export function ProposalCockpit({
               <Button
                 variant="outline"
                 className="w-full justify-center gap-1.5"
-                onClick={() => {
-                  downloadProposal.mutate(toIsoDate(effDate), {
-                    onError: (err: any) => {
-                      toast({
-                        title: "Could not prepare PDF",
-                        description: err?.message ?? "Please try again later.",
-                        variant: "destructive",
-                      });
-                    },
-                  });
-                }}
-                disabled={downloadProposal.isPending}
+                onClick={() => setExportOpen(true)}
                 data-testid="button-download-pdf"
               >
                 <Download className="h-4 w-4" />
-                {downloadProposal.isPending ? "Preparing…" : "Download PDF"}
+                Download / Print
               </Button>
             </div>
           </aside>
@@ -254,6 +243,14 @@ export function ProposalCockpit({
             throw err;
           }
         }}
+      />
+
+      <ProposalExportModal
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        group={group}
+        effectiveDate={effDate}
+        plans={plans}
       />
     </div>
   );

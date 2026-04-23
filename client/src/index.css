@@ -286,3 +286,75 @@
     inset: -1px;
   }
 }
+
+/* ── Print styles for the "Full Proposal" export modal ──────────────
+   Triggered by ProposalExportModal's "Print / Save PDF" button, which
+   calls window.print(). Strategy: hide everything not inside the
+   [data-print-target] subtree, unwrap the dialog chrome, and size the
+   content to a letter-friendly single column. Browser's Print →
+   "Save as PDF" turns this into a downloadable proposal. */
+@media print {
+  /* Hide everything by default, then reveal only the print target and
+     its ancestors so the dialog content bubbles up without its
+     overlay / backdrop / sticky nav. */
+  body * {
+    visibility: hidden;
+  }
+  [data-print-target],
+  [data-print-target] * {
+    visibility: visible;
+  }
+  /* Unwrap the dialog — render the content as a normal block flow
+     filling the page, not as a centered overlay with backdrop. */
+  [data-print-target] {
+    position: absolute !important;
+    inset: 0 !important;
+    transform: none !important;
+    max-width: none !important;
+    max-height: none !important;
+    width: 100% !important;
+    height: auto !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0.25in !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    background: white !important;
+    color: black !important;
+  }
+  /* Hide the modal header action bar (Print / Close buttons). */
+  .print\:hidden {
+    display: none !important;
+  }
+  /* Keep tables from breaking rows across pages where possible. */
+  table {
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  thead {
+    display: table-header-group;
+  }
+  /* Section headings stay with their first table row. */
+  .print-section {
+    page-break-inside: avoid;
+    margin-bottom: 12pt;
+  }
+  /* Tailwind's sticky/overflow/shadow utilities add paint artifacts
+     that confuse print renderers — neutralize them on the print body. */
+  .print-body .sticky {
+    position: static !important;
+  }
+  .print-body .shadow,
+  .print-body .shadow-sm,
+  .print-body .shadow-md {
+    box-shadow: none !important;
+  }
+  /* Force @page to letter with reasonable margins. */
+  @page {
+    size: letter;
+    margin: 0.5in;
+  }
+}
