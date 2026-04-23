@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
-import { ArrowRight, Loader2, UserPlus, Mail, Building2, Phone, User, Key, Lock } from "lucide-react";
+import { ArrowRight, Loader2, Mail, Building2, Phone, User, Key, Lock } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -139,7 +139,7 @@ export default function RegisterPage() {
         <ThemeToggle />
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-6 py-12">
+      <div className="flex-1 flex items-start justify-center px-6 pt-6 pb-12">
         <div className="w-full max-w-md">
           {emailSent ? (
             <div className="text-center space-y-4">
@@ -164,16 +164,9 @@ export default function RegisterPage() {
             </div>
           ) : (
             <>
-              <div className="text-center mb-8">
-                <span className="inline-block text-[10px] uppercase tracking-widest text-primary font-bold bg-primary/10 px-3 py-1 rounded-full mb-4">Sales Portal</span>
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mx-auto mb-4">
-                  <UserPlus className="h-6 w-6 text-primary" />
-                </div>
-                <h1 className="text-2xl font-bold tracking-tight" data-testid="text-register-title">Submit Your Group</h1>
-                <p className="text-muted-foreground mt-2">
-                  Start your proposal and see if your group qualifies for better rates.
-                </p>
-              </div>
+              <h1 className="mb-4 text-2xl font-bold tracking-tight" data-testid="text-register-title">
+                Create Account
+              </h1>
 
               <Card className="p-6">
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -343,7 +336,7 @@ export default function RegisterPage() {
                     {isLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <>Create Account <ArrowRight className="ml-1 h-4 w-4" /></>
+                      <>Submit <ArrowRight className="ml-1 h-4 w-4" /></>
                     )}
                   </Button>
                 </form>

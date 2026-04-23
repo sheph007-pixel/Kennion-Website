@@ -31,10 +31,9 @@ export default function LoginPage() {
   async function onSubmit(data: z.infer<typeof signInSchema>) {
     setIsLoading(true);
     try {
-      await login(data.email, data.password);
-      // Check role via /api/auth/me since login() doesn't return the user.
-      const me = await fetch("/api/auth/me", { credentials: "include" });
-      const user = me.ok ? await me.json() : null;
+      // login() returns the fresh user and seeds the auth cache, so
+      // we can navigate deterministically with no second round-trip.
+      const user = await login(data.email, data.password);
       navigate(user?.role === "admin" ? "/admin" : "/dashboard");
     } catch (err: any) {
       const errMsg = err?.message || "";

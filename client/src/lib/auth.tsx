@@ -21,7 +21,7 @@ interface AuthContextType {
     accessCode: string;
   }) => Promise<{ message: string; email: string; verified?: boolean }>;
   verifyMagicLink: (token: string) => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthUser>;
   logout: () => Promise<void>;
 }
 
@@ -62,13 +62,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }) => {
     const res = await apiRequest("POST", "/api/auth/register", data);
     const result = await res.json();
-    // If user is verified, invalidate the query to fetch the new user.
-    // Clear ALL caches first — any stale user-scoped data from a prior
-    // session in this tab (e.g. /api/groups) would otherwise leak into
-    // the new user's view because our default staleTime is Infinity.
+    // If verified, immediately seed the auth cache with whatever the
+    // server returned. Clearing + invalidating first would leave a
+    // window where `user` is null — the login/register page then sees
+    // isLoading=false, user=null and could redirect unexpectedly.
     if (result.verified) {
       queryClient.clear();
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      await primeAuthMe();
     }
     return result;
   }, []);
@@ -76,13 +76,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const verifyMagicLink = useCallback(async (token: string) => {
     await apiRequest("POST", "/api/auth/verify-magic-link", { token });
     queryClient.clear();
-    await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    await primeAuthMe();
   }, []);
 
+  // Returns the user from the login response so callers can navigate
+  // by role without waiting on a second /api/auth/me round-trip that
+  // races the AuthProvider's own refetch.
   const login = useCallback(async (email: string, password: string) => {
-    await apiRequest("POST", "/api/auth/login", { email, password });
+    const res = await apiRequest("POST", "/api/auth/login", { email, password });
+    const user = (await res.json()) as AuthUser;
+    // Wipe stale user-scoped caches from any prior session in this tab
+    // (e.g. /api/groups with the previous user's rows) before seeding
+    // the new user so DashboardPage doesn't render with the old data
+    // while auth is still resolving.
     queryClient.clear();
-    await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    queryClient.setQueryData(["/api/auth/me"], user);
+    return user;
   }, []);
 
   const logout = useCallback(async () => {
@@ -90,6 +99,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     queryClient.clear();
     queryClient.setQueryData(["/api/auth/me"], null);
   }, []);
+
+  // Fetch /api/auth/me and write the result directly into the cache.
+  // Used by register/magic-link transitions where the server sets the
+  // session but doesn't return the user object in the same response.
+  async function primeAuthMe() {
+    try {
+      const res = await fetch("/api/auth/me", { credentials: "include" });
+      const user = res.ok ? ((await res.json()) as AuthUser) : null;
+      queryClient.setQueryData(["/api/auth/me"], user);
+    } catch {
+      queryClient.setQueryData(["/api/auth/me"], null);
+    }
+  }
 
   return (
     <AuthContext.Provider value={{ user: user ?? null, isLoading, requestMagicLink, register, verifyMagicLink, login, logout }}>
