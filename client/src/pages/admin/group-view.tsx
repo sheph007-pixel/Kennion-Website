@@ -53,11 +53,11 @@ export default function AdminGroupViewPage() {
     <ProposalCockpit
       group={group}
       bannerSlot={<AdminBanner group={group} />}
-      // Admin doesn't drive the customer Accept flow from here, but
-      // they can still trigger a re-upload by pointing the customer at
-      // their own /dashboard/new. We leave both callbacks undefined so
-      // the cockpit's usual buttons remain visible as read-only
-      // reminders of what the customer would see.
+      // Admin gets the same Replace Census path the customer does —
+      // the server endpoint accepts owner-or-admin, so re-uploading
+      // on behalf of a client works end-to-end. Accept-Proposal is
+      // still a customer-driven flow, so we leave that prop omitted.
+      onReplaceCensus={() => navigate(`/dashboard/${group.id}/replace-census`)}
     />
   );
 }

@@ -1,21 +1,39 @@
 import { Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ProposalNav } from "@/components/proposal/proposal-nav";
 import { ProposalUpload } from "@/pages/proposal/upload";
-import { useGroupById } from "@/hooks/use-proposal";
+import type { Group } from "@shared/schema";
 
 // Replace-census page. Thin wrapper that resolves the group from the
-// URL, 404s if it doesn't exist, and renders ProposalUpload in replace
-// mode. ProposalUpload does all the heavy lifting — AI column mapping,
-// validation preview, invalidations. On success we navigate back to
-// the cockpit so the user sees the new tier / score / rates.
+// URL and renders ProposalUpload in replace mode. ProposalUpload does
+// all the heavy lifting — AI column mapping, validation preview,
+// cache invalidations. On success we navigate back to the cockpit so
+// the user sees the new tier / score / rates.
+//
+// We fetch via /api/groups/:id (which has an admin-or-owner bypass
+// server-side) rather than useGroupById/useMyGroups so admin
+// impersonation works too — admin viewing a customer's group isn't
+// in their own groups list.
 export default function ReplaceCensusPage() {
   const [, navigate] = useLocation();
   const [, params] = useRoute("/dashboard/:groupId/replace-census");
   const groupId = params?.groupId;
-  const { group, isLoading } = useGroupById(groupId);
+
+  const { data: group, isLoading, isError } = useQuery<Group>({
+    queryKey: ["/api/groups", groupId],
+    queryFn: async () => {
+      const res = await fetch(`/api/groups/${groupId}`, { credentials: "include" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message ?? `Failed to load group (${res.status})`);
+      }
+      return res.json();
+    },
+    enabled: Boolean(groupId),
+  });
 
   if (isLoading) {
     return (
@@ -28,7 +46,7 @@ export default function ReplaceCensusPage() {
     );
   }
 
-  if (!group) {
+  if (isError || !group) {
     return (
       <div className="min-h-screen bg-background">
         <ProposalNav />
