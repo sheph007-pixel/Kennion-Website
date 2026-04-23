@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
@@ -27,13 +27,30 @@ export function ContributionControl({ mode, value, eeRate, onChange }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eeRate, mode]);
 
-  const display = mode === "dollar" ? `$${value}` : `${value}%`;
+  const min = mode === "dollar" ? minDollar : 50;
+  const max = mode === "dollar" ? maxDollar : 100;
+
+  const [draft, setDraft] = useState<string>(String(value));
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value, mode]);
+
+  function commitDraft() {
+    const n = parseInt(draft, 10);
+    if (!Number.isFinite(n)) {
+      setDraft(String(value));
+      return;
+    }
+    const clamped = Math.max(min, Math.min(max, n));
+    if (clamped !== value) onChange(mode, clamped);
+    setDraft(String(clamped));
+  }
 
   return (
     <Card className="p-5" data-testid="card-contribution">
       <div className="text-base font-semibold">Employer Contribution</div>
       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-        Choose amount paid by your company.
+        You decide how much your company pays toward each employee's premium.
       </p>
 
       <div className="mt-4 inline-flex rounded-md border bg-muted p-0.5">
@@ -53,18 +70,45 @@ export function ContributionControl({ mode, value, eeRate, onChange }: Props) {
         </SegBtn>
       </div>
 
-      <div className="mt-4 flex items-center gap-4">
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+        {mode === "dollar"
+          ? "With Defined Contribution, you tell us how much you can spend per employee per month."
+          : "Your company pays this percent of each employee's premium; employees pay the rest."}
+      </p>
+
+      <div className="mt-3 flex items-center gap-3">
         <Slider
           value={[value]}
-          min={mode === "dollar" ? minDollar : 50}
-          max={mode === "dollar" ? maxDollar : 100}
+          min={min}
+          max={max}
           step={mode === "dollar" ? 5 : 1}
           onValueChange={(v) => onChange(mode, v[0])}
           className="flex-1"
           data-testid="slider-contribution"
         />
-        <div className="min-w-[70px] text-right font-mono text-xl font-semibold tabular-nums">
-          {display}
+        <div className="flex h-9 items-center rounded-md border bg-background px-2">
+          {mode === "dollar" && (
+            <span className="mr-0.5 text-sm text-muted-foreground">$</span>
+          )}
+          <input
+            type="text"
+            inputMode="numeric"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, ""))}
+            onBlur={commitDraft}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                commitDraft();
+                e.currentTarget.blur();
+              }
+            }}
+            aria-label={mode === "dollar" ? "Dollar amount" : "Percent"}
+            className="w-12 bg-transparent text-right font-mono text-base font-semibold tabular-nums outline-none"
+            data-testid="input-contribution"
+          />
+          {mode === "percent" && (
+            <span className="ml-0.5 text-sm text-muted-foreground">%</span>
+          )}
         </div>
       </div>
     </Card>
