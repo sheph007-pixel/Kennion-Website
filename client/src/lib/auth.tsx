@@ -62,8 +62,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }) => {
     const res = await apiRequest("POST", "/api/auth/register", data);
     const result = await res.json();
-    // If user is verified, invalidate the query to fetch the new user
+    // If user is verified, invalidate the query to fetch the new user.
+    // Clear ALL caches first — any stale user-scoped data from a prior
+    // session in this tab (e.g. /api/groups) would otherwise leak into
+    // the new user's view because our default staleTime is Infinity.
     if (result.verified) {
+      queryClient.clear();
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     }
     return result;
@@ -71,18 +75,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const verifyMagicLink = useCallback(async (token: string) => {
     await apiRequest("POST", "/api/auth/verify-magic-link", { token });
+    queryClient.clear();
     await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     await apiRequest("POST", "/api/auth/login", { email, password });
+    queryClient.clear();
     await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
   }, []);
 
   const logout = useCallback(async () => {
     await apiRequest("POST", "/api/auth/logout");
+    queryClient.clear();
     queryClient.setQueryData(["/api/auth/me"], null);
-    await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
   }, []);
 
   return (
