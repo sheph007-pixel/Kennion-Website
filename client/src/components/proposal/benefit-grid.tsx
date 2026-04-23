@@ -49,9 +49,23 @@ export function BenefitGrid<P extends { key: string; name: string }>({
   labelColWidth = 220,
   minPlanColWidth = 140,
 }: Props<P>) {
-  const selectedIdx = selectedKey
-    ? plans.findIndex((p) => p.key === selectedKey)
+  // The `selectedKey` prop seeds the initial highlight (from
+  // ?plan=… passed through from the cockpit). Once on this page,
+  // users can click any plan column header to repin the comparison
+  // anchor — that's the natural way to explore a compare table.
+  const [pinnedKey, setPinnedKey] = useState<string | null>(selectedKey ?? null);
+  // Re-seed if the prop changes (e.g. navigation back + forward
+  // with a different ?plan=). Otherwise local clicks win.
+  useEffect(() => {
+    setPinnedKey(selectedKey ?? null);
+  }, [selectedKey]);
+  const selectedIdx = pinnedKey
+    ? plans.findIndex((p) => p.key === pinnedKey)
     : -1;
+
+  function togglePin(key: string) {
+    setPinnedKey((prev) => (prev === key ? null : key));
+  }
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -176,11 +190,24 @@ export function BenefitGrid<P extends { key: string; name: string }>({
                   key={p.key}
                   scope="col"
                   className={cn(
-                    "sticky top-0 z-20 h-14 border-b border-white/10 bg-[hsl(215_50%_18%)] px-3 text-center align-middle text-xs font-semibold leading-tight text-white",
+                    "sticky top-0 z-20 h-14 border-b border-white/10 bg-[hsl(215_50%_18%)] p-0 text-center align-middle text-xs font-semibold leading-tight text-white",
                     i === selectedIdx && "ring-2 ring-inset ring-amber-400",
                   )}
                 >
-                  {p.name}
+                  <button
+                    type="button"
+                    onClick={() => togglePin(p.key)}
+                    aria-pressed={i === selectedIdx}
+                    title={
+                      i === selectedIdx
+                        ? "Click to unpin this plan"
+                        : "Click to pin this plan for comparison"
+                    }
+                    className="flex h-full w-full items-center justify-center px-3 text-white transition hover:bg-white/10"
+                    data-testid={`button-pin-${p.key}`}
+                  >
+                    {p.name}
+                  </button>
                 </th>
               ))}
             </tr>
