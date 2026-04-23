@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Download } from "lucide-react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -55,6 +56,7 @@ export function ProposalCockpit({
   const [censusOpen, setCensusOpen] = useState(false);
 
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const ratesQuery = useGroupRates(group.id, toIsoDate(effDate));
   const censusQuery = useGroupCensus(group.id);
   const replaceCensus = useReplaceCensus(group.id);
@@ -170,6 +172,18 @@ export function ProposalCockpit({
                     Supplemental
                   </TabPill>
                 </TabsList>
+                <button
+                  type="button"
+                  className="ml-auto inline-flex items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover-elevate"
+                  onClick={() => {
+                    const q = selectedPlan ? `?plan=${encodeURIComponent(selectedPlan.name)}` : "";
+                    navigate(`/dashboard/${group.id}/plan-details${q}`);
+                  }}
+                  data-testid="button-compare-plan-details"
+                >
+                  Compare plan details
+                  <ArrowRight className="h-4 w-4" />
+                </button>
               </div>
 
               <TabsContent value="medical" className="mt-5 min-h-[640px] space-y-4">
