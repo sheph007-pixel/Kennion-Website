@@ -33,22 +33,24 @@ export function MonthlyTotalCard({
       >
         {planName}
       </div>
-      <div className="mt-2 flex items-baseline gap-1.5 font-sans">
-        <div
-          className="text-[30px] font-bold leading-none tracking-tight"
-          data-testid="text-total-gross"
-        >
-          {money0(gross)}
-        </div>
-        <div className="text-sm text-white/55">/mo</div>
-      </div>
-      <div className="mt-1 text-[11px] text-white/50">
-        Effective {fmtMonthYear(effectiveDate)}
-      </div>
-
-      <div className="mt-4 border-t border-white/15 pt-2 text-xs text-white/80">
+      <div className="mt-3 text-xs text-white/80">
         <Row label="Paid by company" value={money0(employerCost)} testId="text-employer-cost" />
         <Row label="Paid by employees" value={money0(employeeCost)} testId="text-employee-cost" />
+      </div>
+
+      <div className="mt-3 border-t border-white/15 pt-3">
+        <div className="flex items-baseline gap-1.5 font-sans">
+          <div
+            className="text-[30px] font-bold leading-none tracking-tight"
+            data-testid="text-total-gross"
+          >
+            {money0(gross)}
+          </div>
+          <div className="text-sm text-white/55">/mo</div>
+        </div>
+        <div className="mt-1 text-[11px] text-white/50">
+          Effective {fmtMonthYear(effectiveDate)}
+        </div>
       </div>
     </div>
   );
