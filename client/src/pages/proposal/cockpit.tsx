@@ -24,7 +24,7 @@ import {
 } from "@/lib/kennion-rates";
 import { GroupHeader } from "@/components/proposal/group-header";
 import { EffectiveDatePicker } from "@/components/proposal/effective-date-picker";
-import { ContributionControl, type ContribMode } from "@/components/proposal/contribution-control";
+import { ContributionControl } from "@/components/proposal/contribution-control";
 import { MedicalTable } from "@/components/proposal/medical-table";
 import { MonthlyTotalCard } from "@/components/proposal/monthly-total-card";
 import { SimpleRateTable } from "@/components/proposal/simple-rate-table";
@@ -49,8 +49,7 @@ export function ProposalCockpit({
   bannerSlot,
 }: Props) {
   const [effDate, setEffDate] = useState(() => effectiveDateOptions()[0]);
-  const [contribMode, setContribMode] = useState<ContribMode>("percent");
-  const [contribValue, setContribValue] = useState(50);
+  const [contribValue, setContribValue] = useState(0);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("medical");
   const [censusOpen, setCensusOpen] = useState(false);
@@ -79,8 +78,8 @@ export function ProposalCockpit({
 
   const totals = useMemo(() => {
     if (!selectedPlan) return { gross: 0, employerCost: 0, employeeCost: 0 };
-    return computeMedicalTotal(selectedPlan, mix, contribMode, contribValue);
-  }, [selectedPlan, mix, contribMode, contribValue]);
+    return computeMedicalTotal(selectedPlan, mix, contribValue);
+  }, [selectedPlan, mix, contribValue]);
 
   const isMedical = activeTab === "medical";
 
@@ -99,13 +98,9 @@ export function ProposalCockpit({
 
             {isMedical && selectedPlan && (
               <ContributionControl
-                mode={contribMode}
                 value={contribValue}
                 eeRate={eeRate}
-                onChange={(m, v) => {
-                  setContribMode(m);
-                  setContribValue(v);
-                }}
+                onChange={setContribValue}
               />
             )}
 
