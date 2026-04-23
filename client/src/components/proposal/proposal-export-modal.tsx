@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { DENTAL_PLANS, VISION_PLANS } from "@/lib/kennion-rates";
-import { SUPPLEMENTAL_COVERAGE, HOSPITAL_PLAN_DETAILS } from "@shared/plan-benefits";
+import { SUPPLEMENTAL, type SupplementalSection } from "@shared/benefits-rates";
 import { inferRatingArea } from "@shared/rating-area";
 import type { Group } from "@shared/schema";
 import type { MedicalPlan, TieredRates } from "@/lib/kennion-rates";
@@ -31,7 +31,9 @@ type Props = {
 };
 
 const money = (n: number) =>
-  "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  isFinite(n)
+    ? "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : "—";
 
 const fmtLong = (d: Date) =>
   d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
@@ -143,56 +145,20 @@ export function ProposalExportModal({
             />
           </Section>
 
-          <Section title="Voluntary Benefits">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="bg-[hsl(215_50%_18%)] text-left text-white">
-                  <th className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em]">Benefit</th>
-                  <th className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em]">Coverage</th>
-                </tr>
-              </thead>
-              <tbody>
-                {SUPPLEMENTAL_COVERAGE.map((s) => (
-                  <tr key={s.key} className="border-b last:border-b-0">
-                    <td className="px-3 py-2 align-top text-sm font-semibold">{s.name}</td>
-                    <td className="px-3 py-2 align-top text-sm">
-                      <div>{s.coverage}</div>
-                      {s.note && (
-                        <div className="mt-0.5 text-xs italic text-muted-foreground">{s.note}</div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Section>
-
-          <Section title="Voluntary Hospital — Benefits">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="bg-[hsl(215_50%_18%)] text-white">
-                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.12em]">Plan</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-[0.12em]">Inpatient Admission</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-[0.12em]">ER / Urgent Care</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-[0.12em]">Surgery</th>
-                </tr>
-              </thead>
-              <tbody>
-                {HOSPITAL_PLAN_DETAILS.map((p, i) => (
-                  <tr key={p.key} className={i % 2 === 0 ? "bg-muted/40" : ""}>
-                    <td className="px-3 py-2 text-sm font-semibold">{p.name}</td>
-                    <td className="px-3 py-2 text-right text-sm tabular-nums">{p.inpatientAdmission}</td>
-                    <td className="px-3 py-2 text-right text-sm tabular-nums">{p.erUrgentCare}</td>
-                    <td className="px-3 py-2 text-right text-sm tabular-nums">{p.surgery}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Section>
+          {Object.entries(SUPPLEMENTAL).map(([key, section]) => (
+            <Section
+              key={key}
+              title={`${section.label} — Monthly Rates`}
+              subtitle={section.note}
+            >
+              <RateTable rows={sectionRows(section)} />
+            </Section>
+          ))}
 
           <p className="text-xs italic text-muted-foreground">
             Rates are illustrative and subject to final underwriting approval.
-            Questions? Contact your Kennion advisor.
+            Questions? Contact your Kennion Advisor — Hunter Shepherd
+            (205-641-0469 · hunter@kennion.com).
           </p>
         </div>
       </DialogContent>
@@ -200,17 +166,53 @@ export function ProposalExportModal({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="print-section">
-      <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.12em] text-primary">
+      <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-primary">
         {title}
       </h2>
+      {subtitle && (
+        <p className="mb-2 mt-0.5 text-xs italic text-muted-foreground">{subtitle}</p>
+      )}
+      {!subtitle && <div className="mb-2" />}
       <div className="overflow-hidden rounded-md border bg-card">
         {children}
       </div>
     </section>
   );
+}
+
+// Normalizes the three SUPPLEMENTAL shapes into the RateTable row
+// format. Band products (Life, Critical, STD) use the age-band label
+// as the left column and fill missing tiers with NaN so money()
+// renders them as "—" rather than "$NaN".
+function sectionRows(
+  section: SupplementalSection,
+): Array<{ name: string; rates: TieredRates }> {
+  if (section.kind === "flat") {
+    return [{ name: section.label, rates: section.rates }];
+  }
+  if (section.kind === "plans") {
+    return section.plans.map((p) => ({ name: p.label, rates: p.rates }));
+  }
+  return section.bands.map((b) => ({
+    name: b.label,
+    rates: {
+      EE: b.rates.EE ?? NaN,
+      EE_CH: b.rates.EE_CH ?? NaN,
+      EE_SP: b.rates.EE_SP ?? NaN,
+      EE_FAM: b.rates.EE_FAM ?? NaN,
+    },
+  }));
 }
 
 function RateTable({ rows }: { rows: Array<{ name: string; rates: TieredRates }> }) {
