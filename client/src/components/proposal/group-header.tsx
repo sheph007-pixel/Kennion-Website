@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { FileText, Lock, MapPin, Sparkles } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  Lock,
+  MapPin,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TierBadge } from "./tier-badge";
@@ -15,8 +23,20 @@ type Props = {
   onViewCensus?: () => void;
 };
 
+// Remembers expanded/collapsed across navigation so a broker who
+// prefers the compact header on a smaller screen doesn't have to
+// toggle every time they open a new group.
+const STORAGE_KEY = "kennion:group-header-expanded";
+
+function readInitialExpanded(): boolean {
+  if (typeof window === "undefined") return true;
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+  return raw === null ? true : raw === "1";
+}
+
 export function GroupHeader({ group, census, onViewCensus }: Props) {
   const [auditOpen, setAuditOpen] = useState(false);
+  const [expanded, setExpanded] = useState<boolean>(readInitialExpanded);
 
   const shortId = `KBA-${group.id.slice(0, 8).toUpperCase()}`;
   const submitted = group.submittedAt ? new Date(group.submittedAt) : null;
@@ -43,36 +63,149 @@ export function GroupHeader({ group, census, onViewCensus }: Props) {
       ? inferRatingArea(group.state, group.zipCode)
       : null;
 
+  function toggle() {
+    setExpanded((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
+      }
+      return next;
+    });
+  }
+
+  const ToggleBtn = (
+    <button
+      type="button"
+      onClick={toggle}
+      className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-card text-muted-foreground hover-elevate"
+      aria-label={expanded ? "Collapse group details" : "Expand group details"}
+      data-testid="button-group-header-toggle"
+    >
+      {expanded ? (
+        <ChevronUp className="h-4 w-4" />
+      ) : (
+        <ChevronDown className="h-4 w-4" />
+      )}
+    </button>
+  );
+
+  // Collapsed: single row with tier dot, company name, lives, and
+  // actions on the right. Keeps the important context visible but
+  // reclaims screen space for the rate tables below.
+  if (!expanded) {
+    return (
+      <Card
+        className="mb-6 flex items-center gap-3 px-5 py-3"
+        data-testid="proposal-group-header"
+      >
+        <span
+          className="h-2.5 w-2.5 shrink-0 rounded-full"
+          style={{
+            background: tierConfig?.hsl ?? "hsl(var(--muted-foreground))",
+          }}
+          aria-hidden
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <span
+              className="truncate text-lg font-bold tracking-tight"
+              data-testid="text-group-title"
+            >
+              {group.companyName}
+            </span>
+            {tierConfig && (
+              <span
+                className={cn(
+                  "shrink-0 text-[11px] font-semibold uppercase tracking-[0.12em]",
+                  tierConfig.className,
+                )}
+              >
+                {tier === "high" ? "Not Approved" : tierConfig.label}
+              </span>
+            )}
+            {group.locked && (
+              <Lock className="h-3.5 w-3.5 shrink-0 text-amber-600" aria-label="Locked" />
+            )}
+          </div>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <Users className="h-3 w-3" aria-hidden />
+              {group.totalLives ?? 0} lives
+            </span>
+            {stateZip && (
+              <>
+                <span aria-hidden>·</span>
+                <span>{stateZip}</span>
+              </>
+            )}
+            {ratingArea && (
+              <>
+                <span aria-hidden>·</span>
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-3 w-3" aria-hidden />
+                  {ratingArea}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+        {onViewCensus && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onViewCensus}
+            className="shrink-0 gap-1.5"
+            data-testid="button-view-census"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            View Census
+          </Button>
+        )}
+        {ToggleBtn}
+
+        <ScoreAuditDialog
+          open={auditOpen}
+          onOpenChange={setAuditOpen}
+          group={group}
+          census={census}
+        />
+      </Card>
+    );
+  }
+
   return (
     <Card className="mb-6 p-6" data-testid="proposal-group-header">
-      <div className="mb-3 flex flex-wrap items-center gap-3">
-        <TierBadge tier={tier} />
-        {group.riskScore != null && tierConfig && (
-          <button
-            type="button"
-            onClick={() => setAuditOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-0.5 text-[11px] font-semibold tabular-nums transition hover-elevate"
-            title="View how this score was calculated"
-            data-testid="badge-risk-score"
-          >
-            <Sparkles className="h-3 w-3" style={{ color: tierConfig.hsl }} />
-            <span className="text-muted-foreground">Kennion Score</span>
-            <span style={{ color: tierConfig.hsl }}>{group.riskScore.toFixed(2)}</span>
-          </button>
-        )}
-        {group.locked && (
-          <span
-            className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-400"
-            title="Locked by your Kennion advisor"
-            data-testid="badge-locked"
-          >
-            <Lock className="h-3 w-3" />
-            Locked
-          </span>
-        )}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <TierBadge tier={tier} />
+          {group.riskScore != null && tierConfig && (
+            <button
+              type="button"
+              onClick={() => setAuditOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-0.5 text-[11px] font-semibold tabular-nums transition hover-elevate"
+              title="View how this score was calculated"
+              data-testid="badge-risk-score"
+            >
+              <Sparkles className="h-3 w-3" style={{ color: tierConfig.hsl }} />
+              <span className="text-muted-foreground">Kennion Score</span>
+              <span style={{ color: tierConfig.hsl }}>{group.riskScore.toFixed(2)}</span>
+            </button>
+          )}
+          {group.locked && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-400"
+              title="Locked by your Kennion advisor"
+              data-testid="badge-locked"
+            >
+              <Lock className="h-3 w-3" />
+              Locked
+            </span>
+          )}
+        </div>
+        {ToggleBtn}
       </div>
       <h1
-        className="text-[34px] font-bold leading-tight tracking-tight text-foreground"
+        className="mt-3 text-[34px] font-bold leading-tight tracking-tight text-foreground"
         data-testid="text-group-title"
       >
         {group.companyName}

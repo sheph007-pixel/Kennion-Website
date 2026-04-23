@@ -2115,6 +2115,58 @@ export async function registerRoutes(
     }
   });
 
+  // Customer-facing "Download PDF" endpoint. Unlike the admin generate
+  // route above, this does not persist a proposal row — the engine is
+  // deterministic, so regenerating on demand is cheap and means the
+  // customer never sees a "not available yet" error. High-risk groups
+  // are ineligible and return 403.
+  app.get("/api/groups/:groupId/proposal/download", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const groupId = req.params.groupId as string;
+      const group = await storage.getGroup(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      if (group.userId !== req.session.userId && req.session.role !== "admin") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      if (group.riskTier === "high") {
+        return res.status(403).json({
+          message: "This group is ineligible for a proposal. Your Kennion advisor will be in touch.",
+        });
+      }
+
+      const census = await storage.getCensusByGroupId(groupId);
+      if (census.length === 0) {
+        return res.status(400).json({ message: "No census entries found for this group" });
+      }
+
+      const effectiveDate =
+        (typeof req.query.effectiveDate === "string" && req.query.effectiveDate) ||
+        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+      const members: CensusMember[] = censusEntriesToMembers(census);
+      const pricing = priceGroup({
+        census: members,
+        effectiveDate,
+        ratingArea: inferRatingAreaFromCensus(members),
+        admin: "EBPA",
+        group: group.companyName,
+      });
+
+      const { renderProposalPdf } = await import("./proposal-pdf");
+      const { pdfBuffer, fileName } = await renderProposalPdf(group, pricing, census);
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+      res.setHeader("Content-Length", String(pdfBuffer.length));
+      res.end(pdfBuffer);
+    } catch (err: any) {
+      log(`Customer PDF download error: ${err.message}`, "proposal");
+      res.status(500).json({ message: err.message || "Failed to generate PDF" });
+    }
+  });
+
   // GET — list sheet names in the uploaded template
   app.get("/api/admin/proposal/sheets", requireAdmin, async (_req: Request, res: Response) => {
     try {

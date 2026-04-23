@@ -24,11 +24,9 @@ export function MonthlyTotalCard({
       style={{ background: "hsl(215 50% 18%)" }}
       data-testid="card-monthly-total"
     >
-      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">
-        Monthly Total
-      </div>
+      <div className="text-base font-semibold text-white">Monthly Total</div>
       <div
-        className="mt-1 truncate text-sm font-semibold text-white"
+        className="mt-2 truncate text-sm font-semibold text-white/90"
         data-testid="text-selected-plan-name"
       >
         {planName}

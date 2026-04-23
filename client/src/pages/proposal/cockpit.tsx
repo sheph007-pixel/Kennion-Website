@@ -132,11 +132,12 @@ export function ProposalCockpit({
                 variant="outline"
                 className="w-full justify-center gap-1.5"
                 onClick={() => {
-                  downloadProposal.mutate(undefined, {
+                  downloadProposal.mutate(toIsoDate(effDate), {
                     onError: (err: any) => {
                       toast({
-                        title: "Not available yet",
+                        title: "Could not prepare PDF",
                         description: err?.message ?? "Please try again later.",
+                        variant: "destructive",
                       });
                     },
                   });
