@@ -55,13 +55,13 @@ export function BenefitGrid<P extends { key: string; name: string }>({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
-  // Default both to true so the affordance is visible on first paint
-  // when the grid is naturally wider than the viewport (the common
-  // case — 15 medical plans never fit unscrolled at desktop widths).
-  // The measurement effect below corrects either flag to false if
-  // there is actually no overflow in that direction.
+  // Guess whether the grid will overflow before we can measure, so the
+  // chevron doesn't flash enabled → disabled when switching from a
+  // wide tab (Medical) to a narrow one (Dental/Vision). 1200 is a
+  // reasonable floor for desktop viewports inside the 1280-max layout.
+  const estimatedTableWidth = labelColWidth + plans.length * minPlanColWidth;
   const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [canScrollRight, setCanScrollRight] = useState(estimatedTableWidth > 1200);
 
   const update = useCallback(() => {
     const el = scrollRef.current;

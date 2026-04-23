@@ -121,7 +121,7 @@ export default function PlanDetailsPage() {
             <TabPill value="supplemental" active={activeTab === "supplemental"}>Supplemental</TabPill>
           </TabsList>
 
-          <TabsContent value="medical" className="mt-5">
+          <TabsContent value="medical" className="mt-5 min-h-[640px]">
             <BenefitGrid<MedicalPlanBenefits>
               plans={MEDICAL_PLAN_DETAILS}
               rows={medicalRows}
@@ -131,7 +131,7 @@ export default function PlanDetailsPage() {
             />
           </TabsContent>
 
-          <TabsContent value="dental" className="mt-5">
+          <TabsContent value="dental" className="mt-5 min-h-[640px]">
             <BenefitGrid<DentalPlanBenefits>
               plans={DENTAL_PLAN_DETAILS}
               rows={dentalRows}
@@ -141,7 +141,7 @@ export default function PlanDetailsPage() {
             />
           </TabsContent>
 
-          <TabsContent value="vision" className="mt-5">
+          <TabsContent value="vision" className="mt-5 min-h-[640px]">
             <BenefitGrid<VisionPlanBenefits>
               plans={VISION_PLAN_DETAILS}
               rows={visionRows}
@@ -151,7 +151,7 @@ export default function PlanDetailsPage() {
             />
           </TabsContent>
 
-          <TabsContent value="supplemental" className="mt-5 space-y-6">
+          <TabsContent value="supplemental" className="mt-5 min-h-[640px] space-y-6">
             <div>
               <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 Voluntary Benefits
