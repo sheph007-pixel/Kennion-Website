@@ -170,11 +170,11 @@ export function censusFileName(group: {
 
 // Monthly total math for a medical plan + group mix.
 // Mix keys: EE, EE_CH, EE_SP, EE_FAM (counts of employees in each tier).
-// contribMode "percent" (50..100) or "dollar" (fixed $ per EE-only).
+// contribValue is the employer's Defined Contribution in $ per employee
+// per month, clamped to the EE-only rate.
 export function computeMedicalTotal(
   plan: Pick<MedicalPlan, "base">,
   mix: TierMix,
-  contribMode: "percent" | "dollar",
   contribValue: number,
 ) {
   const rate = (t: TierKey) => plan.base[t];
@@ -184,11 +184,7 @@ export function computeMedicalTotal(
     mix.EE_CH * rate("EE_CH") +
     mix.EE_SP * rate("EE_SP") +
     mix.EE_FAM * rate("EE_FAM");
-  const eeRate = rate("EE");
-  const erPerEE =
-    contribMode === "percent"
-      ? eeRate * (contribValue / 100)
-      : Math.min(contribValue, eeRate);
+  const erPerEE = Math.min(contribValue, rate("EE"));
   const employerCost = erPerEE * employees;
   const employeeCost = gross - employerCost;
   return { gross, employerCost, employeeCost };

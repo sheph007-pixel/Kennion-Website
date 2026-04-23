@@ -1,100 +1,84 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
-
-export type ContribMode = "percent" | "dollar";
 
 type Props = {
-  mode: ContribMode;
   value: number;
   eeRate: number;
-  onChange: (mode: ContribMode, value: number) => void;
+  onChange: (value: number) => void;
 };
 
-// Employer Contribution: % or $ toggle + slider. In $ fixed mode the slider
-// is clamped to [ceil(eeRate*0.5), ceil(eeRate)] and re-baselines to 50%
-// whenever the selected plan's EE rate changes, so the value always tracks
-// a valid 50%+ contribution on the current plan.
-export function ContributionControl({ mode, value, eeRate, onChange }: Props) {
-  const minDollar = Math.max(1, Math.ceil(eeRate * 0.5));
-  const maxDollar = Math.max(minDollar, Math.ceil(eeRate));
+// Employer Contribution, Defined-Contribution style: the employer picks a
+// per-employee-per-month dollar budget. Clamped to [ceil(eeRate*0.5),
+// ceil(eeRate)] and re-baselined to 50% of the EE rate whenever the
+// selected plan changes, so the value always tracks a valid 50%+
+// contribution on the current plan.
+export function ContributionControl({ value, eeRate, onChange }: Props) {
+  const min = Math.max(1, Math.ceil(eeRate * 0.5));
+  const max = Math.max(min, Math.ceil(eeRate));
 
   useEffect(() => {
-    if (mode !== "dollar") return;
-    onChange("dollar", Math.ceil(eeRate * 0.5));
-    // Re-baseline whenever the plan's EE rate changes.
+    onChange(Math.ceil(eeRate * 0.5));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eeRate, mode]);
+  }, [eeRate]);
 
-  const display = mode === "dollar" ? `$${value}` : `${value}%`;
+  const [draft, setDraft] = useState<string>(String(value));
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
+  function commitDraft() {
+    const n = parseInt(draft, 10);
+    if (!Number.isFinite(n)) {
+      setDraft(String(value));
+      return;
+    }
+    const clamped = Math.max(min, Math.min(max, n));
+    if (clamped !== value) onChange(clamped);
+    setDraft(String(clamped));
+  }
 
   return (
     <Card className="p-5" data-testid="card-contribution">
-      <div className="text-base font-semibold">Employer Contribution</div>
+      <div className="text-base font-semibold">Monthly Budget</div>
       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-        Choose amount paid by your company.
+        With Defined Contribution, you tell us how much you can spend per
+        employee per month:
       </p>
 
-      <div className="mt-4 inline-flex rounded-md border bg-muted p-0.5">
-        <SegBtn
-          active={mode === "percent"}
-          onClick={() => onChange("percent", 50)}
-          testId="toggle-percent"
-        >
-          %
-        </SegBtn>
-        <SegBtn
-          active={mode === "dollar"}
-          onClick={() => onChange("dollar", Math.ceil(eeRate * 0.5))}
-          testId="toggle-dollar"
-        >
-          $ fixed
-        </SegBtn>
-      </div>
-
-      <div className="mt-4 flex items-center gap-4">
+      <div className="mt-3 flex items-center gap-3">
         <Slider
           value={[value]}
-          min={mode === "dollar" ? minDollar : 50}
-          max={mode === "dollar" ? maxDollar : 100}
-          step={mode === "dollar" ? 5 : 1}
-          onValueChange={(v) => onChange(mode, v[0])}
+          min={min}
+          max={max}
+          step={5}
+          onValueChange={(v) => onChange(v[0])}
           className="flex-1"
           data-testid="slider-contribution"
         />
-        <div className="min-w-[70px] text-right font-mono text-xl font-semibold tabular-nums">
-          {display}
+        <div className="flex items-baseline rounded-md border bg-background px-2 py-1.5">
+          <span className="mr-0.5 text-sm text-muted-foreground">$</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, ""))}
+            onBlur={commitDraft}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                commitDraft();
+                e.currentTarget.blur();
+              }
+            }}
+            aria-label="Dollar amount per employee per month"
+            className="w-14 bg-transparent text-right font-mono text-2xl font-bold leading-none tabular-nums outline-none"
+            data-testid="input-contribution"
+          />
+          <span className="ml-1 text-[10px] font-bold tracking-wider text-muted-foreground">
+            PEPM
+          </span>
         </div>
       </div>
     </Card>
-  );
-}
-
-function SegBtn({
-  active,
-  onClick,
-  children,
-  testId,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  testId: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "min-w-[64px] rounded px-3 py-1.5 text-sm font-semibold transition",
-        active
-          ? "bg-card text-foreground shadow-sm"
-          : "text-muted-foreground hover:text-foreground",
-      )}
-      data-testid={testId}
-    >
-      {children}
-    </button>
   );
 }

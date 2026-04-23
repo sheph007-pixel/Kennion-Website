@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Group, CensusEntry } from "@shared/schema";
 import type { MedicalPlan, TierKey } from "@/lib/kennion-rates";
@@ -212,6 +212,9 @@ export function useGroupRates(groupId: string | undefined, effectiveDate: string
       return { plans, result };
     },
     enabled: Boolean(groupId && effectiveDate),
+    // Keep the previous month's plan table visible while the new date
+    // refetches so the table and sidebar cards don't unmount/reflow.
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -10,7 +10,7 @@ export function EffectiveDatePicker({ value, onChange }: Props) {
   const options = effectiveDateOptions();
   return (
     <div data-testid="picker-effective-date">
-      <p className="mb-2 text-xs text-muted-foreground">Select for your company.</p>
+      <p className="mb-2 text-xs text-muted-foreground">Select for your company:</p>
       <div className="flex flex-col gap-1.5">
         {options.map((d) => {
           const iso = d.toISOString().slice(0, 10);
