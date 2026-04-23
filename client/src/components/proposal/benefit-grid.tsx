@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -54,30 +54,49 @@ export function BenefitGrid<P extends { key: string; name: string }>({
     : -1;
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+  // Default both to true so the affordance is visible on first paint
+  // when the grid is naturally wider than the viewport (the common
+  // case — 15 medical plans never fit unscrolled at desktop widths).
+  // The measurement effect below corrects either flag to false if
+  // there is actually no overflow in that direction.
   const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
-  // Track scroll position + container width so the edge fades and the
-  // chevron buttons only show when there's actually more content in
-  // that direction. Same pattern Stripe / Notion / Linear use on wide
-  // comparison tables.
+  const update = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 4);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 4);
+  }, []);
+
+  // Measure on mount before paint, and again on every relevant change.
+  // ResizeObserver on both the viewport container AND the inner table
+  // handles: font/style shifts, tab switches (Radix toggles display),
+  // plan-count changes, and window resizes.
+  useLayoutEffect(() => {
+    update();
+  }, [plans.length, rows.length, update]);
+
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const update = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = el;
-      setCanScrollLeft(scrollLeft > 4);
-      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 4);
-    };
-    update();
     el.addEventListener("scroll", update, { passive: true });
     const ro = new ResizeObserver(update);
     ro.observe(el);
+    if (tableRef.current) ro.observe(tableRef.current);
+    window.addEventListener("resize", update);
+    // Extra pass after the first paint in case web fonts shift the
+    // layout (otherwise scrollWidth can read stale at mount).
+    const raf = requestAnimationFrame(update);
     return () => {
       el.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
       ro.disconnect();
+      cancelAnimationFrame(raf);
     };
-  }, [plans.length]);
+  }, [update]);
 
   function scrollByColumn(direction: 1 | -1) {
     const el = scrollRef.current;
@@ -94,7 +113,7 @@ export function BenefitGrid<P extends { key: string; name: string }>({
         ref={scrollRef}
         className="w-full overflow-x-auto rounded-md border bg-card"
       >
-        <table className="w-full border-collapse text-sm">
+        <table ref={tableRef} className="w-full border-collapse text-sm">
           <colgroup>
             <col style={{ width: labelColWidth, minWidth: labelColWidth }} />
             {plans.map((p) => (
