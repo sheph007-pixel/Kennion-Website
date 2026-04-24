@@ -29,6 +29,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   updateGroupStatusSchema,
+  chatRuleInputSchema,
 } from "@shared/schema";
 import ConnectPgSimple from "connect-pg-simple";
 import { log } from "./index";
@@ -2556,6 +2557,98 @@ export async function registerRoutes(
   // system prompt, rate limiting, and knowledge assembly. Streams SSE.
   // ──────────────────────────────────────────────────────────────────────
   app.post("/api/chat", requireAuth, handleChat);
+
+  // Admin — chat transcripts. List conversations (one row per
+  // conversationId) then fetch full turns on demand.
+  app.get("/api/admin/chat/conversations", requireAdmin, async (_req: Request, res: Response) => {
+    try {
+      const rows = await storage.listConversations(200);
+      const userIds = Array.from(new Set(rows.map((r) => r.userId)));
+      const users = await Promise.all(userIds.map((id) => storage.getUser(id)));
+      const byId = new Map(users.filter(Boolean).map((u) => [u!.id, u!] as const));
+      const groupIds = Array.from(new Set(rows.map((r) => r.groupId).filter((v): v is string => !!v)));
+      const groupsArr = await Promise.all(groupIds.map((id) => storage.getGroup(id)));
+      const groupById = new Map(groupsArr.filter(Boolean).map((g) => [g!.id, g!] as const));
+      res.json(rows.map((r) => {
+        const u = byId.get(r.userId);
+        const g = r.groupId ? groupById.get(r.groupId) : null;
+        return {
+          ...r,
+          userEmail: u?.email ?? null,
+          userName: u?.fullName ?? null,
+          companyName: g?.companyName ?? null,
+        };
+      }));
+    } catch (err: any) {
+      res.status(500).json({ message: err?.message || "Failed to load transcripts" });
+    }
+  });
+
+  app.get("/api/admin/chat/conversations/:conversationId", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const conversationId = req.params.conversationId as string;
+      const messages = await storage.getConversationMessages(conversationId);
+      if (messages.length === 0) return res.status(404).json({ message: "Not found" });
+      const user = await storage.getUser(messages[0].userId);
+      const group = messages[0].groupId ? await storage.getGroup(messages[0].groupId) : null;
+      res.json({
+        conversationId,
+        user: user ? { id: user.id, email: user.email, fullName: user.fullName } : null,
+        group: group ? { id: group.id, companyName: group.companyName } : null,
+        messages,
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err?.message || "Failed to load transcript" });
+    }
+  });
+
+  // Admin — chat rules (operator-authored additions to the system prompt).
+  app.get("/api/admin/chat/rules", requireAdmin, async (_req: Request, res: Response) => {
+    try {
+      res.json(await storage.listChatRules(false));
+    } catch (err: any) {
+      res.status(500).json({ message: err?.message || "Failed to load rules" });
+    }
+  });
+
+  app.post("/api/admin/chat/rules", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const parsed = chatRuleInputSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.errors[0]?.message || "Invalid rule" });
+      }
+      const created = await storage.createChatRule({
+        ...parsed.data,
+        createdBy: req.session.userId ?? null,
+      });
+      res.status(201).json(created);
+    } catch (err: any) {
+      res.status(500).json({ message: err?.message || "Failed to create rule" });
+    }
+  });
+
+  app.patch("/api/admin/chat/rules/:id", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const parsed = chatRuleInputSchema.partial().safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.errors[0]?.message || "Invalid rule" });
+      }
+      const updated = await storage.updateChatRule(req.params.id as string, parsed.data);
+      if (!updated) return res.status(404).json({ message: "Rule not found" });
+      res.json(updated);
+    } catch (err: any) {
+      res.status(500).json({ message: err?.message || "Failed to update rule" });
+    }
+  });
+
+  app.delete("/api/admin/chat/rules/:id", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteChatRule(req.params.id as string);
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(500).json({ message: err?.message || "Failed to delete rule" });
+    }
+  });
 
   return httpServer;
 }

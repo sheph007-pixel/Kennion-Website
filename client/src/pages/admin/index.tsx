@@ -57,6 +57,7 @@ import type { Group, User } from "@shared/schema";
 export default function AdminHome() {
   const { toast } = useToast();
   const { users, isLoading } = useAdminUsersWithGroups();
+  const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [editUser, setEditUser] = useState<User | null>(null);
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
@@ -111,10 +112,20 @@ export default function AdminHome() {
               Click any group to open it in the customer view and take action.
             </p>
           </div>
-          <Badge variant="secondary" className="px-3 py-1">
-            {users.length} {users.length === 1 ? "user" : "users"} · {totalGroups}{" "}
-            {totalGroups === 1 ? "group" : "groups"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/admin/chat")}
+              data-testid="admin-chat-link"
+            >
+              Chat assistant
+            </Button>
+            <Badge variant="secondary" className="px-3 py-1">
+              {users.length} {users.length === 1 ? "user" : "users"} · {totalGroups}{" "}
+              {totalGroups === 1 ? "group" : "groups"}
+            </Badge>
+          </div>
         </div>
 
         <div className="mb-5">

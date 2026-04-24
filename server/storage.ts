@@ -6,13 +6,18 @@ import {
   type CensusEntry,
   type InsertCensusEntry,
   type Proposal,
+  type ChatMessage,
+  type ChatRule,
+  type ChatRuleInput,
   users,
   groups,
   censusEntries,
   proposals,
+  chatMessages,
+  chatRules,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, asc, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -38,6 +43,25 @@ export interface IStorage {
   getProposal(id: string): Promise<Proposal | undefined>;
   createProposal(data: { groupId: string; pdfPath: string; pdfBase64?: string; fileName: string; ratesData?: any }): Promise<Proposal>;
   deleteProposalsByGroupId(groupId: string): Promise<void>;
+
+  // Chat
+  createChatMessage(msg: { conversationId: string; userId: string; groupId?: string | null; role: "user" | "assistant"; content: string }): Promise<ChatMessage>;
+  listConversations(limit?: number): Promise<Array<{
+    conversationId: string;
+    userId: string;
+    groupId: string | null;
+    messageCount: number;
+    firstAt: Date;
+    lastAt: Date;
+    firstUserMessage: string | null;
+  }>>;
+  getConversationMessages(conversationId: string): Promise<ChatMessage[]>;
+
+  listChatRules(enabledOnly?: boolean): Promise<ChatRule[]>;
+  getChatRule(id: string): Promise<ChatRule | undefined>;
+  createChatRule(input: ChatRuleInput & { createdBy?: string | null }): Promise<ChatRule>;
+  updateChatRule(id: string, input: Partial<ChatRuleInput>): Promise<ChatRule | undefined>;
+  deleteChatRule(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -140,6 +164,120 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProposalsByGroupId(groupId: string): Promise<void> {
     await db.delete(proposals).where(eq(proposals.groupId, groupId));
+  }
+
+  // ── Chat ────────────────────────────────────────────────────────────
+
+  async createChatMessage(msg: {
+    conversationId: string;
+    userId: string;
+    groupId?: string | null;
+    role: "user" | "assistant";
+    content: string;
+  }): Promise<ChatMessage> {
+    const [created] = await db.insert(chatMessages).values({
+      conversationId: msg.conversationId,
+      userId: msg.userId,
+      groupId: msg.groupId ?? null,
+      role: msg.role,
+      content: msg.content,
+    }).returning();
+    return created;
+  }
+
+  async listConversations(limit = 200): Promise<Array<{
+    conversationId: string;
+    userId: string;
+    groupId: string | null;
+    messageCount: number;
+    firstAt: Date;
+    lastAt: Date;
+    firstUserMessage: string | null;
+  }>> {
+    // One row per conversationId. Picks the earliest userId + groupId
+    // per conversation (all turns share them anyway) and summarises the
+    // message count and date range. The firstUserMessage subquery grabs
+    // the first user prompt so the admin list has something previewable.
+    const rows = await db.execute<{
+      conversation_id: string;
+      user_id: string;
+      group_id: string | null;
+      message_count: number;
+      first_at: Date;
+      last_at: Date;
+      first_user_message: string | null;
+    }>(sql`
+      SELECT
+        c.conversation_id,
+        MIN(c.user_id)                                       AS user_id,
+        MIN(c.group_id)                                      AS group_id,
+        COUNT(*)::int                                        AS message_count,
+        MIN(c.created_at)                                    AS first_at,
+        MAX(c.created_at)                                    AS last_at,
+        (
+          SELECT content FROM ${chatMessages} m2
+          WHERE m2.conversation_id = c.conversation_id AND m2.role = 'user'
+          ORDER BY m2.created_at ASC
+          LIMIT 1
+        ) AS first_user_message
+      FROM ${chatMessages} c
+      GROUP BY c.conversation_id
+      ORDER BY last_at DESC
+      LIMIT ${limit}
+    `);
+    return rows.rows.map((r) => ({
+      conversationId: r.conversation_id,
+      userId: r.user_id,
+      groupId: r.group_id,
+      messageCount: Number(r.message_count),
+      firstAt: r.first_at,
+      lastAt: r.last_at,
+      firstUserMessage: r.first_user_message,
+    }));
+  }
+
+  async getConversationMessages(conversationId: string): Promise<ChatMessage[]> {
+    return db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.conversationId, conversationId))
+      .orderBy(asc(chatMessages.createdAt));
+  }
+
+  async listChatRules(enabledOnly = false): Promise<ChatRule[]> {
+    const q = db.select().from(chatRules).orderBy(asc(chatRules.createdAt));
+    if (enabledOnly) {
+      return db.select().from(chatRules).where(eq(chatRules.enabled, true)).orderBy(asc(chatRules.createdAt));
+    }
+    return q;
+  }
+
+  async getChatRule(id: string): Promise<ChatRule | undefined> {
+    const [r] = await db.select().from(chatRules).where(eq(chatRules.id, id));
+    return r;
+  }
+
+  async createChatRule(input: ChatRuleInput & { createdBy?: string | null }): Promise<ChatRule> {
+    const [created] = await db.insert(chatRules).values({
+      label: input.label,
+      content: input.content,
+      enabled: input.enabled ?? true,
+      createdBy: input.createdBy ?? null,
+    }).returning();
+    return created;
+  }
+
+  async updateChatRule(id: string, input: Partial<ChatRuleInput>): Promise<ChatRule | undefined> {
+    const [updated] = await db
+      .update(chatRules)
+      .set({ ...input, updatedAt: new Date() })
+      .where(eq(chatRules.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteChatRule(id: string): Promise<void> {
+    await db.delete(chatRules).where(eq(chatRules.id, id));
   }
 }
 

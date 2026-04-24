@@ -31,6 +31,17 @@ interface ChatWidgetProps {
 const STARTER = "Hi! I'm the Kennion plan assistant. Ask me about your plan benefits, rates, or how the program works.";
 const MAX_CHARS = 1000;
 
+// One UUID per widget mount. Each exchange between the user and the
+// assistant gets tagged with it so admin transcripts can replay a
+// coherent back-and-forth.
+function newConversationId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  // Fallback for older browsers: 128-ish bits of randomness.
+  return `cv_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`;
+}
+
 export function ChatWidget({ groupId }: ChatWidgetProps) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -39,6 +50,7 @@ export function ChatWidget({ groupId }: ChatWidgetProps) {
   ]);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const conversationIdRef = useRef<string>(newConversationId());
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -80,6 +92,7 @@ export function ChatWidget({ groupId }: ChatWidgetProps) {
         body: JSON.stringify({
           message: text,
           groupId,
+          conversationId: conversationIdRef.current,
           // Send everything except the just-added empty assistant stub.
           history: nextHistory.slice(0, -1),
         }),

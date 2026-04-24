@@ -18,6 +18,7 @@ import ReplaceCensusPage from "@/pages/proposal/replace-census";
 import AdminHome from "@/pages/admin";
 import AdminGroupViewPage from "@/pages/admin/group-view";
 import AdminTemplatesPage from "@/pages/admin/templates";
+import AdminChatPage from "@/pages/admin/chat";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
 import { Redirect } from "wouter";
@@ -112,6 +113,9 @@ function Router() {
       </Route>
       <Route path="/admin/templates">
         <ProtectedRoute component={AdminTemplatesPage} adminOnly />
+      </Route>
+      <Route path="/admin/chat">
+        <ProtectedRoute component={AdminChatPage} adminOnly />
       </Route>
       {/* Legacy admin deep links redirect to the unified admin home. */}
       <Route path="/admin/dashboard">
