@@ -170,16 +170,21 @@ export function ChatWidget({ groupId }: ChatWidgetProps) {
 
   return (
     <>
-      {/* Floating launcher — bottom-right, fixed to the viewport. */}
-      <Button
+      {/* Floating launcher — bottom-right, fixed to the viewport.
+          Uses a raw <button> (not the shadcn Button wrapper) so the
+          app's `.hover-elevate` rule — which forces position: relative
+          via :not() and outranks Tailwind's `.fixed` utility on
+          specificity — doesn't demote this element into normal
+          document flow. */}
+      <button
+        type="button"
         aria-label="Open Kennion plan assistant"
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full p-0 shadow-lg hover:shadow-xl"
-        size="icon"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         data-testid="chat-widget-launcher"
       >
         <MessageCircle className="h-6 w-6" />
-      </Button>
+      </button>
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
