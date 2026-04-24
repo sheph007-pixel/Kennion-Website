@@ -57,7 +57,11 @@ export function ProposalCockpit({
   const [acceptOpen, setAcceptOpen] = useState(false);
 
   const { toast } = useToast();
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
+  // When admin is viewing a customer's group under /admin/groups/:id,
+  // side nav links must stay in admin-space so the group fetch hits the
+  // owner-or-admin endpoint and the ProposalNav keeps admin mode.
+  const isAdminView = location.startsWith("/admin/groups/");
   const ratesQuery = useGroupRates(group.id, toIsoDate(effDate));
   const censusQuery = useGroupCensus(group.id);
   const replaceCensus = useReplaceCensus(group.id);
@@ -166,7 +170,10 @@ export function ProposalCockpit({
                   className="ml-auto inline-flex items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover-elevate"
                   onClick={() => {
                     const q = selectedPlan ? `?plan=${encodeURIComponent(selectedPlan.name)}` : "";
-                    navigate(`/dashboard/${group.id}/plan-details${q}`);
+                    const base = isAdminView
+                      ? `/admin/groups/${group.id}/plan-details`
+                      : `/dashboard/${group.id}/plan-details`;
+                    navigate(`${base}${q}`);
                   }}
                   data-testid="button-compare-plan-details"
                 >

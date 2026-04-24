@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProposalNav } from "@/components/proposal/proposal-nav";
 import { ProposalFooter } from "@/components/proposal/proposal-footer";
+import { AdminBanner } from "@/components/admin/admin-banner";
 import { BenefitGrid, type BenefitRow } from "@/components/proposal/benefit-grid";
-import { useGroupById } from "@/hooks/use-proposal";
+import type { Group } from "@shared/schema";
 import {
   MEDICAL_PLAN_DETAILS,
   DENTAL_PLAN_DETAILS,
@@ -28,10 +30,31 @@ import {
 // highlighted so the customer keeps their place.
 export default function PlanDetailsPage() {
   const [, navigate] = useLocation();
-  const [, params] = useRoute("/dashboard/:groupId/plan-details");
-  const groupId = params?.groupId;
-  const { group, isLoading } = useGroupById(groupId);
+  // Same page serves two routes: the customer path /dashboard/:id/plan-details
+  // and the admin-view path /admin/groups/:id/plan-details. The admin variant
+  // keeps admin mode in the nav and adds the AdminBanner on top.
+  const [isAdminRoute, adminParams] = useRoute("/admin/groups/:groupId/plan-details");
+  const [, customerParams] = useRoute("/dashboard/:groupId/plan-details");
+  const groupId = (isAdminRoute ? adminParams?.groupId : customerParams?.groupId);
+  // Fetch by id via the owner-or-admin endpoint so this page works for
+  // both the customer (their own group) and an admin viewing any group.
+  // useGroupById(id) would only search the *admin's* own groups and 404
+  // every customer group.
+  const { data: group, isLoading } = useQuery<Group>({
+    queryKey: ["/api/groups", groupId],
+    queryFn: async () => {
+      const res = await fetch(`/api/groups/${groupId}`, { credentials: "include" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message ?? `Failed to load group (${res.status})`);
+      }
+      return res.json();
+    },
+    enabled: Boolean(groupId),
+  });
   const [activeTab, setActiveTab] = useState("medical");
+
+  const backPath = isAdminRoute && group ? `/admin/groups/${group.id}` : group ? `/dashboard/${group.id}` : "/dashboard";
 
   // Selected plan highlight comes from ?plan=<key>. Read lazily so the
   // query-string change re-reads on render without extra hooks.
@@ -66,8 +89,11 @@ export default function PlanDetailsPage() {
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               The link may be out of date, or the quote may have been removed.
             </p>
-            <Button className="mt-6" onClick={() => navigate("/dashboard/groups")}>
-              Back to your groups
+            <Button
+              className="mt-6"
+              onClick={() => navigate(isAdminRoute ? "/admin" : "/dashboard/groups")}
+            >
+              {isAdminRoute ? "Back to users" : "Back to your groups"}
             </Button>
           </Card>
         </div>
@@ -78,12 +104,13 @@ export default function PlanDetailsPage() {
   return (
     <div className="min-h-screen bg-background">
       <ProposalNav />
+      {isAdminRoute && <AdminBanner group={group} />}
       <div className="mx-auto max-w-[1280px] px-6 py-6">
         {/* Breadcrumb + back */}
         <div className="mb-4 flex items-center justify-between gap-3">
           <button
             type="button"
-            onClick={() => navigate(`/dashboard/${group.id}`)}
+            onClick={() => navigate(backPath)}
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
             data-testid="button-back-to-rates"
           >

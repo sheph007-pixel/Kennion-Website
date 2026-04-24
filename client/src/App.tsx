@@ -104,6 +104,9 @@ function Router() {
       <Route path="/admin">
         <ProtectedRoute component={AdminHome} adminOnly />
       </Route>
+      <Route path="/admin/groups/:groupId/plan-details">
+        <ProtectedRoute component={PlanDetailsPage} adminOnly />
+      </Route>
       <Route path="/admin/groups/:groupId">
         <ProtectedRoute component={AdminGroupViewPage} adminOnly />
       </Route>
