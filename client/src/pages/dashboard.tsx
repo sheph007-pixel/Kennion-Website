@@ -4,12 +4,14 @@ import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useMyGroups, useGroupById } from "@/hooks/use-proposal";
+import { useAuth } from "@/lib/auth";
 import { ProposalCockpit } from "@/pages/proposal/cockpit";
 import { ProposalUpload } from "@/pages/proposal/upload";
 import { ProposalAnalyzing } from "@/pages/proposal/analyzing";
 import { ProposalHighRisk } from "@/pages/proposal/high-risk";
 import { NewGroupDetails } from "@/pages/proposal/new-group";
 import { ProposalNav } from "@/components/proposal/proposal-nav";
+import { ChatWidget } from "@/components/chat/chat-widget";
 
 // URL-driven screen router. The URL + server group state are the single
 // source of truth — no local "screen" state — so refresh, back/forward,
@@ -29,6 +31,10 @@ export default function DashboardPage() {
 
   const { groups, isLoading } = useMyGroups();
   const { group: selectedGroup } = useGroupById(groupId);
+  const { user } = useAuth();
+  // Group-side only. Admins viewing a customer's dashboard shouldn't see
+  // the assistant (they have different tools).
+  const showChat = user?.role !== "admin";
 
   // /dashboard with groups → redirect to the most recent.
   const needsIndexRedirect = !isNewRoute && !isGroupRoute && !isLoading && groups.length > 0;
@@ -38,73 +44,82 @@ export default function DashboardPage() {
     }
   }, [needsIndexRedirect, groups, navigate]);
 
-  if (isLoading) {
+  const content = (() => {
+    if (isLoading) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+
+    // Explicit "upload a new group" path. If the user already has at
+    // least one group, they first fill in the new group's name, state,
+    // and ZIP — we only skip that form for the initial group, which
+    // inherits the details they entered at signup.
+    if (isNewRoute) {
+      return <NewGroupUploadFlow hasExistingGroups={groups.length > 0} />;
+    }
+
+    // No groups yet → upload is the landing screen. Same behavior as before
+    // the multi-group change.
+    if (groups.length === 0) {
+      return (
+        <ProposalUpload
+          onComplete={(g) => navigate(`/dashboard/${g.id}`, { replace: true })}
+        />
+      );
+    }
+
+    // /dashboard bare URL with groups in flight → the effect above redirects
+    // us on the next tick; render a spinner until it happens.
+    if (!isGroupRoute) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+
+    // /dashboard/:id where :id isn't one of the user's groups.
+    if (!selectedGroup) {
+      return <NotFoundState onBack={() => navigate("/dashboard/groups")} />;
+    }
+
+    // Still running the initial analysis — the group exists but hasn't been
+    // scored yet. We show the animated progress screen; when the server
+    // sets riskTier, useMyGroups re-fetches and we fall through to the
+    // proper view.
+    if (!selectedGroup.riskTier) {
+      return (
+        <ProposalAnalyzing
+          group={selectedGroup}
+          onComplete={() => {
+            // Stay on the same URL — the group record will have a tier
+            // now, so the next render will pick cockpit or high-risk.
+          }}
+        />
+      );
+    }
+
+    // High risk groups never see the proposal.
+    if (selectedGroup.riskTier === "high") {
+      return <ProposalHighRisk />;
+    }
+
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // Explicit "upload a new group" path. If the user already has at
-  // least one group, they first fill in the new group's name, state,
-  // and ZIP — we only skip that form for the initial group, which
-  // inherits the details they entered at signup.
-  if (isNewRoute) {
-    return <NewGroupUploadFlow hasExistingGroups={groups.length > 0} />;
-  }
-
-  // No groups yet → upload is the landing screen. Same behavior as before
-  // the multi-group change.
-  if (groups.length === 0) {
-    return (
-      <ProposalUpload
-        onComplete={(g) => navigate(`/dashboard/${g.id}`, { replace: true })}
-      />
-    );
-  }
-
-  // /dashboard bare URL with groups in flight → the effect above redirects
-  // us on the next tick; render a spinner until it happens.
-  if (!isGroupRoute) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // /dashboard/:id where :id isn't one of the user's groups.
-  if (!selectedGroup) {
-    return <NotFoundState onBack={() => navigate("/dashboard/groups")} />;
-  }
-
-  // Still running the initial analysis — the group exists but hasn't been
-  // scored yet. We show the animated progress screen; when the server
-  // sets riskTier, useMyGroups re-fetches and we fall through to the
-  // proper view.
-  if (!selectedGroup.riskTier) {
-    return (
-      <ProposalAnalyzing
+      <ProposalCockpit
         group={selectedGroup}
-        onComplete={() => {
-          // Stay on the same URL — the group record will have a tier
-          // now, so the next render will pick cockpit or high-risk.
-        }}
+        onReplaceCensus={() => navigate(`/dashboard/${selectedGroup.id}/replace-census`)}
       />
     );
-  }
-
-  // High risk groups never see the proposal.
-  if (selectedGroup.riskTier === "high") {
-    return <ProposalHighRisk />;
-  }
+  })();
 
   return (
-    <ProposalCockpit
-      group={selectedGroup}
-      onReplaceCensus={() => navigate(`/dashboard/${selectedGroup.id}/replace-census`)}
-    />
+    <>
+      {content}
+      {showChat && <ChatWidget groupId={selectedGroup?.id} />}
+    </>
   );
 }
 

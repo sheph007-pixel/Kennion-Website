@@ -36,6 +36,7 @@ import { sendMagicLinkEmail, sendProposalAcceptanceEmail } from "./email";
 import { pool, testConnection } from "./db";
 import { cleanCSVWithAI, generateValidationGuidance } from "./ai-csv-cleaner";
 import { generateActuarialAnalysis, generateScoreReview } from "./ai-analysis";
+import { handleChat } from "./ai-chat";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 const templateUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
@@ -2549,6 +2550,12 @@ export async function registerRoutes(
       res.status(500).json({ message: err.message || "Pricing failed" });
     }
   });
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Dashboard AI chat — group-side only. See server/ai-chat.ts for
+  // system prompt, rate limiting, and knowledge assembly. Streams SSE.
+  // ──────────────────────────────────────────────────────────────────────
+  app.post("/api/chat", requireAuth, handleChat);
 
   return httpServer;
 }

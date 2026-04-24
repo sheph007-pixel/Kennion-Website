@@ -1,13 +1,4 @@
-import OpenAI from "openai";
-
-function getOpenAIClient() {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error("OPENAI_API_KEY environment variable is not set");
-  }
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-}
+import { getOpenAIClient } from "./ai-client";
 
 interface CleanedRow {
   firstName: string;
