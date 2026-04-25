@@ -211,3 +211,58 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
+
+// Heads-up to Hunter when a group user starts a new dashboard chat
+// session. Sent at most once per conversationId (the caller decides).
+// Failure is non-fatal — the assistant should keep working even if
+// Resend is down.
+export type ChatStartedPayload = {
+  userName: string | null;
+  userEmail: string;
+  companyName: string | null;
+  groupId: string | null;
+  conversationId: string;
+  firstMessage: string;
+};
+
+export async function sendChatStartedEmail(
+  toEmail: string,
+  payload: ChatStartedPayload,
+): Promise<boolean> {
+  const company = payload.companyName ? ` (${payload.companyName})` : "";
+  const subject = `Dashboard chat — ${payload.userName || payload.userEmail}${company}`;
+  const text = [
+    "A group user just opened a chat with the dashboard assistant.",
+    "",
+    `User:    ${payload.userName || "—"} <${payload.userEmail}>`,
+    `Company: ${payload.companyName || "—"}`,
+    `Group:   ${payload.groupId || "—"}`,
+    "",
+    "First question:",
+    payload.firstMessage,
+    "",
+    `Conversation ID: ${payload.conversationId}`,
+    "Full transcript: https://www.kennion.com/admin/chat",
+  ].join("\n");
+  const html = `<pre style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.5; color: #1b1b1b; white-space: pre-wrap;">${escapeHtml(text)}</pre>`;
+
+  try {
+    const client = getResendClient();
+    const result = await client.emails.send({
+      from: FROM_EMAIL,
+      to: toEmail,
+      subject,
+      text,
+      html,
+    });
+    if (result.error) {
+      log(`[EMAIL ERROR] Chat-started email Resend error: ${JSON.stringify(result.error)}`);
+      return false;
+    }
+    log(`[EMAIL SUCCESS] Chat-started email sent for ${payload.userEmail} (id: ${result.data?.id})`);
+    return true;
+  } catch (err: any) {
+    log(`[EMAIL ERROR] Failed to send chat-started email: ${err.message}`);
+    return false;
+  }
+}

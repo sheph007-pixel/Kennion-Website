@@ -26,6 +26,7 @@ import path from "path";
 import type { Request, Response } from "express";
 import { storage } from "./storage";
 import { getOpenAIClient } from "./ai-client";
+import { sendChatStartedEmail } from "./email";
 import {
   priceGroup,
   inferRatingArea,
@@ -208,6 +209,33 @@ export function buildSystemPrompt(
   return sections.join("\n\n");
 }
 
+// ─── Hunter handoff (email) ───────────────────────────────────────────────
+
+const HUNTER_EMAIL = "hunter@kennion.com";
+
+async function notifyHunter(
+  userId: string,
+  groupId: string | null,
+  conversationId: string,
+  firstMessage: string,
+): Promise<void> {
+  try {
+    const user = await storage.getUser(userId);
+    if (!user) return;
+    const groupRecord = groupId ? await storage.getGroup(groupId) : null;
+    await sendChatStartedEmail(HUNTER_EMAIL, {
+      userName: user.fullName || null,
+      userEmail: user.email,
+      companyName: groupRecord?.companyName ?? user.companyName ?? null,
+      groupId,
+      conversationId,
+      firstMessage,
+    });
+  } catch (err) {
+    console.error("[chat] notifyHunter failed:", err);
+  }
+}
+
 // ─── Per-request: compute this group's rates ─────────────────────────────
 
 async function priceForGroupId(groupId: string): Promise<{ group: Group; rates: PricingResult } | null> {
@@ -317,6 +345,20 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
 
   const systemPrompt = buildSystemPrompt(group, rates, adminRules);
 
+  // First turn detection — if there are no prior rows for this
+  // conversationId, this is a brand-new chat and we'll heads-up Hunter
+  // by email after persisting the user's message. We check before the
+  // insert so the count is meaningful.
+  let isFirstTurn = false;
+  try {
+    const existing = await storage.getConversationMessages(conversationId);
+    isFirstTurn = existing.length === 0;
+  } catch (err) {
+    // If the count lookup fails (e.g. table missing on first deploy),
+    // skip the notification rather than surface the error to the user.
+    console.error("[chat] first-turn lookup failed:", err);
+  }
+
   // Persist the user's prompt before we call OpenAI. If the upstream
   // call or stream fails we still want this turn in the transcript so
   // admins can see the frustrated or ambiguous question that led to a
@@ -331,6 +373,13 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
     });
   } catch (err) {
     console.error("[chat] failed to persist user message:", err);
+  }
+
+  // Fire-and-forget email to Hunter on the first message of a new
+  // conversation. We don't await — Resend is non-critical and we don't
+  // want it on the chat response's hot path.
+  if (isFirstTurn) {
+    void notifyHunter(userId, group?.id ?? null, conversationId, message);
   }
 
   const openai = getOpenAIClient();
