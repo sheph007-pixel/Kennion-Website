@@ -122,6 +122,63 @@ function getBaseUrl(req: Request): string {
   return `${req.protocol}://${host}`;
 }
 
+// ──────────────────────────────────────────────────────────────────────
+// PHI / sensitive-column scrubber
+//
+// We never want SSNs, tax IDs, or other identity numbers to land in
+// our database (including the express-session table, where raw CSV
+// rows would otherwise stage on the way to /confirm) or in our
+// application logs (the response logger captures res.json() payloads,
+// which used to include `sampleRows` and `headers`).
+//
+// Hard rule: at the moment a CSV is parsed, drop any column whose
+// header looks like an identity number BEFORE the rows touch the
+// session, the AI cleaner, or the response. The 6 fields the rate
+// engine actually needs (first name, last name, DOB, gender, zip,
+// relationship) never trip these patterns.
+// ──────────────────────────────────────────────────────────────────────
+const SENSITIVE_HEADER_PATTERNS: ReadonlyArray<RegExp> = [
+  /\bssn\b/i,
+  /social[\s_-]?sec/i,
+  /\btax[\s_-]?id\b/i,
+  /\bein\b/i,
+  /\bfed[\s_-]?id\b/i,
+  /\bfederal[\s_-]?id\b/i,
+  /credit[\s_-]?card/i,
+  /card[\s_-]?(num|number)/i,
+  /\bcvv\b/i,
+  /driver[\s_-]?lic/i,
+  /\blicen[sc]e[\s_-]?num/i,
+  /\bpassport\b/i,
+  /bank[\s_-]?account/i,
+  /\brouting[\s_-]?num/i,
+];
+
+function isSensitiveHeader(h: string): boolean {
+  return SENSITIVE_HEADER_PATTERNS.some((p) => p.test(h));
+}
+
+// Returns sanitised headers + rows with all sensitive columns removed,
+// plus the names of dropped columns (for a non-PII warning the parse
+// endpoint can echo back to the client / log).
+function stripSensitiveColumns(
+  headers: string[],
+  rows: any[],
+): { headers: string[]; rows: any[]; dropped: string[] } {
+  const dropped = headers.filter(isSensitiveHeader);
+  if (dropped.length === 0) return { headers, rows, dropped };
+  const droppedSet = new Set(dropped);
+  const safeHeaders = headers.filter((h) => !droppedSet.has(h));
+  const safeRows = rows.map((row) => {
+    const next: Record<string, any> = {};
+    for (const k of Object.keys(row)) {
+      if (!droppedSet.has(k)) next[k] = row[k];
+    }
+    return next;
+  });
+  return { headers: safeHeaders, rows: safeRows, dropped };
+}
+
 // STRICT: Require exact column names from template (no AI mapping)
 const REQUIRED_COLUMNS = [
   "First Name",
@@ -1188,12 +1245,22 @@ export async function registerRoutes(
         return res.status(400).json({ message: "CSV file is empty" });
       }
 
-      const headers = Object.keys(rows[0]).filter(h => h.trim() !== "");
+      const rawHeaders = Object.keys(rows[0]).filter(h => h.trim() !== "");
 
-      log(`Found ${headers.length} columns: ${headers.join(", ")}`);
+      // PHI scrub: drop SSN / tax-id / card-number style columns BEFORE
+      // anything else touches the rows. This keeps sensitive values
+      // out of the session table, the AI cleaner, and our response
+      // logs. The 6 fields the rate engine needs never trip these
+      // patterns.
+      const scrubbed = stripSensitiveColumns(rawHeaders, rows);
+      const headers = scrubbed.headers;
+      if (scrubbed.dropped.length > 0) {
+        log(`PHI scrub: dropped ${scrubbed.dropped.length} sensitive column(s): ${scrubbed.dropped.join(", ")}`);
+      }
+      log(`Found ${headers.length} usable columns: ${headers.join(", ")}`);
 
       // Filter out completely empty rows (rows where all values are empty/null)
-      const nonEmptyRows = rows.filter(row => {
+      const nonEmptyRows = scrubbed.rows.filter(row => {
         const values = Object.values(row);
         return values.some(val => val != null && String(val).trim() !== "");
       });
@@ -2691,8 +2758,17 @@ export async function registerRoutes(
       const rows = parsed.data as any[];
       if (rows.length === 0) return res.status(400).json({ message: "CSV file is empty" });
 
-      const headers = Object.keys(rows[0]).filter((h) => h.trim() !== "");
-      const nonEmptyRows = rows.filter((row) =>
+      const rawHeaders = Object.keys(rows[0]).filter((h) => h.trim() !== "");
+
+      // PHI scrub before anything touches the session, the AI cleaner,
+      // or the response. See SENSITIVE_HEADER_PATTERNS for what
+      // qualifies. Mirrors the customer parse path.
+      const scrubbed = stripSensitiveColumns(rawHeaders, rows);
+      const headers = scrubbed.headers;
+      if (scrubbed.dropped.length > 0) {
+        log(`PHI scrub (admin quote): dropped ${scrubbed.dropped.length} sensitive column(s): ${scrubbed.dropped.join(", ")}`);
+      }
+      const nonEmptyRows = scrubbed.rows.filter((row) =>
         Object.values(row).some((v) => v != null && String(v).trim() !== "")
       );
       if (nonEmptyRows.length === 0) {

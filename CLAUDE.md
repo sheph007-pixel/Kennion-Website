@@ -47,6 +47,38 @@ working until the requested change is live on www.kennion.com and verified.
 
 ---
 
+# Sensitive data: SSN / tax-ID handling
+
+Hard rule: **the only place an SSN ever lives in this system is the
+acceptance email body sent to hunter@kennion.com via Resend.** Never:
+
+- Add an SSN-bearing column to any DB table (`groups`, `census_entries`,
+  `users`, `proposals`, or anything new).
+- Echo SSN-bearing form fields back in any response. Acceptance routes
+  return `{ ok: true }` only.
+- Log a request body or its individual SSN fields. The response logger
+  in `server/index.ts` captures `res.json()` payloads only — never let
+  an SSN appear in a JSON response.
+- Stash a raw CSV row in `req.session.*` without first running it
+  through `stripSensitiveColumns(...)` in `server/routes.ts`. The
+  helper drops any column whose header matches
+  `SENSITIVE_HEADER_PATTERNS` (SSN, social-sec, tax-id, EIN, fed-id,
+  credit card, CVV, driver license, passport, bank/routing).
+
+The acceptance route validates `ssnLast4` + `ssnLast4Verify`, hands them
+straight to `sendProposalAcceptanceEmail` in `server/email.ts`, and
+the function exits — the value is garbage-collected. No DB write, no
+log line, no session put. If you add new acceptance-style flows,
+copy that pattern verbatim and keep the SSN out of any persistence.
+
+CSV parse endpoints (`/api/groups/parse`, `/api/admin/quotes/parse`)
+call `stripSensitiveColumns` on the parsed rows before anything else
+touches them — the sanitised set is what reaches the AI cleaner, the
+session table, the response, and the logs. Never bypass this on a
+new parse path; if you add one, route it through the same helper.
+
+---
+
 # Rate Engine
 
 This is how kennion.com turns an uploaded census into proposal rates. Read this
