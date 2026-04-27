@@ -2,7 +2,10 @@ import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
 import {
+  ArrowDown,
   ArrowLeft,
+  ArrowUp,
+  ArrowUpDown,
   Briefcase,
   Copy,
   ExternalLink,
@@ -19,6 +22,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,23 +62,60 @@ import {
 import type { Group } from "@shared/schema";
 import { cn } from "@/lib/utils";
 
-// Internal sales quotes list. One row per quote with status, view
-// counts, and per-row actions (copy / rotate / revoke / open / delete).
+// Internal sales quotes list — sortable table. Click any column
+// header to toggle sort direction. Default is newest submitted first
+// so freshly minted quotes always sit at the top.
+type SortKey =
+  | "companyName"
+  | "employeeCount"
+  | "submittedAt"
+  | "riskScore"
+  | "riskTier";
+type SortDir = "asc" | "desc";
+
+// Lower index = "better" tier so ascending sort shows preferred
+// risk → standard → high.  Anything else (null / unknown) sinks to
+// the bottom of either direction.
+const TIER_ORDER: Record<string, number> = {
+  preferred: 0,
+  standard: 1,
+  high: 2,
+};
+
+function defaultDir(key: SortKey): SortDir {
+  return key === "companyName" || key === "riskTier" ? "asc" : "desc";
+}
+
 export default function AdminQuotesPage() {
   const [, navigate] = useLocation();
   const { data: quotes, isLoading } = useAdminQuotes();
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
+    key: "submittedAt",
+    dir: "desc",
+  });
 
-  const filtered = useMemo(() => {
+  function onSort(key: SortKey) {
+    setSort((cur) =>
+      cur.key === key
+        ? { key, dir: cur.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: defaultDir(key) },
+    );
+  }
+
+  const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     const all = quotes ?? [];
-    if (!q) return all;
-    return all.filter((g) =>
-      g.companyName?.toLowerCase().includes(q) ||
-      g.contactName?.toLowerCase().includes(q) ||
-      g.contactEmail?.toLowerCase().includes(q)
-    );
-  }, [quotes, search]);
+    const filtered = q
+      ? all.filter((g) =>
+          g.companyName?.toLowerCase().includes(q) ||
+          g.contactName?.toLowerCase().includes(q) ||
+          g.contactEmail?.toLowerCase().includes(q),
+        )
+      : all;
+    const sorted = [...filtered].sort((a, b) => compareQuotes(a, b, sort.key, sort.dir));
+    return sorted;
+  }, [quotes, search, sort]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -121,10 +169,10 @@ export default function AdminQuotesPage() {
         {isLoading ? (
           <div className="space-y-3">
             {[0, 1, 2].map((i) => (
-              <Skeleton key={i} className="h-20 w-full" />
+              <Skeleton key={i} className="h-12 w-full" />
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : visible.length === 0 ? (
           <Card className="p-10 text-center text-muted-foreground">
             {search ? (
               "No quotes match your search."
@@ -142,15 +190,103 @@ export default function AdminQuotesPage() {
             )}
           </Card>
         ) : (
-          <div className="space-y-2">
-            {filtered.map((g) => (
-              <QuoteRow key={g.id} group={g} />
-            ))}
-          </div>
+          <Card className="overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[260px]">
+                    <SortBtn label="Company" k="companyName" sort={sort} onSort={onSort} />
+                  </TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">
+                    <SortBtn label="Employees" k="employeeCount" sort={sort} onSort={onSort} align="right" />
+                  </TableHead>
+                  <TableHead>
+                    <SortBtn label="Submitted" k="submittedAt" sort={sort} onSort={onSort} />
+                  </TableHead>
+                  <TableHead className="text-right">
+                    <SortBtn label="Score" k="riskScore" sort={sort} onSort={onSort} align="right" />
+                  </TableHead>
+                  <TableHead>
+                    <SortBtn label="Tier" k="riskTier" sort={sort} onSort={onSort} />
+                  </TableHead>
+                  <TableHead className="w-[180px] text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {visible.map((g) => (
+                  <QuoteRow key={g.id} group={g} />
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
         )}
       </div>
     </div>
   );
+}
+
+function SortBtn({
+  label,
+  k,
+  sort,
+  onSort,
+  align = "left",
+}: {
+  label: string;
+  k: SortKey;
+  sort: { key: SortKey; dir: SortDir };
+  onSort: (key: SortKey) => void;
+  align?: "left" | "right";
+}) {
+  const active = sort.key === k;
+  const Icon = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(k)}
+      className={cn(
+        "inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide hover:text-foreground",
+        active ? "text-foreground" : "text-muted-foreground",
+        align === "right" && "ml-auto",
+      )}
+      data-testid={`sort-${k}`}
+    >
+      {label}
+      <Icon className={cn("h-3 w-3", !active && "opacity-50")} />
+    </button>
+  );
+}
+
+function compareQuotes(a: Group, b: Group, key: SortKey, dir: SortDir): number {
+  const factor = dir === "asc" ? 1 : -1;
+  switch (key) {
+    case "companyName": {
+      return (a.companyName ?? "").localeCompare(b.companyName ?? "") * factor;
+    }
+    case "employeeCount": {
+      return ((a.employeeCount ?? 0) - (b.employeeCount ?? 0)) * factor;
+    }
+    case "submittedAt": {
+      const av = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+      const bv = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+      return (av - bv) * factor;
+    }
+    case "riskScore": {
+      // Drafts (no score) sink to the bottom regardless of direction.
+      const av = a.riskScore;
+      const bv = b.riskScore;
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      return (av - bv) * factor;
+    }
+    case "riskTier": {
+      const av = a.riskTier ? TIER_ORDER[a.riskTier] ?? 99 : 99;
+      const bv = b.riskTier ? TIER_ORDER[b.riskTier] ?? 99 : 99;
+      return (av - bv) * factor;
+    }
+  }
 }
 
 function QuoteRow({ group }: { group: Group }) {
@@ -168,6 +304,9 @@ function QuoteRow({ group }: { group: Group }) {
   const publicUrl = group.publicToken
     ? `${window.location.origin}/q/${group.publicToken}`
     : null;
+  const submittedLabel = group.submittedAt
+    ? format(new Date(group.submittedAt), "MMM d, yyyy")
+    : "—";
   const lastViewedLabel = group.lastViewedAt
     ? format(new Date(group.lastViewedAt), "MMM d · h:mm a")
     : null;
@@ -180,128 +319,163 @@ function QuoteRow({ group }: { group: Group }) {
       .catch(() => toast({ title: "Copy failed", variant: "destructive" }));
   }
 
+  // Whole-row click opens the cockpit; per-cell controls
+  // (mailto link, action buttons) stop propagation so their own
+  // handlers fire without yanking the rep into the cockpit.
+  function openCockpit() {
+    navigate(`/admin/groups/${group.id}`);
+  }
+
   return (
-    <Card className="overflow-hidden" data-testid={`row-quote-${group.id}`}>
-      <div className="flex items-center gap-3 px-5 py-3.5">
-        <button
-          type="button"
-          onClick={() => navigate(`/admin/groups/${group.id}`)}
-          className="flex min-w-0 flex-1 items-center gap-3 text-left"
-          data-testid={`button-open-quote-${group.id}`}
-        >
-          <span
-            className="h-2 w-2 shrink-0 rounded-full"
-            style={{ background: tierConfig?.hsl ?? "hsl(var(--muted-foreground))" }}
-            aria-hidden
-          />
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2 truncate text-sm font-semibold">
-              {group.companyName}
-              {tierConfig && (
-                <span className={cn("text-[11px] font-semibold uppercase tracking-wide", tierConfig.className)}>
-                  {tier === "high" ? "Not Approved" : tierConfig.label}
-                </span>
-              )}
-              <StatusPill status={status} />
-            </div>
-            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-              {group.contactName ? (
-                <span>{group.contactName}</span>
-              ) : !group.contactEmail ? (
-                <span className="italic">No contact yet</span>
-              ) : null}
-              {group.contactEmail && (
-                <>
-                  {group.contactName && <span aria-hidden>·</span>}
-                  <a
-                    href={`mailto:${group.contactEmail}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="hover:text-foreground"
-                  >
-                    {group.contactEmail}
-                  </a>
-                </>
-              )}
-              <span aria-hidden>·</span>
-              <span>{group.totalLives ?? 0} lives</span>
-              {lastViewedLabel && (
-                <>
-                  <span aria-hidden>·</span>
-                  <span>
-                    Last viewed {lastViewedLabel}
-                    {group.viewCount ? ` · ${group.viewCount} views` : null}
-                  </span>
-                </>
-              )}
+    <>
+      <TableRow
+        className="cursor-pointer"
+        onClick={openCockpit}
+        data-testid={`row-quote-${group.id}`}
+      >
+        <TableCell>
+          <div className="flex items-start gap-2.5">
+            <span
+              className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+              style={{ background: tierConfig?.hsl ?? "hsl(var(--muted-foreground))" }}
+              aria-hidden
+            />
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold">{group.companyName}</div>
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                {group.contactName ? (
+                  <span>{group.contactName}</span>
+                ) : !group.contactEmail ? (
+                  <span className="italic">No contact yet</span>
+                ) : null}
+                {group.contactEmail && (
+                  <>
+                    {group.contactName && <span aria-hidden>·</span>}
+                    <a
+                      href={`mailto:${group.contactEmail}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="hover:text-foreground"
+                    >
+                      {group.contactEmail}
+                    </a>
+                  </>
+                )}
+                {lastViewedLabel && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span>
+                      {group.viewCount ?? 0}{" "}
+                      {(group.viewCount ?? 0) === 1 ? "view" : "views"} · last{" "}
+                      {lastViewedLabel}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </button>
-        <div className="flex shrink-0 items-center gap-1">
-          {publicUrl && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={copyLink}
-              className="gap-1.5"
-              data-testid={`button-copy-link-${group.id}`}
-            >
-              <Copy className="h-3.5 w-3.5" />
-              Copy link
-            </Button>
+        </TableCell>
+
+        <TableCell>
+          <StatusPill status={status} />
+        </TableCell>
+
+        <TableCell className="text-right tabular-nums">
+          {group.employeeCount ?? 0}
+        </TableCell>
+
+        <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+          {submittedLabel}
+        </TableCell>
+
+        <TableCell className="text-right tabular-nums">
+          {group.riskScore != null ? (
+            <span style={{ color: tierConfig?.hsl }}>{group.riskScore.toFixed(2)}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
           )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+        </TableCell>
+
+        <TableCell>
+          {tierConfig ? (
+            <span className={cn("text-[11px] font-semibold uppercase tracking-wide", tierConfig.className)}>
+              {tier === "high" ? "Not Approved" : tierConfig.label}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          )}
+        </TableCell>
+
+        <TableCell className="text-right">
+          <div
+            className="flex items-center justify-end gap-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {publicUrl && (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="h-8 w-8 p-0"
-                data-testid={`button-quote-menu-${group.id}`}
+                onClick={copyLink}
+                className="gap-1.5"
+                data-testid={`button-copy-link-${group.id}`}
               >
-                <MoreHorizontal className="h-4 w-4" />
+                <Copy className="h-3.5 w-3.5" />
+                Copy link
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem onSelect={() => navigate(`/admin/groups/${group.id}`)}>
-                <Eye className="mr-2 h-4 w-4" />
-                Open in cockpit
-              </DropdownMenuItem>
-              {publicUrl && (
-                <DropdownMenuItem onSelect={() => window.open(publicUrl, "_blank")}>
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Preview public page
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  data-testid={`button-quote-menu-${group.id}`}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onSelect={openCockpit}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  Open in cockpit
                 </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onSelect={() =>
-                  rotate.mutate(group.id, {
-                    onSuccess: () => toast({ title: "Link rotated", description: "The old link no longer works." }),
-                    onError: (e: any) => toast({ title: "Rotate failed", description: e?.message, variant: "destructive" }),
-                  })
-                }
-                disabled={!group.riskTier}
-              >
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Rotate link
-              </DropdownMenuItem>
-              {group.publicToken && (
-                <DropdownMenuItem onSelect={() => setConfirmRevoke(true)}>
-                  <Slash className="mr-2 h-4 w-4" />
-                  Revoke link
+                {publicUrl && (
+                  <DropdownMenuItem onSelect={() => window.open(publicUrl, "_blank")}>
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Preview public page
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={() =>
+                    rotate.mutate(group.id, {
+                      onSuccess: () => toast({ title: "Link rotated", description: "The old link no longer works." }),
+                      onError: (e: any) => toast({ title: "Rotate failed", description: e?.message, variant: "destructive" }),
+                    })
+                  }
+                  disabled={!group.riskTier}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Rotate link
                 </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onSelect={() => setConfirmDelete(true)}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete quote
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+                {group.publicToken && (
+                  <DropdownMenuItem onSelect={() => setConfirmRevoke(true)}>
+                    <Slash className="mr-2 h-4 w-4" />
+                    Revoke link
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={() => setConfirmDelete(true)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete quote
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </TableCell>
+      </TableRow>
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
@@ -358,7 +532,7 @@ function QuoteRow({ group }: { group: Group }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Card>
+    </>
   );
 }
 
@@ -371,7 +545,7 @@ function StatusPill({ status }: { status: QuoteStatus }) {
     revoked:  "bg-destructive/10 text-destructive",
   };
   return (
-    <Badge variant="secondary" className={cn("text-[10px] font-semibold", tone[status])}>
+    <Badge variant="secondary" className={cn("text-[10px] font-semibold whitespace-nowrap", tone[status])}>
       {statusLabel(status)}
     </Badge>
   );
