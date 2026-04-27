@@ -15,7 +15,7 @@ import {
 import { ProposalNav } from "@/components/proposal/proposal-nav";
 import { ProposalUpload } from "@/pages/proposal/upload";
 import { useToast } from "@/hooks/use-toast";
-import { useCreateQuote } from "@/hooks/use-admin-quotes";
+import { useStashQuoteDetails } from "@/hooks/use-admin-quotes";
 import { US_STATES } from "@shared/schema";
 
 // Two-step admin wizard for creating a sales-rep-driven quote.
@@ -23,26 +23,28 @@ import { US_STATES } from "@shared/schema";
 //   Step 1 — Prospect basics (company + state/zip; contact info is
 //            optional so reps can crank quotes fast and let the
 //            prospect fill it via the Accept modal).
-//            POST /api/admin/quotes → returns the new quote id.
-//   Step 2 — Census upload (ProposalUpload in adminQuoteId mode).
-//            On complete, route to /admin/groups/:id where the rep can
-//            copy the public link from the AdminBanner.
+//            POST /api/admin/quotes/pending stashes details in the
+//            session — NO DB row yet.
+//   Step 2 — Census upload. Server validates → atomically creates
+//            quote + census on success. If the upload fails, no
+//            orphan "Draft" row is left behind because nothing was
+//            created in the first place.
 //
-// The quoteId travels in the URL as `?id=…` so a refresh on step 2
-// keeps the same quote.
+// The current step travels in the URL as `?step=upload`. Refresh at
+// step 2 still has the session-stashed details; if the session is
+// empty (cookie cleared, etc.) the upload step will surface a clear
+// error from the server and the rep starts over.
 export default function AdminQuoteWizardPage() {
   const [, navigate] = useLocation();
-  // wouter v3's useLocation() returns the pathname only — query
-  // strings come from useSearch(). Same pattern reset-password.tsx
-  // uses for its `?token=…` lookup.
   const search = useSearch();
-  const qid = new URLSearchParams(search).get("id");
-  const step: "details" | "census" = qid ? "census" : "details";
+  const step = new URLSearchParams(search).get("step") === "upload" ? "upload" : "details";
 
-  if (step === "details") return <DetailsStep onCreated={(id) => navigate(`/admin/quotes/new?id=${id}`)} />;
+  if (step === "details") {
+    return <DetailsStep onContinue={() => navigate("/admin/quotes/new?step=upload")} />;
+  }
   return (
     <ProposalUpload
-      adminQuoteId={qid!}
+      adminQuoteFlow
       title="Upload the prospect's census"
       subtitle={
         <>
@@ -57,10 +59,10 @@ export default function AdminQuoteWizardPage() {
   );
 }
 
-function DetailsStep({ onCreated }: { onCreated: (quoteId: string) => void }) {
+function DetailsStep({ onContinue }: { onContinue: () => void }) {
   const { toast } = useToast();
   const [, navigate] = useLocation();
-  const createQuote = useCreateQuote();
+  const stashDetails = useStashQuoteDetails();
   const [companyName, setCompanyName] = useState("");
   const [state, setState] = useState("");
   const [zipCode, setZipCode] = useState("");
@@ -81,12 +83,12 @@ function DetailsStep({ onCreated }: { onCreated: (quoteId: string) => void }) {
     stateValid &&
     zipValid &&
     emailValid &&
-    !createQuote.isPending;
+    !stashDetails.isPending;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canContinue) return;
-    createQuote.mutate(
+    stashDetails.mutate(
       {
         companyName: companyName.trim(),
         state: state.trim().toUpperCase(),
@@ -96,10 +98,10 @@ function DetailsStep({ onCreated }: { onCreated: (quoteId: string) => void }) {
         contactPhone: contactPhone.trim() || undefined,
       },
       {
-        onSuccess: (quote) => onCreated(quote.id),
+        onSuccess: () => onContinue(),
         onError: (err: any) =>
           toast({
-            title: "Couldn't create quote",
+            title: "Couldn't save details",
             description: err?.message,
             variant: "destructive",
           }),
@@ -238,7 +240,7 @@ function DetailsStep({ onCreated }: { onCreated: (quoteId: string) => void }) {
               className="w-full gap-1.5"
               data-testid="button-quote-continue"
             >
-              {createQuote.isPending ? (
+              {stashDetails.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>

@@ -9,7 +9,7 @@ export function useAdminQuotes() {
   return useQuery<Group[]>({ queryKey: ["/api/admin/quotes"] });
 }
 
-type CreateQuoteInput = {
+type StashQuoteDetailsInput = {
   companyName: string;
   state: string;
   zipCode: string;
@@ -21,14 +21,25 @@ type CreateQuoteInput = {
   contactPhone?: string;
 };
 
-export function useCreateQuote() {
+// Step 1 of the wizard: stash prospect details in the session. We do
+// NOT create a DB row here — that only happens once the census also
+// validates, in /api/admin/quotes/confirm. This avoids the orphan
+// "Draft" rows that piled up when the upload step failed under the
+// previous create-eagerly design.
+export function useStashQuoteDetails() {
   return useMutation({
-    mutationFn: async (input: CreateQuoteInput) => {
-      const res = await apiRequest("POST", "/api/admin/quotes", input);
-      return (await res.json()) as Group;
+    mutationFn: async (input: StashQuoteDetailsInput) => {
+      await apiRequest("POST", "/api/admin/quotes/pending", input);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/quotes"] });
+  });
+}
+
+// Discard the in-flight wizard draft (rep clicked Cancel or backed
+// out). Idempotent — safe to call even if there's no draft.
+export function useDiscardPendingQuote() {
+  return useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", "/api/admin/quotes/pending", {});
     },
   });
 }

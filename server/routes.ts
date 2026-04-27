@@ -60,16 +60,27 @@ declare module "express-session" {
       state: string;
       zipCode: string;
     };
-    // Per-quote staging area for the admin "internal sales" wizard.
-    // Keyed by the draft quote's id so a sales rep can keep multiple
-    // wizards open without crossing streams. Mirrors the shape of
-    // pendingCensus but namespaced by quoteId.
-    pendingAdminQuote?: Record<string, {
-      headers: string[];
-      rows: any[];
-      fileName: string;
-      aiCleaned?: any;
-    }>;
+    // Per-rep staging area for the admin "internal sales" wizard. Held
+    // in session, NOT in the DB — the quote row is only created when
+    // the census validates. Single slot per session (not per quote)
+    // mirrors the customer flow and means a failed CSV upload never
+    // leaves an orphan draft behind.
+    pendingAdminQuoteDraft?: {
+      details: {
+        companyName: string;
+        state: string;
+        zipCode: string;
+        contactName?: string | null;
+        contactEmail?: string | null;
+        contactPhone?: string | null;
+      };
+      census?: {
+        headers: string[];
+        rows: any[];
+        fileName: string;
+        aiCleaned?: any;
+      };
+    };
   }
 }
 
@@ -2612,31 +2623,45 @@ export async function registerRoutes(
     return true;
   }
 
-  // Step 1 of the admin wizard: the rep enters prospect details and we
-  // mint a draft quote + public token. The link is ready to copy from
-  // the moment the wizard finishes census upload.
-  app.post("/api/admin/quotes", requireAdmin, async (req: Request, res: Response) => {
+  // ── Admin wizard endpoints ──────────────────────────────────────────
+  //
+  // The wizard never creates a DB row until the census validates and
+  // is ready to ship. Until then everything lives in the session, so
+  // a failed upload or an abandoned wizard never leaves an orphan
+  // draft on /admin/quotes.
+
+  // Stash the prospect details from step 1. No DB write — we wait for
+  // the census to validate before minting the row.
+  app.post("/api/admin/quotes/pending", requireAdmin, async (req: Request, res: Response) => {
     try {
       const parsed = internalSalesQuoteInputSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ message: parsed.error.errors[0]?.message || "Invalid quote details" });
       }
-      const adminId = req.session.userId!;
-      const created = await storage.createInternalSalesQuote({
-        companyName: parsed.data.companyName,
-        state: parsed.data.state,
-        zipCode: parsed.data.zipCode,
-        contactName: parsed.data.contactName ?? null,
-        contactEmail: parsed.data.contactEmail ?? null,
-        contactPhone: parsed.data.contactPhone ?? null,
-        createdByAdminId: adminId,
-        publicToken: generatePublicToken(),
-      });
-      res.status(201).json(created);
+      req.session.pendingAdminQuoteDraft = {
+        details: {
+          companyName: parsed.data.companyName,
+          state: parsed.data.state,
+          zipCode: parsed.data.zipCode,
+          contactName: parsed.data.contactName ?? null,
+          contactEmail: parsed.data.contactEmail ?? null,
+          contactPhone: parsed.data.contactPhone ?? null,
+        },
+      };
+      res.json({ ok: true });
     } catch (err: any) {
-      log(`Admin quote create error: ${err?.message || err}`, "routes");
-      res.status(500).json({ message: err?.message || "Failed to create quote" });
+      log(`Admin quote stash error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: err?.message || "Failed to stash details" });
     }
+  });
+
+  // Step 2's mount can call this to confirm there's an in-flight draft;
+  // returns 404 if the rep landed on the upload step without filling
+  // step 1 first (browser refresh on a stale URL, etc).
+  app.get("/api/admin/quotes/pending", requireAdmin, async (req: Request, res: Response) => {
+    const draft = req.session.pendingAdminQuoteDraft;
+    if (!draft) return res.status(404).json({ message: "No quote in progress" });
+    res.json({ details: draft.details });
   });
 
   // List all internal-sales quotes for the admin quotes page. We hand
@@ -2651,16 +2676,11 @@ export async function registerRoutes(
     }
   });
 
-  // Step 2 of the wizard: parse the CSV and detect column mapping.
-  // Mirrors /api/groups/parse but stashes under
-  // pendingAdminQuote[quoteId] so reps can keep multiple wizards open.
-  app.post("/api/admin/quotes/:id/parse", requireAdmin, upload.single("file"), async (req: Request, res: Response) => {
+  // CSV upload + AI column detection. Stashes under the session draft.
+  app.post("/api/admin/quotes/parse", requireAdmin, upload.single("file"), async (req: Request, res: Response) => {
     try {
-      const id = req.params.id as string;
-      const quote = await storage.getGroup(id);
-      if (!quote || quote.source !== "internal_sales") {
-        return res.status(404).json({ message: "Quote not found" });
-      }
+      const draft = req.session.pendingAdminQuoteDraft;
+      if (!draft) return res.status(400).json({ message: "Start with the prospect details first." });
       if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
       const csvText = req.file.buffer.toString("utf-8");
@@ -2681,11 +2701,13 @@ export async function registerRoutes(
 
       const aiResult = await cleanCSVWithAI(headers, nonEmptyRows);
 
-      req.session.pendingAdminQuote = req.session.pendingAdminQuote || {};
-      req.session.pendingAdminQuote[id] = {
-        headers,
-        rows: nonEmptyRows,
-        fileName: req.file.originalname || "census.csv",
+      req.session.pendingAdminQuoteDraft = {
+        ...draft,
+        census: {
+          headers,
+          rows: nonEmptyRows,
+          fileName: req.file.originalname || "census.csv",
+        },
       };
 
       const sampleRows = nonEmptyRows.slice(0, 3).map((row) => {
@@ -2708,17 +2730,15 @@ export async function registerRoutes(
     }
   });
 
-  // Step 3: apply the user-confirmed column mapping and AI-clean the data.
-  app.post("/api/admin/quotes/:id/apply-mapping", requireAdmin, async (req: Request, res: Response) => {
+  app.post("/api/admin/quotes/apply-mapping", requireAdmin, async (req: Request, res: Response) => {
     try {
-      const id = req.params.id as string;
-      const pending = req.session.pendingAdminQuote?.[id];
-      if (!pending) return res.status(400).json({ message: "No pending census. Upload first." });
+      const draft = req.session.pendingAdminQuoteDraft;
+      if (!draft?.census) return res.status(400).json({ message: "No pending census. Upload first." });
 
       const { columnMapping } = req.body;
       if (!columnMapping) return res.status(400).json({ message: "Column mapping is required" });
 
-      const aiResult = await cleanCSVWithAI(pending.headers, pending.rows, columnMapping);
+      const aiResult = await cleanCSVWithAI(draft.census.headers, draft.census.rows, columnMapping);
       const previewRows = aiResult.cleanedData.slice(0, 10).map((cleaned: any) => ({
         firstName: cleaned.firstName,
         lastName: cleaned.lastName,
@@ -2728,10 +2748,13 @@ export async function registerRoutes(
         zip: cleaned.zip,
         issues: cleaned.issues,
       }));
-      req.session.pendingAdminQuote![id] = { ...pending, aiCleaned: aiResult };
+      req.session.pendingAdminQuoteDraft = {
+        ...draft,
+        census: { ...draft.census, aiCleaned: aiResult },
+      };
 
       res.json({
-        totalRows: pending.rows.length,
+        totalRows: draft.census.rows.length,
         cleanedRows: aiResult.cleanedData.length,
         previewRows,
         summary: aiResult.summary,
@@ -2744,23 +2767,17 @@ export async function registerRoutes(
     }
   });
 
-  // Step 4 (terminal): validate, score, write census, populate the
-  // internal-sales group. Mirrors /api/groups/confirm's analysis +
-  // validation block; difference is the group already exists (we just
-  // populate it) and we don't read user-derived defaults.
-  app.post("/api/admin/quotes/:id/confirm", requireAdmin, async (req: Request, res: Response) => {
+  // Terminal step: validate, score, then create the quote + census in
+  // one shot. If validation fails, NO row is created — the rep can
+  // re-upload a corrected CSV without piling up orphan drafts.
+  app.post("/api/admin/quotes/confirm", requireAdmin, async (req: Request, res: Response) => {
     try {
-      const id = req.params.id as string;
-      const quote = await storage.getGroup(id);
-      if (!quote || quote.source !== "internal_sales") {
-        return res.status(404).json({ message: "Quote not found" });
-      }
-      const pending = req.session.pendingAdminQuote?.[id];
-      if (!pending?.aiCleaned) {
+      const draft = req.session.pendingAdminQuoteDraft;
+      if (!draft?.census?.aiCleaned) {
         return res.status(400).json({ message: "No pending census. Upload first." });
       }
 
-      const aiCleaned = pending.aiCleaned;
+      const aiCleaned = draft.census.aiCleaned;
       const entries = aiCleaned.cleanedData.map((c: any) => ({
         firstName: c.firstName,
         lastName: c.lastName,
@@ -2796,9 +2813,13 @@ export async function registerRoutes(
         });
       }
 
-      // If this is a re-upload (admin retried after a fix), wipe the
-      // prior census so we don't end up with stacked rosters.
-      await storage.deleteCensusByGroupId(id);
+      // Validation passed — now create the quote + census atomically.
+      const adminId = req.session.userId!;
+      const created = await storage.createInternalSalesQuote({
+        ...draft.details,
+        createdByAdminId: adminId,
+        publicToken: generatePublicToken(),
+      });
 
       const adminNotes = await generateActuarialAnalysis({
         riskScore: analysis.riskScore,
@@ -2811,10 +2832,10 @@ export async function registerRoutes(
         maleCount: analysis.maleCount,
         femaleCount: analysis.femaleCount,
         characteristics: analysis.characteristics,
-        companyName: quote.companyName,
+        companyName: created.companyName,
       });
 
-      await storage.updateGroup(id, {
+      await storage.updateGroup(created.id, {
         riskScore: analysis.riskScore,
         riskTier: analysis.riskTier,
         averageAge: analysis.averageAge,
@@ -2827,14 +2848,11 @@ export async function registerRoutes(
         spouseCount,
         childrenCount,
         totalLives: entries.length,
-        // Same status the customer flow uses post-analysis. The quote
-        // remains in the internal-sales bucket (source=internal_sales),
-        // so it stays on /admin/quotes regardless of status.
         status: "analyzing",
       });
 
       await storage.createCensusEntries(entries.map((e: any) => ({
-        groupId: id,
+        groupId: created.id,
         firstName: e.firstName,
         lastName: e.lastName,
         dateOfBirth: e.dateOfBirth,
@@ -2843,15 +2861,22 @@ export async function registerRoutes(
         relationship: e.relationship,
       })));
 
-      // Free the staged data so a follow-on upload re-parses cleanly.
-      if (req.session.pendingAdminQuote) delete req.session.pendingAdminQuote[id];
+      // Clear the staged draft now that the quote is real.
+      delete req.session.pendingAdminQuoteDraft;
 
-      const updated = await storage.getGroup(id);
+      const updated = await storage.getGroup(created.id);
       res.json({ message: "Quote ready to share", group: updated });
     } catch (err: any) {
       log(`Admin quote confirm error: ${err?.message || err}`, "routes");
       res.status(500).json({ message: err?.message || "Confirm failed" });
     }
+  });
+
+  // Discard the in-flight draft (rep clicked "cancel" or navigated
+  // away). No DB row exists yet so this just clears the session slot.
+  app.delete("/api/admin/quotes/pending", requireAdmin, async (req: Request, res: Response) => {
+    delete req.session.pendingAdminQuoteDraft;
+    res.json({ ok: true });
   });
 
   // Mint a fresh public token, breaking the existing share link. Used
