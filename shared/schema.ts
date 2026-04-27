@@ -74,35 +74,6 @@ export const proposals = pgTable("proposals", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Every turn of a dashboard chat (user prompt or assistant reply) is
-// appended here after the stream completes. Grouped by conversationId
-// (generated client-side per widget mount) so admins can replay a full
-// exchange. No PHI is ever stored — the chat endpoint constrains what
-// the assistant sees; this table only captures what was actually said.
-export const chatMessages = pgTable("chat_messages", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  conversationId: varchar("conversation_id").notNull(),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  groupId: varchar("group_id").references(() => groups.id, { onDelete: "set null" }),
-  role: text("role").notNull(),          // "user" | "assistant"
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-// Admin-editable behaviour overrides appended to the chat assistant's
-// system prompt. Enabled rules are concatenated into a dedicated
-// "=== ADMIN RULES ===" section so admins can nudge answers, add new
-// facts, or correct mistakes without a code deploy.
-export const chatRules = pgTable("chat_rules", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  label: text("label").notNull(),
-  content: text("content").notNull(),
-  enabled: boolean("enabled").default(true).notNull(),
-  createdBy: varchar("created_by").references(() => users.id, { onDelete: "set null" }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   verified: true,
@@ -297,12 +268,3 @@ export type InsertGroup = z.infer<typeof insertGroupSchema>;
 export type CensusEntry = typeof censusEntries.$inferSelect;
 export type InsertCensusEntry = z.infer<typeof insertCensusEntrySchema>;
 export type Proposal = typeof proposals.$inferSelect;
-export type ChatMessage = typeof chatMessages.$inferSelect;
-export type ChatRule = typeof chatRules.$inferSelect;
-
-export const chatRuleInputSchema = z.object({
-  label: z.string().min(1, "Label is required").max(120),
-  content: z.string().min(1, "Rule content is required").max(4000),
-  enabled: z.boolean().default(true),
-});
-export type ChatRuleInput = z.infer<typeof chatRuleInputSchema>;

@@ -113,14 +113,6 @@ export default function AdminHome() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/admin/chat")}
-              data-testid="admin-chat-link"
-            >
-              Chat assistant
-            </Button>
             <Badge variant="secondary" className="px-3 py-1">
               {users.length} {users.length === 1 ? "user" : "users"} · {totalGroups}{" "}
               {totalGroups === 1 ? "group" : "groups"}

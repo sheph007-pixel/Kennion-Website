@@ -11,7 +11,7 @@ import { ProposalAnalyzing } from "@/pages/proposal/analyzing";
 import { ProposalHighRisk } from "@/pages/proposal/high-risk";
 import { NewGroupDetails } from "@/pages/proposal/new-group";
 import { ProposalNav } from "@/components/proposal/proposal-nav";
-import { ChatWidget } from "@/components/chat/chat-widget";
+import { HunterContactButton } from "@/components/contact/hunter-contact-button";
 
 // URL-driven screen router. The URL + server group state are the single
 // source of truth — no local "screen" state — so refresh, back/forward,
@@ -32,9 +32,9 @@ export default function DashboardPage() {
   const { groups, isLoading } = useMyGroups();
   const { group: selectedGroup } = useGroupById(groupId);
   const { user } = useAuth();
-  // Group-side only. Admins viewing a customer's dashboard shouldn't see
-  // the assistant (they have different tools).
-  const showChat = user?.role !== "admin";
+  // Group-side only. Admins viewing a customer's dashboard have their
+  // own tools and shouldn't see the customer-facing contact button.
+  const showContact = user?.role !== "admin";
 
   // /dashboard with groups → redirect to the most recent.
   const needsIndexRedirect = !isNewRoute && !isGroupRoute && !isLoading && groups.length > 0;
@@ -118,7 +118,7 @@ export default function DashboardPage() {
   return (
     <>
       {content}
-      {showChat && <ChatWidget groupId={selectedGroup?.id} />}
+      {showContact && <HunterContactButton />}
     </>
   );
 }
