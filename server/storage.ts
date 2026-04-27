@@ -46,8 +46,8 @@ export interface IStorage {
     companyName: string;
     state: string;
     zipCode: string;
-    contactName: string;
-    contactEmail: string;
+    contactName?: string | null;
+    contactEmail?: string | null;
     contactPhone?: string | null;
     createdByAdminId: string;
     publicToken: string;
@@ -168,8 +168,8 @@ export class DatabaseStorage implements IStorage {
     companyName: string;
     state: string;
     zipCode: string;
-    contactName: string;
-    contactEmail: string;
+    contactName?: string | null;
+    contactEmail?: string | null;
     contactPhone?: string | null;
     createdByAdminId: string;
     publicToken: string;
@@ -182,8 +182,8 @@ export class DatabaseStorage implements IStorage {
       companyName: input.companyName,
       state: input.state,
       zipCode: input.zipCode,
-      contactName: input.contactName,
-      contactEmail: input.contactEmail,
+      contactName: input.contactName ?? null,
+      contactEmail: input.contactEmail ?? null,
       contactPhone: input.contactPhone ?? null,
       // Status starts at 'draft' so the quotes list can distinguish
       // pre-census quotes from sent ones; once census is uploaded the

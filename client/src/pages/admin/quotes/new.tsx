@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, Building2, Loader2, Mail, Phone, ShieldCheck, User } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,19 +20,23 @@ import { US_STATES } from "@shared/schema";
 
 // Two-step admin wizard for creating a sales-rep-driven quote.
 //
-//   Step 1 — Prospect details (company + state/zip + contact name / email / phone)
+//   Step 1 — Prospect basics (company + state/zip; contact info is
+//            optional so reps can crank quotes fast and let the
+//            prospect fill it via the Accept modal).
 //            POST /api/admin/quotes → returns the new quote id.
 //   Step 2 — Census upload (ProposalUpload in adminQuoteId mode).
 //            On complete, route to /admin/groups/:id where the rep can
 //            copy the public link from the AdminBanner.
 //
-// The quoteId is held in URL state via wouter's `useLocation` so a
-// refresh on step 2 keeps the same quote.
+// The quoteId travels in the URL as `?id=…` so a refresh on step 2
+// keeps the same quote.
 export default function AdminQuoteWizardPage() {
-  const [location, navigate] = useLocation();
-  // Match `?id=…` from the URL — wouter doesn't have a useSearchParams
-  // helper, so we parse it directly. Stable enough for a single param.
-  const qid = new URLSearchParams(location.split("?")[1] ?? "").get("id");
+  const [, navigate] = useLocation();
+  // wouter v3's useLocation() returns the pathname only — query
+  // strings come from useSearch(). Same pattern reset-password.tsx
+  // uses for its `?token=…` lookup.
+  const search = useSearch();
+  const qid = new URLSearchParams(search).get("id");
   const step: "details" | "census" = qid ? "census" : "details";
 
   if (step === "details") return <DetailsStep onCreated={(id) => navigate(`/admin/quotes/new?id=${id}`)} />;
@@ -66,12 +70,16 @@ function DetailsStep({ onCreated }: { onCreated: (quoteId: string) => void }) {
 
   const zipValid = /^\d{5}(-\d{4})?$/.test(zipCode.trim());
   const stateValid = /^[A-Za-z]{2}$/.test(state.trim());
-  const emailValid = /^\S+@\S+\.\S+$/.test(contactEmail.trim());
+  // Contact email validates only when filled — empty is fine since
+  // contact info is optional and the prospect supplies it themselves
+  // in the Accept modal.
+  const emailValid =
+    contactEmail.trim().length === 0 ||
+    /^\S+@\S+\.\S+$/.test(contactEmail.trim());
   const canContinue =
     companyName.trim().length > 0 &&
     stateValid &&
     zipValid &&
-    contactName.trim().length > 0 &&
     emailValid &&
     !createQuote.isPending;
 
@@ -83,8 +91,8 @@ function DetailsStep({ onCreated }: { onCreated: (quoteId: string) => void }) {
         companyName: companyName.trim(),
         state: state.trim().toUpperCase(),
         zipCode: zipCode.trim(),
-        contactName: contactName.trim(),
-        contactEmail: contactEmail.trim(),
+        contactName: contactName.trim() || undefined,
+        contactEmail: contactEmail.trim() || undefined,
         contactPhone: contactPhone.trim() || undefined,
       },
       {
@@ -121,8 +129,9 @@ function DetailsStep({ onCreated }: { onCreated: (quoteId: string) => void }) {
             Tell us about this prospect
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Enter the company's basics and the contact you'll send the proposal
-            link to. Next step is the census upload.
+            Just the company basics to get going. Contact info is optional —
+            you can add it later, or the prospect fills it in when they
+            accept the proposal.
           </p>
         </div>
 
@@ -171,51 +180,54 @@ function DetailsStep({ onCreated }: { onCreated: (quoteId: string) => void }) {
               </div>
             </div>
 
-            <div className="space-y-2 pt-2">
-              <Label htmlFor="contactName">Contact name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="contactName"
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                  placeholder="Jane Smith"
-                  className="pl-9"
-                  data-testid="input-quote-contact-name"
-                />
+            <div className="rounded-md border border-dashed border-border/70 p-4 space-y-3">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Contact <span className="font-normal normal-case tracking-normal text-muted-foreground/80">— optional, can be added later</span>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="contactEmail">Contact email</Label>
+                <Label htmlFor="contactName">Contact name</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="contactEmail"
-                    type="email"
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    placeholder="jane@acme.com"
+                    id="contactName"
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    placeholder="Jane Smith"
                     className="pl-9"
-                    data-testid="input-quote-contact-email"
+                    data-testid="input-quote-contact-name"
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="contactPhone">
-                  Phone <span className="text-muted-foreground">(optional)</span>
-                </Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="contactPhone"
-                    value={contactPhone}
-                    onChange={(e) => setContactPhone(e.target.value)}
-                    placeholder="(205) 555-0123"
-                    className="pl-9"
-                    data-testid="input-quote-contact-phone"
-                  />
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="contactEmail">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="contactEmail"
+                      type="email"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      placeholder="jane@acme.com"
+                      className="pl-9"
+                      data-testid="input-quote-contact-email"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contactPhone">Phone</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="contactPhone"
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      placeholder="(205) 555-0123"
+                      className="pl-9"
+                      data-testid="input-quote-contact-phone"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

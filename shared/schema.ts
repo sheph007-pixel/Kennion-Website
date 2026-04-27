@@ -45,8 +45,12 @@ export const groups = pgTable("groups", {
   // 'Sent / Viewed / Accepted' status without re-deriving from logs.
   publicAcceptedAt: timestamp("public_accepted_at"),
   companyName: text("company_name").notNull(),
-  contactName: text("contact_name").notNull(),
-  contactEmail: text("contact_email").notNull(),
+  // Contact fields are optional for internal_sales quotes (rep
+  // creates the quote first, prospect fills their own info on
+  // accept). Self-service rows always have them populated from
+  // the logged-in user's profile in /api/groups/confirm.
+  contactName: text("contact_name"),
+  contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
   employeeCount: integer("employee_count").default(0),
   childrenCount: integer("dependent_count").default(0),
@@ -238,9 +242,10 @@ export const newGroupDetailsSchema = z.object({
     .refine((s) => /^\d{5}(-\d{4})?$/.test(s), { message: "Enter a 5-digit ZIP" }),
 });
 
-// Internal sales rep creates a quote on behalf of a prospect. Differs
-// from newGroupDetailsSchema by also collecting the prospect's contact
-// details (since there's no logged-in customer to seed them from).
+// Internal sales rep creates a quote on behalf of a prospect. Only
+// company basics are required up-front so the rep can crank quotes
+// fast; contact info is optional (rep can fill it later, or the
+// prospect supplies it themselves on the Accept modal).
 export const internalSalesQuoteInputSchema = z.object({
   companyName: z.string().min(1, "Company name is required").max(120),
   state: z
@@ -251,8 +256,15 @@ export const internalSalesQuoteInputSchema = z.object({
     .string()
     .transform((s) => s.trim())
     .refine((s) => /^\d{5}(-\d{4})?$/.test(s), { message: "Enter a 5-digit ZIP" }),
-  contactName: z.string().min(1, "Contact name is required").max(120),
-  contactEmail: z.string().email("Valid email required"),
+  contactName: z.string().max(120).optional().nullable(),
+  contactEmail: z
+    .string()
+    .optional()
+    .nullable()
+    .refine(
+      (v) => v == null || v === "" || /^\S+@\S+\.\S+$/.test(v),
+      { message: "Enter a valid email or leave blank" },
+    ),
   contactPhone: z.string().optional().nullable(),
 });
 export type InternalSalesQuoteInput = z.infer<typeof internalSalesQuoteInputSchema>;

@@ -205,15 +205,23 @@ function QuoteRow({ group }: { group: Group }) {
               <StatusPill status={status} />
             </div>
             <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-              <span>{group.contactName}</span>
-              <span aria-hidden>·</span>
-              <a
-                href={`mailto:${group.contactEmail}`}
-                onClick={(e) => e.stopPropagation()}
-                className="hover:text-foreground"
-              >
-                {group.contactEmail}
-              </a>
+              {group.contactName ? (
+                <span>{group.contactName}</span>
+              ) : !group.contactEmail ? (
+                <span className="italic">No contact yet</span>
+              ) : null}
+              {group.contactEmail && (
+                <>
+                  {group.contactName && <span aria-hidden>·</span>}
+                  <a
+                    href={`mailto:${group.contactEmail}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="hover:text-foreground"
+                  >
+                    {group.contactEmail}
+                  </a>
+                </>
+              )}
               <span aria-hidden>·</span>
               <span>{group.totalLives ?? 0} lives</span>
               {lastViewedLabel && (

@@ -2623,7 +2623,11 @@ export async function registerRoutes(
       }
       const adminId = req.session.userId!;
       const created = await storage.createInternalSalesQuote({
-        ...parsed.data,
+        companyName: parsed.data.companyName,
+        state: parsed.data.state,
+        zipCode: parsed.data.zipCode,
+        contactName: parsed.data.contactName ?? null,
+        contactEmail: parsed.data.contactEmail ?? null,
         contactPhone: parsed.data.contactPhone ?? null,
         createdByAdminId: adminId,
         publicToken: generatePublicToken(),

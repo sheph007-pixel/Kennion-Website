@@ -13,8 +13,11 @@ type CreateQuoteInput = {
   companyName: string;
   state: string;
   zipCode: string;
-  contactName: string;
-  contactEmail: string;
+  // All contact fields optional — the rep can crank a quote with
+  // just company + state/zip and either fill these later or leave
+  // them for the prospect to fill on Accept.
+  contactName?: string;
+  contactEmail?: string;
   contactPhone?: string;
 };
 

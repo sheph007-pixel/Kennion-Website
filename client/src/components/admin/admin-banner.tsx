@@ -130,11 +130,23 @@ export function AdminBanner({ group }: Props) {
             </div>
           ) : isInternalSales ? (
             <div className="text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">{group.contactName}</span>
-              <span className="mx-1.5" aria-hidden>·</span>
-              <a href={`mailto:${group.contactEmail}`} className="hover:text-foreground">
-                {group.contactEmail}
-              </a>
+              {group.contactName || group.contactEmail ? (
+                <>
+                  {group.contactName && (
+                    <span className="font-semibold text-foreground">{group.contactName}</span>
+                  )}
+                  {group.contactName && group.contactEmail && (
+                    <span className="mx-1.5" aria-hidden>·</span>
+                  )}
+                  {group.contactEmail && (
+                    <a href={`mailto:${group.contactEmail}`} className="hover:text-foreground">
+                      {group.contactEmail}
+                    </a>
+                  )}
+                </>
+              ) : (
+                <span className="italic">Contact info not set — prospect fills it on Accept</span>
+              )}
             </div>
           ) : null}
           <div className="flex-1" />
