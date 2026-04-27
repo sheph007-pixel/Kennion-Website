@@ -29,6 +29,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   updateGroupStatusSchema,
+  internalSalesQuoteInputSchema,
 } from "@shared/schema";
 import ConnectPgSimple from "connect-pg-simple";
 import { log } from "./index";
@@ -59,6 +60,16 @@ declare module "express-session" {
       state: string;
       zipCode: string;
     };
+    // Per-quote staging area for the admin "internal sales" wizard.
+    // Keyed by the draft quote's id so a sales rep can keep multiple
+    // wizards open without crossing streams. Mirrors the shape of
+    // pendingCensus but namespaced by quoteId.
+    pendingAdminQuote?: Record<string, {
+      headers: string[];
+      rows: any[];
+      fileName: string;
+      aiCleaned?: any;
+    }>;
   }
 }
 
@@ -1988,7 +1999,10 @@ export async function registerRoutes(
   });
 
   app.get("/api/admin/groups", requireAdmin, async (_req: Request, res: Response) => {
-    const allGroups = await storage.getAllGroups();
+    // Customer (self_service) groups only — internal_sales quotes have
+    // their own list at GET /api/admin/quotes so they don't double up
+    // with customer-driven groups in the user list view.
+    const allGroups = await storage.getCustomerGroups();
     res.json(allGroups);
   });
 
@@ -2547,6 +2561,527 @@ export async function registerRoutes(
     } catch (err: any) {
       log(`Rate pricing error: ${err.message}`, "rate");
       res.status(500).json({ message: err.message || "Pricing failed" });
+    }
+  });
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Internal sales bulk proposals
+  //
+  // Sales reps create quotes on behalf of prospects without a customer
+  // login. Each quote gets a 22-char unguessable public token; the
+  // prospect opens /q/:token to see a read-only cockpit and accept.
+  // Same rate engine, same scoring, same acceptance email — only the
+  // entry point and the auth posture differ.
+  //
+  // Customer flow is untouched: the endpoints below are admin-only,
+  // and /api/admin/groups is filtered to source=self_service so
+  // customer-driven groups stay on /admin and quotes stay on
+  // /admin/quotes.
+  // ──────────────────────────────────────────────────────────────────────
+
+  function generatePublicToken(): string {
+    // 16 random bytes → 22 char base64url (no padding). 128 bits of
+    // entropy: practically unguessable, same security model as a
+    // Calendly link or a Notion public share URL.
+    return crypto.randomBytes(16).toString("base64url");
+  }
+
+  // Lightweight per-IP rate limiting for the public quote endpoints.
+  // The token itself is unguessable so brute force is implausible, but
+  // a small bucket protects against runaway scrapers and keeps the
+  // accept endpoint from being flooded.
+  const publicRateBuckets = new Map<string, { count: number; resetAt: number }>();
+  const PUBLIC_LIMITS = {
+    view:   { count: 60, windowMs: 60_000 },           // 60 / minute
+    accept: { count: 5,  windowMs: 60 * 60_000 },      // 5  / hour
+  } as const;
+  function publicRateLimit(req: Request, kind: keyof typeof PUBLIC_LIMITS): boolean {
+    const ip = (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim()
+      || req.socket.remoteAddress
+      || "unknown";
+    const limit = PUBLIC_LIMITS[kind];
+    const key = `${kind}:${ip}`;
+    const now = Date.now();
+    const bucket = publicRateBuckets.get(key);
+    if (!bucket || bucket.resetAt < now) {
+      publicRateBuckets.set(key, { count: 1, resetAt: now + limit.windowMs });
+      return true;
+    }
+    if (bucket.count >= limit.count) return false;
+    bucket.count++;
+    return true;
+  }
+
+  // Step 1 of the admin wizard: the rep enters prospect details and we
+  // mint a draft quote + public token. The link is ready to copy from
+  // the moment the wizard finishes census upload.
+  app.post("/api/admin/quotes", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const parsed = internalSalesQuoteInputSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.errors[0]?.message || "Invalid quote details" });
+      }
+      const adminId = req.session.userId!;
+      const created = await storage.createInternalSalesQuote({
+        ...parsed.data,
+        contactPhone: parsed.data.contactPhone ?? null,
+        createdByAdminId: adminId,
+        publicToken: generatePublicToken(),
+      });
+      res.status(201).json(created);
+    } catch (err: any) {
+      log(`Admin quote create error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: err?.message || "Failed to create quote" });
+    }
+  });
+
+  // List all internal-sales quotes for the admin quotes page. We hand
+  // back the raw rows; the client computes status (Draft / Sent /
+  // Viewed / Accepted) from view counters + publicAcceptedAt.
+  app.get("/api/admin/quotes", requireAdmin, async (_req: Request, res: Response) => {
+    try {
+      const rows = await storage.getInternalSalesQuotes();
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ message: err?.message || "Failed to load quotes" });
+    }
+  });
+
+  // Step 2 of the wizard: parse the CSV and detect column mapping.
+  // Mirrors /api/groups/parse but stashes under
+  // pendingAdminQuote[quoteId] so reps can keep multiple wizards open.
+  app.post("/api/admin/quotes/:id/parse", requireAdmin, upload.single("file"), async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const quote = await storage.getGroup(id);
+      if (!quote || quote.source !== "internal_sales") {
+        return res.status(404).json({ message: "Quote not found" });
+      }
+      if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+      const csvText = req.file.buffer.toString("utf-8");
+      const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+      if (parsed.errors.length > 0 && parsed.data.length === 0) {
+        return res.status(400).json({ message: "CSV parsing error: " + parsed.errors[0].message });
+      }
+      const rows = parsed.data as any[];
+      if (rows.length === 0) return res.status(400).json({ message: "CSV file is empty" });
+
+      const headers = Object.keys(rows[0]).filter((h) => h.trim() !== "");
+      const nonEmptyRows = rows.filter((row) =>
+        Object.values(row).some((v) => v != null && String(v).trim() !== "")
+      );
+      if (nonEmptyRows.length === 0) {
+        return res.status(400).json({ message: "CSV file contains no valid data" });
+      }
+
+      const aiResult = await cleanCSVWithAI(headers, nonEmptyRows);
+
+      req.session.pendingAdminQuote = req.session.pendingAdminQuote || {};
+      req.session.pendingAdminQuote[id] = {
+        headers,
+        rows: nonEmptyRows,
+        fileName: req.file.originalname || "census.csv",
+      };
+
+      const sampleRows = nonEmptyRows.slice(0, 3).map((row) => {
+        const sample: Record<string, string> = {};
+        headers.forEach((h) => { sample[h] = row[h]?.toString() || ""; });
+        return sample;
+      });
+
+      res.json({
+        totalRows: rows.length,
+        validRows: nonEmptyRows.length,
+        headers,
+        columnMapping: aiResult.columnMapping,
+        sampleRows,
+        message: "Column mapping detected. Please confirm the mapping below.",
+      });
+    } catch (err: any) {
+      log(`Admin quote parse error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: err?.message || "Parse failed" });
+    }
+  });
+
+  // Step 3: apply the user-confirmed column mapping and AI-clean the data.
+  app.post("/api/admin/quotes/:id/apply-mapping", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const pending = req.session.pendingAdminQuote?.[id];
+      if (!pending) return res.status(400).json({ message: "No pending census. Upload first." });
+
+      const { columnMapping } = req.body;
+      if (!columnMapping) return res.status(400).json({ message: "Column mapping is required" });
+
+      const aiResult = await cleanCSVWithAI(pending.headers, pending.rows, columnMapping);
+      const previewRows = aiResult.cleanedData.slice(0, 10).map((cleaned: any) => ({
+        firstName: cleaned.firstName,
+        lastName: cleaned.lastName,
+        relationship: cleaned.relationship,
+        dob: cleaned.dob,
+        gender: cleaned.gender,
+        zip: cleaned.zip,
+        issues: cleaned.issues,
+      }));
+      req.session.pendingAdminQuote![id] = { ...pending, aiCleaned: aiResult };
+
+      res.json({
+        totalRows: pending.rows.length,
+        cleanedRows: aiResult.cleanedData.length,
+        previewRows,
+        summary: aiResult.summary,
+        warnings: aiResult.warnings,
+        confidence: aiResult.confidence,
+      });
+    } catch (err: any) {
+      log(`Admin quote apply-mapping error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: err?.message || "Failed to apply column mapping" });
+    }
+  });
+
+  // Step 4 (terminal): validate, score, write census, populate the
+  // internal-sales group. Mirrors /api/groups/confirm's analysis +
+  // validation block; difference is the group already exists (we just
+  // populate it) and we don't read user-derived defaults.
+  app.post("/api/admin/quotes/:id/confirm", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const quote = await storage.getGroup(id);
+      if (!quote || quote.source !== "internal_sales") {
+        return res.status(404).json({ message: "Quote not found" });
+      }
+      const pending = req.session.pendingAdminQuote?.[id];
+      if (!pending?.aiCleaned) {
+        return res.status(400).json({ message: "No pending census. Upload first." });
+      }
+
+      const aiCleaned = pending.aiCleaned;
+      const entries = aiCleaned.cleanedData.map((c: any) => ({
+        firstName: c.firstName,
+        lastName: c.lastName,
+        dateOfBirth: c.dob,
+        gender: c.gender,
+        zipCode: c.zip,
+        relationship: c.relationship,
+      }));
+
+      const invalid = entries.filter(
+        (e: any) => !e.firstName || !e.lastName || !e.dateOfBirth || !e.gender || !e.zipCode
+      );
+      if (invalid.length > 0) {
+        return res.status(400).json({
+          message: `${invalid.length} row(s) have missing required fields after AI processing. Please check your CSV file.`,
+        });
+      }
+
+      const employeeCount = entries.filter((e: any) => e.relationship === "EE").length;
+      const spouseCount   = entries.filter((e: any) => e.relationship === "SP").length;
+      const childrenCount = entries.filter((e: any) => e.relationship === "CH").length;
+
+      const analysis = analyzeGroupRisk(entries);
+      const validation = validateCensusData(entries, analysis);
+      if (!validation.valid) {
+        const guidance = await generateValidationGuidance(validation.errors, validation.matchRate);
+        return res.status(400).json({
+          message: "Census data validation failed",
+          guidance,
+          errors: validation.errors,
+          matchRate: validation.matchRate,
+          needsReupload: true,
+        });
+      }
+
+      // If this is a re-upload (admin retried after a fix), wipe the
+      // prior census so we don't end up with stacked rosters.
+      await storage.deleteCensusByGroupId(id);
+
+      const adminNotes = await generateActuarialAnalysis({
+        riskScore: analysis.riskScore,
+        riskTier: analysis.riskTier,
+        averageAge: analysis.averageAge,
+        employeeCount,
+        spouseCount,
+        childrenCount,
+        totalLives: entries.length,
+        maleCount: analysis.maleCount,
+        femaleCount: analysis.femaleCount,
+        characteristics: analysis.characteristics,
+        companyName: quote.companyName,
+      });
+
+      await storage.updateGroup(id, {
+        riskScore: analysis.riskScore,
+        riskTier: analysis.riskTier,
+        averageAge: analysis.averageAge,
+        maleCount: analysis.maleCount,
+        femaleCount: analysis.femaleCount,
+        groupCharacteristics: analysis.characteristics,
+        score: analysis.characteristics.qualificationScore,
+        adminNotes,
+        employeeCount,
+        spouseCount,
+        childrenCount,
+        totalLives: entries.length,
+        // Same status the customer flow uses post-analysis. The quote
+        // remains in the internal-sales bucket (source=internal_sales),
+        // so it stays on /admin/quotes regardless of status.
+        status: "analyzing",
+      });
+
+      await storage.createCensusEntries(entries.map((e: any) => ({
+        groupId: id,
+        firstName: e.firstName,
+        lastName: e.lastName,
+        dateOfBirth: e.dateOfBirth,
+        gender: e.gender,
+        zipCode: e.zipCode,
+        relationship: e.relationship,
+      })));
+
+      // Free the staged data so a follow-on upload re-parses cleanly.
+      if (req.session.pendingAdminQuote) delete req.session.pendingAdminQuote[id];
+
+      const updated = await storage.getGroup(id);
+      res.json({ message: "Quote ready to share", group: updated });
+    } catch (err: any) {
+      log(`Admin quote confirm error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: err?.message || "Confirm failed" });
+    }
+  });
+
+  // Mint a fresh public token, breaking the existing share link. Used
+  // when a quote URL leaks or the rep wants a new one.
+  app.post("/api/admin/quotes/:id/rotate-link", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const quote = await storage.getGroup(id);
+      if (!quote || quote.source !== "internal_sales") {
+        return res.status(404).json({ message: "Quote not found" });
+      }
+      const updated = await storage.setQuotePublicToken(id, generatePublicToken());
+      res.json(updated);
+    } catch (err: any) {
+      res.status(500).json({ message: err?.message || "Failed to rotate link" });
+    }
+  });
+
+  // Revoke the public link. /q/:token will 404 after this.
+  app.post("/api/admin/quotes/:id/revoke-link", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const quote = await storage.getGroup(id);
+      if (!quote || quote.source !== "internal_sales") {
+        return res.status(404).json({ message: "Quote not found" });
+      }
+      const updated = await storage.setQuotePublicToken(id, null);
+      res.json(updated);
+    } catch (err: any) {
+      res.status(500).json({ message: err?.message || "Failed to revoke link" });
+    }
+  });
+
+  // ── Public quote endpoints (no session required) ────────────────────
+  //
+  // Token-gated, no PHI. The cockpit's "View Census" button is hidden
+  // in public mode so individual employee names never leave the server.
+
+  // Sanitised payload for the public cockpit. Increments view counters
+  // atomically. 404s on revoked / unknown tokens with no leakage of
+  // whether the token previously existed.
+  app.get("/api/quote/:token", async (req: Request, res: Response) => {
+    if (!publicRateLimit(req, "view")) {
+      return res.status(429).json({ message: "Too many requests. Please slow down." });
+    }
+    const token = req.params.token as string;
+    if (!token || token.length < 16) return res.status(404).json({ message: "Not found" });
+
+    const quote = await storage.getGroupByPublicToken(token);
+    if (!quote || quote.source !== "internal_sales" || !quote.riskTier) {
+      // Quote not found, revoked, or not yet ready (no census uploaded).
+      return res.status(404).json({ message: "Not found" });
+    }
+
+    // Fire-and-forget bump — failure here shouldn't fail the page load.
+    storage.bumpQuoteView(quote.id).catch((err) => {
+      log(`bumpQuoteView failed for ${quote.id}: ${err?.message || err}`, "routes");
+    });
+
+    // Tier mix is precomputed server-side so the cockpit doesn't need
+    // to fetch individual census rows. Mirrors censusToMix() on the
+    // client but runs on the trusted side.
+    const census = await storage.getCensusByGroupId(quote.id);
+    const mix = { EE: 0, EE_CH: 0, EE_SP: 0, EE_FAM: 0 };
+    let current: { hasSpouse: boolean; hasChild: boolean } | null = null;
+    const families: { hasSpouse: boolean; hasChild: boolean }[] = [];
+    for (const e of census) {
+      const r = (e.relationship || "").toLowerCase();
+      if (r === "ee" || r === "employee") {
+        current = { hasSpouse: false, hasChild: false };
+        families.push(current);
+      } else if (r === "sp" || r === "spouse") {
+        if (current) current.hasSpouse = true;
+      } else if (r === "ch" || r === "child") {
+        if (current) current.hasChild = true;
+      }
+    }
+    for (const f of families) {
+      if (f.hasSpouse && f.hasChild) mix.EE_FAM++;
+      else if (f.hasSpouse) mix.EE_SP++;
+      else if (f.hasChild) mix.EE_CH++;
+      else mix.EE++;
+    }
+
+    // Sanitised group: omit admin-only fields and any FK ids that
+    // don't belong on the public surface.
+    const publicGroup = {
+      id: quote.id,
+      companyName: quote.companyName,
+      contactName: quote.contactName,
+      contactEmail: quote.contactEmail,
+      contactPhone: quote.contactPhone,
+      employeeCount: quote.employeeCount,
+      childrenCount: quote.childrenCount,
+      spouseCount: quote.spouseCount,
+      totalLives: quote.totalLives,
+      riskScore: quote.riskScore,
+      riskTier: quote.riskTier,
+      averageAge: quote.averageAge,
+      maleCount: quote.maleCount,
+      femaleCount: quote.femaleCount,
+      state: quote.state,
+      zipCode: quote.zipCode,
+      status: quote.status,
+      submittedAt: quote.submittedAt,
+      // Static scaffold the cockpit reads.
+      locked: false,
+    };
+
+    res.json({ group: publicGroup, mix });
+  });
+
+  // Public price endpoint — same engine as /api/rate/price-group, but
+  // looks up the group by token (not auth) and only services
+  // internal_sales rows.
+  app.post("/api/quote/:token/price-group", async (req: Request, res: Response) => {
+    if (!publicRateLimit(req, "view")) {
+      return res.status(429).json({ message: "Too many requests. Please slow down." });
+    }
+    try {
+      const token = req.params.token as string;
+      const quote = await storage.getGroupByPublicToken(token);
+      if (!quote || quote.source !== "internal_sales" || !quote.riskTier) {
+        return res.status(404).json({ message: "Not found" });
+      }
+      const rows = await storage.getCensusByGroupId(quote.id);
+      if (rows.length === 0) {
+        return res.status(400).json({ message: "Quote not ready" });
+      }
+      const members = censusEntriesToMembers(rows);
+      const {
+        effective_date = new Date().toISOString().slice(0, 10),
+        rating_area,
+      } = (req.body || {}) as { effective_date?: string; rating_area?: RatingArea };
+
+      const fromGroup = quote.state || quote.zipCode
+        ? inferRatingArea(quote.state, quote.zipCode)
+        : null;
+      const area: RatingArea = rating_area && rating_area !== "auto"
+        ? rating_area
+        : fromGroup ?? inferRatingAreaFromCensus(members);
+
+      const result = priceGroup({
+        census: members,
+        effectiveDate: effective_date,
+        ratingArea: area,
+        admin: "EBPA",
+        group: quote.companyName,
+      });
+      res.json(result);
+    } catch (err: any) {
+      log(`Public quote pricing error: ${err?.message || err}`, "rate");
+      res.status(500).json({ message: err?.message || "Pricing failed" });
+    }
+  });
+
+  // Public acceptance — same validation + email as /api/groups/:id/accept,
+  // gated by the public token instead of session auth.
+  //
+  // WARNING: body includes ssnLast4 / ssnLast4Verify. Never log the
+  // body or any field values.
+  app.post("/api/quote/:token/accept", async (req: Request, res: Response) => {
+    if (!publicRateLimit(req, "accept")) {
+      return res.status(429).json({ message: "Too many submissions. Please try again later." });
+    }
+    try {
+      const token = req.params.token as string;
+      const quote = await storage.getGroupByPublicToken(token);
+      if (!quote || quote.source !== "internal_sales" || !quote.riskTier) {
+        return res.status(404).json({ message: "Not found" });
+      }
+
+      const body = (req.body ?? {}) as any;
+      const healthPlans = Array.isArray(body?.plans?.health) ? body.plans.health.filter(Boolean) : [];
+      const dentalPlans = Array.isArray(body?.plans?.dental) ? body.plans.dental.filter(Boolean) : [];
+      const visionPlans = Array.isArray(body?.plans?.vision) ? body.plans.vision.filter(Boolean) : [];
+      if (healthPlans.length < 1 || healthPlans.length > 3) {
+        return res.status(400).json({ message: "Select 1–3 health plans." });
+      }
+      if (dentalPlans.length < 1 || dentalPlans.length > 2) {
+        return res.status(400).json({ message: "Select 1–2 dental plans." });
+      }
+      if (visionPlans.length < 1 || visionPlans.length > 2) {
+        return res.status(400).json({ message: "Select 1–2 vision plans." });
+      }
+      const ssn = String(body?.contact?.ssnLast4 ?? "");
+      const ssnVerify = String(body?.contact?.ssnLast4Verify ?? "");
+      if (!/^\d{4}$/.test(ssn)) {
+        return res.status(400).json({ message: "SSN last 4 must be 4 digits." });
+      }
+      if (ssn !== ssnVerify) {
+        return res.status(400).json({ message: "SSN confirmation does not match." });
+      }
+      const legalName = String(body?.company?.legalName ?? "").trim();
+      if (!legalName) {
+        return res.status(400).json({ message: "Company legal name is required." });
+      }
+
+      await sendProposalAcceptanceEmail("hunter@kennion.com", {
+        groupId: quote.id,
+        submittedAt: new Date(),
+        plans: {
+          health: healthPlans.map(String),
+          dental: dentalPlans.map(String),
+          vision: visionPlans.map(String),
+          supplemental: String(body?.plans?.supplemental ?? ""),
+          employerPaidLife: String(body?.plans?.employerPaidLife ?? ""),
+        },
+        company: {
+          legalName,
+          taxId: String(body?.company?.taxId ?? ""),
+          streetAddress: String(body?.company?.streetAddress ?? ""),
+          cityStateZip: String(body?.company?.cityStateZip ?? ""),
+        },
+        contact: {
+          name: String(body?.contact?.name ?? ""),
+          workEmail: String(body?.contact?.workEmail ?? ""),
+          ssnLast4: ssn,
+          ssnLast4Verify: ssnVerify,
+          title: String(body?.contact?.title ?? ""),
+          phone: String(body?.contact?.phone ?? ""),
+          reason: String(body?.contact?.reason ?? ""),
+        },
+        acceptance: {
+          additionalComments: String(body?.acceptance?.additionalComments ?? ""),
+        },
+      });
+
+      await storage.markQuotePubliclyAccepted(quote.id);
+      log(`Public proposal acceptance for quote ${quote.id}`, "routes");
+      res.json({ ok: true });
+    } catch (err: any) {
+      log(`Public acceptance error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: err?.message || "Failed to submit acceptance." });
     }
   });
 

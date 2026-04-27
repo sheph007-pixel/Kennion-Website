@@ -29,6 +29,10 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   group: Group;
   preselectedPlan: string | null;
+  // Optional override for the POST target. Defaults to the
+  // session-auth route used by the customer dashboard. The public
+  // /q/:token cockpit passes /api/quote/:token/accept.
+  acceptUrl?: string;
 };
 
 // The 15 medical plans the cockpit shows under Medical — must match
@@ -124,7 +128,7 @@ function initialState(group: Group, _preselected: string | null): AcceptState {
   };
 }
 
-export function ProposalAcceptModal({ open, onOpenChange, group, preselectedPlan }: Props) {
+export function ProposalAcceptModal({ open, onOpenChange, group, preselectedPlan, acceptUrl }: Props) {
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [state, setState] = useState<AcceptState>(() => initialState(group, preselectedPlan));
@@ -153,8 +157,11 @@ export function ProposalAcceptModal({ open, onOpenChange, group, preselectedPlan
     if (!stepValidation.ok) return;
     setSubmitting(true);
     try {
-      await apiRequest("POST", `/api/groups/${group.id}/accept`, state);
-      // Refresh groups cache so status badge flips immediately.
+      const url = acceptUrl ?? `/api/groups/${group.id}/accept`;
+      await apiRequest("POST", url, state);
+      // Refresh groups cache so status badge flips immediately. Public
+      // mode has no /api/groups list to invalidate, but invalidating an
+      // unfetched key is a no-op so it's safe to leave unconditional.
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
       setSubmitted(true);
     } catch (err: any) {

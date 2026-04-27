@@ -43,6 +43,10 @@ export function useAdminUsersWithGroups() {
     if (!usersQuery.data) return [];
     const groupsByUser = new Map<string, Group[]>();
     for (const g of groupsQuery.data ?? []) {
+      // Skip orphan groups (internal-sales quotes have userId=null).
+      // The /api/admin/groups endpoint already filters those out, but
+      // guard here too so the type narrows to non-null.
+      if (!g.userId) continue;
       const list = groupsByUser.get(g.userId) ?? [];
       list.push(g);
       groupsByUser.set(g.userId, list);

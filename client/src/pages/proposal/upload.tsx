@@ -16,6 +16,15 @@ type Props = {
   // of creating a new one. Same upload + AI-clean UX either way — only
   // the terminal confirm step differs. Null/omitted = create new group.
   replaceForGroupId?: string;
+  // When set, the wizard is running on the admin-side internal-sales
+  // quote flow. Posts to /api/admin/quotes/:id/* instead of the
+  // customer endpoints. The quote row has already been created at
+  // step 1 of the wizard.
+  adminQuoteId?: string;
+  // Optional page chrome overrides for the admin wizard.
+  title?: string;
+  subtitle?: React.ReactNode;
+  nav?: React.ReactNode;
 };
 
 const REQUIRED_FIELDS = [
@@ -27,7 +36,14 @@ const REQUIRED_FIELDS = [
   "Zip Code",
 ];
 
-export function ProposalUpload({ onComplete, replaceForGroupId }: Props) {
+export function ProposalUpload({
+  onComplete,
+  replaceForGroupId,
+  adminQuoteId,
+  title,
+  subtitle,
+  nav,
+}: Props) {
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -46,9 +62,26 @@ export function ProposalUpload({ onComplete, replaceForGroupId }: Props) {
       }
       setUploading(true);
       try {
+        // Three modes share the same upload UX but post to different
+        // endpoint families. The server-side AI-clean + scoring logic
+        // is symmetric across all three.
+        const endpoints = adminQuoteId
+          ? {
+              parse: `/api/admin/quotes/${adminQuoteId}/parse`,
+              applyMapping: `/api/admin/quotes/${adminQuoteId}/apply-mapping`,
+              confirm: `/api/admin/quotes/${adminQuoteId}/confirm`,
+            }
+          : {
+              parse: "/api/groups/parse",
+              applyMapping: "/api/groups/apply-mapping",
+              confirm: replaceForGroupId
+                ? `/api/groups/${replaceForGroupId}/census/replace-from-pending`
+                : "/api/groups/confirm",
+            };
+
         const form = new FormData();
         form.append("file", file);
-        const parseRes = await fetch("/api/groups/parse", {
+        const parseRes = await fetch(endpoints.parse, {
           method: "POST",
           body: form,
           credentials: "include",
@@ -56,7 +89,7 @@ export function ProposalUpload({ onComplete, replaceForGroupId }: Props) {
         if (!parseRes.ok) throw new Error("parse-failed");
         const parsed = await parseRes.json();
 
-        const mappingRes = await fetch("/api/groups/apply-mapping", {
+        const mappingRes = await fetch(endpoints.applyMapping, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ columnMapping: parsed.columnMapping ?? {} }),
@@ -64,18 +97,16 @@ export function ProposalUpload({ onComplete, replaceForGroupId }: Props) {
         });
         if (!mappingRes.ok) throw new Error("mapping-failed");
 
-        // Branch on mode: replace the existing group's census OR create
-        // a new group from the pending session data. The server-side
-        // re-underwrite logic is identical either way.
-        const confirmUrl = replaceForGroupId
-          ? `/api/groups/${replaceForGroupId}/census/replace-from-pending`
-          : "/api/groups/confirm";
-        const confirm = await apiRequest("POST", confirmUrl, {});
+        const confirm = await apiRequest("POST", endpoints.confirm, {});
         const data = await confirm.json();
 
         // Refresh every cache that renders this group's data so the
         // cockpit picks up the new stats, risk tier, and rates.
         await queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+        if (adminQuoteId) {
+          queryClient.invalidateQueries({ queryKey: ["/api/admin/quotes"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/groups", adminQuoteId] });
+        }
         if (replaceForGroupId) {
           queryClient.invalidateQueries({
             queryKey: ["/api/groups", replaceForGroupId, "census"],
@@ -105,7 +136,7 @@ export function ProposalUpload({ onComplete, replaceForGroupId }: Props) {
         setUploading(false);
       }
     },
-    [onComplete, replaceForGroupId, toast],
+    [onComplete, replaceForGroupId, adminQuoteId, toast],
   );
 
   const onDrop = useCallback(
@@ -118,28 +149,34 @@ export function ProposalUpload({ onComplete, replaceForGroupId }: Props) {
     [handleFile],
   );
 
+  const headingTitle =
+    title ?? (replaceForGroupId ? "Replace Your Census" : "Upload Your Employee Census");
+  const headingSubtitle =
+    subtitle ??
+    (replaceForGroupId ? (
+      <>
+        Upload a new CSV to replace the current roster. We'll re-run
+        underwriting and reprice your plans on the new census —
+        company, contacts, and rating area stay the same.
+      </>
+    ) : (
+      <>
+        You will need each <strong className="text-foreground">employee</strong> and all{" "}
+        <strong className="text-foreground">family members</strong> (i.e. spouses and children)
+        that will be covered under the group health plan.
+      </>
+    ));
+
   return (
     <div className="min-h-screen bg-background">
-      <ProposalNav />
+      {nav ?? <ProposalNav />}
       <div className="mx-auto max-w-2xl px-6 py-12">
         <div className="mb-6">
           <h1 className="text-3xl font-bold tracking-tight text-primary">
-            {replaceForGroupId ? "Replace Your Census" : "Upload Your Employee Census"}
+            {headingTitle}
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            {replaceForGroupId ? (
-              <>
-                Upload a new CSV to replace the current roster. We'll re-run
-                underwriting and reprice your plans on the new census —
-                company, contacts, and rating area stay the same.
-              </>
-            ) : (
-              <>
-                You will need each <strong className="text-foreground">employee</strong> and all{" "}
-                <strong className="text-foreground">family members</strong> (i.e. spouses and children)
-                that will be covered under the group health plan.
-              </>
-            )}
+            {headingSubtitle}
           </p>
         </div>
 

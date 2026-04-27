@@ -26,6 +26,10 @@ type Props = {
   group: Group;
   census?: CensusEntry[];
   onViewCensus?: () => void;
+  // Public-share mode hides edit affordances: the rename pencil, the
+  // score-audit popover, and (since the parent passes no
+  // onViewCensus) the View Census button.
+  readOnly?: boolean;
 };
 
 // Remembers expanded/collapsed across navigation so a broker who
@@ -39,7 +43,7 @@ function readInitialExpanded(): boolean {
   return raw === null ? true : raw === "1";
 }
 
-export function GroupHeader({ group, census, onViewCensus }: Props) {
+export function GroupHeader({ group, census, onViewCensus, readOnly }: Props) {
   const [auditOpen, setAuditOpen] = useState(false);
   const [expanded, setExpanded] = useState<boolean>(readInitialExpanded);
   const [editingName, setEditingName] = useState(false);
@@ -59,7 +63,7 @@ export function GroupHeader({ group, census, onViewCensus }: Props) {
   }, [editingName]);
 
   function beginEdit() {
-    if (group.locked) return;
+    if (group.locked || readOnly) return;
     setDraftName(group.companyName);
     setEditingName(true);
   }
@@ -233,17 +237,29 @@ export function GroupHeader({ group, census, onViewCensus }: Props) {
         <div className="flex flex-wrap items-center gap-3">
           <TierBadge tier={tier} />
           {group.riskScore != null && tierConfig && (
-            <button
-              type="button"
-              onClick={() => setAuditOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-0.5 text-[11px] font-semibold tabular-nums transition hover-elevate"
-              title="View how this score was calculated"
-              data-testid="badge-risk-score"
-            >
-              <Sparkles className="h-3 w-3" style={{ color: tierConfig.hsl }} />
-              <span className="text-muted-foreground">Kennion Score</span>
-              <span style={{ color: tierConfig.hsl }}>{group.riskScore.toFixed(2)}</span>
-            </button>
+            readOnly ? (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-0.5 text-[11px] font-semibold tabular-nums"
+                title="Kennion underwriting score"
+                data-testid="badge-risk-score"
+              >
+                <Sparkles className="h-3 w-3" style={{ color: tierConfig.hsl }} />
+                <span className="text-muted-foreground">Kennion Score</span>
+                <span style={{ color: tierConfig.hsl }}>{group.riskScore.toFixed(2)}</span>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAuditOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-0.5 text-[11px] font-semibold tabular-nums transition hover-elevate"
+                title="View how this score was calculated"
+                data-testid="badge-risk-score"
+              >
+                <Sparkles className="h-3 w-3" style={{ color: tierConfig.hsl }} />
+                <span className="text-muted-foreground">Kennion Score</span>
+                <span style={{ color: tierConfig.hsl }}>{group.riskScore.toFixed(2)}</span>
+              </button>
+            )
           )}
           {group.locked && (
             <span
@@ -303,7 +319,7 @@ export function GroupHeader({ group, census, onViewCensus }: Props) {
             >
               {group.companyName}
             </h1>
-            {!group.locked && (
+            {!group.locked && !readOnly && (
               <button
                 type="button"
                 onClick={beginEdit}

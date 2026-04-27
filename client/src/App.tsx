@@ -18,6 +18,9 @@ import ReplaceCensusPage from "@/pages/proposal/replace-census";
 import AdminHome from "@/pages/admin";
 import AdminGroupViewPage from "@/pages/admin/group-view";
 import AdminTemplatesPage from "@/pages/admin/templates";
+import AdminQuotesPage from "@/pages/admin/quotes/index";
+import AdminQuoteWizardPage from "@/pages/admin/quotes/new";
+import PublicQuotePage from "@/pages/quote/[token]";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
 import { Redirect } from "wouter";
@@ -113,6 +116,14 @@ function Router() {
       <Route path="/admin/templates">
         <ProtectedRoute component={AdminTemplatesPage} adminOnly />
       </Route>
+      <Route path="/admin/quotes/new">
+        <ProtectedRoute component={AdminQuoteWizardPage} adminOnly />
+      </Route>
+      <Route path="/admin/quotes">
+        <ProtectedRoute component={AdminQuotesPage} adminOnly />
+      </Route>
+      {/* Public share link — logged out, token-gated, no PHI. */}
+      <Route path="/q/:token" component={PublicQuotePage} />
       {/* Legacy admin deep links redirect to the unified admin home. */}
       <Route path="/admin/dashboard">
         <Redirect to="/admin" />

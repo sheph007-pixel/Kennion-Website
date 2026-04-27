@@ -12,7 +12,7 @@ import {
   proposals,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -38,6 +38,26 @@ export interface IStorage {
   getProposal(id: string): Promise<Proposal | undefined>;
   createProposal(data: { groupId: string; pdfPath: string; pdfBase64?: string; fileName: string; ratesData?: any }): Promise<Proposal>;
   deleteProposalsByGroupId(groupId: string): Promise<void>;
+
+  // Internal sales quotes — admin-driven flow that mints a sharable
+  // /q/:token link for prospects. Same scoring and rates as
+  // self_service customer groups (rate engine is shared).
+  createInternalSalesQuote(input: {
+    companyName: string;
+    state: string;
+    zipCode: string;
+    contactName: string;
+    contactEmail: string;
+    contactPhone?: string | null;
+    createdByAdminId: string;
+    publicToken: string;
+  }): Promise<Group>;
+  getInternalSalesQuotes(): Promise<Group[]>;
+  getCustomerGroups(): Promise<Group[]>;
+  getGroupByPublicToken(token: string): Promise<Group | undefined>;
+  bumpQuoteView(groupId: string): Promise<void>;
+  setQuotePublicToken(groupId: string, token: string | null): Promise<Group | undefined>;
+  markQuotePubliclyAccepted(groupId: string): Promise<Group | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -140,6 +160,92 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProposalsByGroupId(groupId: string): Promise<void> {
     await db.delete(proposals).where(eq(proposals.groupId, groupId));
+  }
+
+  // ── Internal sales quotes ───────────────────────────────────────────
+
+  async createInternalSalesQuote(input: {
+    companyName: string;
+    state: string;
+    zipCode: string;
+    contactName: string;
+    contactEmail: string;
+    contactPhone?: string | null;
+    createdByAdminId: string;
+    publicToken: string;
+  }): Promise<Group> {
+    const [created] = await db.insert(groups).values({
+      userId: null,
+      createdByAdminId: input.createdByAdminId,
+      source: "internal_sales",
+      publicToken: input.publicToken,
+      companyName: input.companyName,
+      state: input.state,
+      zipCode: input.zipCode,
+      contactName: input.contactName,
+      contactEmail: input.contactEmail,
+      contactPhone: input.contactPhone ?? null,
+      // Status starts at 'draft' so the quotes list can distinguish
+      // pre-census quotes from sent ones; once census is uploaded the
+      // finalize step flips it to 'analyzing' (matching customer flow).
+      status: "draft",
+    }).returning();
+    return created;
+  }
+
+  async getInternalSalesQuotes(): Promise<Group[]> {
+    return db
+      .select()
+      .from(groups)
+      .where(eq(groups.source, "internal_sales"))
+      .orderBy(desc(groups.submittedAt));
+  }
+
+  async getCustomerGroups(): Promise<Group[]> {
+    return db
+      .select()
+      .from(groups)
+      .where(eq(groups.source, "self_service"))
+      .orderBy(desc(groups.submittedAt));
+  }
+
+  async getGroupByPublicToken(token: string): Promise<Group | undefined> {
+    const [g] = await db.select().from(groups).where(eq(groups.publicToken, token));
+    return g;
+  }
+
+  async bumpQuoteView(groupId: string): Promise<void> {
+    // Atomic: COALESCE first_viewed_at so it stays at the first hit.
+    await db.execute(sql`
+      UPDATE groups
+      SET view_count       = view_count + 1,
+          last_viewed_at   = NOW(),
+          first_viewed_at  = COALESCE(first_viewed_at, NOW()),
+          updated_at       = NOW()
+      WHERE id = ${groupId}
+    `);
+  }
+
+  async setQuotePublicToken(groupId: string, token: string | null): Promise<Group | undefined> {
+    const [updated] = await db
+      .update(groups)
+      .set({ publicToken: token, updatedAt: new Date() })
+      .where(eq(groups.id, groupId))
+      .returning();
+    return updated;
+  }
+
+  async markQuotePubliclyAccepted(groupId: string): Promise<Group | undefined> {
+    const [updated] = await db
+      .update(groups)
+      .set({
+        publicAcceptedAt: new Date(),
+        status: "proposal_accepted",
+        updatedAt: new Date(),
+      })
+      .where(eq(groups.id, groupId))
+      .returning();
+    return updated;
   }
 }
 

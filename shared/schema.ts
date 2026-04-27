@@ -21,7 +21,29 @@ export const users = pgTable("users", {
 
 export const groups = pgTable("groups", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  // Owner user. Self-service customer groups always have one;
+  // internal_sales quotes have NULL until/unless an admin attaches an
+  // owner later. The /api/groups customer listing filters by exact
+  // userId match, so NULL rows naturally never appear there.
+  userId: varchar("user_id").references(() => users.id),
+  // For internal_sales quotes: the admin who created the quote on
+  // behalf of a prospect. NULL for self_service rows.
+  createdByAdminId: varchar("created_by_admin_id").references(() => users.id),
+  // Discriminator: 'self_service' (customer-uploaded) or
+  // 'internal_sales' (sales-rep-driven). Drives admin list filtering
+  // and whether a public link is minted.
+  source: text("source").default("self_service").notNull(),
+  // Unguessable token used in /q/:token public links. NULL for
+  // self_service rows; rotated/revoked by admins on internal_sales.
+  publicToken: text("public_token"),
+  firstViewedAt: timestamp("first_viewed_at"),
+  lastViewedAt: timestamp("last_viewed_at"),
+  viewCount: integer("view_count").default(0).notNull(),
+  // Set when the prospect submits the accept modal via the public
+  // route. The acceptance email + status flip happen the same way as
+  // self_service; this field just lets the quotes list distinguish
+  // 'Sent / Viewed / Accepted' status without re-deriving from logs.
+  publicAcceptedAt: timestamp("public_accepted_at"),
   companyName: text("company_name").notNull(),
   contactName: text("contact_name").notNull(),
   contactEmail: text("contact_email").notNull(),
@@ -215,6 +237,25 @@ export const newGroupDetailsSchema = z.object({
     .transform((s) => s.trim())
     .refine((s) => /^\d{5}(-\d{4})?$/.test(s), { message: "Enter a 5-digit ZIP" }),
 });
+
+// Internal sales rep creates a quote on behalf of a prospect. Differs
+// from newGroupDetailsSchema by also collecting the prospect's contact
+// details (since there's no logged-in customer to seed them from).
+export const internalSalesQuoteInputSchema = z.object({
+  companyName: z.string().min(1, "Company name is required").max(120),
+  state: z
+    .string()
+    .transform((s) => s.trim().toUpperCase())
+    .refine((s) => US_STATE_CODES.has(s), { message: "Enter a valid 2-letter state" }),
+  zipCode: z
+    .string()
+    .transform((s) => s.trim())
+    .refine((s) => /^\d{5}(-\d{4})?$/.test(s), { message: "Enter a 5-digit ZIP" }),
+  contactName: z.string().min(1, "Contact name is required").max(120),
+  contactEmail: z.string().email("Valid email required"),
+  contactPhone: z.string().optional().nullable(),
+});
+export type InternalSalesQuoteInput = z.infer<typeof internalSalesQuoteInputSchema>;
 
 export const magicLinkVerifySchema = z.object({
   token: z.string().min(1, "Token is required"),

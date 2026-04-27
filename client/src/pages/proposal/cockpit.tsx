@@ -13,6 +13,7 @@ import {
   useReplaceCensus,
   censusToMix,
 } from "@/hooks/use-proposal";
+import { usePublicQuoteRates, type TierMix } from "@/hooks/use-public-quote";
 import { ProposalExportModal } from "@/components/proposal/proposal-export-modal";
 import { ProposalAcceptModal } from "@/components/proposal/proposal-accept-modal";
 import {
@@ -34,6 +35,15 @@ import { SupplementalTables } from "@/components/proposal/supplemental-tables";
 import { CensusModal } from "@/components/proposal/census-modal";
 import type { Group } from "@shared/schema";
 
+// Cockpit operating mode. Default ("session") is what an authenticated
+// customer or admin sees: hooks talk to /api/groups + /api/rate, all
+// affordances visible. "public" mode powers the logged-out /q/:token
+// share link: hooks talk to /api/quote/:token, no auth, no PHI, and
+// edit/replace/audit affordances are hidden.
+export type CockpitMode =
+  | { kind: "session" }
+  | { kind: "public"; token: string; mix: TierMix };
+
 type Props = {
   group: Group;
   onReplaceCensus?: () => void;
@@ -41,13 +51,27 @@ type Props = {
   // Used by the admin view to overlay admin-only controls on top of
   // the same cockpit the customer sees.
   bannerSlot?: React.ReactNode;
+  // Defaults to { kind: "session" } so existing callers keep working
+  // without any prop changes.
+  mode?: CockpitMode;
+  // Override the default <ProposalNav />. The public route uses this
+  // to swap in a logged-out nav that doesn't fetch the user's groups.
+  nav?: React.ReactNode;
+  // URL the accept modal POSTs to. Defaults to the session-auth route;
+  // public mode passes /api/quote/:token/accept.
+  acceptUrl?: string;
 };
 
 export function ProposalCockpit({
   group,
   onReplaceCensus,
   bannerSlot,
+  mode,
+  nav,
+  acceptUrl,
 }: Props) {
+  const resolvedMode: CockpitMode = mode ?? { kind: "session" };
+  const isPublic = resolvedMode.kind === "public";
   const [effDate, setEffDate] = useState(() => effectiveDateOptions()[0]);
   const [contribValue, setContribValue] = useState(0);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
@@ -62,9 +86,24 @@ export function ProposalCockpit({
   // side nav links must stay in admin-space so the group fetch hits the
   // owner-or-admin endpoint and the ProposalNav keeps admin mode.
   const isAdminView = location.startsWith("/admin/groups/");
-  const ratesQuery = useGroupRates(group.id, toIsoDate(effDate));
-  const censusQuery = useGroupCensus(group.id);
-  const replaceCensus = useReplaceCensus(group.id);
+  // Hooks must run unconditionally (rules of hooks). Each one's
+  // `enabled` flag is gated so only the active mode actually fetches.
+  const sessionRatesQuery = useGroupRates(
+    isPublic ? undefined : group.id,
+    isPublic ? null : toIsoDate(effDate),
+  );
+  const publicRatesQuery = usePublicQuoteRates(
+    isPublic && resolvedMode.kind === "public" ? resolvedMode.token : undefined,
+    isPublic ? toIsoDate(effDate) : null,
+  );
+  const ratesQuery = isPublic ? publicRatesQuery : sessionRatesQuery;
+  // No census fetch in public mode — individual rows are PHI-adjacent
+  // and the cockpit never displays them to the prospect anyway.
+  const censusQuery = useGroupCensus(isPublic ? undefined : group.id);
+  // useReplaceCensus is a useMutation — fine to instantiate with
+  // undefined; mutate() throws if invoked, but in public mode we never
+  // mount the trigger button.
+  const replaceCensus = useReplaceCensus(isPublic ? undefined : group.id);
   const plans = ratesQuery.data?.plans ?? [];
   const fileName = censusFileName(group);
 
@@ -80,7 +119,12 @@ export function ProposalCockpit({
     [plans, selectedPlanId],
   );
   const eeRate = selectedPlan?.base.EE ?? 0;
-  const mix = useMemo(() => censusToMix(censusQuery.data), [censusQuery.data]);
+  // In public mode the server pre-computes the tier mix from the
+  // census so we never have to ship those rows to the browser.
+  const mix = useMemo(() => {
+    if (resolvedMode.kind === "public") return resolvedMode.mix;
+    return censusToMix(censusQuery.data);
+  }, [resolvedMode, censusQuery.data]);
 
   const totals = useMemo(() => {
     if (!selectedPlan) return { gross: 0, employerCost: 0, employeeCost: 0 };
@@ -91,7 +135,7 @@ export function ProposalCockpit({
 
   return (
     <div className="min-h-screen bg-background">
-      <ProposalNav />
+      {nav ?? <ProposalNav />}
       {bannerSlot}
       <div className="mx-auto max-w-[1280px] px-6 py-6">
         <div className="grid grid-cols-[300px_1fr] gap-6">
@@ -146,7 +190,8 @@ export function ProposalCockpit({
             <GroupHeader
               group={group}
               census={censusQuery.data}
-              onViewCensus={() => setCensusOpen(true)}
+              onViewCensus={isPublic ? undefined : () => setCensusOpen(true)}
+              readOnly={isPublic}
             />
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
@@ -165,21 +210,23 @@ export function ProposalCockpit({
                     Supplemental
                   </TabPill>
                 </TabsList>
-                <button
-                  type="button"
-                  className="ml-auto inline-flex items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover-elevate"
-                  onClick={() => {
-                    const q = selectedPlan ? `?plan=${encodeURIComponent(selectedPlan.name)}` : "";
-                    const base = isAdminView
-                      ? `/admin/groups/${group.id}/plan-details`
-                      : `/dashboard/${group.id}/plan-details`;
-                    navigate(`${base}${q}`);
-                  }}
-                  data-testid="button-compare-plan-details"
-                >
-                  Compare plan details
-                  <ArrowRight className="h-4 w-4" />
-                </button>
+                {!isPublic && (
+                  <button
+                    type="button"
+                    className="ml-auto inline-flex items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover-elevate"
+                    onClick={() => {
+                      const q = selectedPlan ? `?plan=${encodeURIComponent(selectedPlan.name)}` : "";
+                      const base = isAdminView
+                        ? `/admin/groups/${group.id}/plan-details`
+                        : `/dashboard/${group.id}/plan-details`;
+                      navigate(`${base}${q}`);
+                    }}
+                    data-testid="button-compare-plan-details"
+                  >
+                    Compare plan details
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                )}
               </div>
 
               <TabsContent value="medical" className="mt-5 min-h-[640px] space-y-4">
@@ -226,31 +273,33 @@ export function ProposalCockpit({
       </div>
       <ProposalFooter />
 
-      <CensusModal
-        open={censusOpen}
-        onOpenChange={setCensusOpen}
-        entries={censusQuery.data}
-        censusFileName={fileName}
-        submittedAt={group.submittedAt}
-        locked={group.locked}
-        onReplace={() => onReplaceCensus?.()}
-        onSave={async (rows) => {
-          try {
-            await replaceCensus.mutateAsync(rows);
-            toast({
-              title: "Census updated",
-              description: "Rates recalculated for the new roster.",
-            });
-          } catch (err: any) {
-            toast({
-              title: "Could not update census",
-              description: err?.message ?? "Please try again.",
-              variant: "destructive",
-            });
-            throw err;
-          }
-        }}
-      />
+      {!isPublic && (
+        <CensusModal
+          open={censusOpen}
+          onOpenChange={setCensusOpen}
+          entries={censusQuery.data}
+          censusFileName={fileName}
+          submittedAt={group.submittedAt}
+          locked={group.locked}
+          onReplace={() => onReplaceCensus?.()}
+          onSave={async (rows) => {
+            try {
+              await replaceCensus.mutateAsync(rows);
+              toast({
+                title: "Census updated",
+                description: "Rates recalculated for the new roster.",
+              });
+            } catch (err: any) {
+              toast({
+                title: "Could not update census",
+                description: err?.message ?? "Please try again.",
+                variant: "destructive",
+              });
+              throw err;
+            }
+          }}
+        />
+      )}
 
       <ProposalExportModal
         open={exportOpen}
@@ -265,6 +314,7 @@ export function ProposalCockpit({
         onOpenChange={setAcceptOpen}
         group={group}
         preselectedPlan={selectedPlan?.name ?? null}
+        acceptUrl={acceptUrl}
       />
     </div>
   );
