@@ -273,7 +273,7 @@ function StatsBar() {
     { value: "2,415+", label: "Groups Analyzed" },
     { value: "18%", label: "Avg. Rate Reduction" },
     { value: "$12M+", label: "Client Savings" },
-    { value: "97%", label: "Retention Rate" },
+    { value: "85-95%", label: "Retention Rate" },
   ];
   return (
     <section className="border-y bg-card/50">
