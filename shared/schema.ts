@@ -74,6 +74,12 @@ export const groups = pgTable("groups", {
   // When true, the owner can no longer edit or replace the census —
   // the proposal is frozen as-is. Only admins can toggle this.
   locked: boolean("locked").default(false).notNull(),
+  // Dual-AI audit verdict for the group's current census + computed
+  // rates. See server/ai-audit.ts. Null until the first audit runs;
+  // re-audit invalidates this cache. The group is the right home for
+  // this rather than the proposals row because most cockpit views
+  // never persist a proposals row (rates are computed live).
+  auditResults: jsonb("audit_results"),
   submittedAt: timestamp("submitted_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

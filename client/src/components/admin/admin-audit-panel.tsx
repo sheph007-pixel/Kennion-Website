@@ -1,39 +1,41 @@
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useProposalsForGroup } from "@/pages/admin/hooks";
 import {
   AIActuaryBadges,
   type AuditPair,
 } from "@/components/ai-actuary-badges";
 import type { Group } from "@shared/schema";
 
-// Sits just below the AdminBanner on the admin cockpit. Pulls the
-// latest proposal for the group, surfaces its dual-AI audit verdict,
-// and exposes a "Run audit / Re-run" button that calls
-// /api/admin/proposals/:id/re-audit. Hidden completely when the
-// group has no proposals yet — the admin cockpit's existing
-// "generate proposal" affordance lives elsewhere.
+// Sits just below the AdminBanner on the admin cockpit. Reads the
+// dual-AI audit verdict directly off the group (server caches it on
+// `groups.audit_results`) and exposes a "Run audit / Re-run" button
+// that calls /api/admin/groups/:id/audit. Always renders — even
+// when no audit has run yet — so the admin always sees the panel
+// and can kick off the first audit with one click.
 export function AdminAuditPanel({ group }: { group: Group }) {
   const { toast } = useToast();
-  const { data: proposals } = useProposalsForGroup(group.id);
-  const latest = proposals?.[0];
-  const audit = (latest?.auditResults as AuditPair | null | undefined) ?? null;
+  const audit =
+    ((group as any)?.auditResults as AuditPair | null | undefined) ?? null;
 
   const reAudit = useMutation({
-    mutationFn: async (proposalId: string) => {
+    mutationFn: async () => {
       const res = await apiRequest(
         "POST",
-        `/api/admin/proposals/${proposalId}/re-audit`,
+        `/api/admin/groups/${group.id}/audit`,
         {},
       );
       return (await res.json()) as { auditResults: AuditPair };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/admin/proposal/group", group.id],
-      });
-      toast({ title: "Audit refreshed" });
+      // useGroupForAdmin pulls /api/groups/:id directly — invalidate
+      // that key so the freshly persisted audit shows up immediately.
+      // Also invalidate the admin lists so quote rows reflect the
+      // new audit state if/when those surfaces add a column.
+      queryClient.invalidateQueries({ queryKey: ["/api/groups", group.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/groups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/quotes"] });
+      toast({ title: "Audit complete" });
     },
     onError: (err: any) => {
       toast({
@@ -44,11 +46,6 @@ export function AdminAuditPanel({ group }: { group: Group }) {
     },
   });
 
-  // No proposals yet → nothing to audit. The cockpit's existing
-  // "Download PDF" / "Generate proposal" path will create one and the
-  // audit will run automatically.
-  if (!latest) return null;
-
   return (
     <div className="border-b bg-background">
       <div className="mx-auto max-w-[1280px] px-6 py-4">
@@ -57,7 +54,7 @@ export function AdminAuditPanel({ group }: { group: Group }) {
         </div>
         <AIActuaryBadges
           audit={audit}
-          onReAudit={() => reAudit.mutate(latest.id)}
+          onReAudit={() => reAudit.mutate()}
           isReAuditing={reAudit.isPending}
         />
       </div>

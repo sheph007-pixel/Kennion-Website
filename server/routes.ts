@@ -2345,7 +2345,9 @@ export async function registerRoutes(
 
       // Dual-AI actuary audit. Errors here must NOT block the
       // proposal — generation has already succeeded and the audit
-      // can be re-run on demand from the cockpit.
+      // can be re-run on demand from the cockpit. We write to the
+      // group (not the proposal) so cockpit views without a
+      // persisted proposals row still surface the audit.
       try {
         const { runAuditPair } = await import("./ai-audit");
         const audit = await runAuditPair({
@@ -2354,9 +2356,9 @@ export async function registerRoutes(
           pricing,
           proposalFileName: fileName,
         });
-        await storage.updateProposalAudit(proposal.id, audit);
+        await storage.updateGroupAudit(groupId, audit);
       } catch (err: any) {
-        log(`AI audit pair error (proposal ${proposal.id}): ${err?.message || err}`, "audit");
+        log(`AI audit pair error (group ${groupId}): ${err?.message || err}`, "audit");
       }
 
       res.json({
@@ -2409,39 +2411,52 @@ export async function registerRoutes(
     }
   });
 
-  // POST — re-run dual-AI audit for an existing proposal. Used by
-  // the "Run audit" / "Retry" buttons in the cockpit when an audit
-  // never ran (legacy row), failed, or went stale relative to the
-  // proposal row's createdAt.
-  app.post("/api/admin/proposals/:id/re-audit", requireAdmin, async (req: Request, res: Response) => {
+  // POST — run (or re-run) the dual-AI audit for a group. Used by the
+  // "Run audit" / "Re-run" buttons on the admin cockpit. Most groups
+  // never have a persisted proposals row, so the audit binds to the
+  // group itself and prices the census live via priceGroup the same
+  // way /api/rate/price-group does.
+  app.post("/api/admin/groups/:id/audit", requireAdmin, async (req: Request, res: Response) => {
     try {
-      const proposal = await storage.getProposal(req.params.id);
-      if (!proposal) {
-        return res.status(404).json({ message: "Proposal not found" });
-      }
-      const group = await storage.getGroup(proposal.groupId);
+      const groupId = req.params.id as string;
+      const group = await storage.getGroup(groupId);
       if (!group) {
         return res.status(404).json({ message: "Group not found" });
       }
-      const census = await storage.getCensusByGroupId(proposal.groupId);
-      const pricing = (proposal.ratesData as any) || null;
-      if (!pricing) {
+      const census = await storage.getCensusByGroupId(groupId);
+      if (census.length === 0) {
         return res.status(400).json({
-          message: "Proposal has no cached rates — regenerate the proposal first.",
+          message: "Group has no census — upload one before running an audit.",
         });
       }
+      const members: CensusMember[] = censusEntriesToMembers(census);
+      const fromGroup =
+        group.state || group.zipCode
+          ? inferRatingArea(group.state, group.zipCode)
+          : null;
+      const ratingArea = fromGroup ?? inferRatingAreaFromCensus(members);
+      const effectiveDate =
+        (typeof req.body?.effectiveDate === "string" && req.body.effectiveDate) ||
+        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const pricing = priceGroup({
+        census: members,
+        effectiveDate,
+        ratingArea,
+        admin: "EBPA",
+        group: group.companyName,
+      });
       const { runAuditPair } = await import("./ai-audit");
       const audit = await runAuditPair({
         group,
         census,
         pricing,
-        proposalFileName: proposal.fileName,
+        proposalFileName: `${group.companyName} — ${effectiveDate}`,
       });
-      await storage.updateProposalAudit(proposal.id, audit);
-      res.json({ proposalId: proposal.id, auditResults: audit });
+      await storage.updateGroupAudit(groupId, audit);
+      res.json({ groupId, auditResults: audit });
     } catch (err: any) {
-      log(`Re-audit error: ${err?.message || err}`, "audit");
-      res.status(500).json({ message: err?.message || "Re-audit failed" });
+      log(`Group audit error: ${err?.message || err}`, "audit");
+      res.status(500).json({ message: err?.message || "Audit failed" });
     }
   });
 
@@ -3268,8 +3283,9 @@ export async function registerRoutes(
             await storage.updateGroup(created.id, { status: "proposal_sent" });
 
             // Dual-AI audit. Best-effort — failures don't fail the
-            // bulk row, just leave the proposal un-audited (badge
+            // bulk row, just leave the group un-audited (badge
             // shows "Audit pending — retry").
+            let auditForResponse: any = null;
             try {
               const { runAuditPair } = await import("./ai-audit");
               const audit = await runAuditPair({
@@ -3278,18 +3294,15 @@ export async function registerRoutes(
                 pricing,
                 proposalFileName: fileName,
               });
-              await storage.updateProposalAudit(proposal.id, audit);
+              await storage.updateGroupAudit(created.id, audit);
+              auditForResponse = audit;
             } catch (auditErr: any) {
               log(
-                `AI audit pair error (bulk, proposal ${proposal.id}): ${auditErr?.message || auditErr}`,
+                `AI audit pair error (bulk, group ${created.id}): ${auditErr?.message || auditErr}`,
                 "audit",
               );
             }
 
-            // Re-fetch the proposal so the response carries the
-            // audit verdict that was just persisted (best-effort —
-            // missing audit just stays null).
-            const persisted = await storage.getProposal(proposal.id);
             results.push({
               ok: true,
               fileName: file.originalname,
@@ -3298,7 +3311,7 @@ export async function registerRoutes(
               proposalId: proposal.id,
               totalLives: entries.length,
               ratingArea: pricing.rating_area,
-              audit: (persisted?.auditResults as any) ?? null,
+              audit: auditForResponse,
             });
           } catch (err: any) {
             log(
@@ -3513,9 +3526,7 @@ export async function registerRoutes(
     // hit 100% — partial / disagreeing / failed audits stay hidden
     // from prospects. The shape is intentionally minimal (no per-item
     // findings, no error strings).
-    const proposalsForGroup = await storage.getProposalsByGroupId(quote.id);
-    const latest = proposalsForGroup[0];
-    const audit = (latest?.auditResults as any) || null;
+    const audit = (quote.auditResults as any) || null;
     let publicAudit: {
       audited_at: string;
       actuary_i: { system: string; model: string; score_pct: number };

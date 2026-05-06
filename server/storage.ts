@@ -23,6 +23,10 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   deleteUser(id: string): Promise<void>;
 
+  // Persist a dual-AI audit verdict on a group (see server/ai-audit.ts).
+  // The audit lives on the group rather than on a proposals row because
+  // most cockpit views never persist a proposals row.
+  updateGroupAudit(groupId: string, auditResults: any): Promise<Group | undefined>;
   getGroupsByUserId(userId: string): Promise<Group[]>;
   getAllGroups(): Promise<Group[]>;
   getGroup(id: string): Promise<Group | undefined>;
@@ -100,6 +104,15 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(id: string): Promise<void> {
     await db.delete(users).where(eq(users.id, id));
+  }
+
+  async updateGroupAudit(groupId: string, auditResults: any): Promise<Group | undefined> {
+    const [updated] = await db
+      .update(groups)
+      .set({ auditResults, updatedAt: new Date() })
+      .where(eq(groups.id, groupId))
+      .returning();
+    return updated;
   }
 
   async getGroupsByUserId(userId: string): Promise<Group[]> {

@@ -54,7 +54,7 @@ type Slot = "actuary_i" | "actuary_ii";
 // Two side-by-side badges, click to expand the 16-item checklist. If
 // auditResults is null the admin sees a "Run audit" button; if either
 // side errored, a "Retry" button. onReAudit is the callback that
-// triggers POST /api/admin/proposals/:id/re-audit.
+// triggers POST /api/admin/groups/:id/audit.
 
 export function AIActuaryBadges({
   audit,
