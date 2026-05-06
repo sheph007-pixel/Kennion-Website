@@ -96,6 +96,11 @@ export const proposals = pgTable("proposals", {
   pdfBase64: text("pdf_base64"),
   fileName: text("file_name").notNull(),
   ratesData: jsonb("rates_data"),
+  // Dual-AI audit verdict — see server/ai-audit.ts. Null on legacy
+  // proposals (pre-audit feature) or rows where the audit hasn't
+  // run yet; the admin "Run audit" button fills it in on demand.
+  // Public quote views read this field but never re-call AI providers.
+  auditResults: jsonb("audit_results"),
   status: text("status").default("generated").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

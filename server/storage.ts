@@ -36,7 +36,10 @@ export interface IStorage {
 
   getProposalsByGroupId(groupId: string): Promise<Proposal[]>;
   getProposal(id: string): Promise<Proposal | undefined>;
-  createProposal(data: { groupId: string; pdfPath: string; pdfBase64?: string; fileName: string; ratesData?: any }): Promise<Proposal>;
+  createProposal(data: { groupId: string; pdfPath: string; pdfBase64?: string; fileName: string; ratesData?: any; auditResults?: any }): Promise<Proposal>;
+  // Persist a fresh dual-AI audit verdict on an existing proposal
+  // row. See server/ai-audit.ts for the AuditPair shape.
+  updateProposalAudit(proposalId: string, auditResults: any): Promise<Proposal | undefined>;
   deleteProposalsByGroupId(groupId: string): Promise<void>;
 
   // Internal sales quotes — admin-driven flow that mints a sharable
@@ -158,9 +161,18 @@ export class DatabaseStorage implements IStorage {
     return proposal;
   }
 
-  async createProposal(data: { groupId: string; pdfPath: string; pdfBase64?: string; fileName: string; ratesData?: any }): Promise<Proposal> {
+  async createProposal(data: { groupId: string; pdfPath: string; pdfBase64?: string; fileName: string; ratesData?: any; auditResults?: any }): Promise<Proposal> {
     const [created] = await db.insert(proposals).values(data).returning();
     return created;
+  }
+
+  async updateProposalAudit(proposalId: string, auditResults: any): Promise<Proposal | undefined> {
+    const [updated] = await db
+      .update(proposals)
+      .set({ auditResults })
+      .where(eq(proposals.id, proposalId))
+      .returning();
+    return updated;
   }
 
   async deleteProposalsByGroupId(groupId: string): Promise<void> {

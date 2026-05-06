@@ -34,6 +34,10 @@ import { ProposalNav } from "@/components/proposal/proposal-nav";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
+import {
+  AIActuaryStatus,
+  type AuditPair,
+} from "@/components/ai-actuary-badges";
 
 // The 2 admin platforms exposed in the bulk UI. The rate engine
 // supports more (Virtual_RBP variants), but those are not offered
@@ -62,6 +66,7 @@ type BulkResult =
       proposalId: string;
       totalLives: number;
       ratingArea: string;
+      audit: AuditPair | null;
     }
   | {
       ok: false;
@@ -449,6 +454,7 @@ export default function AdminQuotesBulkPage() {
                   <TableHead>Group</TableHead>
                   <TableHead className="text-right">Lives</TableHead>
                   <TableHead>Result</TableHead>
+                  <TableHead>Audit</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -472,6 +478,9 @@ export default function AdminQuotesBulkPage() {
                           <span className="break-words">{r.error}</span>
                         </span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      {r.ok ? <AIActuaryStatus audit={r.audit} /> : null}
                     </TableCell>
                     <TableCell className="text-right">
                       {r.ok && (
