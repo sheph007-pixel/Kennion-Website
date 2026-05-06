@@ -8,18 +8,23 @@ import {
   ArrowUpDown,
   Briefcase,
   Copy,
+  Download,
   ExternalLink,
   Eye,
+  Loader2,
   MoreHorizontal,
   Plus,
   RotateCcw,
   Search,
   Slash,
   Trash2,
+  Upload,
+  X,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -57,9 +62,9 @@ import {
   useDeleteQuote,
   deriveQuoteStatus,
   statusLabel,
+  type AdminQuote,
   type QuoteStatus,
 } from "@/hooks/use-admin-quotes";
-import type { Group } from "@shared/schema";
 import { cn } from "@/lib/utils";
 
 // Internal sales quotes list — sortable table. Click any column
@@ -88,12 +93,18 @@ function defaultDir(key: SortKey): SortDir {
 
 export default function AdminQuotesPage() {
   const [, navigate] = useLocation();
+  const { toast } = useToast();
   const { data: quotes, isLoading } = useAdminQuotes();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
     key: "submittedAt",
     dir: "desc",
   });
+  // Set of group ids the user has checked. Only rows with a
+  // latestProposalId can be selected — those are the rows the bulk
+  // download endpoint actually has a PDF for.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [downloading, setDownloading] = useState(false);
 
   function onSort(key: SortKey) {
     setSort((cur) =>
@@ -116,6 +127,86 @@ export default function AdminQuotesPage() {
     const sorted = [...filtered].sort((a, b) => compareQuotes(a, b, sort.key, sort.dir));
     return sorted;
   }, [quotes, search, sort]);
+
+  const selectableIds = useMemo(
+    () => visible.filter((g) => g.latestProposalId).map((g) => g.id),
+    [visible],
+  );
+  const allSelected = selectableIds.length > 0 &&
+    selectableIds.every((id) => selected.has(id));
+
+  function toggleOne(id: string) {
+    setSelected((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function toggleAll() {
+    setSelected((cur) => {
+      if (allSelected) return new Set();
+      const next = new Set(cur);
+      for (const id of selectableIds) next.add(id);
+      return next;
+    });
+  }
+  function clearSelection() {
+    setSelected(new Set());
+  }
+
+  // POST the latestProposalIds to the zip endpoint and download the
+  // returned blob. Skips empty-id rows defensively (the UI already
+  // guards against this with selectableIds, but the server is the
+  // source of truth on which proposals actually have a PDF).
+  async function downloadZip() {
+    if (selected.size === 0 || downloading) return;
+    setDownloading(true);
+    try {
+      const ids = (quotes ?? [])
+        .filter((g) => selected.has(g.id) && g.latestProposalId)
+        .map((g) => g.latestProposalId as string);
+      if (ids.length === 0) {
+        toast({
+          title: "No PDFs to download",
+          description: "The selected quotes don't have proposals yet.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const res = await fetch("/api/admin/proposals/bulk-download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proposalIds: ids }),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        let msg = `${res.status}: Download failed`;
+        try { msg = JSON.parse(t).message || msg; } catch { /* keep generic */ }
+        throw new Error(msg);
+      }
+      const blob = await res.blob();
+      const stamp = new Date().toISOString().slice(0, 10);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `kennion-proposals-${stamp}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast({ title: `Downloaded ${ids.length} PDF${ids.length === 1 ? "" : "s"}` });
+    } catch (err: any) {
+      toast({
+        title: "Download failed",
+        description: err?.message,
+        variant: "destructive",
+      });
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -143,14 +234,25 @@ export default function AdminQuotesPage() {
               Same engine, same scoring, same accept flow as customer-driven quotes.
             </p>
           </div>
-          <Button
-            onClick={() => navigate("/admin/quotes/new")}
-            className="gap-1.5"
-            data-testid="button-new-quote"
-          >
-            <Plus className="h-4 w-4" />
-            New quote
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/admin/quotes/bulk")}
+              className="gap-1.5"
+              data-testid="button-bulk-upload"
+            >
+              <Upload className="h-4 w-4" />
+              Bulk upload
+            </Button>
+            <Button
+              onClick={() => navigate("/admin/quotes/new")}
+              className="gap-1.5"
+              data-testid="button-new-quote"
+            >
+              <Plus className="h-4 w-4" />
+              New quote
+            </Button>
+          </div>
         </div>
 
         <div className="mb-5">
@@ -190,10 +292,19 @@ export default function AdminQuotesPage() {
             )}
           </Card>
         ) : (
-          <Card className="overflow-hidden">
+          <Card className={cn("overflow-hidden", selected.size > 0 && "mb-24")}>
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={toggleAll}
+                      disabled={selectableIds.length === 0}
+                      aria-label="Select all eligible quotes"
+                      data-testid="checkbox-select-all"
+                    />
+                  </TableHead>
                   <TableHead className="min-w-[260px]">
                     <SortBtn label="Company" k="companyName" sort={sort} onSort={onSort} />
                   </TableHead>
@@ -215,13 +326,54 @@ export default function AdminQuotesPage() {
               </TableHeader>
               <TableBody>
                 {visible.map((g) => (
-                  <QuoteRow key={g.id} group={g} />
+                  <QuoteRow
+                    key={g.id}
+                    group={g}
+                    selected={selected.has(g.id)}
+                    onToggleSelect={() => toggleOne(g.id)}
+                  />
                 ))}
               </TableBody>
             </Table>
           </Card>
         )}
       </div>
+
+      {selected.size > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 shadow-lg backdrop-blur">
+          <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-3 px-6 py-3">
+            <div className="text-sm">
+              <span className="font-semibold">{selected.size}</span>{" "}
+              quote{selected.size === 1 ? "" : "s"} selected
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearSelection}
+                disabled={downloading}
+                data-testid="button-clear-selection"
+              >
+                <X className="mr-1.5 h-4 w-4" />
+                Clear
+              </Button>
+              <Button
+                onClick={downloadZip}
+                disabled={downloading}
+                className="gap-1.5"
+                data-testid="button-bulk-download"
+              >
+                {downloading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                Download {selected.size} PDF{selected.size === 1 ? "" : "s"} as zip
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -258,7 +410,7 @@ function SortBtn({
   );
 }
 
-function compareQuotes(a: Group, b: Group, key: SortKey, dir: SortDir): number {
+function compareQuotes(a: AdminQuote, b: AdminQuote, key: SortKey, dir: SortDir): number {
   const factor = dir === "asc" ? 1 : -1;
   switch (key) {
     case "companyName": {
@@ -289,7 +441,15 @@ function compareQuotes(a: Group, b: Group, key: SortKey, dir: SortDir): number {
   }
 }
 
-function QuoteRow({ group }: { group: Group }) {
+function QuoteRow({
+  group,
+  selected,
+  onToggleSelect,
+}: {
+  group: AdminQuote;
+  selected: boolean;
+  onToggleSelect: () => void;
+}) {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const rotate = useRotateQuoteLink();
@@ -333,6 +493,22 @@ function QuoteRow({ group }: { group: Group }) {
         onClick={openCockpit}
         data-testid={`row-quote-${group.id}`}
       >
+        <TableCell
+          className="w-10"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Checkbox
+            checked={selected}
+            onCheckedChange={onToggleSelect}
+            disabled={!group.latestProposalId}
+            aria-label={
+              group.latestProposalId
+                ? `Select ${group.companyName}`
+                : "No proposal yet"
+            }
+            data-testid={`checkbox-quote-${group.id}`}
+          />
+        </TableCell>
         <TableCell>
           <div className="flex items-start gap-2.5">
             <span

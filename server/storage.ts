@@ -53,6 +53,11 @@ export interface IStorage {
     publicToken: string;
   }): Promise<Group>;
   getInternalSalesQuotes(): Promise<Group[]>;
+  // Same shape as getInternalSalesQuotes but with the most recent
+  // proposalId per group joined in. Powers the "select multiple →
+  // download zip" action on the admin quotes list, where the client
+  // needs an id to send to /api/admin/proposals/bulk-download.
+  getInternalSalesQuotesWithLatestProposal(): Promise<Array<Group & { latestProposalId: string | null }>>;
   getCustomerGroups(): Promise<Group[]>;
   getGroupByPublicToken(token: string): Promise<Group | undefined>;
   bumpQuoteView(groupId: string): Promise<void>;
@@ -199,6 +204,37 @@ export class DatabaseStorage implements IStorage {
       .from(groups)
       .where(eq(groups.source, "internal_sales"))
       .orderBy(desc(groups.submittedAt));
+  }
+
+  async getInternalSalesQuotesWithLatestProposal(): Promise<
+    Array<Group & { latestProposalId: string | null }>
+  > {
+    // Two-query approach: avoids a correlated subquery that can be
+    // brittle across Drizzle versions and is plenty fast — N is the
+    // number of internal-sales rows, typically a few hundred at most.
+    const rows = await db
+      .select()
+      .from(groups)
+      .where(eq(groups.source, "internal_sales"))
+      .orderBy(desc(groups.submittedAt));
+    if (rows.length === 0) return [];
+    const allProposals = await db
+      .select({
+        id: proposals.id,
+        groupId: proposals.groupId,
+        createdAt: proposals.createdAt,
+      })
+      .from(proposals)
+      .orderBy(desc(proposals.createdAt));
+    // First-seen wins because we ordered by createdAt DESC.
+    const latestByGroup = new Map<string, string>();
+    for (const p of allProposals) {
+      if (!latestByGroup.has(p.groupId)) latestByGroup.set(p.groupId, p.id);
+    }
+    return rows.map((g) => ({
+      ...g,
+      latestProposalId: latestByGroup.get(g.id) ?? null,
+    }));
   }
 
   async getCustomerGroups(): Promise<Group[]> {

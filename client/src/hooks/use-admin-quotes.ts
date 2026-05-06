@@ -2,11 +2,17 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import type { Group } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
+// Server joins the latest proposal id per row (newest by createdAt) so
+// the multi-select bulk-download bar on the quotes list has the id it
+// needs without a follow-up fetch. `null` for quotes that haven't
+// generated a proposal yet — those rows opt out of the checkbox.
+export type AdminQuote = Group & { latestProposalId: string | null };
+
 // Internal-sales quotes list (admin only). Filtered server-side to
 // source='internal_sales' so it never overlaps with the customer
 // /admin user list.
 export function useAdminQuotes() {
-  return useQuery<Group[]>({ queryKey: ["/api/admin/quotes"] });
+  return useQuery<AdminQuote[]>({ queryKey: ["/api/admin/quotes"] });
 }
 
 type StashQuoteDetailsInput = {

@@ -20,6 +20,7 @@ import AdminGroupViewPage from "@/pages/admin/group-view";
 import AdminTemplatesPage from "@/pages/admin/templates";
 import AdminQuotesPage from "@/pages/admin/quotes/index";
 import AdminQuoteWizardPage from "@/pages/admin/quotes/new";
+import AdminQuotesBulkPage from "@/pages/admin/quotes/bulk";
 import PublicQuotePage from "@/pages/quote/[token]";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
@@ -118,6 +119,9 @@ function Router() {
       </Route>
       <Route path="/admin/quotes/new">
         <ProtectedRoute component={AdminQuoteWizardPage} adminOnly />
+      </Route>
+      <Route path="/admin/quotes/bulk">
+        <ProtectedRoute component={AdminQuotesBulkPage} adminOnly />
       </Route>
       <Route path="/admin/quotes">
         <ProtectedRoute component={AdminQuotesPage} adminOnly />

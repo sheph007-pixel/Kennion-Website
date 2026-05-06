@@ -7,6 +7,7 @@ import crypto from "crypto";
 import path from "path";
 import fs from "fs";
 import XLSX from "xlsx";
+import archiver from "archiver";
 import bcrypt from "bcryptjs";
 import { storage } from "./storage";
 import {
@@ -40,6 +41,13 @@ import { generateActuarialAnalysis, generateScoreReview } from "./ai-analysis";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 const templateUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+// Bulk census upload: many small CSVs, each per group. 5MB / file × 200
+// files keeps the request bounded; a 100-group renewal batch fits well
+// inside that envelope.
+const bulkCensusUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 200 },
+});
 
 declare module "express-session" {
   interface SessionData {
@@ -2736,7 +2744,10 @@ export async function registerRoutes(
   // Viewed / Accepted) from view counters + publicAcceptedAt.
   app.get("/api/admin/quotes", requireAdmin, async (_req: Request, res: Response) => {
     try {
-      const rows = await storage.getInternalSalesQuotes();
+      // Includes latestProposalId per row so the bulk-download
+      // multi-select can post the right ids to /bulk-download
+      // without a follow-up fetch.
+      const rows = await storage.getInternalSalesQuotesWithLatestProposal();
       res.json(rows);
     } catch (err: any) {
       res.status(500).json({ message: err?.message || "Failed to load quotes" });
@@ -2947,6 +2958,365 @@ export async function registerRoutes(
       res.status(500).json({ message: err?.message || "Confirm failed" });
     }
   });
+
+  // ── Bulk census upload ──────────────────────────────────────────────
+  //
+  // Upload N CSVs in one shot; one group + one proposal per file.
+  // Reuses the same scrub → AI clean → score → validate → priceGroup →
+  // PDF pipeline as the single-file confirm flow above. Files are
+  // processed independently — a bad CSV in slot 12 doesn't poison the
+  // other 99. Group name comes from a "Group Name" / "Company" column
+  // when present (then dropped from the rows so it never reaches the
+  // rate engine), otherwise from the file's basename.
+  //
+  // The endpoint is intentionally synchronous: priceGroup runs in
+  // memory, the PDF render is fast, and a 100-file renewal batch comes
+  // back in seconds. No queue, no job table, no background worker.
+  const GROUP_NAME_HEADER_PATTERNS: ReadonlyArray<RegExp> = [
+    /^group[\s_-]?name$/i,
+    /^company[\s_-]?name$/i,
+    /^company$/i,
+    /^group$/i,
+    /^employer$/i,
+    /^employer[\s_-]?name$/i,
+  ];
+  function pickGroupNameHeader(headers: string[]): string | null {
+    for (const h of headers) {
+      if (GROUP_NAME_HEADER_PATTERNS.some((p) => p.test(h.trim()))) return h;
+    }
+    return null;
+  }
+  function fileBasename(originalname: string): string {
+    const base = originalname.replace(/^.*[\\/]/, "");
+    return base.replace(/\.csv$/i, "").trim() || "Untitled Group";
+  }
+  // Sanitise a string so it can't unmask any per-row CSV value in an
+  // error payload. validateCensusData only emits aggregate counts, but
+  // a defensive belt-and-braces strip keeps SSN-shaped digit blocks
+  // out of the JSON we ship back to the browser.
+  function safeBulkErrorMessage(s: string): string {
+    return s.replace(/\b\d{3}-?\d{2}-?\d{4}\b/g, "[redacted]");
+  }
+
+  app.post(
+    "/api/admin/quotes/bulk-upload",
+    requireAdmin,
+    bulkCensusUpload.array("files", 200),
+    async (req: Request, res: Response) => {
+      try {
+        const files = (req.files as Express.Multer.File[] | undefined) || [];
+        if (files.length === 0) {
+          return res.status(400).json({ message: "No files uploaded" });
+        }
+
+        const body = (req.body || {}) as {
+          effectiveDate?: string;
+          admin?: string;
+          groupOverrides?: string;
+        };
+        const effectiveDate =
+          body.effectiveDate ||
+          new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        const administrator = (body.admin as Admin | undefined) || "EBPA";
+        const adminId = req.session.userId!;
+
+        // Optional per-file override array (same length & order as
+        // `files`). If absent or malformed, we fall back to the
+        // column-or-filename rule on every file.
+        let overrides: Array<{ groupName?: string }> = [];
+        if (body.groupOverrides) {
+          try {
+            const parsed = JSON.parse(body.groupOverrides);
+            if (Array.isArray(parsed)) overrides = parsed;
+          } catch {
+            /* ignore malformed override payload */
+          }
+        }
+
+        type BulkResult =
+          | {
+              ok: true;
+              fileName: string;
+              groupId: string;
+              groupName: string;
+              proposalId: string;
+              totalLives: number;
+              ratingArea: string;
+            }
+          | {
+              ok: false;
+              fileName: string;
+              groupName: string;
+              error: string;
+            };
+        const results: BulkResult[] = [];
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const override = overrides[i]?.groupName?.trim();
+          // Resolve names early so failure rows still carry context.
+          // Override (from the rep's table edit) wins over the
+          // column-or-filename fallback.
+          let groupName = override || fileBasename(file.originalname || "census.csv");
+          try {
+            // 1. Parse CSV
+            const csvText = file.buffer.toString("utf-8");
+            const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+            if (parsed.errors.length > 0 && parsed.data.length === 0) {
+              throw new Error(`CSV parsing error: ${parsed.errors[0].message}`);
+            }
+            const rawRows = parsed.data as any[];
+            if (rawRows.length === 0) throw new Error("CSV file is empty");
+            const rawHeaders = Object.keys(rawRows[0]).filter((h) => h.trim() !== "");
+
+            // 2. PHI scrub before anything else touches the rows.
+            const scrubbed = stripSensitiveColumns(rawHeaders, rawRows);
+            if (scrubbed.dropped.length > 0) {
+              log(
+                `PHI scrub (bulk upload, ${file.originalname}): dropped ${scrubbed.dropped.length} sensitive column(s)`,
+              );
+            }
+
+            // 3. Resolve group name. If a Group Name / Company column
+            // is present, it wins over the filename — and we drop the
+            // column from the row set so it never reaches the cleaner
+            // / rate engine.
+            const nameHeader = pickGroupNameHeader(scrubbed.headers);
+            let workingHeaders = scrubbed.headers;
+            let workingRows = scrubbed.rows;
+            if (nameHeader) {
+              // The rep-supplied override wins over the column; if
+              // there's no override we take the column's first
+              // non-empty value. Either way the column is dropped from
+              // the working set so it never reaches the rate engine.
+              if (!override) {
+                const firstNonEmpty = workingRows
+                  .map((r) => String(r[nameHeader] ?? "").trim())
+                  .find((v) => v.length > 0);
+                if (firstNonEmpty) groupName = firstNonEmpty;
+              }
+              workingHeaders = workingHeaders.filter((h) => h !== nameHeader);
+              workingRows = workingRows.map((row) => {
+                const next: Record<string, any> = {};
+                for (const k of Object.keys(row)) {
+                  if (k !== nameHeader) next[k] = row[k];
+                }
+                return next;
+              });
+            }
+
+            const nonEmptyRows = workingRows.filter((row) =>
+              Object.values(row).some((v) => v != null && String(v).trim() !== ""),
+            );
+            if (nonEmptyRows.length === 0) {
+              throw new Error("CSV file contains no valid census rows");
+            }
+
+            // 4. AI column detection + cleaning (same call the single
+            // flow makes — auto-detect, no user mapping).
+            const aiResult = await cleanCSVWithAI(workingHeaders, nonEmptyRows);
+
+            // 5. Build entries + run risk + validation.
+            const entries = aiResult.cleanedData.map((c: any) => ({
+              firstName: c.firstName,
+              lastName: c.lastName,
+              dateOfBirth: c.dob,
+              gender: c.gender,
+              zipCode: c.zip,
+              relationship: c.relationship,
+            }));
+            const invalid = entries.filter(
+              (e: any) =>
+                !e.firstName || !e.lastName || !e.dateOfBirth || !e.gender || !e.zipCode,
+            );
+            if (invalid.length > 0) {
+              throw new Error(
+                `${invalid.length} row(s) missing required fields after AI cleaning`,
+              );
+            }
+            const employeeCount = entries.filter((e: any) => e.relationship === "EE").length;
+            const spouseCount = entries.filter((e: any) => e.relationship === "SP").length;
+            const childrenCount = entries.filter((e: any) => e.relationship === "CH").length;
+
+            const analysis = analyzeGroupRisk(entries);
+            const validation = validateCensusData(entries, analysis);
+            if (!validation.valid) {
+              throw new Error(
+                `Census validation failed: ${validation.errors
+                  .slice(0, 2)
+                  .map(safeBulkErrorMessage)
+                  .join(" ")}`,
+              );
+            }
+
+            // 6. Create group + census atomically.
+            const created = await storage.createInternalSalesQuote({
+              companyName: groupName,
+              state: "",
+              zipCode: "",
+              contactName: null,
+              contactEmail: null,
+              contactPhone: null,
+              createdByAdminId: adminId,
+              publicToken: generatePublicToken(),
+            });
+            await storage.updateGroup(created.id, {
+              riskScore: analysis.riskScore,
+              riskTier: analysis.riskTier,
+              averageAge: analysis.averageAge,
+              maleCount: analysis.maleCount,
+              femaleCount: analysis.femaleCount,
+              groupCharacteristics: analysis.characteristics,
+              score: analysis.characteristics.qualificationScore,
+              employeeCount,
+              spouseCount,
+              childrenCount,
+              totalLives: entries.length,
+              status: "approved",
+            });
+            await storage.createCensusEntries(
+              entries.map((e: any) => ({
+                groupId: created.id,
+                firstName: e.firstName,
+                lastName: e.lastName,
+                dateOfBirth: e.dateOfBirth,
+                gender: e.gender,
+                zipCode: e.zipCode,
+                relationship: e.relationship,
+              })),
+            );
+
+            // 7. Price + render PDF + persist proposal.
+            const fullGroup = await storage.getGroup(created.id);
+            if (!fullGroup) throw new Error("Group disappeared mid-flight");
+            const persistedCensus = await storage.getCensusByGroupId(created.id);
+            const members: CensusMember[] = censusEntriesToMembers(persistedCensus);
+            const ratingArea: RatingArea = inferRatingAreaFromCensus(members);
+            const pricing = priceGroup({
+              census: members,
+              effectiveDate,
+              ratingArea,
+              admin: administrator,
+              group: groupName,
+            });
+            const { renderProposalPdf } = await import("./proposal-pdf");
+            const { pdfBuffer, fileName } = await renderProposalPdf(
+              fullGroup,
+              pricing,
+              persistedCensus,
+            );
+            const proposal = await storage.createProposal({
+              groupId: created.id,
+              pdfPath: `proposals/${fileName}`,
+              pdfBase64: pdfBuffer.toString("base64"),
+              fileName,
+              ratesData: pricing,
+            });
+            await storage.updateGroup(created.id, { status: "proposal_sent" });
+
+            results.push({
+              ok: true,
+              fileName: file.originalname,
+              groupId: created.id,
+              groupName,
+              proposalId: proposal.id,
+              totalLives: entries.length,
+              ratingArea: pricing.rating_area,
+            });
+          } catch (err: any) {
+            log(
+              `Bulk upload (${file.originalname}): ${err?.message || err}`,
+              "routes",
+            );
+            results.push({
+              ok: false,
+              fileName: file.originalname,
+              groupName,
+              error: safeBulkErrorMessage(err?.message || "Failed to process file"),
+            });
+          }
+        }
+
+        const succeeded = results.filter((r) => r.ok).length;
+        res.json({
+          summary: {
+            total: results.length,
+            succeeded,
+            failed: results.length - succeeded,
+            effectiveDate,
+            admin: administrator,
+          },
+          results,
+        });
+      } catch (err: any) {
+        log(`Bulk upload error: ${err?.message || err}`, "routes");
+        res.status(500).json({ message: err?.message || "Bulk upload failed" });
+      }
+    },
+  );
+
+  // Stream a zip of one PDF per requested proposal id. Used by the
+  // multi-select bar on /admin/quotes. We hand back the single most
+  // recently-stored PDF for each id; if the row has no pdfBase64 we
+  // skip it rather than fail the whole download.
+  app.post(
+    "/api/admin/proposals/bulk-download",
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const body = (req.body || {}) as { proposalIds?: string[] };
+        const proposalIds = Array.isArray(body.proposalIds) ? body.proposalIds : [];
+        if (proposalIds.length === 0) {
+          return res.status(400).json({ message: "proposalIds is required" });
+        }
+
+        const stamp = new Date().toISOString().slice(0, 10);
+        res.setHeader("Content-Type", "application/zip");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="kennion-proposals-${stamp}.zip"`,
+        );
+
+        const archive = archiver("zip", { zlib: { level: 9 } });
+        archive.on("warning", (err: any) => log(`Zip warning: ${err?.message || err}`));
+        archive.on("error", (err: any) => {
+          log(`Zip error: ${err?.message || err}`);
+          try {
+            res.status(500).end();
+          } catch {
+            /* ignore — headers may already be flushed */
+          }
+        });
+        archive.pipe(res);
+
+        const usedNames = new Set<string>();
+        for (const id of proposalIds) {
+          const proposal = await storage.getProposal(id);
+          if (!proposal || !proposal.pdfBase64) continue;
+          const group = await storage.getGroup(proposal.groupId);
+          const safeCompany = (group?.companyName || "Group")
+            .replace(/[^a-zA-Z0-9 ._-]/g, "")
+            .trim() || "Group";
+          let entryName = `${safeCompany}.pdf`;
+          let dedupe = 2;
+          while (usedNames.has(entryName)) {
+            entryName = `${safeCompany} (${dedupe}).pdf`;
+            dedupe++;
+          }
+          usedNames.add(entryName);
+          archive.append(Buffer.from(proposal.pdfBase64, "base64"), { name: entryName });
+        }
+        await archive.finalize();
+      } catch (err: any) {
+        log(`Bulk download error: ${err?.message || err}`, "routes");
+        if (!res.headersSent) {
+          res.status(500).json({ message: err?.message || "Bulk download failed" });
+        } else {
+          try { res.end(); } catch { /* noop */ }
+        }
+      }
+    },
+  );
 
   // Discard the in-flight draft (rep clicked "cancel" or navigated
   // away). No DB row exists yet so this just clears the session slot.
