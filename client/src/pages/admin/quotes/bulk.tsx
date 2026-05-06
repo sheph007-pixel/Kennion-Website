@@ -35,13 +35,12 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
 
-// The 4 admin platforms the rate engine supports today. Mirrors the
-// `Admin` union in server/rate-engine.ts.
+// The 2 admin platforms exposed in the bulk UI. The rate engine
+// supports more (Virtual_RBP variants), but those are not offered
+// here.
 const ADMIN_OPTIONS = [
   { value: "EBPA", label: "EBPA" },
   { value: "HEALTHEZ", label: "HealthEZ" },
-  { value: "Virtual_RBP", label: "Virtual RBP" },
-  { value: "Virtual_RBP_HEALTHEZ", label: "Virtual RBP × HealthEZ" },
 ] as const;
 
 type StagedFile = {
