@@ -30,6 +30,7 @@ import path from "path";
 import crypto from "crypto";
 import type { CensusEntry } from "@shared/schema";
 import { blockDemographicRisk, legacyAgeBand } from "./risk-factors";
+import { priceGroup as priceGroupRate, type CensusMember as RateCensusMember } from "./rate-engine";
 
 // ────────────────────────────────────────────────────────────────────────
 // Types
@@ -92,6 +93,16 @@ export interface ScreenResult {
   predicted_pepm: number;            // per-employee-per-month (= annual_claims / 12 / n_employees)
   book_mean_pmpy: number;            // reference book mean for comparison
   book_mean_pmpm: number;            // book mean per-member-per-month
+
+  // Per-plan funding vs claims projection
+  plan_projections: Array<{
+    plan: string;
+    funding_monthly: number;     // total monthly premium across the group at this plan
+    funding_pmpm: number;        // funding per covered member per month
+    claims_pmpm: number;         // predicted claims per covered member per month
+    loss_ratio: number;          // predicted claims / funding (1.0 = breakeven)
+    margin: number;              // funding - predicted claims, monthly
+  }>;
 
   // Composite
   kri: number;
@@ -528,6 +539,55 @@ export function screenGroup(input: ScreenInput): ScreenResult {
     decision = "DECLINE";
   }
 
+  // ── 8.5. Per-plan funding-vs-claims projections ──────────────────────
+  // Call the certified actuarial rate engine for THIS census, then for
+  // Deluxe Platinum (richest plan) + Freedom Bronze (cheapest), compute
+  // total monthly premium using the actual tier mix and compare against
+  // predicted claims. Gives the underwriter an immediate "would we make
+  // money on this group?" answer bounded by best-plan and worst-plan
+  // scenarios.
+  let plan_projections: any[] = [];
+  try {
+    const rateCensus: RateCensusMember[] = input.census.map(m => ({
+      relationship: m.relationship,
+      firstName: m.firstName,
+      lastName: m.lastName,
+      dob: m.dob,
+      sex: m.sex,
+      zip: m.zip,
+    }));
+    const pricing = priceGroupRate({
+      census: rateCensus,
+      effectiveDate: input.effectiveDate,
+    });
+    const claimsPmpm = aiPredictedPmpy / 12;
+    const PLANS_TO_SHOW = ["Deluxe Platinum", "Freedom Bronze"];
+    for (const planName of PLANS_TO_SHOW) {
+      const tiered = pricing.plan_rates[planName];
+      if (!tiered) continue;
+      // total monthly premium = sum over households of (tier rate at this plan)
+      const fundingMonthly =
+        tierMix.EE  * tiered.EE +
+        tierMix.ECH * tiered.EC +
+        tierMix.ESP * tiered.ES +
+        tierMix.FAM * tiered.EF;
+      const fundingPmpm = N > 0 ? fundingMonthly / N : 0;
+      const lossRatio = fundingPmpm > 0 ? claimsPmpm / fundingPmpm : 0;
+      const margin = fundingMonthly - (aiPredictedPmpy * N) / 12;
+      plan_projections.push({
+        plan: planName,
+        funding_monthly: Math.round(fundingMonthly),
+        funding_pmpm: round2(fundingPmpm),
+        claims_pmpm: round2(claimsPmpm),
+        loss_ratio: round4(lossRatio),
+        margin: Math.round(margin),
+      });
+    }
+  } catch (e) {
+    // Rate engine couldn't price (missing tables, bad census, etc.) - leave empty
+    plan_projections = [];
+  }
+
   // ── 9. Top drivers - describe the score, not threshold violations ────
   // Always populate so every screen has a populated "why" panel.
   // Drivers describe the *most informative* facts about this group's score.
@@ -670,6 +730,7 @@ export function screenGroup(input: ScreenInput): ScreenResult {
     predicted_pepm: round2((aiPredictedPmpy * N) / 12 / Math.max(1, employees.length)),
     book_mean_pmpy: residual?.block_mean_pmpy ?? 6470,
     book_mean_pmpm: round2((residual?.block_mean_pmpy ?? 6470) / 12),
+    plan_projections,
 
     kri: round4(kri),
     tier,
