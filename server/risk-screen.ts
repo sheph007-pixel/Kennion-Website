@@ -525,18 +525,12 @@ export function screenGroup(input: ScreenInput): ScreenResult {
       impact: +(geoNormalized - 1.0),
     });
   }
-  // County concentration is INFORMATIONAL — captive diversifies geography.
-  // Keep the line as context but don't load the score.
+  // County concentration doesn't matter in a pooled captive — pool diversifies.
+  // Not surfaced as a driver.
 
   // Composition — group structure facts.
-  // Group size is INFORMATIONAL only — no load in a pooled captive.
-  // The captive absorbs variance; individual group size doesn't change
-  // admission risk. Driver text is descriptive, impact = 0.
-  drivers.push({
-    category: "Composition",
-    text: `Group size ${employees.length} EE (variance absorbed by captive pool — no size load)`,
-    impact: 0,
-  });
+  // Group size doesn't matter in a pooled captive — captive absorbs the
+  // variance. Not surfaced as a driver.
   const totalHouseholds = tierMix.EE + tierMix.ECH + tierMix.ESP + tierMix.FAM;
   const famPct = totalHouseholds > 0
     ? (tierMix.FAM / totalHouseholds)

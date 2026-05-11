@@ -203,8 +203,6 @@ export function RiskScreenButton({ groupId }: { groupId: string }) {
                 <div><div className="text-muted-foreground">Employees</div><div className="font-semibold">{latest.n_employees}</div></div>
                 <div><div className="text-muted-foreground">Avg age</div><div className="font-semibold">{latest.avg_age.toFixed(1)}</div></div>
                 <div><div className="text-muted-foreground">Female %</div><div className="font-semibold">{(latest.pct_female * 100).toFixed(0)}%</div></div>
-                <div><div className="text-muted-foreground">Top county</div><div className="font-semibold truncate">{latest.top_county}</div></div>
-                <div><div className="text-muted-foreground">Concentration</div><div className="font-semibold">{(latest.pct_top_county * 100).toFixed(0)}%</div></div>
                 <div><div className="text-muted-foreground">Medicare cliff</div><div className="font-semibold">{(latest.pct_medicare_cliff * 100).toFixed(0)}%</div></div>
               </div>
             </div>

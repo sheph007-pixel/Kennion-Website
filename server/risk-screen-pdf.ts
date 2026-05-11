@@ -164,8 +164,6 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
       { label: "Avg Age",          value: result.avg_age.toFixed(1) },
       { label: "Female %",         value: pct(result.pct_female) },
       { label: "Medicare-Cliff %", value: pct(result.pct_medicare_cliff) },
-      { label: "Top County",       value: result.top_county || "—" },
-      { label: "County Conc.",     value: pct(result.pct_top_county) },
       { label: "Family Tier %",    value: pct(
           (result.family_tier_mix.FAM) /
           Math.max(1, result.family_tier_mix.EE + result.family_tier_mix.ECH +
