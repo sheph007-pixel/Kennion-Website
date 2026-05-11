@@ -1,12 +1,12 @@
 {
-  "version": "3.2",
+  "version": "3.3",
   "methodology_ref": "KRS-METHOD-v1.0 \u00a74.2",
   "built_at": "2026-04-27T00:00:00Z",
-  "notes": "Initial v1.0 weights. Demo:Geo:Comp = 50:30:20. Calibrated against peer-reviewed elasticity estimates of medical loss to demographic, geographic, and structural factors. Subject to annual re-fit per \u00a75.2. | v3.2: pool-centric, AI residual trained on block, multiplicative composite, captive-aware composition (no size/concentration loads).",
+  "notes": "Initial v1.0 weights. Demo:Geo:Comp = 50:30:20. Calibrated against peer-reviewed elasticity estimates of medical loss to demographic, geographic, and structural factors. Subject to annual re-fit per \u00a75.2. | v3.2: pool-centric, AI residual trained on block, multiplicative composite, captive-aware composition (no size/concentration loads). | v3.3: Geographic loading reduced alpha 0.07 -> 0.04 and clamped to [0.92, 1.08]. Prevents geographic from dominating the score (was contributing 13% on rural-Southern groups; now max \u00b18%).",
   "w_demo": 0.5,
   "w_geo": 0.3,
   "w_comp": 0.2,
-  "alpha_geo_scaling": 0.07,
+  "alpha_geo_scaling": 0.04,
   "beta_medicare_cliff": 0.4,
   "beta_concentration": 0.1,
   "small_group_threshold": 20,
@@ -15,5 +15,9 @@
     "preferred": 0.95,
     "high_risk": 1.5
   },
-  "ai_residual_clamp": 0.1
+  "ai_residual_clamp": 0.1,
+  "geo_normalized_clamp": {
+    "min": 0.92,
+    "max": 1.08
+  }
 }

@@ -176,6 +176,7 @@ interface ModelWeights {
   small_group_threshold: number; // employees below this get a load
   small_group_load: number;      // multiplicative
   thresholds: { preferred: number; high_risk: number };
+  geo_normalized_clamp?: { min: number; max: number };
 }
 
 // ────────────────────────────────────────────────────────────────────────
@@ -444,7 +445,9 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   // ── 4. Geographic component ───────────────────────────────────────────
   const geoZs = members.map(m => m.countyZ).filter((z): z is number => z !== null);
   const meanGeoZ = geoZs.length > 0 ? geoZs.reduce((s,x) => s+x, 0) / geoZs.length : 0;
-  const geoNormalized = 1 + weights.alpha_geo_scaling * meanGeoZ;
+  const geoRaw = 1 + weights.alpha_geo_scaling * meanGeoZ;
+  const geoClamp = weights.geo_normalized_clamp ?? { min: 0.92, max: 1.08 };
+  const geoNormalized = Math.max(geoClamp.min, Math.min(geoClamp.max, geoRaw));
   const geoDrivers: string[] = [];
   if (meanGeoZ > 0.5) geoDrivers.push(`Members concentrated in counties ${meanGeoZ.toFixed(2)} SD above national health-risk mean`);
   if (pct_top_county > 0.5 && places.counties[top_county]?.geo_z && places.counties[top_county].geo_z > 0.3) {
