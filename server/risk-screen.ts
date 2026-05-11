@@ -2,7 +2,7 @@
  * Kennion Risk Screen (KRS) v1.0
  *
  * Deterministic group-level underwriting screen. Sits upstream of the
- * Kennion Actuarial Rater (KAR) — produces a single composite Kennion
+ * Kennion Actuarial Rater (KAR) - produces a single composite Kennion
  * Risk Index (KRI) and a tier verdict (Preferred / Standard / High Risk).
  *
  * Public API:
@@ -19,7 +19,7 @@
  *
  *   KRI = Demo × Geo × Comp × (1 + clamp(Residual, ±0.10))
  *
- * Demo IS the legacy Kennion Score — same block-calibrated age×gender table.
+ * Demo IS the legacy Kennion Score - same block-calibrated age×gender table.
  * Geo and Comp are multiplicative adjustments. KRI strictly extends the
  * existing score; an underwriter sees the same baseline number, deeper.
  *
@@ -297,7 +297,7 @@ function lookupCounty(zip: string | null | undefined, zm: ZipToCounty): string |
 function regionFromState(state?: string | null): "1" | "2" | "3" | "4" {
   // MEPS Census Region: 1=NE, 2=MW, 3=South, 4=West.
   // For Kennion's predominantly-AL book, default to South.
-  // (Inferred from ZIP later if state missing — for now use South.)
+  // (Inferred from ZIP later if state missing - for now use South.)
   return "3";
 }
 
@@ -415,7 +415,7 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   const pct_top_county = N > 0 ? top_count / N : 0;
 
   // ── 3. Demographic component ──────────────────────────────────────────
-  // Uses Kennion's block-calibrated (age × gender) risk factor table —
+  // Uses Kennion's block-calibrated (age × gender) risk factor table -
   // the SAME table that produces the legacy "Kennion Score". KRS keeps
   // this number identical so the two surfaces agree.
   const blockRisks = members.map(m => m.blockRisk);
@@ -433,7 +433,7 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   const demoDrivers: string[] = [];
   if (avg_age >= 50) demoDrivers.push(`Avg age ${avg_age.toFixed(1)} elevates demographic risk`);
   if (pct_medicare_cliff >= 0.10) demoDrivers.push(`${(pct_medicare_cliff*100).toFixed(0)}% of group within 5 yrs of Medicare`);
-  if (pct_female > 0.60) demoDrivers.push(`Female-heavy mix (${(pct_female*100).toFixed(0)}%) — higher utilization profile`);
+  if (pct_female > 0.60) demoDrivers.push(`Female-heavy mix (${(pct_female*100).toFixed(0)}%) - higher utilization profile`);
   const demo: ComponentScore = {
     raw: demoNormalized,                 // raw = the Kennion Score itself
     normalized: demoNormalized,          // 1.00 = book median
@@ -459,7 +459,7 @@ export function screenGroup(input: ScreenInput): ScreenResult {
 
   // ── 5. Composition component ──────────────────────────────────────────
   const cliff = pct_medicare_cliff;
-  // Family-tier share — more FAM/ECH households means more dependent claim
+  // Family-tier share - more FAM/ECH households means more dependent claim
   // volume that age×gender on the employee alone doesn't capture.
   const totalHH = tierMix.EE + tierMix.ECH + tierMix.ESP + tierMix.FAM;
   const famShare = totalHH > 0 ? tierMix.FAM / totalHH : 0;
@@ -468,7 +468,7 @@ export function screenGroup(input: ScreenInput): ScreenResult {
     (1 + 0.10 * famShare);   // family-tier load: 10% × FAM share
   const compDrivers: string[] = [];
   if (cliff >= 0.10) compDrivers.push(`Medicare-cliff exposure: ${(cliff*100).toFixed(0)}% within 5 yrs of 65`);
-  if (famShare >= 0.30) compDrivers.push(`Family-tier heavy (${(famShare*100).toFixed(0)}% FAM) — higher dependent claim volume`);
+  if (famShare >= 0.30) compDrivers.push(`Family-tier heavy (${(famShare*100).toFixed(0)}% FAM) - higher dependent claim volume`);
   const comp: ComponentScore = {
     raw: 1.0,
     normalized: compNormalized,
@@ -476,7 +476,7 @@ export function screenGroup(input: ScreenInput): ScreenResult {
     drivers: compDrivers,
   };
 
-  // ── 6. AI residual — Tweedie GLM trained on Kennion block paid claims ────
+  // ── 6. AI residual - Tweedie GLM trained on Kennion block paid claims ────
   // Predicts per-member PMPY from age × gender × tier × geo_z, then compares
   // the group's predicted PMPY to the block mean to produce a bounded
   // multiplicative adjustment.
@@ -499,7 +499,7 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   // ── 7. Composite KRI ──────────────────────────────────────────────────
   // MULTIPLICATIVE composite. KRI = (block demographic) × (geo loading) × (comp loading) × (1 + AI residual).
   // The Demographic component IS the legacy Kennion Score. Geographic and
-  // Composition are adjustments LAYERED on top — so a group with a 1.04
+  // Composition are adjustments LAYERED on top - so a group with a 1.04
   // Kennion Score and elevated geo + comp scores ends up at 1.04 × ... ≥ 1.04.
   const kri = demo.normalized * geo.normalized * comp.normalized * (1 + aiResidualClamped);
 
@@ -517,12 +517,12 @@ export function screenGroup(input: ScreenInput): ScreenResult {
     decision = "DECLINE";
   }
 
-  // ── 9. Top drivers — describe the score, not threshold violations ────
+  // ── 9. Top drivers - describe the score, not threshold violations ────
   // Always populate so every screen has a populated "why" panel.
   // Drivers describe the *most informative* facts about this group's score.
   const drivers: Array<{ category: string; text: string; impact: number }> = [];
 
-  // Demographic — show the strongest signal in the age/sex mix.
+  // Demographic - show the strongest signal in the age/sex mix.
   if (avg_age >= 45) {
     drivers.push({
       category: "Demographic",
@@ -532,7 +532,7 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   } else if (avg_age <= 35) {
     drivers.push({
       category: "Demographic",
-      text: `Young workforce (avg age ${avg_age.toFixed(0)}) — expected cost below book median`,
+      text: `Young workforce (avg age ${avg_age.toFixed(0)}) - expected cost below book median`,
       impact: +(demoNormalized - 1.0),
     });
   } else {
@@ -545,13 +545,13 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   if (pct_female >= 0.60) {
     drivers.push({
       category: "Demographic",
-      text: `Female-heavy mix (${(pct_female * 100).toFixed(0)}%) — higher utilization profile`,
+      text: `Female-heavy mix (${(pct_female * 100).toFixed(0)}%) - higher utilization profile`,
       impact: +0.05,
     });
   } else if (pct_female <= 0.40) {
     drivers.push({
       category: "Demographic",
-      text: `Male-heavy mix (${((1 - pct_female) * 100).toFixed(0)}%) — lower preventive utilization`,
+      text: `Male-heavy mix (${((1 - pct_female) * 100).toFixed(0)}%) - lower preventive utilization`,
       impact: -0.03,
     });
   }
@@ -563,7 +563,7 @@ export function screenGroup(input: ScreenInput): ScreenResult {
     });
   }
 
-  // Geographic — describe the county exposure regardless of magnitude.
+  // Geographic - describe the county exposure regardless of magnitude.
   if (meanGeoZ >= 0.30) {
     drivers.push({
       category: "Geographic",
@@ -583,11 +583,11 @@ export function screenGroup(input: ScreenInput): ScreenResult {
       impact: +(geoNormalized - 1.0),
     });
   }
-  // County concentration doesn't matter in a pooled captive — pool diversifies.
+  // County concentration doesn't matter in a pooled captive - pool diversifies.
   // Not surfaced as a driver.
 
-  // Composition — group structure facts.
-  // Group size doesn't matter in a pooled captive — captive absorbs the
+  // Composition - group structure facts.
+  // Group size doesn't matter in a pooled captive - captive absorbs the
   // variance. Not surfaced as a driver.
   const totalHouseholds = tierMix.EE + tierMix.ECH + tierMix.ESP + tierMix.FAM;
   const famPct = totalHouseholds > 0
@@ -596,12 +596,12 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   if (famPct >= 0.30) {
     drivers.push({
       category: "Composition",
-      text: `Family-tier heavy (${(famPct * 100).toFixed(0)}% FAM) — elevated dependent claim volume`,
+      text: `Family-tier heavy (${(famPct * 100).toFixed(0)}% FAM) - elevated dependent claim volume`,
       impact: +0.10 * famPct,
     });
   }
 
-  // AI residual driver — show predicted vs pool PMPY so the impact is concrete.
+  // AI residual driver - show predicted vs pool PMPY so the impact is concrete.
   if (residual && aiResidualClamped !== 0) {
     drivers.push({
       category: "AI",
@@ -664,25 +664,25 @@ function buildSummary(ctx: {
   const parts: string[] = [];
 
   if (ctx.tier === "Preferred") {
-    parts.push(`This group screens as Preferred (KRI ${ctx.kri.toFixed(2)}) — favorable for binding.`);
+    parts.push(`This group screens as Preferred (KRI ${ctx.kri.toFixed(2)}) - favorable for binding.`);
   } else if (ctx.tier === "Standard") {
-    parts.push(`This group screens as Standard (KRI ${ctx.kri.toFixed(2)}) — typical risk profile for the Kennion underwriting benchmark.`);
+    parts.push(`This group screens as Standard (KRI ${ctx.kri.toFixed(2)}) - typical risk profile for the Kennion underwriting benchmark.`);
   } else {
-    parts.push(`This group screens as High Risk (KRI ${ctx.kri.toFixed(2)}) — recommend declining the quote.`);
+    parts.push(`This group screens as High Risk (KRI ${ctx.kri.toFixed(2)}) - recommend declining the quote.`);
   }
 
   if (ctx.demo.normalized > 1.08) {
-    parts.push(`Kennion demographic score ${ctx.demo.normalized.toFixed(2)} — ${((ctx.demo.normalized - 1) * 100).toFixed(0)}% above the Kennion underwriting benchmark for this age/gender mix.`);
+    parts.push(`Kennion demographic score ${ctx.demo.normalized.toFixed(2)} - ${((ctx.demo.normalized - 1) * 100).toFixed(0)}% above the Kennion underwriting benchmark for this age/gender mix.`);
   } else if (ctx.demo.normalized < 0.92) {
-    parts.push(`Kennion demographic score ${ctx.demo.normalized.toFixed(2)} — ${((1 - ctx.demo.normalized) * 100).toFixed(0)}% below the Kennion underwriting benchmark for this age/gender mix.`);
+    parts.push(`Kennion demographic score ${ctx.demo.normalized.toFixed(2)} - ${((1 - ctx.demo.normalized) * 100).toFixed(0)}% below the Kennion underwriting benchmark for this age/gender mix.`);
   } else {
-    parts.push(`Kennion demographic score ${ctx.demo.normalized.toFixed(2)} — book-typical (avg age ${ctx.avg_age.toFixed(0)}).`);
+    parts.push(`Kennion demographic score ${ctx.demo.normalized.toFixed(2)} - book-typical (avg age ${ctx.avg_age.toFixed(0)}).`);
   }
 
   if (ctx.geo.raw > 0.5) {
-    parts.push(`Geographic risk is elevated — members concentrated in counties with above-average chronic-disease prevalence (top county: ${ctx.top_county_name}).`);
+    parts.push(`Geographic risk is elevated - members concentrated in counties with above-average chronic-disease prevalence (top county: ${ctx.top_county_name}).`);
   } else if (ctx.geo.raw < -0.3) {
-    parts.push(`Geographic risk is favorable — counties show below-average chronic-disease prevalence.`);
+    parts.push(`Geographic risk is favorable - counties show below-average chronic-disease prevalence.`);
   }
 
   if (ctx.pct_medicare_cliff >= 0.15) {
@@ -690,7 +690,7 @@ function buildSummary(ctx: {
   }
 
   if (ctx.tier === "High Risk") {
-    parts.push(`Decision: DECLINE — do not advance to KAR.`);
+    parts.push(`Decision: DECLINE - do not advance to KAR.`);
   } else if (ctx.tier === "Standard" && (ctx.demo.normalized > 1.10 || ctx.geo.raw > 0.5)) {
     parts.push(`Recommend quoting with adverse-selection load.`);
   } else {
@@ -704,7 +704,7 @@ function round2(x: number): number { return Math.round(x * 100) / 100; }
 function round4(x: number): number { return Math.round(x * 10000) / 10000; }
 
 // ────────────────────────────────────────────────────────────────────────
-// CensusEntry (Drizzle) adapter — same shape as rate-engine
+// CensusEntry (Drizzle) adapter - same shape as rate-engine
 // ────────────────────────────────────────────────────────────────────────
 export function censusEntriesToScreenMembers(rows: CensusEntry[]): ScreenMember[] {
   return rows.map(r => ({

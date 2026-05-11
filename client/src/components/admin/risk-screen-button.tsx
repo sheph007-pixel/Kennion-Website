@@ -94,7 +94,7 @@ export function RiskScreenButton({ groupId }: { groupId: string }) {
       setOpen(true);
       toast({
         title: `Risk Screen: ${data.tier}`,
-        description: `KRI ${data.kri.toFixed(2)} — ${data.decision.replace(/_/g, " ")}`,
+        description: `KRI ${data.kri.toFixed(2)} - ${data.decision.replace(/_/g, " ")}`,
         variant: data.tier === "High Risk" ? "destructive" : "default",
       });
     },
@@ -160,8 +160,7 @@ export function RiskScreenButton({ groupId }: { groupId: string }) {
             {latest && (
               <DialogDescription>
                 KRI <span className="font-mono font-semibold">{latest.kri.toFixed(2)}</span>
-                {" · "}Decision: <span className="font-semibold">{latest.decision.replace(/_/g, " ")}</span>
-                {" · "}Model v{latest.model_version} · hash {latest.model_hash}
+                {"  ·  Decision: "}<span className="font-semibold">{latest.decision.replace(/_/g, " ")}</span>
               </DialogDescription>
             )}
           </DialogHeader>
@@ -198,7 +197,7 @@ export function RiskScreenButton({ groupId }: { groupId: string }) {
                 </ul>
               </div>
 
-              <div className="grid grid-cols-4 gap-3 pt-2 border-t text-xs">
+              <div className="grid grid-cols-5 gap-3 pt-2 border-t text-xs">
                 <div><div className="text-muted-foreground">Lives</div><div className="font-semibold">{latest.n_members}</div></div>
                 <div><div className="text-muted-foreground">Employees</div><div className="font-semibold">{latest.n_employees}</div></div>
                 <div><div className="text-muted-foreground">Avg age</div><div className="font-semibold">{latest.avg_age.toFixed(1)}</div></div>

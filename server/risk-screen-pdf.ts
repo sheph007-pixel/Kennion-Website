@@ -1,5 +1,5 @@
 /**
- * Kennion Risk Screen — single-page PDF renderer.
+ * Kennion Risk Screen - single-page PDF renderer.
  *
  * Hard one-page layout for US Letter. Every band has a fixed y-budget
  * so content never spills to a second page even at maximum width.
@@ -216,7 +216,7 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
     let dy = y + 14;
     if (!result.top_drivers || result.top_drivers.length === 0) {
       doc.font("Helvetica-Oblique").fontSize(9).fillColor(COLORS.muted)
-         .text("Group scores near book median — no single factor dominates.",
+         .text("Group scores near book median - no single factor dominates.",
                driversX, dy, { width: driversW });
     } else {
       for (const d of result.top_drivers) {
@@ -242,10 +242,10 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
     let decisionLabel: string;
     let decisionColor: string;
     if (result.decision === "DECLINE") {
-      decisionLabel = "DECISION:  DECLINE — DO NOT QUOTE";
+      decisionLabel = "DECISION:  DECLINE - DO NOT QUOTE";
       decisionColor = COLORS.highRisk;
     } else if (result.decision === "QUOTE_WITH_REVIEW") {
-      decisionLabel = "DECISION:  QUOTE — UNDERWRITER REVIEW REQUIRED";
+      decisionLabel = "DECISION:  QUOTE - UNDERWRITER REVIEW REQUIRED";
       decisionColor = COLORS.standard;
     } else {
       decisionLabel = "DECISION:  QUOTE";
