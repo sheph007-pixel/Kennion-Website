@@ -197,6 +197,27 @@ export function RiskScreenButton({ groupId }: { groupId: string }) {
                 </ul>
               </div>
 
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t text-xs">
+                <div>
+                  <div className="text-muted-foreground">Predicted 12-mo paid claims</div>
+                  <div className="font-semibold text-base">
+                    {typeof (latest as any).predicted_annual_claims === "number"
+                      ? `$${(latest as any).predicted_annual_claims.toLocaleString()}`
+                      : "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">
+                    Predicted PMPY  ·  Book mean ${(latest as any).book_mean_pmpy?.toLocaleString?.() ?? "—"}
+                  </div>
+                  <div className="font-semibold text-base">
+                    {typeof (latest as any).predicted_pmpy === "number"
+                      ? `$${(latest as any).predicted_pmpy.toLocaleString()}`
+                      : "—"}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-5 gap-3 pt-2 border-t text-xs">
                 <div><div className="text-muted-foreground">Lives</div><div className="font-semibold">{latest.n_members}</div></div>
                 <div><div className="text-muted-foreground">Employees</div><div className="font-semibold">{latest.n_employees}</div></div>

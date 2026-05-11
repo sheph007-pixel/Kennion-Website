@@ -199,6 +199,29 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
        .strokeColor(COLORS.border).lineWidth(0.5).stroke();
     y += 8;
 
+    // 12-Month Forecast strip
+    const pred = (result as any).predicted_annual_claims;
+    const ppmpy = (result as any).predicted_pmpy;
+    const bookMean = (result as any).book_mean_pmpy ?? 6470;
+    if (typeof pred === "number" && typeof ppmpy === "number") {
+      doc.fillColor(COLORS.text).font("Helvetica-Bold").fontSize(10.5)
+         .text("12-Month Forecast (Kennion AI)", M, y);
+      y += 14;
+      const half = innerW / 2;
+      doc.font("Helvetica").fontSize(8).fillColor(COLORS.muted)
+         .text("Predicted 12-mo paid claims", M, y);
+      doc.font("Helvetica-Bold").fontSize(11).fillColor(COLORS.text)
+         .text(`$${pred.toLocaleString()}`, M, y + 10);
+      doc.font("Helvetica").fontSize(8).fillColor(COLORS.muted)
+         .text(`Predicted PMPY  ·  Book mean $${bookMean.toLocaleString()}`, M + half, y);
+      doc.font("Helvetica-Bold").fontSize(11).fillColor(COLORS.text)
+         .text(`$${ppmpy.toLocaleString()}`, M + half, y + 10);
+      y += 28;
+      doc.moveTo(M, y).lineTo(W - M, y)
+         .strokeColor(COLORS.border).lineWidth(0.5).stroke();
+      y += 8;
+    }
+
     // AI Summary + Top Drivers
     const colGap = 14;
     const summaryW = Math.floor(innerW * 0.45);

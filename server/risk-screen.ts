@@ -85,6 +85,11 @@ export interface ScreenResult {
   composition: ComponentScore;
   ai_residual: { raw: number; clamped: number; drivers: string[] };
 
+  // 12-Month forecast (AI model point estimates)
+  predicted_pmpy: number;            // average predicted per-member-per-year
+  predicted_annual_claims: number;   // sum across all members
+  book_mean_pmpy: number;            // reference book mean for comparison
+
   // Composite
   kri: number;
   tier: RiskTier;
@@ -656,6 +661,9 @@ export function screenGroup(input: ScreenInput): ScreenResult {
     geographic: geo,
     composition: comp,
     ai_residual: { raw: aiResidualRaw, clamped: aiResidualClamped, drivers: aiResidualDrivers },
+    predicted_pmpy: round2(aiPredictedPmpy),
+    predicted_annual_claims: Math.round(aiPredictedPmpy * N),
+    book_mean_pmpy: residual?.block_mean_pmpy ?? 6470,
 
     kri: round4(kri),
     tier,
