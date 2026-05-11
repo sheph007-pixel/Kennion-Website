@@ -2680,7 +2680,7 @@ export async function registerRoutes(
   // Pool reference statistics — the captive's actual loss curve, demographic
   // mix, and clinical profile. Anchors every Risk Screen prediction to a
   // statistically credible 1,907-life population.
-  app.get("/api/screen/pool", (_req: Request, res: Response) => {
+  app.get("/api/screen/pool", requireAdmin, (_req: Request, res: Response) => {
     try {
       const fs = require("fs"); const path = require("path");
       const ref = JSON.parse(fs.readFileSync(

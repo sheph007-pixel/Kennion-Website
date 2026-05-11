@@ -605,7 +605,7 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   if (residual && aiResidualClamped !== 0) {
     drivers.push({
       category: "AI",
-      text: `Captive-pool ML predicts $${Math.round(aiPredictedPmpy).toLocaleString()} PMPY vs. $${Math.round(residual.block_mean_pmpy||6470).toLocaleString()} pool mean (${(aiResidualClamped * 100).toFixed(1)}% adjustment, bounded ±10%)`,
+      text: `Proprietary Kennion AI model ${aiResidualClamped > 0 ? "flags elevated" : "indicates favorable"} utilization profile (${(aiResidualClamped * 100).toFixed(1)}% adjustment, bounded ±10%)`,
       impact: aiResidualClamped,
     });
   }
@@ -666,17 +666,17 @@ function buildSummary(ctx: {
   if (ctx.tier === "Preferred") {
     parts.push(`This group screens as Preferred (KRI ${ctx.kri.toFixed(2)}) — favorable for binding.`);
   } else if (ctx.tier === "Standard") {
-    parts.push(`This group screens as Standard (KRI ${ctx.kri.toFixed(2)}) — typical risk profile for our captive pool.`);
+    parts.push(`This group screens as Standard (KRI ${ctx.kri.toFixed(2)}) — typical risk profile for the Kennion underwriting benchmark.`);
   } else {
     parts.push(`This group screens as High Risk (KRI ${ctx.kri.toFixed(2)}) — recommend declining the quote.`);
   }
 
   if (ctx.demo.normalized > 1.08) {
-    parts.push(`Block-calibrated demographic score ${ctx.demo.normalized.toFixed(2)} — ${((ctx.demo.normalized - 1) * 100).toFixed(0)}% above our captive pool's PMPY for this age/gender mix.`);
+    parts.push(`Kennion demographic score ${ctx.demo.normalized.toFixed(2)} — ${((ctx.demo.normalized - 1) * 100).toFixed(0)}% above the Kennion underwriting benchmark for this age/gender mix.`);
   } else if (ctx.demo.normalized < 0.92) {
-    parts.push(`Block-calibrated demographic score ${ctx.demo.normalized.toFixed(2)} — ${((1 - ctx.demo.normalized) * 100).toFixed(0)}% below our captive pool's PMPY for this age/gender mix.`);
+    parts.push(`Kennion demographic score ${ctx.demo.normalized.toFixed(2)} — ${((1 - ctx.demo.normalized) * 100).toFixed(0)}% below the Kennion underwriting benchmark for this age/gender mix.`);
   } else {
-    parts.push(`Block-calibrated demographic score ${ctx.demo.normalized.toFixed(2)} — book-typical (avg age ${ctx.avg_age.toFixed(0)}).`);
+    parts.push(`Kennion demographic score ${ctx.demo.normalized.toFixed(2)} — book-typical (avg age ${ctx.avg_age.toFixed(0)}).`);
   }
 
   if (ctx.geo.raw > 0.5) {
