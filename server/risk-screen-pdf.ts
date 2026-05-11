@@ -61,7 +61,7 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
     doc.fillColor("white").font("Helvetica-Bold").fontSize(13)
        .text(result.tier.toUpperCase(), pillX, y + 10, { width: pillW, align: "center" });
     doc.font("Helvetica-Bold").fontSize(20)
-       .text(`KRI ${result.kri.toFixed(2)}`, pillX, y + 28, { width: pillW, align: "center" });
+       .text(`Score ${result.kri.toFixed(2)}`, pillX, y + 28, { width: pillW, align: "center" });
     y += 72;
 
     // Meta strip
@@ -83,7 +83,7 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
 
     // Scorecard
     doc.fillColor(COLORS.text).font("Helvetica-Bold").fontSize(10.5)
-       .text("Component Scorecard", M, y);
+       .text("Score Breakdown", M, y);
     y += 16;
 
     const aiBoxW = 110;
@@ -242,13 +242,13 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
     let decisionLabel: string;
     let decisionColor: string;
     if (result.decision === "DECLINE") {
-      decisionLabel = "DECISION:  DECLINE - DO NOT QUOTE";
+      decisionLabel = "RECOMMENDATION:  DO NOT QUOTE";
       decisionColor = COLORS.highRisk;
     } else if (result.decision === "QUOTE_WITH_REVIEW") {
-      decisionLabel = "DECISION:  QUOTE - UNDERWRITER REVIEW REQUIRED";
+      decisionLabel = "RECOMMENDATION:  QUOTE WITH MANAGER REVIEW";
       decisionColor = COLORS.standard;
     } else {
-      decisionLabel = "DECISION:  QUOTE";
+      decisionLabel = "RECOMMENDATION:  QUOTE";
       decisionColor = COLORS.preferred;
     }
     doc.roundedRect(M, decisionY, innerW, 30, 4)

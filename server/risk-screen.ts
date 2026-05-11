@@ -535,33 +535,33 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   } else if (avg_age <= 35) {
     drivers.push({
       category: "Demographic",
-      text: `Young workforce (avg age ${avg_age.toFixed(0)}) - expected cost below book median`,
+      text: `Young workforce (average age ${avg_age.toFixed(0)}) - expected to cost less than a typical group`,
       impact: +(demoNormalized - 1.0),
     });
   } else {
     drivers.push({
       category: "Demographic",
-      text: `Book-typical age mix (avg ${avg_age.toFixed(0)}, median ${median_age}); expected cost ${(demoNormalized * 100).toFixed(0)}% of book`,
+      text: `Typical age mix (average ${avg_age.toFixed(0)}, median ${median_age}) - expected cost is ${(demoNormalized * 100).toFixed(0)}% of a typical group`,
       impact: +(demoNormalized - 1.0),
     });
   }
   if (pct_female >= 0.60) {
     drivers.push({
       category: "Demographic",
-      text: `Female-heavy mix (${(pct_female * 100).toFixed(0)}%) - higher utilization profile`,
+      text: `Mostly women (${(pct_female * 100).toFixed(0)}%) - women tend to use more healthcare`,
       impact: +0.05,
     });
   } else if (pct_female <= 0.40) {
     drivers.push({
       category: "Demographic",
-      text: `Male-heavy mix (${((1 - pct_female) * 100).toFixed(0)}%) - lower preventive utilization`,
+      text: `Mostly men (${((1 - pct_female) * 100).toFixed(0)}%) - men tend to use less preventive care`,
       impact: -0.03,
     });
   }
   if (pct_medicare_cliff >= 0.10) {
     drivers.push({
       category: "Demographic",
-      text: `${(pct_medicare_cliff * 100).toFixed(0)}% of group within 5 years of Medicare`,
+      text: `${(pct_medicare_cliff * 100).toFixed(0)}% of the group is within 5 years of age 65 (most expensive age band)`,
       impact: +0.08 * pct_medicare_cliff,
     });
   }
@@ -570,19 +570,19 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   if (meanGeoZ >= 0.30) {
     drivers.push({
       category: "Geographic",
-      text: `Members concentrated in counties ${meanGeoZ.toFixed(2)} SD above national chronic-disease mean`,
+      text: `Members live in areas with higher-than-average rates of diabetes, obesity, and other ongoing health conditions`,
       impact: +(geoNormalized - 1.0),
     });
   } else if (meanGeoZ <= -0.20) {
     drivers.push({
       category: "Geographic",
-      text: `Members in healthier-than-average counties (${meanGeoZ.toFixed(2)} SD below national mean)`,
+      text: `Members live in healthier-than-average areas`,
       impact: +(geoNormalized - 1.0),
     });
   } else {
     drivers.push({
       category: "Geographic",
-      text: `Geographic risk near national baseline (composite Z = ${meanGeoZ.toFixed(2)})`,
+      text: `Members live in areas with average health risk`,
       impact: +(geoNormalized - 1.0),
     });
   }
@@ -599,7 +599,7 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   if (famPct >= 0.30) {
     drivers.push({
       category: "Composition",
-      text: `Family-tier heavy (${(famPct * 100).toFixed(0)}% FAM) - elevated dependent claim volume`,
+      text: `Many family enrollments (${(famPct * 100).toFixed(0)}% FAM) - more dependents means more claims`,
       impact: +0.10 * famPct,
     });
   }
@@ -608,7 +608,7 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   if (residual && aiResidualClamped !== 0) {
     drivers.push({
       category: "AI",
-      text: `Proprietary Kennion AI model ${aiResidualClamped > 0 ? "flags elevated" : "indicates favorable"} utilization profile (${(aiResidualClamped * 100).toFixed(1)}% adjustment, bounded ±10%)`,
+      text: `Kennion AI model (trained on our claims history) expects this group to ${aiResidualClamped > 0 ? "cost more" : "cost less"} than the deterministic math predicts (${(aiResidualClamped * 100).toFixed(1)}% adjustment)`,
       impact: aiResidualClamped,
     });
   }
@@ -667,35 +667,35 @@ function buildSummary(ctx: {
   const parts: string[] = [];
 
   if (ctx.tier === "Preferred") {
-    parts.push(`This group screens as Preferred (KRI ${ctx.kri.toFixed(2)}) - favorable for binding.`);
+    parts.push(`This group earned a Kennion Score of ${ctx.kri.toFixed(2)} (Preferred). The group looks favorable for our program.`);
   } else if (ctx.tier === "Standard") {
-    parts.push(`This group screens as Standard (KRI ${ctx.kri.toFixed(2)}) - typical risk profile for the Kennion underwriting benchmark.`);
+    parts.push(`This group earned a Kennion Score of ${ctx.kri.toFixed(2)} (Standard). The group looks like a typical fit for our program.`);
   } else {
-    parts.push(`This group screens as High Risk (KRI ${ctx.kri.toFixed(2)}) - recommend declining the quote.`);
+    parts.push(`This group earned a Kennion Score of ${ctx.kri.toFixed(2)} (High Risk). We do not recommend quoting this group.`);
   }
 
   if (ctx.demo.normalized > 1.08) {
-    parts.push(`Kennion demographic score ${ctx.demo.normalized.toFixed(2)} - ${((ctx.demo.normalized - 1) * 100).toFixed(0)}% above the Kennion underwriting benchmark for this age/gender mix.`);
+    parts.push(`Age and gender mix puts expected cost at ${((ctx.demo.normalized) * 100).toFixed(0)}% of a typical Kennion group (above average).`);
   } else if (ctx.demo.normalized < 0.92) {
-    parts.push(`Kennion demographic score ${ctx.demo.normalized.toFixed(2)} - ${((1 - ctx.demo.normalized) * 100).toFixed(0)}% below the Kennion underwriting benchmark for this age/gender mix.`);
+    parts.push(`Age and gender mix puts expected cost at ${((ctx.demo.normalized) * 100).toFixed(0)}% of a typical Kennion group (below average).`);
   } else {
-    parts.push(`Kennion demographic score ${ctx.demo.normalized.toFixed(2)} - book-typical (avg age ${ctx.avg_age.toFixed(0)}).`);
+    parts.push(`Age and gender mix is typical (average age ${ctx.avg_age.toFixed(0)}).`);
   }
 
   if (ctx.geo.raw > 0.5) {
-    parts.push(`Geographic risk is elevated - members concentrated in counties with above-average chronic-disease prevalence (top county: ${ctx.top_county_name}).`);
+    parts.push(`Members live in areas with higher rates of ongoing health conditions (mostly in ${ctx.top_county_name}).`);
   } else if (ctx.geo.raw < -0.3) {
-    parts.push(`Geographic risk is favorable - counties show below-average chronic-disease prevalence.`);
+    parts.push(`Members live in healthier-than-average areas.`);
   }
 
   if (ctx.pct_medicare_cliff >= 0.15) {
-    parts.push(`Medicare-cliff exposure is meaningful at ${(ctx.pct_medicare_cliff * 100).toFixed(0)}% of group.`);
+    parts.push(`${(ctx.pct_medicare_cliff * 100).toFixed(0)}% of the group is within five years of age 65, which is the most expensive age band.`);
   }
 
   if (ctx.tier === "High Risk") {
-    parts.push(`Decision: DECLINE - do not advance to KAR.`);
+    parts.push(`We do not recommend quoting this group.`);
   } else if (ctx.tier === "Standard" && (ctx.demo.normalized > 1.10 || ctx.geo.raw > 0.5)) {
-    parts.push(`Recommend quoting with adverse-selection load.`);
+    parts.push(`Recommend quoting with risk-adjusted pricing.`);
   } else {
     parts.push(`Recommend quoting at standard pricing.`);
   }

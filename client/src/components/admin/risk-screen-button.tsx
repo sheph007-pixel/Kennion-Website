@@ -94,7 +94,7 @@ export function RiskScreenButton({ groupId }: { groupId: string }) {
       setOpen(true);
       toast({
         title: `Risk Screen: ${data.tier}`,
-        description: `KRI ${data.kri.toFixed(2)} - ${data.decision.replace(/_/g, " ")}`,
+        description: `Score ${data.kri.toFixed(2)} - ${data.decision.replace(/_/g, " ")}`,
         variant: data.tier === "High Risk" ? "destructive" : "default",
       });
     },
@@ -125,7 +125,7 @@ export function RiskScreenButton({ groupId }: { groupId: string }) {
             <>
               {style.icon}
               {latest
-                ? <span className="ml-1.5">{latest.tier} · KRI {latest.kri.toFixed(2)}</span>
+                ? <span className="ml-1.5">{latest.tier} · Score {latest.kri.toFixed(2)}</span>
                 : <span className="ml-1.5">Run Risk Screen</span>}
             </>
           )}
@@ -159,8 +159,8 @@ export function RiskScreenButton({ groupId }: { groupId: string }) {
             </DialogTitle>
             {latest && (
               <DialogDescription>
-                KRI <span className="font-mono font-semibold">{latest.kri.toFixed(2)}</span>
-                {"  ·  Decision: "}<span className="font-semibold">{latest.decision.replace(/_/g, " ")}</span>
+                Kennion Score <span className="font-mono font-semibold">{latest.kri.toFixed(2)}</span>
+                {"  ·  Recommendation: "}<span className="font-semibold">{latest.decision.replace(/_/g, " ")}</span>
               </DialogDescription>
             )}
           </DialogHeader>
@@ -168,7 +168,7 @@ export function RiskScreenButton({ groupId }: { groupId: string }) {
           {latest && (
             <div className="space-y-4">
               <div>
-                <div className="text-sm font-semibold mb-2">Component scores</div>
+                <div className="text-sm font-semibold mb-2">Score breakdown</div>
                 {bar("Demographic", latest.demographic.normalized, "d")}
                 {bar("Geographic",  latest.geographic.normalized,  "g")}
                 {bar("Composition", latest.composition.normalized, "c")}
