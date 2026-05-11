@@ -6,10 +6,13 @@ import {
   type CensusEntry,
   type InsertCensusEntry,
   type Proposal,
+  type RiskScreen,
+  type InsertRiskScreen,
   users,
   groups,
   censusEntries,
   proposals,
+  riskScreens,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
@@ -38,6 +41,12 @@ export interface IStorage {
   getProposal(id: string): Promise<Proposal | undefined>;
   createProposal(data: { groupId: string; pdfPath: string; pdfBase64?: string; fileName: string; ratesData?: any }): Promise<Proposal>;
   deleteProposalsByGroupId(groupId: string): Promise<void>;
+
+  // Risk Screen
+  saveRiskScreen(data: InsertRiskScreen): Promise<RiskScreen>;
+  getRiskScreen(id: string): Promise<RiskScreen | undefined>;
+  getRiskScreensByGroupId(groupId: string): Promise<RiskScreen[]>;
+  getLatestRiskScreenForGroup(groupId: string): Promise<RiskScreen | undefined>;
 
   // Internal sales quotes — admin-driven flow that mints a sharable
   // /q/:token link for prospects. Same scoring and rates as
@@ -282,6 +291,30 @@ export class DatabaseStorage implements IStorage {
       .where(eq(groups.id, groupId))
       .returning();
     return updated;
+  }
+
+  async saveRiskScreen(data: InsertRiskScreen): Promise<RiskScreen> {
+    const [row] = await db.insert(riskScreens).values(data).returning();
+    return row;
+  }
+
+  async getRiskScreen(id: string): Promise<RiskScreen | undefined> {
+    const [row] = await db.select().from(riskScreens).where(eq(riskScreens.id, id));
+    return row;
+  }
+
+  async getRiskScreensByGroupId(groupId: string): Promise<RiskScreen[]> {
+    return db.select().from(riskScreens)
+      .where(eq(riskScreens.groupId, groupId))
+      .orderBy(desc(riskScreens.createdAt));
+  }
+
+  async getLatestRiskScreenForGroup(groupId: string): Promise<RiskScreen | undefined> {
+    const [row] = await db.select().from(riskScreens)
+      .where(eq(riskScreens.groupId, groupId))
+      .orderBy(desc(riskScreens.createdAt))
+      .limit(1);
+    return row;
   }
 }
 

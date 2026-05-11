@@ -42,6 +42,7 @@ import {
   statusLabel,
 } from "@/hooks/use-admin-quotes";
 import { EditUserDialog } from "./edit-user-dialog";
+import { RiskScreenButton } from "./risk-screen-button";
 import type { Group } from "@shared/schema";
 
 type Props = {
@@ -150,6 +151,8 @@ export function AdminBanner({ group }: Props) {
             </div>
           ) : null}
           <div className="flex-1" />
+
+          <RiskScreenButton groupId={group.id} />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

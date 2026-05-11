@@ -1,0 +1,44 @@
+{
+  "version": "1.0-AL-bootstrap",
+  "source": "Bootstrap ZIP3 → Alabama county FIPS map. Used until full HUD USPS ZIP-COUNTY Q1 2025 crosswalk is loaded in next session.",
+  "built_at": "2026-04-27T00:00:00Z",
+  "zip5": {},
+  "zip3": {
+    "350": "01073",
+    "351": "01073",
+    "352": "01073",
+    "354": "01125",
+    "355": "01007",
+    "356": "01125",
+    "357": "01077",
+    "358": "01089",
+    "359": "01089",
+    "360": "01101",
+    "361": "01101",
+    "362": "01051",
+    "363": "01069",
+    "364": "01069",
+    "365": "01067",
+    "366": "01129",
+    "367": "01067",
+    "368": "01097",
+    "369": "01097"
+  },
+  "_county_names": {
+    "01007": "Bibb County, AL",
+    "01051": "Elmore County, AL",
+    "01067": "Henry County, AL",
+    "01069": "Houston County, AL",
+    "01073": "Jefferson County, AL (Birmingham)",
+    "01077": "Lauderdale County, AL",
+    "01089": "Madison County, AL (Huntsville)",
+    "01097": "Mobile County, AL",
+    "01101": "Montgomery County, AL",
+    "01125": "Tuscaloosa County, AL",
+    "01129": "Washington County, AL"
+  },
+  "_notes": [
+    "ZIP3-only fallback works because ZIP first-3 generally maps to a single county or sectional center. For groups with members in non-AL ZIPs, the engine falls back to national means until the full HUD crosswalk is loaded.",
+    "The full HUD USPS ZIP-COUNTY Q1 2025 release (~3 MB JSON when compiled) will replace this bootstrap in the next session — same JSON shape, same engine, no code changes required."
+  ]
+}

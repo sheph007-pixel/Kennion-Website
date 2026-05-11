@@ -22,6 +22,13 @@ import {
   type Admin,
 } from "./rate-engine";
 import {
+  screenGroup,
+  censusEntriesToScreenMembers,
+  loadScreenTables,
+  reloadScreenTables,
+} from "./risk-screen";
+import { renderRiskScreenPDF } from "./risk-screen-pdf";
+import {
   magicLinkRequestSchema,
   magicLinkVerifySchema,
   loginSchema,
@@ -2646,6 +2653,118 @@ export async function registerRoutes(
       log(`Rate pricing error: ${err.message}`, "rate");
       res.status(500).json({ message: err.message || "Pricing failed" });
     }
+  });
+
+  // ──────────────────────────────────────────────────────────────────────
+  // KENNION RISK SCREEN (KRS) — deterministic underwriting screen
+  // Sits upstream of the rate engine. Produces a Kennion Risk Index (KRI)
+  // and a Preferred / Standard / High Risk tier per group.
+  // ──────────────────────────────────────────────────────────────────────
+
+  // Public KRS table metadata
+  app.get("/api/screen/tables", (_req: Request, res: Response) => {
+    try {
+      const t = loadScreenTables();
+      res.json({
+        meps_version: t.meps.version,
+        meps_n_cells: Object.keys(t.meps.cells).length,
+        meps_built_at: t.meps.built_at,
+        places_version: t.places.version,
+        places_n_counties: Object.keys(t.places.counties).length,
+        places_built_at: t.places.built_at,
+        zip_version: t.zipMap.version,
+        weights_version: t.weights.version,
+        thresholds: t.weights.thresholds,
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Screen tables not loaded" });
+    }
+  });
+
+  // Admin reload
+  app.post("/api/screen/reload", requireAdmin, (_req: Request, res: Response) => {
+    try {
+      reloadScreenTables();
+      const t = loadScreenTables();
+      res.json({ ok: true, weights_version: t.weights.version });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Reload failed" });
+    }
+  });
+
+  // Run the screen against a stored group's census
+  app.post("/api/screen/run/:groupId", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const groupId = req.params.groupId;
+      const group = await storage.getGroup(groupId);
+      if (!group) return res.status(404).json({ message: "Group not found" });
+
+      const censusRows = await storage.getCensusByGroupId(groupId);
+      if (!censusRows || censusRows.length === 0) {
+        return res.status(400).json({ message: "Group has no census entries" });
+      }
+
+      const members = censusEntriesToScreenMembers(censusRows);
+      const effectiveDate = (group as any).effectiveDate
+        ? new Date((group as any).effectiveDate)
+        : new Date();
+
+      const result = screenGroup({
+        census: members,
+        effectiveDate,
+        group: (group as any).companyName || (group as any).name || groupId,
+      });
+
+      const pdfBuf = await renderRiskScreenPDF(result, {
+        groupName: (group as any).companyName || (group as any).name,
+        advisor: (group as any).advisorName || undefined,
+        censusId: groupId,
+      });
+      const pdfBase64 = pdfBuf.toString("base64");
+
+      const saved = await storage.saveRiskScreen({
+        groupId,
+        modelVersion: result.model_version,
+        modelHash: result.model_hash,
+        kri: result.kri,
+        tier: result.tier,
+        decision: result.decision,
+        resultJson: result as any,
+        pdfBase64,
+      });
+
+      res.json({ id: saved.id, ...result });
+    } catch (err: any) {
+      console.error("[risk-screen] run failed:", err);
+      res.status(500).json({ message: err.message || "Screen failed" });
+    }
+  });
+
+  // Latest screen for a group (compact — no PDF)
+  app.get("/api/screen/latest/:groupId", requireAuth, async (req: Request, res: Response) => {
+    const r = await storage.getLatestRiskScreenForGroup(req.params.groupId);
+    if (!r) return res.status(404).json({ message: "No screen yet" });
+    res.json({ id: r.id, ...((r as any).resultJson || {}) });
+  });
+
+  // Fetch a specific screen result (compact)
+  app.get("/api/screen/result/:id", requireAuth, async (req: Request, res: Response) => {
+    const r = await storage.getRiskScreen(req.params.id);
+    if (!r) return res.status(404).json({ message: "Not found" });
+    res.json({ id: r.id, ...((r as any).resultJson || {}) });
+  });
+
+  // Download the screen PDF
+  app.get("/api/screen/pdf/:id", requireAuth, async (req: Request, res: Response) => {
+    const r = await storage.getRiskScreen(req.params.id);
+    if (!r || !r.pdfBase64) return res.status(404).json({ message: "Not found" });
+    const buf = Buffer.from(r.pdfBase64, "base64");
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="RiskScreen_${r.groupId}.pdf"`,
+      "Content-Length": String(buf.length),
+    });
+    res.send(buf);
   });
 
   // ──────────────────────────────────────────────────────────────────────

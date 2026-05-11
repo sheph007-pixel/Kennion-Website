@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "methodology_ref": "KRS-METHOD-v1.0 §4.2",
+  "built_at": "2026-04-27T00:00:00Z",
+  "notes": "Initial v1.0 weights. Demo:Geo:Comp = 50:30:20. Calibrated against peer-reviewed elasticity estimates of medical loss to demographic, geographic, and structural factors. Subject to annual re-fit per §5.2.",
+
+  "w_demo": 0.50,
+  "w_geo": 0.30,
+  "w_comp": 0.20,
+
+  "alpha_geo_scaling": 0.07,
+  "beta_medicare_cliff": 0.40,
+  "beta_concentration": 0.10,
+  "small_group_threshold": 20,
+  "small_group_load": 1.05,
+
+  "thresholds": {
+    "preferred": 0.95,
+    "high_risk": 1.50
+  },
+
+  "ai_residual_clamp": 0.10
+}

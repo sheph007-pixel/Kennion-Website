@@ -108,6 +108,19 @@ export const proposals = pgTable("proposals", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const riskScreens = pgTable("risk_screens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  groupId: varchar("group_id").notNull().references(() => groups.id, { onDelete: "cascade" }),
+  modelVersion: varchar("model_version").notNull(),
+  modelHash: varchar("model_hash").notNull(),
+  kri: real("kri").notNull(),
+  tier: text("tier").notNull(),       // Preferred | Standard | High Risk
+  decision: text("decision").notNull(),  // QUOTE | QUOTE_WITH_REVIEW | DECLINE
+  resultJson: jsonb("result_json").notNull(),
+  pdfBase64: text("pdf_base64"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   verified: true,
@@ -329,3 +342,6 @@ export type InsertGroup = z.infer<typeof insertGroupSchema>;
 export type CensusEntry = typeof censusEntries.$inferSelect;
 export type InsertCensusEntry = z.infer<typeof insertCensusEntrySchema>;
 export type Proposal = typeof proposals.$inferSelect;
+
+export type RiskScreen = typeof riskScreens.$inferSelect;
+export type InsertRiskScreen = typeof riskScreens.$inferInsert;
