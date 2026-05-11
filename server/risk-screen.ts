@@ -442,14 +442,120 @@ export function screenGroup(input: ScreenInput): ScreenResult {
     decision = "DECLINE";
   }
 
-  // ── 9. Top drivers across all components ──────────────────────────────
-  const allDrivers: Array<{ category: string; text: string; impact: number }> = [];
-  for (const d of demoDrivers) allDrivers.push({ category: "Demographic", text: d, impact: demo.contribution });
-  for (const d of geoDrivers)  allDrivers.push({ category: "Geographic",  text: d, impact: geo.contribution });
-  for (const d of compDrivers) allDrivers.push({ category: "Composition", text: d, impact: comp.contribution });
-  for (const d of aiResidualDrivers) allDrivers.push({ category: "AI", text: d, impact: aiResidualClamped });
-  allDrivers.sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact));
-  const top_drivers = allDrivers.slice(0, 5);
+  // ── 9. Top drivers — describe the score, not threshold violations ────
+  // Always populate so every screen has a populated "why" panel.
+  // Drivers describe the *most informative* facts about this group's score.
+  const drivers: Array<{ category: string; text: string; impact: number }> = [];
+
+  // Demographic — show the strongest signal in the age/sex mix.
+  if (avg_age >= 45) {
+    drivers.push({
+      category: "Demographic",
+      text: `Avg age ${avg_age.toFixed(0)} elevates expected medical cost (book median ≈ 40)`,
+      impact: +(demoNormalized - 1.0),
+    });
+  } else if (avg_age <= 35) {
+    drivers.push({
+      category: "Demographic",
+      text: `Young workforce (avg age ${avg_age.toFixed(0)}) — expected cost below book median`,
+      impact: +(demoNormalized - 1.0),
+    });
+  } else {
+    drivers.push({
+      category: "Demographic",
+      text: `Book-typical age mix (avg ${avg_age.toFixed(0)}, median ${median_age}); expected cost ${(demoNormalized * 100).toFixed(0)}% of book`,
+      impact: +(demoNormalized - 1.0),
+    });
+  }
+  if (pct_female >= 0.60) {
+    drivers.push({
+      category: "Demographic",
+      text: `Female-heavy mix (${(pct_female * 100).toFixed(0)}%) — higher utilization profile`,
+      impact: +0.05,
+    });
+  } else if (pct_female <= 0.40) {
+    drivers.push({
+      category: "Demographic",
+      text: `Male-heavy mix (${((1 - pct_female) * 100).toFixed(0)}%) — lower preventive utilization`,
+      impact: -0.03,
+    });
+  }
+  if (pct_medicare_cliff >= 0.10) {
+    drivers.push({
+      category: "Demographic",
+      text: `${(pct_medicare_cliff * 100).toFixed(0)}% of group within 5 years of Medicare`,
+      impact: +0.08 * pct_medicare_cliff,
+    });
+  }
+
+  // Geographic — describe the county exposure regardless of magnitude.
+  if (meanGeoZ >= 0.30) {
+    drivers.push({
+      category: "Geographic",
+      text: `Members concentrated in counties ${meanGeoZ.toFixed(2)} SD above national chronic-disease mean`,
+      impact: +(geoNormalized - 1.0),
+    });
+  } else if (meanGeoZ <= -0.20) {
+    drivers.push({
+      category: "Geographic",
+      text: `Members in healthier-than-average counties (${meanGeoZ.toFixed(2)} SD below national mean)`,
+      impact: +(geoNormalized - 1.0),
+    });
+  } else {
+    drivers.push({
+      category: "Geographic",
+      text: `Geographic risk near national baseline (composite Z = ${meanGeoZ.toFixed(2)})`,
+      impact: +(geoNormalized - 1.0),
+    });
+  }
+  if (pct_top_county >= 0.40 && places.counties[top_county]) {
+    const cz = places.counties[top_county].geo_z;
+    const direction = cz > 0 ? "elevated-risk" : "lower-risk";
+    drivers.push({
+      category: "Geographic",
+      text: `${(pct_top_county * 100).toFixed(0)}% concentrated in ${top_county_name} (${direction}, Z = ${cz.toFixed(2)})`,
+      impact: +cz * 0.05,
+    });
+  }
+
+  // Composition — group structure facts.
+  if (employees.length < weights.small_group_threshold) {
+    drivers.push({
+      category: "Composition",
+      text: `Small group (${employees.length} EE) — credibility/volatility load applied`,
+      impact: +(weights.small_group_load - 1.0),
+    });
+  } else {
+    drivers.push({
+      category: "Composition",
+      text: `Group size ${employees.length} EE — sufficient credibility for full-experience rating`,
+      impact: 0,
+    });
+  }
+  const totalHouseholds = tierMix.EE + tierMix.ECH + tierMix.ESP + tierMix.FAM;
+  const famPct = totalHouseholds > 0
+    ? (tierMix.FAM / totalHouseholds)
+    : 0;
+  if (famPct >= 0.30) {
+    drivers.push({
+      category: "Composition",
+      text: `Family-tier heavy (${(famPct * 100).toFixed(0)}% FAM) — dependent claim volume risk`,
+      impact: +0.04,
+    });
+  }
+
+  // AI residual (if non-zero).
+  if (aiResidualClamped !== 0) {
+    drivers.push({
+      category: "AI",
+      text: `ML residual adjustment ${(aiResidualClamped * 100).toFixed(1)}% (calibrated against Kennion block)`,
+      impact: aiResidualClamped,
+    });
+  }
+
+  // Sort by absolute impact, keep top 5.
+  drivers.sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact));
+  const top_drivers = drivers.slice(0, 5);
 
   // ── 10. AI summary narrative ──────────────────────────────────────────
   const ai_summary = buildSummary({

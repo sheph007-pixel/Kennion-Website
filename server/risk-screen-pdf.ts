@@ -1,23 +1,8 @@
 /**
  * Kennion Risk Screen — single-page PDF renderer.
  *
- * Drop-in: place at server/risk-screen-pdf.ts in the Kennion-Website repo.
- * Uses pdfkit (already in the dependency tree via server/proposal-pdf.ts).
- *
- * Layout (US Letter, single page):
- *
- *   ┌──────────────────────────────────────────────────────────────────┐
- *   │ Header strip — group name, advisor, date, KRS hash    [TIER PILL]│
- *   ├──────────────────────────────────────────────────────────────────┤
- *   │ Scorecard — Demo / Geo / Comp bars + AI Residual box              │
- *   ├──────────────────────────────────────────────────────────────────┤
- *   │ Group profile grid + age-band table                               │
- *   ├──────────────────────────────────────────────────────────────────┤
- *   │ AI Summary (left) + Top 5 Drivers (right) + Decision band         │
- *   └──────────────────────────────────────────────────────────────────┘
- *
- * API:
- *   renderRiskScreenPDF(result, opts) -> Buffer
+ * Hard one-page layout for US Letter. Every band has a fixed y-budget
+ * so content never spills to a second page even at maximum width.
  */
 import PDFDocument from "pdfkit";
 import type { ScreenResult, RiskTier } from "./risk-screen";
@@ -29,14 +14,13 @@ export interface RenderOpts {
 }
 
 const COLORS = {
-  preferred: "#0F8A4A",   // green
-  standard:  "#1F5BB5",   // blue
-  highRisk:  "#B83A2A",   // red
-  bg:        "#FFFFFF",
+  preferred: "#0F8A4A",
+  standard:  "#1F5BB5",
+  highRisk:  "#B83A2A",
   text:      "#1A1A1A",
   muted:     "#6B7280",
   border:    "#D1D5DB",
-  bookMedian:"#9CA3AF",
+  median:    "#9CA3AF",
 };
 
 function tierColor(t: RiskTier): string {
@@ -45,17 +29,13 @@ function tierColor(t: RiskTier): string {
   return COLORS.standard;
 }
 
-function dollar(n: number): string {
-  return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-}
-
-function pct(n: number, digits = 0): string {
-  return (n * 100).toFixed(digits) + "%";
+function pct(n: number, d = 0): string {
+  return (n * 100).toFixed(d) + "%";
 }
 
 export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {}): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: "LETTER", margin: 36 });
+    const doc = new PDFDocument({ size: "LETTER", margin: 36, autoFirstPage: true });
     const chunks: Buffer[] = [];
     doc.on("data", (c) => chunks.push(c));
     doc.on("end",  () => resolve(Buffer.concat(chunks)));
@@ -66,120 +46,106 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
     const M = 36;
     const innerW = W - 2 * M;
 
-    // ── Band 1: Header strip ────────────────────────────────────────────
+    // Header strip
     let y = M;
-
-    // Title
-    doc.fillColor(COLORS.text)
-       .font("Helvetica-Bold").fontSize(18)
-       .text("Kennion Risk Screen", M, y);
-    doc.font("Helvetica").fontSize(9).fillColor(COLORS.muted)
-       .text(`Model ${result.model_version}  ·  hash ${result.model_hash}`, M, y + 22);
-
-    // Tier pill (top right)
-    const pillW = 165, pillH = 50;
+    const pillW = 165, pillH = 56;
     const pillX = W - M - pillW;
-    const pillY = y;
-    doc.roundedRect(pillX, pillY, pillW, pillH, 8)
+
+    doc.fillColor(COLORS.text).font("Helvetica-Bold").fontSize(20)
+       .text("Kennion Risk Screen", M, y);
+    doc.font("Helvetica").fontSize(8.5).fillColor(COLORS.muted)
+       .text(`Model ${result.model_version}  ·  hash ${result.model_hash}`, M, y + 26);
+
+    doc.roundedRect(pillX, y, pillW, pillH, 8)
        .fillColor(tierColor(result.tier)).fill();
-    doc.fillColor("white")
-       .font("Helvetica-Bold").fontSize(14)
-       .text(result.tier.toUpperCase(), pillX, pillY + 8, { width: pillW, align: "center" });
+    doc.fillColor("white").font("Helvetica-Bold").fontSize(13)
+       .text(result.tier.toUpperCase(), pillX, y + 10, { width: pillW, align: "center" });
     doc.font("Helvetica-Bold").fontSize(20)
-       .text(`KRI ${result.kri.toFixed(2)}`, pillX, pillY + 26, { width: pillW, align: "center" });
+       .text(`KRI ${result.kri.toFixed(2)}`, pillX, y + 28, { width: pillW, align: "center" });
+    y += 72;
 
-    y += 56;
-
-    // Group + advisor + date strip
+    // Meta strip
     doc.fillColor(COLORS.text).font("Helvetica-Bold").fontSize(12)
        .text(opts.groupName || result.group || "Group", M, y);
-    doc.font("Helvetica").fontSize(9).fillColor(COLORS.muted);
+    doc.font("Helvetica").fontSize(8.5).fillColor(COLORS.muted);
     const meta = [
       opts.advisor ? `Advisor: ${opts.advisor}` : null,
-      opts.censusId ? `Census ${opts.censusId}` : null,
+      opts.censusId ? `Census ${opts.censusId.slice(0, 28)}` : null,
       `Effective ${result.effective_date}`,
       `Scored ${result.scored_at.slice(0, 16).replace("T", " ")} UTC`,
     ].filter(Boolean).join("  ·  ");
-    doc.text(meta, M, y + 14);
+    doc.text(meta, M, y + 14, { width: innerW });
+    y += 28;
 
-    y += 36;
     doc.moveTo(M, y).lineTo(W - M, y)
        .strokeColor(COLORS.border).lineWidth(0.5).stroke();
-    y += 10;
-
-    // ── Band 2: Scorecard (3 horizontal component bars + AI residual box) ─
-    doc.fillColor(COLORS.text).font("Helvetica-Bold").fontSize(11)
-       .text("Component Scorecard", M, y);
-    y += 18;
-
-    const barLeft = M + 95;
-    const barWidth = innerW - 95 - 130; // leave 130 for AI residual box on right
-    const aiBoxX = M + innerW - 120;
-
-    function drawBar(label: string, raw: number, normalized: number, contribution: number, drivers: string[]) {
-      const barY = y;
-      doc.font("Helvetica-Bold").fontSize(10).fillColor(COLORS.text)
-         .text(label, M, barY);
-      doc.font("Helvetica").fontSize(8).fillColor(COLORS.muted)
-         .text(drivers[0] || "", M, barY + 12, { width: 90 });
-
-      // Background bar
-      doc.roundedRect(barLeft, barY + 4, barWidth, 14, 3)
-         .fillColor("#E5E7EB").fill();
-      // Foreground bar (capped at 1.5x for visual)
-      const visualNorm = Math.min(Math.max(normalized, 0.5), 1.6);
-      const fillW = barWidth * ((visualNorm - 0.5) / 1.1);
-      let color = COLORS.standard;
-      if (normalized < 0.95) color = COLORS.preferred;
-      else if (normalized >= 1.5) color = COLORS.highRisk;
-      doc.roundedRect(barLeft, barY + 4, Math.max(fillW, 3), 14, 3)
-         .fillColor(color).fill();
-      // Book median line at normalized = 1.0
-      const medX = barLeft + barWidth * ((1.0 - 0.5) / 1.1);
-      doc.moveTo(medX, barY + 1).lineTo(medX, barY + 21)
-         .strokeColor(COLORS.bookMedian).lineWidth(1).dash(2, { space: 2 }).stroke();
-      doc.undash();
-
-      // Value label
-      doc.font("Helvetica-Bold").fontSize(9).fillColor(COLORS.text)
-         .text(normalized.toFixed(2), barLeft + barWidth + 6, barY + 6, { width: 30 });
-
-      y += 30;
-    }
-
-    drawBar("Demographic", result.demographic.raw, result.demographic.normalized,
-            result.demographic.contribution, result.demographic.drivers);
-    drawBar("Geographic",  result.geographic.raw, result.geographic.normalized,
-            result.geographic.contribution, result.geographic.drivers);
-    drawBar("Composition", result.composition.raw, result.composition.normalized,
-            result.composition.contribution, result.composition.drivers);
-
-    // AI residual box (top right of scorecard band)
-    const aiBoxY = y - 90;
-    doc.roundedRect(aiBoxX, aiBoxY, 110, 90, 4)
-       .strokeColor(COLORS.border).lineWidth(0.5).stroke();
-    doc.font("Helvetica-Bold").fontSize(9).fillColor(COLORS.text)
-       .text("AI Residual", aiBoxX + 6, aiBoxY + 6);
-    const adj = result.ai_residual.clamped;
-    const adjColor = adj > 0 ? COLORS.highRisk : adj < 0 ? COLORS.preferred : COLORS.muted;
-    doc.font("Helvetica-Bold").fontSize(20).fillColor(adjColor)
-       .text(`${adj >= 0 ? "+" : ""}${(adj * 100).toFixed(1)}%`, aiBoxX, aiBoxY + 28, { width: 110, align: "center" });
-    doc.font("Helvetica").fontSize(7).fillColor(COLORS.muted)
-       .text("ML adjustment\nbounded to ±10%", aiBoxX, aiBoxY + 60, { width: 110, align: "center" });
-
     y += 8;
+
+    // Scorecard
+    doc.fillColor(COLORS.text).font("Helvetica-Bold").fontSize(10.5)
+       .text("Component Scorecard", M, y);
+    y += 16;
+
+    const aiBoxW = 110;
+    const aiBoxX = W - M - aiBoxW;
+    const aiBoxY = y;
+    const labelX = M;
+    const labelW = 75;
+    const barLeft = M + labelW + 6;
+    const barRight = aiBoxX - 16;
+    const valueW = 32;
+    const barWidth = barRight - barLeft - valueW;
+
+    function drawBar(label: string, normalized: number) {
+      doc.font("Helvetica-Bold").fontSize(9).fillColor(COLORS.text)
+         .text(label, labelX, y + 3, { width: labelW });
+      doc.roundedRect(barLeft, y + 4, barWidth, 11, 2)
+         .fillColor("#E5E7EB").fill();
+      const visualNorm = Math.min(Math.max(normalized, 0.5), 1.6);
+      const fillW = Math.max(3, barWidth * ((visualNorm - 0.5) / 1.1));
+      const color =
+        normalized < 0.95 ? COLORS.preferred :
+        normalized >= 1.5 ? COLORS.highRisk  :
+                            COLORS.standard;
+      doc.roundedRect(barLeft, y + 4, fillW, 11, 2).fillColor(color).fill();
+      const medX = barLeft + barWidth * ((1.0 - 0.5) / 1.1);
+      doc.dash(2, { space: 2 }).strokeColor(COLORS.median).lineWidth(0.75)
+         .moveTo(medX, y + 2).lineTo(medX, y + 17).stroke()
+         .undash();
+      doc.font("Helvetica-Bold").fontSize(9).fillColor(COLORS.text)
+         .text(normalized.toFixed(2), barRight - valueW + 2, y + 5,
+               { width: valueW, align: "right" });
+      y += 22;
+    }
+    drawBar("Demographic", result.demographic.normalized);
+    drawBar("Geographic",  result.geographic.normalized);
+    drawBar("Composition", result.composition.normalized);
+
+    const aiBoxH = 66;
+    doc.roundedRect(aiBoxX, aiBoxY, aiBoxW, aiBoxH, 4)
+       .strokeColor(COLORS.border).lineWidth(0.5).stroke();
+    doc.font("Helvetica-Bold").fontSize(8.5).fillColor(COLORS.muted)
+       .text("AI Residual", aiBoxX, aiBoxY + 6, { width: aiBoxW, align: "center" });
+    const adj = result.ai_residual.clamped;
+    const adjColor = adj > 0.01 ? COLORS.highRisk : adj < -0.01 ? COLORS.preferred : COLORS.text;
+    doc.font("Helvetica-Bold").fontSize(18).fillColor(adjColor)
+       .text(`${adj >= 0 ? "+" : ""}${(adj * 100).toFixed(1)}%`, aiBoxX, aiBoxY + 22,
+             { width: aiBoxW, align: "center" });
+    doc.font("Helvetica").fontSize(7).fillColor(COLORS.muted)
+       .text("ML adjustment\nbounded to ±10%", aiBoxX, aiBoxY + 48,
+             { width: aiBoxW, align: "center" });
+
+    y = Math.max(y, aiBoxY + aiBoxH) + 6;
+
     doc.moveTo(M, y).lineTo(W - M, y)
        .strokeColor(COLORS.border).lineWidth(0.5).stroke();
-    y += 10;
+    y += 8;
 
-    // ── Band 3: Group profile grid ──────────────────────────────────────
-    doc.fillColor(COLORS.text).font("Helvetica-Bold").fontSize(11)
+    // Group profile
+    doc.fillColor(COLORS.text).font("Helvetica-Bold").fontSize(10.5)
        .text("Group Profile", M, y);
     y += 16;
 
-    const gridY = y;
-    const gridCols = 4;
-    const gridColW = innerW / gridCols;
     const cells: Array<[string, string]> = [
       ["Total Lives",      String(result.n_members)],
       ["Employees",        String(result.n_employees)],
@@ -189,55 +155,75 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
       ["Avg Age",          result.avg_age.toFixed(1)],
       ["Female %",         pct(result.pct_female)],
       ["Medicare-Cliff %", pct(result.pct_medicare_cliff)],
-      ["Top County",       result.top_county],
+      ["Top County",       result.top_county || "—"],
       ["County Conc.",     pct(result.pct_top_county)],
-      ["Family Tier %",
-       `${pct((result.family_tier_mix.FAM) /
-         Math.max(1, result.family_tier_mix.EE + result.family_tier_mix.ECH +
-                     result.family_tier_mix.ESP + result.family_tier_mix.FAM))}`],
+      ["Family Tier %",    pct(
+        (result.family_tier_mix.FAM) /
+        Math.max(1, result.family_tier_mix.EE + result.family_tier_mix.ECH +
+                    result.family_tier_mix.ESP + result.family_tier_mix.FAM)
+      )],
       ["Tier Mix",
        `EE ${result.family_tier_mix.EE} / ECH ${result.family_tier_mix.ECH} / ` +
        `ESP ${result.family_tier_mix.ESP} / FAM ${result.family_tier_mix.FAM}`],
     ];
+    const gridCols = 4;
+    const gridColW = innerW / gridCols;
+    const gridY = y;
     for (let i = 0; i < cells.length; i++) {
       const col = i % gridCols, row = Math.floor(i / gridCols);
       const cx = M + col * gridColW;
       const cy = gridY + row * 28;
       doc.font("Helvetica").fontSize(8).fillColor(COLORS.muted)
          .text(cells[i][0], cx, cy);
-      doc.font("Helvetica-Bold").fontSize(10).fillColor(COLORS.text)
-         .text(cells[i][1], cx, cy + 11, { width: gridColW - 6 });
+      doc.font("Helvetica-Bold").fontSize(9.5).fillColor(COLORS.text)
+         .text(cells[i][1], cx, cy + 10, { width: gridColW - 6, height: 14, ellipsis: true });
     }
-    y = gridY + Math.ceil(cells.length / gridCols) * 28 + 8;
+    y = gridY + Math.ceil(cells.length / gridCols) * 28 + 4;
 
     doc.moveTo(M, y).lineTo(W - M, y)
        .strokeColor(COLORS.border).lineWidth(0.5).stroke();
-    y += 10;
+    y += 8;
 
-    // ── Band 4: AI Summary + Top Drivers + Decision ─────────────────────
-    const summaryW = innerW * 0.55;
-    const driversX = M + summaryW + 12;
-    const driversW = innerW - summaryW - 12;
+    // AI Summary + Top Drivers
+    const colGap = 14;
+    const summaryW = Math.floor(innerW * 0.45);
+    const driversX = M + summaryW + colGap;
+    const driversW = innerW - summaryW - colGap;
 
-    doc.fillColor(COLORS.text).font("Helvetica-Bold").fontSize(11)
+    doc.fillColor(COLORS.text).font("Helvetica-Bold").fontSize(10.5)
        .text("AI Summary", M, y);
     doc.font("Helvetica").fontSize(9).fillColor(COLORS.text)
-       .text(result.ai_summary, M, y + 14, { width: summaryW, lineGap: 2 });
+       .text(result.ai_summary, M, y + 14,
+             { width: summaryW, lineGap: 2, height: 160, ellipsis: true });
 
-    doc.font("Helvetica-Bold").fontSize(11).fillColor(COLORS.text)
-       .text("Top Risk Drivers", driversX, y);
+    doc.font("Helvetica-Bold").fontSize(10.5).fillColor(COLORS.text)
+       .text("Top Risk Drivers", driversX, y, { width: driversW });
     let dy = y + 14;
-    for (const d of result.top_drivers) {
-      doc.font("Helvetica-Bold").fontSize(8)
-         .fillColor(d.impact > 0 ? COLORS.highRisk : COLORS.preferred)
-         .text(`${d.impact >= 0 ? "+" : ""}${d.impact.toFixed(2)}`, driversX, dy, { width: 32 });
-      doc.font("Helvetica").fontSize(8).fillColor(COLORS.text)
-         .text(`${d.category}: ${d.text}`, driversX + 34, dy, { width: driversW - 34, lineGap: 1 });
-      dy += 16;
+    if (!result.top_drivers || result.top_drivers.length === 0) {
+      doc.font("Helvetica-Oblique").fontSize(9).fillColor(COLORS.muted)
+         .text("Group scores near book median — no single factor dominates.",
+               driversX, dy, { width: driversW });
+    } else {
+      for (const d of result.top_drivers) {
+        const impactColor = d.impact > 0.01 ? COLORS.highRisk
+                          : d.impact < -0.01 ? COLORS.preferred
+                          : COLORS.muted;
+        const chipW = 38;
+        doc.font("Helvetica-Bold").fontSize(8.5).fillColor(impactColor)
+           .text(`${d.impact >= 0 ? "+" : ""}${d.impact.toFixed(2)}`,
+                 driversX, dy, { width: chipW });
+        const txt = `${d.category}: ${d.text}`;
+        const h = doc.heightOfString(txt, { width: driversW - chipW - 4, lineGap: 1 });
+        doc.font("Helvetica").fontSize(8.5).fillColor(COLORS.text)
+           .text(txt, driversX + chipW + 4, dy,
+                 { width: driversW - chipW - 4, lineGap: 1, height: h });
+        dy += Math.max(h, 11) + 4;
+        if (dy > y + 170) break;
+      }
     }
 
-    // Decision band at the bottom
-    const decisionY = H - M - 40;
+    // Decision band (anchored bottom)
+    const decisionY = H - M - 56;
     let decisionLabel: string;
     let decisionColor: string;
     if (result.decision === "DECLINE") {
@@ -253,14 +239,13 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
     doc.roundedRect(M, decisionY, innerW, 30, 4)
        .fillColor(decisionColor).fill();
     doc.fillColor("white").font("Helvetica-Bold").fontSize(13)
-       .text(decisionLabel, M, decisionY + 9, { width: innerW, align: "center" });
+       .text(decisionLabel, M, decisionY + 10, { width: innerW, align: "center" });
 
     // Footer
     doc.font("Helvetica").fontSize(7).fillColor(COLORS.muted)
        .text(
-         `Sources: AHRQ MEPS 2021–2023 (HC-233/243/251) · CDC PLACES 2024 release · HUD ZIP-COUNTY Q1 2025 · Kennion block experience  ·  ` +
-         `Methodology: KRS-METHOD-v${result.model_version}  ·  hash ${result.model_hash}`,
-         M, H - 14, { width: innerW, align: "center" }
+         `AHRQ MEPS · CDC PLACES · HUD ZIP-COUNTY · Kennion block  ·  KRS-METHOD-v${result.model_version} · hash ${result.model_hash}`,
+         M, H - M - 10, { width: innerW, align: "center", lineBreak: false }
        );
 
     doc.end();
