@@ -619,9 +619,18 @@ export function screenGroup(input: ScreenInput): ScreenResult {
 
   // ── 10. AI summary narrative ──────────────────────────────────────────
   const ai_summary = buildSummary({
-    tier, kri, demo, geo, comp, top_county_name,
-    avg_age, n: N, n_employees: employees.length,
-    pct_medicare_cliff: cliff, pct_top_county,
+    tier, kri, demo, geo, comp,
+    top_county_name,
+    meanGeoZ,
+    aiResidualClamped,
+    aiPredictedPmpy,
+    groupName: input.group,
+    avg_age, median_age,
+    n: N, n_employees: employees.length, n_spouses: spouses.length, n_children: children.length,
+    pct_female,
+    pct_medicare_cliff: cliff,
+    pct_top_county,
+    fam_share: totalHouseholds > 0 ? tierMix.FAM / totalHouseholds : 0,
   });
 
   return {
@@ -661,43 +670,104 @@ function buildSummary(ctx: {
   tier: RiskTier; kri: number;
   demo: ComponentScore; geo: ComponentScore; comp: ComponentScore;
   top_county_name: string;
-  avg_age: number; n: number; n_employees: number;
-  pct_medicare_cliff: number; pct_top_county: number;
+  meanGeoZ: number;
+  aiResidualClamped: number;
+  aiPredictedPmpy: number;
+  groupName?: string;
+  avg_age: number; median_age: number;
+  n: number; n_employees: number; n_spouses: number; n_children: number;
+  pct_female: number;
+  pct_medicare_cliff: number;
+  pct_top_county: number;
+  fam_share: number;
 }): string {
   const parts: string[] = [];
+  const name = ctx.groupName || "This group";
+  const scoreStr = ctx.kri.toFixed(2);
 
+  // === Opening sentence — names the group, score, tier, and what the
+  // program rule says about it. ===
   if (ctx.tier === "Preferred") {
-    parts.push(`This group earned a Kennion Score of ${ctx.kri.toFixed(2)} (Preferred). The group looks favorable for our program.`);
+    parts.push(`${name} earned a Kennion Score of ${scoreStr} (Preferred) - a clear fit for our program, exactly the type of group that strengthens the captive pool.`);
   } else if (ctx.tier === "Standard") {
-    parts.push(`This group earned a Kennion Score of ${ctx.kri.toFixed(2)} (Standard). The group looks like a typical fit for our program.`);
+    parts.push(`${name} earned a Kennion Score of ${scoreStr} (Standard) - a typical fit for our program, with some risk factors that pricing should reflect.`);
   } else {
-    parts.push(`This group earned a Kennion Score of ${ctx.kri.toFixed(2)} (High Risk). We do not recommend quoting this group.`);
+    parts.push(`${name} earned a Kennion Score of ${scoreStr} (High Risk) - this group does not qualify for a Kennion quote.`);
   }
 
-  if (ctx.demo.normalized > 1.08) {
-    parts.push(`Age and gender mix puts expected cost at ${((ctx.demo.normalized) * 100).toFixed(0)}% of a typical Kennion group (above average).`);
-  } else if (ctx.demo.normalized < 0.92) {
-    parts.push(`Age and gender mix puts expected cost at ${((ctx.demo.normalized) * 100).toFixed(0)}% of a typical Kennion group (below average).`);
+  // === Group profile sentence — specific to this census ===
+  const tiersDesc: string[] = [];
+  if (ctx.n_employees) tiersDesc.push(`${ctx.n_employees} employee${ctx.n_employees === 1 ? "" : "s"}`);
+  if (ctx.n_spouses)   tiersDesc.push(`${ctx.n_spouses} spouse${ctx.n_spouses === 1 ? "" : "s"}`);
+  if (ctx.n_children)  tiersDesc.push(`${ctx.n_children} dependent${ctx.n_children === 1 ? "" : "s"}`);
+  const tiersJoined = tiersDesc.join(", ");
+  const femalePct = (ctx.pct_female * 100).toFixed(0);
+  const genderDesc =
+    ctx.pct_female >= 0.60 ? `skewed female at ${femalePct}%` :
+    ctx.pct_female <= 0.40 ? `skewed male at ${(100 - +femalePct).toFixed(0)}%` :
+    `balanced at ${femalePct}% female`;
+  parts.push(`The ${ctx.n}-life group (${tiersJoined}) averages age ${ctx.avg_age.toFixed(0)} and is ${genderDesc}.`);
+
+  // === Demographic-specific sentence ===
+  if (ctx.demo.normalized >= 1.10) {
+    parts.push(`Age and gender mix is materially older than typical, with expected medical cost at ${(ctx.demo.normalized * 100).toFixed(0)}% of a typical Kennion group.`);
+  } else if (ctx.demo.normalized <= 0.85) {
+    parts.push(`Age and gender mix is favorable, with expected medical cost at ${(ctx.demo.normalized * 100).toFixed(0)}% of a typical Kennion group - a young, healthy profile.`);
+  } else if (ctx.demo.normalized < 1.0) {
+    parts.push(`Age and gender mix is slightly favorable, running ${((1 - ctx.demo.normalized) * 100).toFixed(0)}% below a typical Kennion group on expected cost.`);
   } else {
-    parts.push(`Age and gender mix is typical (average age ${ctx.avg_age.toFixed(0)}).`);
+    parts.push(`Age and gender mix is close to typical, with expected medical cost at ${(ctx.demo.normalized * 100).toFixed(0)}% of book.`);
   }
 
-  if (ctx.geo.raw > 0.5) {
-    parts.push(`Members live in areas with higher rates of ongoing health conditions (mostly in ${ctx.top_county_name}).`);
-  } else if (ctx.geo.raw < -0.3) {
-    parts.push(`Members live in healthier-than-average areas.`);
-  }
-
+  // === Medicare-cliff callout (only if meaningful) ===
   if (ctx.pct_medicare_cliff >= 0.15) {
-    parts.push(`${(ctx.pct_medicare_cliff * 100).toFixed(0)}% of the group is within five years of age 65, which is the most expensive age band.`);
+    parts.push(`${(ctx.pct_medicare_cliff * 100).toFixed(0)}% of the group is within five years of age 65 - the most expensive age band - and that concentration is a real factor in the score.`);
+  } else if (ctx.pct_medicare_cliff >= 0.08) {
+    parts.push(`${(ctx.pct_medicare_cliff * 100).toFixed(0)}% of the group is approaching Medicare age, which adds modest cost pressure.`);
   }
 
-  if (ctx.tier === "High Risk") {
-    parts.push(`We do not recommend quoting this group.`);
-  } else if (ctx.tier === "Standard" && (ctx.demo.normalized > 1.10 || ctx.geo.raw > 0.5)) {
-    parts.push(`Recommend quoting with risk-adjusted pricing.`);
+  // === Family-tier callout (only if meaningful) ===
+  if (ctx.fam_share >= 0.30) {
+    parts.push(`${(ctx.fam_share * 100).toFixed(0)}% of households are at the family tier, adding dependent claim volume that the age mix alone does not capture.`);
+  }
+
+  // === Geographic sentence — name the top county explicitly ===
+  if (ctx.meanGeoZ >= 0.5) {
+    parts.push(`Members are concentrated in ${ctx.top_county_name} and surrounding areas with notably higher rates of diabetes, obesity, smoking, and other ongoing health conditions than the national average.`);
+  } else if (ctx.meanGeoZ >= 0.2) {
+    parts.push(`Most members live in or around ${ctx.top_county_name}, where chronic-disease rates run modestly above the national average.`);
+  } else if (ctx.meanGeoZ <= -0.3) {
+    parts.push(`Members are clustered in ${ctx.top_county_name} and similarly healthier-than-average counties, which is a positive selection signal.`);
   } else {
-    parts.push(`Recommend quoting at standard pricing.`);
+    parts.push(`Members are mostly in ${ctx.top_county_name}, an area with average health risk relative to the national baseline.`);
+  }
+
+  // === AI Residual sentence — explains what the trained model sees ===
+  if (Math.abs(ctx.aiResidualClamped) >= 0.07) {
+    if (ctx.aiResidualClamped > 0) {
+      parts.push(`The Kennion AI model, trained directly on our captive's paid-claim history, applied its maximum upward adjustment (+${(ctx.aiResidualClamped * 100).toFixed(1)}%) - the model would push the score even higher if it were not bounded, meaning this profile has historically produced costs above what the deterministic math predicts.`);
+    } else {
+      parts.push(`The Kennion AI model, trained directly on our captive's paid-claim history, applied its maximum favorable adjustment (${(ctx.aiResidualClamped * 100).toFixed(1)}%) - groups of this profile have historically run cheaper than the deterministic math predicts.`);
+    }
+  } else if (Math.abs(ctx.aiResidualClamped) >= 0.02) {
+    const dir = ctx.aiResidualClamped > 0 ? "slightly higher cost" : "slightly lower cost";
+    parts.push(`The Kennion AI model, trained on our claim history, sees ${dir} than the deterministic math suggests for this profile (${(ctx.aiResidualClamped * 100).toFixed(1)}% adjustment).`);
+  } else {
+    parts.push(`The Kennion AI model, trained on our claim history, sees this profile as close to what the deterministic math already predicts (${(ctx.aiResidualClamped * 100).toFixed(1)}% adjustment, essentially neutral).`);
+  }
+
+  // === Closing recommendation — tied to program rules ===
+  if (ctx.tier === "Preferred") {
+    parts.push(`Recommendation: Quote competitively. Preferred groups are exactly the kind of additions that protect the captive's long-term loss curve.`);
+  } else if (ctx.tier === "Standard") {
+    const needsLoad = ctx.demo.normalized > 1.05 || ctx.geo.normalized > 1.05 || ctx.aiResidualClamped > 0.03;
+    if (needsLoad) {
+      parts.push(`Recommendation: Quote with risk-adjusted pricing. Standard groups fit our program, but pricing should reflect the elevated factors flagged above.`);
+    } else {
+      parts.push(`Recommendation: Quote at standard pricing. Standard groups fit our program and add credibility to the pool.`);
+    }
+  } else {
+    parts.push(`Recommendation: Decline. Per Kennion program policy, only Preferred and Standard groups are admitted to the captive. Admitting a High Risk group would shift the pool's loss curve in a direction the program's structure - aggregate stop-loss, RBP pricing caps, and reserves - cannot reliably absorb.`);
   }
 
   return parts.join(" ");
