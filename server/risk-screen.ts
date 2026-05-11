@@ -136,6 +136,25 @@ interface PlacesTable {
   counties: Record<string, PlacesCounty>; // keyed by FIPS
 }
 
+interface ResidualModel {
+  model_type: string;
+  version: string;
+  trained_at: string;
+  trained_on: {
+    n_members: number;
+    n_groups: number;
+    groups: string[];
+    total_paid: number;
+    mean_pmpy: number;
+    cv_pearson_mean: number;
+    cv_pearson_std: number;
+  };
+  feature_order: string[];
+  coefficients: Record<string, number>;
+  block_mean_pmpy: number;
+  residual_bounds: { min: number; max: number };
+}
+
 interface ZipToCounty {
   version: string;
   source: string;
@@ -169,23 +188,28 @@ let _meps: MepsTable | null = null;
 let _places: PlacesTable | null = null;
 let _zipMap: ZipToCounty | null = null;
 let _weights: ModelWeights | null = null;
+let _residual: ResidualModel | null = null;
 
 function loadJson<T>(file: string): T {
   return JSON.parse(fs.readFileSync(path.join(SCREEN_DIR, file), "utf8")) as T;
 }
 
 export function loadScreenTables(): {
-  meps: MepsTable; places: PlacesTable; zipMap: ZipToCounty; weights: ModelWeights;
+  meps: MepsTable; places: PlacesTable; zipMap: ZipToCounty; weights: ModelWeights; residual: ResidualModel | null;
 } {
   if (!_meps)    _meps    = loadJson<MepsTable>("meps-expected-cost.json");
   if (!_places)  _places  = loadJson<PlacesTable>("places-county-index.json");
   if (!_zipMap)  _zipMap  = loadJson<ZipToCounty>("zip-to-county.json");
   if (!_weights) _weights = loadJson<ModelWeights>("model-weights.json");
-  return { meps: _meps, places: _places, zipMap: _zipMap, weights: _weights };
+  if (!_residual) {
+    try { _residual = loadJson<ResidualModel>("residual-model.json"); }
+    catch { _residual = null; }
+  }
+  return { meps: _meps, places: _places, zipMap: _zipMap, weights: _weights, residual: _residual };
 }
 
 export function reloadScreenTables(): void {
-  _meps = null; _places = null; _zipMap = null; _weights = null;
+  _meps = null; _places = null; _zipMap = null; _weights = null; _residual = null;
 }
 
 function computeModelHash(
@@ -293,8 +317,31 @@ interface EnrichedMember {
   blockRisk: number;
 }
 
+
+// Tweedie GLM (log-link) member-level predicted PMPY, trained on Kennion block.
+function predictMemberPmpy(model: ResidualModel, m: EnrichedMember): number {
+  const age = m.age - 35.0;
+  const a = age / 10.0;
+  const male = m.sex === "M" ? 1.0 : 0.0;
+  const spouse = m.rel === "SP" ? 1.0 : 0.0;
+  const child = m.rel === "CH" ? 1.0 : 0.0;
+  const geo = m.countyZ ?? 0.0;
+  const c = model.coefficients;
+  const lin =
+    (c.intercept ?? 0) +
+    (c.age       ?? 0) * a +
+    (c.age2      ?? 0) * a * a +
+    (c.age3      ?? 0) * (a * a * a) / 6.0 +
+    (c.male      ?? 0) * male +
+    (c.spouse    ?? 0) * spouse +
+    (c.child     ?? 0) * child +
+    (c.geo_z     ?? 0) * geo +
+    (c.age_x_male ?? 0) * a * male;
+  return Math.exp(lin);
+}
+
 export function screenGroup(input: ScreenInput): ScreenResult {
-  const { meps, places, zipMap, weights } = loadScreenTables();
+  const { meps, places, zipMap, weights, residual } = loadScreenTables();
   const eff = parseDate(input.effectiveDate);
 
   // ── 1. Enrich each member ─────────────────────────────────────────────
@@ -429,13 +476,24 @@ export function screenGroup(input: ScreenInput): ScreenResult {
     drivers: compDrivers,
   };
 
-  // ── 6. AI residual (placeholder: 0 until model is fit) ────────────────
-  // v1.0 ships with residual = 0. v1.1 will load a trained gradient boosted
-  // model from disk and produce a bounded ±0.10 adjustment.
-  const aiResidualRaw = 0;
-  const aiResidualClamped = Math.max(-0.10, Math.min(0.10, aiResidualRaw));
-  const aiResidualDrivers: string[] = aiResidualClamped !== 0
-    ? [`ML residual adjustment: ${(aiResidualClamped*100).toFixed(1)}%`]
+  // ── 6. AI residual — Tweedie GLM trained on Kennion block paid claims ────
+  // Predicts per-member PMPY from age × gender × tier × geo_z, then compares
+  // the group's predicted PMPY to the block mean to produce a bounded
+  // multiplicative adjustment.
+  let aiResidualRaw = 0;
+  let aiPredictedPmpy = 0;
+  if (residual && residual.coefficients) {
+    const memberPreds = members.map(m => predictMemberPmpy(residual, m));
+    aiPredictedPmpy = memberPreds.reduce((s, x) => s + x, 0) / Math.max(1, memberPreds.length);
+    const blockMean = residual.block_mean_pmpy || 6470;
+    // Raw signal: log-ratio of predicted to block mean. Damped 0.5x so we
+    // don't double-count signal already in the Demographic component.
+    aiResidualRaw = 0.5 * Math.log(aiPredictedPmpy / blockMean);
+  }
+  const bounds = residual?.residual_bounds ?? { min: -0.10, max: 0.10 };
+  const aiResidualClamped = Math.max(bounds.min, Math.min(bounds.max, aiResidualRaw));
+  const aiResidualDrivers: string[] = residual
+    ? [`Block-trained ML predicts $${aiPredictedPmpy.toFixed(0)} PMPY vs. $${(residual.block_mean_pmpy||6470).toFixed(0)} book mean (residual ${(aiResidualClamped*100).toFixed(1)}%)`]
     : [];
 
   // ── 7. Composite KRI ──────────────────────────────────────────────────
