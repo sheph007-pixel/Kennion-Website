@@ -9,19 +9,9 @@ import type { MedicalPlan, TierKey } from "@/lib/kennion-rates";
 
 export type TierMix = { EE: number; EE_CH: number; EE_SP: number; EE_FAM: number };
 
-// Public-facing audit summary — present only when both AI auditors
-// scored 100%. Server hides partial / disagreeing results from the
-// /q/:token surface so a prospect never sees a half-passed badge.
-export type PublicAuditSummary = {
-  audited_at: string;
-  actuary_i: { system: string; model: string; score_pct: number };
-  actuary_ii: { system: string; model: string; score_pct: number };
-};
-
 type PublicQuotePayload = {
   group: Group;
   mix: TierMix;
-  audit: PublicAuditSummary | null;
 };
 
 export function usePublicQuote(token: string | undefined) {

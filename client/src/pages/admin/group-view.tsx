@@ -6,7 +6,6 @@ import { useGroupForAdmin } from "@/hooks/use-admin";
 import { ProposalCockpit } from "@/pages/proposal/cockpit";
 import { ProposalNav } from "@/components/proposal/proposal-nav";
 import { AdminBanner } from "@/components/admin/admin-banner";
-import { AdminAuditPanel } from "@/components/admin/admin-audit-panel";
 
 // Admin's "view-as-customer" surface. Renders the exact cockpit a
 // customer sees, with the AdminBanner overlaid on top for admin-only
@@ -53,12 +52,7 @@ export default function AdminGroupViewPage() {
   return (
     <ProposalCockpit
       group={group}
-      bannerSlot={
-        <>
-          <AdminBanner group={group} />
-          <AdminAuditPanel group={group} />
-        </>
-      }
+      bannerSlot={<AdminBanner group={group} />}
       // Admin gets the same Replace Census path the customer does —
       // the server endpoint accepts owner-or-admin, so re-uploading
       // on behalf of a client works end-to-end. Accept-Proposal is

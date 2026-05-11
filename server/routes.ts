@@ -2343,24 +2343,6 @@ export async function registerRoutes(
         await storage.updateGroup(groupId, { status: "proposal_sent" });
       }
 
-      // Dual-AI actuary audit. Errors here must NOT block the
-      // proposal — generation has already succeeded and the audit
-      // can be re-run on demand from the cockpit. We write to the
-      // group (not the proposal) so cockpit views without a
-      // persisted proposals row still surface the audit.
-      try {
-        const { runAuditPair } = await import("./ai-audit");
-        const audit = await runAuditPair({
-          group,
-          census,
-          pricing,
-          proposalFileName: fileName,
-        });
-        await storage.updateGroupAudit(groupId, audit);
-      } catch (err: any) {
-        log(`AI audit pair error (group ${groupId}): ${err?.message || err}`, "audit");
-      }
-
       res.json({
         message: "Proposal generated successfully",
         proposalId: proposal.id,
@@ -2408,55 +2390,6 @@ export async function registerRoutes(
       res.json(proposals);
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Failed to fetch proposals" });
-    }
-  });
-
-  // POST — run (or re-run) the dual-AI audit for a group. Used by the
-  // "Run audit" / "Re-run" buttons on the admin cockpit. Most groups
-  // never have a persisted proposals row, so the audit binds to the
-  // group itself and prices the census live via priceGroup the same
-  // way /api/rate/price-group does.
-  app.post("/api/admin/groups/:id/audit", requireAdmin, async (req: Request, res: Response) => {
-    try {
-      const groupId = req.params.id as string;
-      const group = await storage.getGroup(groupId);
-      if (!group) {
-        return res.status(404).json({ message: "Group not found" });
-      }
-      const census = await storage.getCensusByGroupId(groupId);
-      if (census.length === 0) {
-        return res.status(400).json({
-          message: "Group has no census — upload one before running an audit.",
-        });
-      }
-      const members: CensusMember[] = censusEntriesToMembers(census);
-      const fromGroup =
-        group.state || group.zipCode
-          ? inferRatingArea(group.state, group.zipCode)
-          : null;
-      const ratingArea = fromGroup ?? inferRatingAreaFromCensus(members);
-      const effectiveDate =
-        (typeof req.body?.effectiveDate === "string" && req.body.effectiveDate) ||
-        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-      const pricing = priceGroup({
-        census: members,
-        effectiveDate,
-        ratingArea,
-        admin: "EBPA",
-        group: group.companyName,
-      });
-      const { runAuditPair } = await import("./ai-audit");
-      const audit = await runAuditPair({
-        group,
-        census,
-        pricing,
-        proposalFileName: `${group.companyName} — ${effectiveDate}`,
-      });
-      await storage.updateGroupAudit(groupId, audit);
-      res.json({ groupId, auditResults: audit });
-    } catch (err: any) {
-      log(`Group audit error: ${err?.message || err}`, "audit");
-      res.status(500).json({ message: err?.message || "Audit failed" });
     }
   });
 
@@ -3109,7 +3042,6 @@ export async function registerRoutes(
               proposalId: string;
               totalLives: number;
               ratingArea: string;
-              audit: any | null;
             }
           | {
               ok: false;
@@ -3282,27 +3214,6 @@ export async function registerRoutes(
             });
             await storage.updateGroup(created.id, { status: "proposal_sent" });
 
-            // Dual-AI audit. Best-effort — failures don't fail the
-            // bulk row, just leave the group un-audited (badge
-            // shows "Audit pending — retry").
-            let auditForResponse: any = null;
-            try {
-              const { runAuditPair } = await import("./ai-audit");
-              const audit = await runAuditPair({
-                group: fullGroup,
-                census: persistedCensus,
-                pricing,
-                proposalFileName: fileName,
-              });
-              await storage.updateGroupAudit(created.id, audit);
-              auditForResponse = audit;
-            } catch (auditErr: any) {
-              log(
-                `AI audit pair error (bulk, group ${created.id}): ${auditErr?.message || auditErr}`,
-                "audit",
-              );
-            }
-
             results.push({
               ok: true,
               fileName: file.originalname,
@@ -3311,7 +3222,6 @@ export async function registerRoutes(
               proposalId: proposal.id,
               totalLives: entries.length,
               ratingArea: pricing.rating_area,
-              audit: auditForResponse,
             });
           } catch (err: any) {
             log(
@@ -3522,38 +3432,7 @@ export async function registerRoutes(
       locked: false,
     };
 
-    // Public-facing AI audit badges. Only surface when BOTH auditors
-    // hit 100% — partial / disagreeing / failed audits stay hidden
-    // from prospects. The shape is intentionally minimal (no per-item
-    // findings, no error strings).
-    const audit = (quote.auditResults as any) || null;
-    let publicAudit: {
-      audited_at: string;
-      actuary_i: { system: string; model: string; score_pct: number };
-      actuary_ii: { system: string; model: string; score_pct: number };
-    } | null = null;
-    if (
-      audit &&
-      audit.agreement === "both_pass" &&
-      audit.actuary_i?.all_passed &&
-      audit.actuary_ii?.all_passed
-    ) {
-      publicAudit = {
-        audited_at: audit.audited_at,
-        actuary_i: {
-          system: audit.actuary_i.system,
-          model: audit.actuary_i.model,
-          score_pct: audit.actuary_i.score_pct,
-        },
-        actuary_ii: {
-          system: audit.actuary_ii.system,
-          model: audit.actuary_ii.model,
-          score_pct: audit.actuary_ii.score_pct,
-        },
-      };
-    }
-
-    res.json({ group: publicGroup, mix, audit: publicAudit });
+    res.json({ group: publicGroup, mix });
   });
 
   // Public price endpoint — same engine as /api/rate/price-group, but

@@ -74,11 +74,10 @@ export const groups = pgTable("groups", {
   // When true, the owner can no longer edit or replace the census —
   // the proposal is frozen as-is. Only admins can toggle this.
   locked: boolean("locked").default(false).notNull(),
-  // Dual-AI audit verdict for the group's current census + computed
-  // rates. See server/ai-audit.ts. Null until the first audit runs;
-  // re-audit invalidates this cache. The group is the right home for
-  // this rather than the proposals row because most cockpit views
-  // never persist a proposals row (rates are computed live).
+  // Deprecated: previously stored dual-AI audit verdicts. The audit
+  // feature was removed (the rate pipeline is deterministic — there
+  // was nothing per-proposal for an LLM to catch). Column kept to
+  // avoid a destructive db:push; safe to drop in a future migration.
   auditResults: jsonb("audit_results"),
   submittedAt: timestamp("submitted_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -102,10 +101,8 @@ export const proposals = pgTable("proposals", {
   pdfBase64: text("pdf_base64"),
   fileName: text("file_name").notNull(),
   ratesData: jsonb("rates_data"),
-  // Dual-AI audit verdict — see server/ai-audit.ts. Null on legacy
-  // proposals (pre-audit feature) or rows where the audit hasn't
-  // run yet; the admin "Run audit" button fills it in on demand.
-  // Public quote views read this field but never re-call AI providers.
+  // Deprecated: previously stored dual-AI audit verdicts. The audit
+  // feature was removed; column kept to avoid a destructive db:push.
   auditResults: jsonb("audit_results"),
   status: text("status").default("generated").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

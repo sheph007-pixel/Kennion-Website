@@ -23,10 +23,6 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   deleteUser(id: string): Promise<void>;
 
-  // Persist a dual-AI audit verdict on a group (see server/ai-audit.ts).
-  // The audit lives on the group rather than on a proposals row because
-  // most cockpit views never persist a proposals row.
-  updateGroupAudit(groupId: string, auditResults: any): Promise<Group | undefined>;
   getGroupsByUserId(userId: string): Promise<Group[]>;
   getAllGroups(): Promise<Group[]>;
   getGroup(id: string): Promise<Group | undefined>;
@@ -40,10 +36,7 @@ export interface IStorage {
 
   getProposalsByGroupId(groupId: string): Promise<Proposal[]>;
   getProposal(id: string): Promise<Proposal | undefined>;
-  createProposal(data: { groupId: string; pdfPath: string; pdfBase64?: string; fileName: string; ratesData?: any; auditResults?: any }): Promise<Proposal>;
-  // Persist a fresh dual-AI audit verdict on an existing proposal
-  // row. See server/ai-audit.ts for the AuditPair shape.
-  updateProposalAudit(proposalId: string, auditResults: any): Promise<Proposal | undefined>;
+  createProposal(data: { groupId: string; pdfPath: string; pdfBase64?: string; fileName: string; ratesData?: any }): Promise<Proposal>;
   deleteProposalsByGroupId(groupId: string): Promise<void>;
 
   // Internal sales quotes — admin-driven flow that mints a sharable
@@ -106,15 +99,6 @@ export class DatabaseStorage implements IStorage {
     await db.delete(users).where(eq(users.id, id));
   }
 
-  async updateGroupAudit(groupId: string, auditResults: any): Promise<Group | undefined> {
-    const [updated] = await db
-      .update(groups)
-      .set({ auditResults, updatedAt: new Date() })
-      .where(eq(groups.id, groupId))
-      .returning();
-    return updated;
-  }
-
   async getGroupsByUserId(userId: string): Promise<Group[]> {
     console.log(`🔍 getGroupsByUserId called with userId: ${userId}`);
     const result = await db.select().from(groups).where(eq(groups.userId, userId)).orderBy(desc(groups.submittedAt));
@@ -174,18 +158,9 @@ export class DatabaseStorage implements IStorage {
     return proposal;
   }
 
-  async createProposal(data: { groupId: string; pdfPath: string; pdfBase64?: string; fileName: string; ratesData?: any; auditResults?: any }): Promise<Proposal> {
+  async createProposal(data: { groupId: string; pdfPath: string; pdfBase64?: string; fileName: string; ratesData?: any }): Promise<Proposal> {
     const [created] = await db.insert(proposals).values(data).returning();
     return created;
-  }
-
-  async updateProposalAudit(proposalId: string, auditResults: any): Promise<Proposal | undefined> {
-    const [updated] = await db
-      .update(proposals)
-      .set({ auditResults })
-      .where(eq(proposals.id, proposalId))
-      .returning();
-    return updated;
   }
 
   async deleteProposalsByGroupId(groupId: string): Promise<void> {

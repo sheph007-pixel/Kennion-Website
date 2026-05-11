@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { ProposalCockpit } from "@/pages/proposal/cockpit";
 import { PublicProposalNav } from "@/components/proposal/public-proposal-nav";
 import { usePublicQuote } from "@/hooks/use-public-quote";
-import { AIActuaryBadgesPublic } from "@/components/ai-actuary-badges";
 import type { Group } from "@shared/schema";
 
 // Public share link surface. Logged-out, token-gated, no PHI.
@@ -64,23 +63,11 @@ export default function PublicQuotePage() {
   // shape the cockpit needs (omitted FK ids etc.); cast for the prop.
   const group = data.group as Group;
 
-  // The audit slot only renders when both AI auditors hit 100% —
-  // the server omits the audit field otherwise, so partial /
-  // disagreeing audits never reach a prospect's eyes.
-  const auditSlot = data.audit ? (
-    <div className="border-b bg-muted/30">
-      <div className="mx-auto max-w-[1280px] px-6 py-4">
-        <AIActuaryBadgesPublic audit={data.audit} />
-      </div>
-    </div>
-  ) : null;
-
   return (
     <ProposalCockpit
       group={group}
       mode={{ kind: "public", token: token!, mix: data.mix }}
       nav={<PublicProposalNav />}
-      bannerSlot={auditSlot}
       acceptUrl={`/api/quote/${token}/accept`}
     />
   );
