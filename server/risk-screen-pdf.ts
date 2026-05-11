@@ -127,12 +127,20 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
     doc.font("Helvetica-Bold").fontSize(8.5).fillColor(COLORS.muted)
        .text("AI Residual", aiBoxX, aiBoxY + 6, { width: aiBoxW, align: "center" });
     const adj = result.ai_residual.clamped;
-    const adjColor = adj > 0.01 ? COLORS.highRisk : adj < -0.01 ? COLORS.preferred : COLORS.text;
-    doc.font("Helvetica-Bold").fontSize(18).fillColor(adjColor)
-       .text(`${adj >= 0 ? "+" : ""}${(adj * 100).toFixed(1)}%`, aiBoxX, aiBoxY + 22,
+    const isZero = Math.abs(adj) < 0.005;
+    const adjColor = isZero ? COLORS.muted
+                   : adj > 0.01 ? COLORS.highRisk
+                   : adj < -0.01 ? COLORS.preferred
+                   : COLORS.text;
+    doc.font("Helvetica-Bold").fontSize(isZero ? 14 : 18).fillColor(adjColor)
+       .text(isZero ? "Not yet active" : `${adj >= 0 ? "+" : ""}${(adj * 100).toFixed(1)}%`,
+             aiBoxX, aiBoxY + (isZero ? 26 : 22),
              { width: aiBoxW, align: "center" });
     doc.font("Helvetica").fontSize(7).fillColor(COLORS.muted)
-       .text("ML adjustment\nbounded to ±10%", aiBoxX, aiBoxY + 48,
+       .text(isZero
+             ? "Pending block calibration\n(activates in v1.1)"
+             : "ML adjustment\nbounded to ±10%",
+             aiBoxX, aiBoxY + 48,
              { width: aiBoxW, align: "center" });
 
     y = Math.max(y, aiBoxY + aiBoxH) + 6;
@@ -146,39 +154,48 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
        .text("Group Profile", M, y);
     y += 16;
 
-    const cells: Array<[string, string]> = [
-      ["Total Lives",      String(result.n_members)],
-      ["Employees",        String(result.n_employees)],
-      ["Spouses",          String(result.n_spouses)],
-      ["Children",         String(result.n_children)],
-      ["Median Age",       String(result.median_age)],
-      ["Avg Age",          result.avg_age.toFixed(1)],
-      ["Female %",         pct(result.pct_female)],
-      ["Medicare-Cliff %", pct(result.pct_medicare_cliff)],
-      ["Top County",       result.top_county || "—"],
-      ["County Conc.",     pct(result.pct_top_county)],
-      ["Family Tier %",    pct(
-        (result.family_tier_mix.FAM) /
-        Math.max(1, result.family_tier_mix.EE + result.family_tier_mix.ECH +
-                    result.family_tier_mix.ESP + result.family_tier_mix.FAM)
-      )],
-      ["Tier Mix",
-       `EE ${result.family_tier_mix.EE} / ECH ${result.family_tier_mix.ECH} / ` +
-       `ESP ${result.family_tier_mix.ESP} / FAM ${result.family_tier_mix.FAM}`],
+    type Cell = { label: string; value: string; span?: number };
+    const cells: Cell[] = [
+      { label: "Total Lives",      value: String(result.n_members) },
+      { label: "Employees",        value: String(result.n_employees) },
+      { label: "Spouses",          value: String(result.n_spouses) },
+      { label: "Children",         value: String(result.n_children) },
+      { label: "Median Age",       value: String(result.median_age) },
+      { label: "Avg Age",          value: result.avg_age.toFixed(1) },
+      { label: "Female %",         value: pct(result.pct_female) },
+      { label: "Medicare-Cliff %", value: pct(result.pct_medicare_cliff) },
+      { label: "Top County",       value: result.top_county || "—" },
+      { label: "County Conc.",     value: pct(result.pct_top_county) },
+      { label: "Family Tier %",    value: pct(
+          (result.family_tier_mix.FAM) /
+          Math.max(1, result.family_tier_mix.EE + result.family_tier_mix.ECH +
+                      result.family_tier_mix.ESP + result.family_tier_mix.FAM)
+        ) },
+      { label: "Group Size",       value: result.n_employees < 20 ? "Small (<20 EE)" : result.n_employees < 100 ? "Mid" : "Large" },
+      { label: "Tier Mix",         value:
+          `EE ${result.family_tier_mix.EE}  ·  ECH ${result.family_tier_mix.ECH}  ·  ` +
+          `ESP ${result.family_tier_mix.ESP}  ·  FAM ${result.family_tier_mix.FAM}`,
+        span: 4 },
     ];
     const gridCols = 4;
     const gridColW = innerW / gridCols;
     const gridY = y;
-    for (let i = 0; i < cells.length; i++) {
-      const col = i % gridCols, row = Math.floor(i / gridCols);
+    let col = 0, row = 0;
+    for (const c of cells) {
+      const span = c.span ?? 1;
+      if (col + span > gridCols) { col = 0; row++; }
       const cx = M + col * gridColW;
       const cy = gridY + row * 28;
+      const cellW = gridColW * span - 6;
       doc.font("Helvetica").fontSize(8).fillColor(COLORS.muted)
-         .text(cells[i][0], cx, cy);
+         .text(c.label, cx, cy);
       doc.font("Helvetica-Bold").fontSize(9.5).fillColor(COLORS.text)
-         .text(cells[i][1], cx, cy + 10, { width: gridColW - 6, height: 14, ellipsis: true });
+         .text(c.value, cx, cy + 10, { width: cellW, height: 14, ellipsis: true });
+      col += span;
+      if (col >= gridCols) { col = 0; row++; }
     }
-    y = gridY + Math.ceil(cells.length / gridCols) * 28 + 4;
+    const rowsUsed = row + (col > 0 ? 1 : 0);
+    y = gridY + rowsUsed * 28 + 4;
 
     doc.moveTo(M, y).lineTo(W - M, y)
        .strokeColor(COLORS.border).lineWidth(0.5).stroke();

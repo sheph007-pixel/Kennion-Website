@@ -614,9 +614,9 @@ function buildSummary(ctx: {
     parts.push(`This group screens as High Risk (KRI ${ctx.kri.toFixed(2)}) — recommend declining the quote.`);
   }
 
-  if (ctx.demo.normalized > 1.15) {
+  if (ctx.demo.normalized > 1.08) {
     parts.push(`Demographics are elevated: avg age ${ctx.avg_age.toFixed(0)} drives an MEPS-derived expected cost ${((ctx.demo.normalized - 1) * 100).toFixed(0)}% above book median.`);
-  } else if (ctx.demo.normalized < 0.90) {
+  } else if (ctx.demo.normalized < 0.92) {
     parts.push(`Demographics are favorable: expected medical cost runs ${((1 - ctx.demo.normalized) * 100).toFixed(0)}% below book median.`);
   } else {
     parts.push(`Demographics are book-typical (avg age ${ctx.avg_age.toFixed(0)}).`);
