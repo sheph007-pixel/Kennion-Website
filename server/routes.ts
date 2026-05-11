@@ -2676,6 +2676,20 @@ export async function registerRoutes(
         weights_version: t.weights.version,
         thresholds: t.weights.thresholds,
       });
+
+  // Pool reference statistics — the captive's actual loss curve, demographic
+  // mix, and clinical profile. Anchors every Risk Screen prediction to a
+  // statistically credible 1,907-life population.
+  app.get("/api/screen/pool", (_req: Request, res: Response) => {
+    try {
+      const fs = require("fs"); const path = require("path");
+      const ref = JSON.parse(fs.readFileSync(
+        path.resolve(process.cwd(), "server", "screen", "pool-reference.json"), "utf8"));
+      res.json(ref);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Pool reference not loaded" });
+    }
+  });
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Screen tables not loaded" });
     }

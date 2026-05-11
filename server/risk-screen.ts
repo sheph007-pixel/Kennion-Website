@@ -601,11 +601,11 @@ export function screenGroup(input: ScreenInput): ScreenResult {
     });
   }
 
-  // AI residual (if non-zero).
-  if (aiResidualClamped !== 0) {
+  // AI residual driver — show predicted vs pool PMPY so the impact is concrete.
+  if (residual && aiResidualClamped !== 0) {
     drivers.push({
       category: "AI",
-      text: `ML residual adjustment ${(aiResidualClamped * 100).toFixed(1)}% (calibrated against Kennion block)`,
+      text: `Captive-pool ML predicts $${Math.round(aiPredictedPmpy).toLocaleString()} PMPY vs. $${Math.round(residual.block_mean_pmpy||6470).toLocaleString()} pool mean (${(aiResidualClamped * 100).toFixed(1)}% adjustment, bounded ±10%)`,
       impact: aiResidualClamped,
     });
   }
@@ -666,15 +666,15 @@ function buildSummary(ctx: {
   if (ctx.tier === "Preferred") {
     parts.push(`This group screens as Preferred (KRI ${ctx.kri.toFixed(2)}) — favorable for binding.`);
   } else if (ctx.tier === "Standard") {
-    parts.push(`This group screens as Standard (KRI ${ctx.kri.toFixed(2)}) — typical risk profile for the Kennion book.`);
+    parts.push(`This group screens as Standard (KRI ${ctx.kri.toFixed(2)}) — typical risk profile for our captive pool.`);
   } else {
     parts.push(`This group screens as High Risk (KRI ${ctx.kri.toFixed(2)}) — recommend declining the quote.`);
   }
 
   if (ctx.demo.normalized > 1.08) {
-    parts.push(`Block-calibrated demographic score ${ctx.demo.normalized.toFixed(2)} — ${((ctx.demo.normalized - 1) * 100).toFixed(0)}% above your book median for this age/gender mix.`);
+    parts.push(`Block-calibrated demographic score ${ctx.demo.normalized.toFixed(2)} — ${((ctx.demo.normalized - 1) * 100).toFixed(0)}% above our captive pool's PMPY for this age/gender mix.`);
   } else if (ctx.demo.normalized < 0.92) {
-    parts.push(`Block-calibrated demographic score ${ctx.demo.normalized.toFixed(2)} — ${((1 - ctx.demo.normalized) * 100).toFixed(0)}% below your book median for this age/gender mix.`);
+    parts.push(`Block-calibrated demographic score ${ctx.demo.normalized.toFixed(2)} — ${((1 - ctx.demo.normalized) * 100).toFixed(0)}% below our captive pool's PMPY for this age/gender mix.`);
   } else {
     parts.push(`Block-calibrated demographic score ${ctx.demo.normalized.toFixed(2)} — book-typical (avg age ${ctx.avg_age.toFixed(0)}).`);
   }

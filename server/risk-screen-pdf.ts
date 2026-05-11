@@ -259,7 +259,7 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
     // Footer
     doc.font("Helvetica").fontSize(7).fillColor(COLORS.muted)
        .text(
-         `AHRQ MEPS · CDC PLACES · HUD ZIP-COUNTY · Kennion block  ·  KRS-METHOD-v${result.model_version} · hash ${result.model_hash}`,
+         `Calibrated against Kennion captive pool · CDC PLACES · HUD ZIP-COUNTY · KRS-METHOD-v${result.model_version} · hash ${result.model_hash}`,
          M, H - M - 10, { width: innerW, align: "center", lineBreak: false }
        );
 
