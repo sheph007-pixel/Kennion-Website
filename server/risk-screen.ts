@@ -412,29 +412,16 @@ export function screenGroup(input: ScreenInput): ScreenResult {
 
   // ── 5. Composition component ──────────────────────────────────────────
   const cliff = pct_medicare_cliff;
-  const conc = pct_top_county;
-  // Sliding pool-variance load. Every level-funded group has variance
-  // because none is individually credible — the captive absorbs it. The
-  // load just reflects how much variance THIS group brings to the pool.
-  //    <  15 EE:  high variance (1.08)
-  //    < 50 EE:   moderate     (1.04)
-  //    < 150 EE:  light        (1.02)
-  //    ≥ 150 EE:  minimal      (1.00)
-  let sizeLoad = 1.00;
-  let sizeLabel = "Large group";
-  if (employees.length < 15) { sizeLoad = 1.08; sizeLabel = "Small group"; }
-  else if (employees.length < 50)  { sizeLoad = 1.04; sizeLabel = "Mid-size group"; }
-  else if (employees.length < 150) { sizeLoad = 1.02; sizeLabel = "Mid-to-large group"; }
+  // Family-tier share — more FAM/ECH households means more dependent claim
+  // volume that age×gender on the employee alone doesn't capture.
+  const totalHH = tierMix.EE + tierMix.ECH + tierMix.ESP + tierMix.FAM;
+  const famShare = totalHH > 0 ? tierMix.FAM / totalHH : 0;
   const compNormalized =
     (1 + weights.beta_medicare_cliff * cliff) *
-    (1 + weights.beta_concentration  * conc) *
-    sizeLoad;
+    (1 + 0.10 * famShare);   // family-tier load: 10% × FAM share
   const compDrivers: string[] = [];
-  if (sizeLoad > 1.0) {
-    compDrivers.push(`${sizeLabel} (${employees.length} EE) — pool-variance load ${((sizeLoad - 1) * 100).toFixed(0)}%`);
-  }
   if (cliff >= 0.10) compDrivers.push(`Medicare-cliff exposure: ${(cliff*100).toFixed(0)}% within 5 yrs of 65`);
-  if (conc >= 0.7) compDrivers.push(`High geographic concentration: ${(conc*100).toFixed(0)}% in one county`);
+  if (famShare >= 0.30) compDrivers.push(`Family-tier heavy (${(famShare*100).toFixed(0)}% FAM) — higher dependent claim volume`);
   const comp: ComponentScore = {
     raw: 1.0,
     normalized: compNormalized,
@@ -538,43 +525,18 @@ export function screenGroup(input: ScreenInput): ScreenResult {
       impact: +(geoNormalized - 1.0),
     });
   }
-  if (pct_top_county >= 0.40 && places.counties[top_county]) {
-    const cz = places.counties[top_county].geo_z;
-    const direction = cz > 0 ? "elevated-risk" : "lower-risk";
-    drivers.push({
-      category: "Geographic",
-      text: `${(pct_top_county * 100).toFixed(0)}% concentrated in ${top_county_name} (${direction}, Z = ${cz.toFixed(2)})`,
-      impact: +cz * 0.05,
-    });
-  }
+  // County concentration is INFORMATIONAL — captive diversifies geography.
+  // Keep the line as context but don't load the score.
 
   // Composition — group structure facts.
-  // Pool-variance description — every level-funded group carries some.
-  if (employees.length < 15) {
-    drivers.push({
-      category: "Composition",
-      text: `Small group (${employees.length} EE) — high pool-variance load`,
-      impact: +0.08,
-    });
-  } else if (employees.length < 50) {
-    drivers.push({
-      category: "Composition",
-      text: `Mid-size group (${employees.length} EE) — moderate pool-variance load`,
-      impact: +0.04,
-    });
-  } else if (employees.length < 150) {
-    drivers.push({
-      category: "Composition",
-      text: `Mid-to-large group (${employees.length} EE) — light pool-variance load`,
-      impact: +0.02,
-    });
-  } else {
-    drivers.push({
-      category: "Composition",
-      text: `Large group (${employees.length} EE) — minimal pool-variance load (captive absorbs)`,
-      impact: 0,
-    });
-  }
+  // Group size is INFORMATIONAL only — no load in a pooled captive.
+  // The captive absorbs variance; individual group size doesn't change
+  // admission risk. Driver text is descriptive, impact = 0.
+  drivers.push({
+    category: "Composition",
+    text: `Group size ${employees.length} EE (variance absorbed by captive pool — no size load)`,
+    impact: 0,
+  });
   const totalHouseholds = tierMix.EE + tierMix.ECH + tierMix.ESP + tierMix.FAM;
   const famPct = totalHouseholds > 0
     ? (tierMix.FAM / totalHouseholds)
@@ -582,8 +544,8 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   if (famPct >= 0.30) {
     drivers.push({
       category: "Composition",
-      text: `Family-tier heavy (${(famPct * 100).toFixed(0)}% FAM) — dependent claim volume risk`,
-      impact: +0.04,
+      text: `Family-tier heavy (${(famPct * 100).toFixed(0)}% FAM) — elevated dependent claim volume`,
+      impact: +0.10 * famPct,
     });
   }
 
@@ -604,7 +566,7 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   const ai_summary = buildSummary({
     tier, kri, demo, geo, comp, top_county_name,
     avg_age, n: N, n_employees: employees.length,
-    pct_medicare_cliff: cliff, pct_top_county: conc,
+    pct_medicare_cliff: cliff, pct_top_county,
   });
 
   return {
