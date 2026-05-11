@@ -17,7 +17,11 @@
  *
  * Composite formula (see METHODOLOGY.md §4.2):
  *
- *   KRI = w_demo·Demo + w_geo·Geo + w_comp·Comp + clamp(Residual, ±0.10)
+ *   KRI = Demo × Geo × Comp × (1 + clamp(Residual, ±0.10))
+ *
+ * Demo IS the legacy Kennion Score — same block-calibrated age×gender table.
+ * Geo and Comp are multiplicative adjustments. KRI strictly extends the
+ * existing score; an underwriter sees the same baseline number, deeper.
  *
  * Drop-in: place at server/risk-screen.ts in the Kennion-Website repo.
  */
@@ -25,6 +29,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import type { CensusEntry } from "@shared/schema";
+import { blockDemographicRisk, legacyAgeBand } from "./risk-factors";
 
 // ────────────────────────────────────────────────────────────────────────
 // Types
@@ -285,6 +290,7 @@ interface EnrichedMember {
   countyFips: string | null;
   countyZ: number | null;
   expectedPmpy: number;
+  blockRisk: number;
 }
 
 export function screenGroup(input: ScreenInput): ScreenResult {
@@ -310,6 +316,7 @@ export function screenGroup(input: ScreenInput): ScreenResult {
       countyFips: fips,
       countyZ: cz,
       expectedPmpy,
+      blockRisk: blockDemographicRisk(age, sex === "M" ? "Male" : "Female"),
     };
   });
 
@@ -361,6 +368,14 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   const pct_top_county = N > 0 ? top_count / N : 0;
 
   // ── 3. Demographic component ──────────────────────────────────────────
+  // Uses Kennion's block-calibrated (age × gender) risk factor table —
+  // the SAME table that produces the legacy "Kennion Score". KRS keeps
+  // this number identical so the two surfaces agree.
+  const blockRisks = members.map(m => m.blockRisk);
+  const demoNormalized = blockRisks.length > 0
+    ? blockRisks.reduce((s, x) => s + x, 0) / blockRisks.length
+    : 1.0;
+  // Also compute MEPS-based expected cost for diagnostic display only.
   let weightedExp = 0, sumW = 0;
   for (const m of members) {
     const w = tierWeight(m.rel);
@@ -368,15 +383,14 @@ export function screenGroup(input: ScreenInput): ScreenResult {
     sumW += w;
   }
   const groupExpectedPmpy = sumW > 0 ? weightedExp / sumW : 0;
-  const demoNormalized = groupExpectedPmpy / meps.national_book_median_pmpy;
   const demoDrivers: string[] = [];
-  if (avg_age >= 50) demoDrivers.push(`Avg age ${avg_age.toFixed(1)} elevates expected medical cost`);
+  if (avg_age >= 50) demoDrivers.push(`Avg age ${avg_age.toFixed(1)} elevates demographic risk`);
   if (pct_medicare_cliff >= 0.10) demoDrivers.push(`${(pct_medicare_cliff*100).toFixed(0)}% of group within 5 yrs of Medicare`);
-  if (pct_female > 0.60) demoDrivers.push(`Female-heavy mix (${(pct_female*100).toFixed(0)}%) — higher utilization tier`);
+  if (pct_female > 0.60) demoDrivers.push(`Female-heavy mix (${(pct_female*100).toFixed(0)}%) — higher utilization profile`);
   const demo: ComponentScore = {
-    raw: groupExpectedPmpy,
-    normalized: demoNormalized,
-    contribution: weights.w_demo * demoNormalized,
+    raw: demoNormalized,                 // raw = the Kennion Score itself
+    normalized: demoNormalized,          // 1.00 = book median
+    contribution: demoNormalized,        // baseline multiplier in the composite
     drivers: demoDrivers,
   };
 
@@ -426,7 +440,11 @@ export function screenGroup(input: ScreenInput): ScreenResult {
     : [];
 
   // ── 7. Composite KRI ──────────────────────────────────────────────────
-  const kri = demo.contribution + geo.contribution + comp.contribution + aiResidualClamped;
+  // MULTIPLICATIVE composite. KRI = (block demographic) × (geo loading) × (comp loading) × (1 + AI residual).
+  // The Demographic component IS the legacy Kennion Score. Geographic and
+  // Composition are adjustments LAYERED on top — so a group with a 1.04
+  // Kennion Score and elevated geo + comp scores ends up at 1.04 × ... ≥ 1.04.
+  const kri = demo.normalized * geo.normalized * comp.normalized * (1 + aiResidualClamped);
 
   // ── 8. Tier verdict ───────────────────────────────────────────────────
   let tier: RiskTier;
@@ -615,11 +633,11 @@ function buildSummary(ctx: {
   }
 
   if (ctx.demo.normalized > 1.08) {
-    parts.push(`Demographics are elevated: avg age ${ctx.avg_age.toFixed(0)} drives an MEPS-derived expected cost ${((ctx.demo.normalized - 1) * 100).toFixed(0)}% above book median.`);
+    parts.push(`Block-calibrated demographic score ${ctx.demo.normalized.toFixed(2)} — ${((ctx.demo.normalized - 1) * 100).toFixed(0)}% above your book median for this age/gender mix.`);
   } else if (ctx.demo.normalized < 0.92) {
-    parts.push(`Demographics are favorable: expected medical cost runs ${((1 - ctx.demo.normalized) * 100).toFixed(0)}% below book median.`);
+    parts.push(`Block-calibrated demographic score ${ctx.demo.normalized.toFixed(2)} — ${((1 - ctx.demo.normalized) * 100).toFixed(0)}% below your book median for this age/gender mix.`);
   } else {
-    parts.push(`Demographics are book-typical (avg age ${ctx.avg_age.toFixed(0)}).`);
+    parts.push(`Block-calibrated demographic score ${ctx.demo.normalized.toFixed(2)} — book-typical (avg age ${ctx.avg_age.toFixed(0)}).`);
   }
 
   if (ctx.geo.raw > 0.5) {
