@@ -61,7 +61,7 @@ function bar(label: string, norm: number, key: string) {
   );
 }
 
-export function RiskScreenButton({ groupId }: { groupId: string }) {
+export function RiskScreenButton({ groupId, effectiveDate }: { groupId: string; effectiveDate?: Date | string }) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [latest, setLatest] = useState<ScreenResult | null>(null);
@@ -86,7 +86,12 @@ export function RiskScreenButton({ groupId }: { groupId: string }) {
 
   const run = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/screen/run/${groupId}`);
+      const body: any = {};
+      if (effectiveDate) {
+        const d = effectiveDate instanceof Date ? effectiveDate : new Date(effectiveDate as any);
+        if (!isNaN(d.getTime())) body.effectiveDate = d.toISOString();
+      }
+      const res = await apiRequest("POST", `/api/screen/run/${groupId}`, body);
       return (await res.json()) as ScreenResult;
     },
     onSuccess: (data) => {

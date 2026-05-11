@@ -47,6 +47,9 @@ import type { Group } from "@shared/schema";
 
 type Props = {
   group: Group;
+  // Effective date currently selected on the Proposal cockpit. Passed
+  // down to the Risk Screen so funding numbers match the cockpit rates.
+  effectiveDate?: Date | string;
 };
 
 // Pinned below the top nav when an admin views a customer group. Shows
@@ -55,7 +58,7 @@ type Props = {
 // above the cockpit. Primary workflow actions (approve, status,
 // generate proposal) were removed per product direction — add back
 // here if needed.
-export function AdminBanner({ group }: Props) {
+export function AdminBanner({ group, effectiveDate }: Props) {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const { data: users } = useAllUsers();
@@ -152,7 +155,7 @@ export function AdminBanner({ group }: Props) {
           ) : null}
           <div className="flex-1" />
 
-          <RiskScreenButton groupId={group.id} />
+          <RiskScreenButton groupId={group.id} effectiveDate={effectiveDate} />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

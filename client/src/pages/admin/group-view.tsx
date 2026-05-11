@@ -52,7 +52,7 @@ export default function AdminGroupViewPage() {
   return (
     <ProposalCockpit
       group={group}
-      bannerSlot={<AdminBanner group={group} />}
+      bannerSlot={({ effectiveDate }) => <AdminBanner group={group} effectiveDate={effectiveDate} />}
       // Admin gets the same Replace Census path the customer does —
       // the server endpoint accepts owner-or-admin, so re-uploading
       // on behalf of a client works end-to-end. Accept-Proposal is

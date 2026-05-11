@@ -2719,9 +2719,17 @@ export async function registerRoutes(
       }
 
       const members = censusEntriesToScreenMembers(censusRows);
-      const effectiveDate = (group as any).effectiveDate
-        ? new Date((group as any).effectiveDate)
-        : new Date();
+      // Use the date from the request body if provided (proposal page passes
+      // its currently-displayed effective date so funding numbers match the
+      // visible rate table). Fall back to the group's stored date, then today.
+      const bodyDate = (req.body && req.body.effectiveDate)
+        ? new Date(req.body.effectiveDate)
+        : null;
+      const effectiveDate = bodyDate && !isNaN(bodyDate.getTime())
+        ? bodyDate
+        : ((group as any).effectiveDate
+            ? new Date((group as any).effectiveDate)
+            : new Date());
 
       const result = screenGroup({
         census: members,
@@ -2763,7 +2771,7 @@ export async function registerRoutes(
         console.error("[risk-screen] groups.riskScore write-back failed:", e);
       }
 
-      res.json({ id: saved.id, ...result });
+      res.json({ id: saved.id, effective_date_used: effectiveDate.toISOString().slice(0,10), ...result });
     } catch (err: any) {
       console.error("[risk-screen] run failed:", err);
       res.status(500).json({ message: err.message || "Screen failed" });

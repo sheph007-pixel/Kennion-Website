@@ -50,8 +50,11 @@ type Props = {
   onReplaceCensus?: () => void;
   // Optional content rendered between the top nav and the main layout.
   // Used by the admin view to overlay admin-only controls on top of
-  // the same cockpit the customer sees.
-  bannerSlot?: React.ReactNode;
+  // the same cockpit the customer sees. Accepts either a plain node or
+  // a render function that receives the currently-selected effective
+  // date — so the admin banner can pass that date into the Risk Screen
+  // and keep funding numbers in lock-step with the cockpit.
+  bannerSlot?: React.ReactNode | ((ctx: { effectiveDate: Date }) => React.ReactNode);
   // Defaults to { kind: "session" } so existing callers keep working
   // without any prop changes.
   mode?: CockpitMode;
@@ -138,7 +141,7 @@ export function ProposalCockpit({
   return (
     <div className="min-h-screen bg-background">
       {nav ?? <ProposalNav />}
-      {bannerSlot}
+      {typeof bannerSlot === "function" ? bannerSlot({ effectiveDate: effDate }) : bannerSlot}
       <div className="mx-auto max-w-[1280px] px-6 py-6">
         <div className="grid grid-cols-[300px_1fr] gap-6">
           {/* LEFT RAIL */}
