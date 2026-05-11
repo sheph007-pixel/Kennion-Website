@@ -201,13 +201,15 @@ export function RiskScreenButton({ groupId }: { groupId: string }) {
                 <div className="text-xs font-semibold mb-2">12-Month Forecast (Kennion AI)</div>
                 <div className="grid grid-cols-4 gap-3 text-xs">
                   <div>
-                    <div className="text-muted-foreground">Predicted claims</div>
-                    <div className="font-semibold text-sm">
-                      {typeof (latest as any).predicted_annual_claims === "number"
-                        ? `$${(latest as any).predicted_annual_claims.toLocaleString()}`
+                    <div className="text-muted-foreground">Claims PMPM</div>
+                    <div className="font-bold text-base">
+                      {typeof (latest as any).predicted_pmpm === "number"
+                        ? `$${(latest as any).predicted_pmpm.toLocaleString()}`
                         : "—"}
                     </div>
-                    <div className="text-[10px] text-muted-foreground">annual</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      book mean ${(latest as any).book_mean_pmpm?.toLocaleString?.() ?? "—"}
+                    </div>
                   </div>
                   <div>
                     <div className="text-muted-foreground">PMPY</div>
@@ -221,15 +223,13 @@ export function RiskScreenButton({ groupId }: { groupId: string }) {
                     </div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground">Claims PMPM</div>
+                    <div className="text-muted-foreground">Annual claims</div>
                     <div className="font-semibold text-sm">
-                      {typeof (latest as any).predicted_pmpm === "number"
-                        ? `$${(latest as any).predicted_pmpm.toLocaleString()}`
+                      {typeof (latest as any).predicted_annual_claims === "number"
+                        ? `$${(latest as any).predicted_annual_claims.toLocaleString()}`
                         : "—"}
                     </div>
-                    <div className="text-[10px] text-muted-foreground">
-                      book ${(latest as any).book_mean_pmpm?.toLocaleString?.() ?? "—"}
-                    </div>
+                    <div className="text-[10px] text-muted-foreground">12-mo paid</div>
                   </div>
                   <div>
                     <div className="text-muted-foreground">Claims PEPM</div>
@@ -238,7 +238,7 @@ export function RiskScreenButton({ groupId }: { groupId: string }) {
                         ? `$${(latest as any).predicted_pepm.toLocaleString()}`
                         : "—"}
                     </div>
-                    <div className="text-[10px] text-muted-foreground">compare to funding</div>
+                    <div className="text-[10px] text-muted-foreground">vs funding PEPM</div>
                   </div>
                 </div>
               </div>
