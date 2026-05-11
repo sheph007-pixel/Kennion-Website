@@ -125,7 +125,7 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
     doc.roundedRect(aiBoxX, aiBoxY, aiBoxW, aiBoxH, 4)
        .strokeColor(COLORS.border).lineWidth(0.5).stroke();
     doc.font("Helvetica-Bold").fontSize(8.5).fillColor(COLORS.muted)
-       .text("AI Residual", aiBoxX, aiBoxY + 6, { width: aiBoxW, align: "center" });
+       .text("AI Adjustment", aiBoxX, aiBoxY + 6, { width: aiBoxW, align: "center" });
     const adj = result.ai_residual.clamped;
     const isZero = Math.abs(adj) < 0.005;
     const adjColor = isZero ? COLORS.muted
@@ -139,7 +139,7 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
     doc.font("Helvetica").fontSize(7).fillColor(COLORS.muted)
        .text(isZero
              ? "Pending block calibration\n(activates in v1.1)"
-             : "ML adjustment\nbounded to ±10%",
+             : "AI adjustment\nlimited to ±10%",
              aiBoxX, aiBoxY + 48,
              { width: aiBoxW, align: "center" });
 
