@@ -209,7 +209,7 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
        .text("AI Summary", M, y);
     doc.font("Helvetica").fontSize(9).fillColor(COLORS.text)
        .text(result.ai_summary, M, y + 14,
-             { width: summaryW, lineGap: 2, height: 160, ellipsis: true });
+             { width: summaryW, lineGap: 2 });
 
     doc.font("Helvetica-Bold").fontSize(10.5).fillColor(COLORS.text)
        .text("Top Risk Drivers", driversX, y, { width: driversW });

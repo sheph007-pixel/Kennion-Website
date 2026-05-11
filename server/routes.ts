@@ -2747,6 +2747,22 @@ export async function registerRoutes(
         pdfBase64,
       });
 
+      // Write the full Kennion Score back to the legacy group fields so
+      // every surface (header pill, admin list, exports) shows ONE number
+      // and one tier — the Risk Screen result. No more parallel scores.
+      const legacyTier =
+        result.tier === "Preferred"  ? "preferred" :
+        result.tier === "High Risk"  ? "high" :
+                                       "standard";
+      try {
+        await storage.updateGroup(groupId, {
+          riskScore: result.kri as any,
+          riskTier: legacyTier as any,
+        } as any);
+      } catch (e) {
+        console.error("[risk-screen] groups.riskScore write-back failed:", e);
+      }
+
       res.json({ id: saved.id, ...result });
     } catch (err: any) {
       console.error("[risk-screen] run failed:", err);
