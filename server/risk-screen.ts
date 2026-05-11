@@ -88,7 +88,10 @@ export interface ScreenResult {
   // 12-Month forecast (AI model point estimates)
   predicted_pmpy: number;            // average predicted per-member-per-year
   predicted_annual_claims: number;   // sum across all members
+  predicted_pmpm: number;            // per-member-per-month  (= pmpy / 12)
+  predicted_pepm: number;            // per-employee-per-month (= annual_claims / 12 / n_employees)
   book_mean_pmpy: number;            // reference book mean for comparison
+  book_mean_pmpm: number;            // book mean per-member-per-month
 
   // Composite
   kri: number;
@@ -663,7 +666,10 @@ export function screenGroup(input: ScreenInput): ScreenResult {
     ai_residual: { raw: aiResidualRaw, clamped: aiResidualClamped, drivers: aiResidualDrivers },
     predicted_pmpy: round2(aiPredictedPmpy),
     predicted_annual_claims: Math.round(aiPredictedPmpy * N),
+    predicted_pmpm: round2(aiPredictedPmpy / 12),
+    predicted_pepm: round2((aiPredictedPmpy * N) / 12 / Math.max(1, employees.length)),
     book_mean_pmpy: residual?.block_mean_pmpy ?? 6470,
+    book_mean_pmpm: round2((residual?.block_mean_pmpy ?? 6470) / 12),
 
     kri: round4(kri),
     tier,

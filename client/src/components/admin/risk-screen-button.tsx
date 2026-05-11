@@ -197,23 +197,48 @@ export function RiskScreenButton({ groupId }: { groupId: string }) {
                 </ul>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-3 border-t text-xs">
-                <div>
-                  <div className="text-muted-foreground">Predicted 12-mo paid claims</div>
-                  <div className="font-semibold text-base">
-                    {typeof (latest as any).predicted_annual_claims === "number"
-                      ? `$${(latest as any).predicted_annual_claims.toLocaleString()}`
-                      : "—"}
+              <div className="pt-3 border-t">
+                <div className="text-xs font-semibold mb-2">12-Month Forecast (Kennion AI)</div>
+                <div className="grid grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <div className="text-muted-foreground">Predicted claims</div>
+                    <div className="font-semibold text-sm">
+                      {typeof (latest as any).predicted_annual_claims === "number"
+                        ? `$${(latest as any).predicted_annual_claims.toLocaleString()}`
+                        : "—"}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">annual</div>
                   </div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">
-                    Predicted PMPY  ·  Book mean ${(latest as any).book_mean_pmpy?.toLocaleString?.() ?? "—"}
+                  <div>
+                    <div className="text-muted-foreground">PMPY</div>
+                    <div className="font-semibold text-sm">
+                      {typeof (latest as any).predicted_pmpy === "number"
+                        ? `$${(latest as any).predicted_pmpy.toLocaleString()}`
+                        : "—"}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      book ${(latest as any).book_mean_pmpy?.toLocaleString?.() ?? "—"}
+                    </div>
                   </div>
-                  <div className="font-semibold text-base">
-                    {typeof (latest as any).predicted_pmpy === "number"
-                      ? `$${(latest as any).predicted_pmpy.toLocaleString()}`
-                      : "—"}
+                  <div>
+                    <div className="text-muted-foreground">Claims PMPM</div>
+                    <div className="font-semibold text-sm">
+                      {typeof (latest as any).predicted_pmpm === "number"
+                        ? `$${(latest as any).predicted_pmpm.toLocaleString()}`
+                        : "—"}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      book ${(latest as any).book_mean_pmpm?.toLocaleString?.() ?? "—"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground">Claims PEPM</div>
+                    <div className="font-semibold text-sm">
+                      {typeof (latest as any).predicted_pepm === "number"
+                        ? `$${(latest as any).predicted_pepm.toLocaleString()}`
+                        : "—"}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">compare to funding</div>
                   </div>
                 </div>
               </div>

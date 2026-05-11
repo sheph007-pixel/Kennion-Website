@@ -203,20 +203,38 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
     const pred = (result as any).predicted_annual_claims;
     const ppmpy = (result as any).predicted_pmpy;
     const bookMean = (result as any).book_mean_pmpy ?? 6470;
+    const ppmpm = (result as any).predicted_pmpm;
+    const ppepm = (result as any).predicted_pepm;
+    const bookPmpm = (result as any).book_mean_pmpm ?? Math.round((bookMean as number)/12);
     if (typeof pred === "number" && typeof ppmpy === "number") {
       doc.fillColor(COLORS.text).font("Helvetica-Bold").fontSize(10.5)
          .text("12-Month Forecast (Kennion AI)", M, y);
       y += 14;
-      const half = innerW / 2;
+      const col = innerW / 4;
+      // 4 columns: Annual / PMPY / PMPM / PEPM
       doc.font("Helvetica").fontSize(8).fillColor(COLORS.muted)
-         .text("Predicted 12-mo paid claims", M, y);
+         .text("Predicted 12-mo claims", M, y);
       doc.font("Helvetica-Bold").fontSize(11).fillColor(COLORS.text)
          .text(`$${pred.toLocaleString()}`, M, y + 10);
       doc.font("Helvetica").fontSize(8).fillColor(COLORS.muted)
-         .text(`Predicted PMPY  ·  Book mean $${bookMean.toLocaleString()}`, M + half, y);
+         .text(`Predicted PMPY`, M + col, y);
       doc.font("Helvetica-Bold").fontSize(11).fillColor(COLORS.text)
-         .text(`$${ppmpy.toLocaleString()}`, M + half, y + 10);
-      y += 28;
+         .text(`$${ppmpy.toLocaleString()}`, M + col, y + 10);
+      doc.font("Helvetica").fontSize(7).fillColor(COLORS.muted)
+         .text(`book $${bookMean.toLocaleString()}`, M + col, y + 22);
+      doc.font("Helvetica").fontSize(8).fillColor(COLORS.muted)
+         .text(`Claims PMPM`, M + col*2, y);
+      doc.font("Helvetica-Bold").fontSize(11).fillColor(COLORS.text)
+         .text(`$${(ppmpm ?? 0).toLocaleString()}`, M + col*2, y + 10);
+      doc.font("Helvetica").fontSize(7).fillColor(COLORS.muted)
+         .text(`book $${bookPmpm.toLocaleString()}`, M + col*2, y + 22);
+      doc.font("Helvetica").fontSize(8).fillColor(COLORS.muted)
+         .text(`Claims PEPM`, M + col*3, y);
+      doc.font("Helvetica-Bold").fontSize(11).fillColor(COLORS.text)
+         .text(`$${(ppepm ?? 0).toLocaleString()}`, M + col*3, y + 10);
+      doc.font("Helvetica").fontSize(7).fillColor(COLORS.muted)
+         .text(`compare to funding`, M + col*3, y + 22);
+      y += 38;
       doc.moveTo(M, y).lineTo(W - M, y)
          .strokeColor(COLORS.border).lineWidth(0.5).stroke();
       y += 8;
