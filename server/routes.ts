@@ -2773,9 +2773,26 @@ export async function registerRoutes(
     const r = await storage.getRiskScreen(req.params.id);
     if (!r || !r.pdfBase64) return res.status(404).json({ message: "Not found" });
     const buf = Buffer.from(r.pdfBase64, "base64");
+
+    // Build a human-readable, unique filename:
+    //   RiskScreen_<CompanyName>_<YYYY-MM-DD>_<shortId>.pdf
+    let companyName = "Group";
+    try {
+      const g = await storage.getGroup(r.groupId);
+      const raw = (g as any)?.companyName || (g as any)?.name || "Group";
+      companyName = String(raw).trim();
+    } catch {}
+    const safeName = companyName
+      .replace(/[^A-Za-z0-9 .-]/g, "")
+      .replace(/\s+/g, "_")
+      .slice(0, 40) || "Group";
+    const isoDate = new Date(r.createdAt as any).toISOString().slice(0, 10);
+    const shortId = String(r.id).replace(/-/g, "").slice(0, 8);
+    const filename = `RiskScreen_${safeName}_${isoDate}_${shortId}.pdf`;
+
     res.set({
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="RiskScreen_${r.groupId}.pdf"`,
+      "Content-Disposition": `attachment; filename="${filename}"`,
       "Content-Length": String(buf.length),
     });
     res.send(buf);

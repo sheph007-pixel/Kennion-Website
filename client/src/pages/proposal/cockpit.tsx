@@ -29,6 +29,7 @@ import { GroupHeader } from "@/components/proposal/group-header";
 import { EffectiveDatePicker } from "@/components/proposal/effective-date-picker";
 import { ContributionControl } from "@/components/proposal/contribution-control";
 import { MedicalTable } from "@/components/proposal/medical-table";
+import { useHighRiskGate, HighRiskNotice } from "@/components/proposal/high-risk-gate";
 import { MonthlyTotalCard } from "@/components/proposal/monthly-total-card";
 import { SimpleRateTable } from "@/components/proposal/simple-rate-table";
 import { SupplementalTables } from "@/components/proposal/supplemental-tables";
@@ -71,6 +72,7 @@ export function ProposalCockpit({
   acceptUrl,
 }: Props) {
   const resolvedMode: CockpitMode = mode ?? { kind: "session" };
+  const { isHighRisk, screen: latestScreen } = useHighRiskGate(group?.id);
   const isPublic = resolvedMode.kind === "public";
   const [effDate, setEffDate] = useState(() => effectiveDateOptions()[0]);
   const [contribValue, setContribValue] = useState(0);
@@ -154,7 +156,7 @@ export function ProposalCockpit({
               />
             )}
 
-            {isMedical && selectedPlan && (
+            {isMedical && selectedPlan && !isHighRisk && (
               <MonthlyTotalCard
                 planName={selectedPlan.name}
                 effectiveDate={effDate}
@@ -165,6 +167,7 @@ export function ProposalCockpit({
             )}
 
             <div className="space-y-2">
+              {!isHighRisk && (
               <Button
                 className="w-full justify-center gap-1.5"
                 onClick={() => setAcceptOpen(true)}
@@ -173,6 +176,7 @@ export function ProposalCockpit({
                 Accept Proposal
                 <ArrowRight className="h-4 w-4" />
               </Button>
+              )}
               <Button
                 variant="outline"
                 className="w-full justify-center gap-1.5"
@@ -239,14 +243,23 @@ export function ProposalCockpit({
                     </>
                   }
                 />
-                {ratesQuery.isLoading && <div className="text-sm text-muted-foreground">Pricing…</div>}
-                {ratesQuery.isError && (
-                  <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-                    Could not load rates. Refresh to try again.
-                  </div>
-                )}
-                {plans.length > 0 && (
-                  <MedicalTable plans={plans} selectedId={selectedPlanId} onSelect={setSelectedPlanId} />
+                {isHighRisk ? (
+                  <HighRiskNotice
+                    groupName={group.companyName || (group as any).name}
+                    score={latestScreen?.kri}
+                  />
+                ) : (
+                  <>
+                    {ratesQuery.isLoading && <div className="text-sm text-muted-foreground">Pricing…</div>}
+                    {ratesQuery.isError && (
+                      <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                        Could not load rates. Refresh to try again.
+                      </div>
+                    )}
+                    {plans.length > 0 && (
+                      <MedicalTable plans={plans} selectedId={selectedPlanId} onSelect={setSelectedPlanId} />
+                    )}
+                  </>
                 )}
               </TabsContent>
 
