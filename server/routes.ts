@@ -1925,8 +1925,11 @@ export async function registerRoutes(
       const overallAvgRisk = overallRiskCount > 0 ? overallRiskSum / overallRiskCount : 1;
 
       // Stable audit id: FNV-1a 32-bit over a minimal identity fingerprint
-      // so the customer can quote it back for later reconciliation.
-      const fingerprint = `${group.id}:${group.updatedAt?.toISOString?.() ?? ""}:${rows.length}:${overallAvgRisk.toFixed(4)}`;
+      // so the customer can quote it back for later reconciliation. The
+      // "v2" literal forces a regenerate after the narrative engine swap
+      // (LLM → deterministic template) so no stale wrong-direction prose
+      // survives the deploy.
+      const fingerprint = `v2:${group.id}:${group.updatedAt?.toISOString?.() ?? ""}:${rows.length}:${overallAvgRisk.toFixed(4)}`;
       let h = 0x811c9dc5;
       for (let i = 0; i < fingerprint.length; i++) {
         h ^= fingerprint.charCodeAt(i);
@@ -1942,20 +1945,15 @@ export async function registerRoutes(
       if (cached?.auditId === auditId && typeof cached?.narrative === "string") {
         narrative = cached.narrative;
       } else {
-        try {
-          narrative = await generateScoreReview({
-            companyName: group.companyName,
-            riskScore: group.riskScore ?? overallAvgRisk,
-            riskTier: group.riskTier ?? "standard",
-            totalLives: rows.length,
-            averageAge: ageCount > 0 ? sumAge / ageCount : 0,
-            femalePct: (totalFemale + totalMale) > 0 ? (totalFemale / (totalFemale + totalMale)) * 100 : 0,
-            bands: ageBands.map((b) => ({ band: b.band, total: b.total, avgRiskScore: b.avgRiskScore })),
-          });
-        } catch (err: any) {
-          log(`Score review AI error: ${err?.message || err}`, "routes");
-          narrative = "Score is consistent with the reported demographic profile.";
-        }
+        narrative = await generateScoreReview({
+          companyName: group.companyName,
+          riskScore: group.riskScore ?? overallAvgRisk,
+          riskTier: group.riskTier ?? "standard",
+          totalLives: rows.length,
+          averageAge: ageCount > 0 ? sumAge / ageCount : 0,
+          femalePct: (totalFemale + totalMale) > 0 ? (totalFemale / (totalFemale + totalMale)) * 100 : 0,
+          bands: ageBands.map((b) => ({ band: b.band, total: b.total, avgRiskScore: b.avgRiskScore })),
+        });
         await storage.updateGroup(id, {
           groupCharacteristics: { ...chars, scoreReview: { auditId, narrative, generatedAt: new Date().toISOString() } },
         });

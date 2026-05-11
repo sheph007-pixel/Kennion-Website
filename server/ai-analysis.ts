@@ -14,9 +14,14 @@ interface GroupAnalysisInput {
   companyName: string;
 }
 
-// Short, focused review for the score-audit dialog. Different prompt
-// from the full actuarial narrative — we want 2–3 crisp sentences that
-// confirm the score matches the demographic profile, not a report.
+// Deterministic 2-3 sentence summary for the score-audit dialog. The
+// table above this prose already shows every per-band number, so the
+// prose only needs to state tier+threshold, demographic mix, and the
+// directional rule (lower score = better). Was previously an LLM call;
+// gpt-4o-mini produced direction-reversed text ("higher older-band
+// scores contribute positively to the overall score") because the
+// prompt did not state the directionality. Plain template avoids that
+// class of bug entirely and is free + instant.
 export async function generateScoreReview(input: {
   companyName: string;
   riskScore: number;
@@ -26,31 +31,23 @@ export async function generateScoreReview(input: {
   femalePct: number;
   bands: { band: string; total: number; avgRiskScore: number }[];
 }): Promise<string> {
-  const openai = getOpenAIClient();
-  const distSummary = input.bands
-    .filter((b) => b.total > 0)
-    .map((b) => `${b.band}: n=${b.total}, r=${b.avgRiskScore.toFixed(2)}`)
-    .join("; ");
-  const prompt = `You are an actuarial reviewer auditing a computed group risk score.
-Confirm in 2–3 short sentences whether the score is consistent with the
-demographic profile. Do not reword the inputs. Plain text only, no
-bullet points, no markdown, no em-dashes.
-
-Company: ${input.companyName}
-Computed score: ${input.riskScore.toFixed(2)} (${input.riskTier})
-Lives: ${input.totalLives}, avg age ${input.averageAge.toFixed(1)}, ${input.femalePct.toFixed(0)}% female.
-Per-band: ${distSummary}`;
-
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: "You are a terse actuarial reviewer. Never use em-dashes." },
-      { role: "user", content: prompt },
-    ],
-    max_tokens: 180,
-    temperature: 0.2,
-  });
-  return completion.choices[0]?.message?.content?.trim() || "Score is consistent with the reported demographic profile.";
+  const score = input.riskScore.toFixed(2);
+  let tierSentence: string;
+  if (input.riskScore < 1.0) {
+    tierSentence = `Score ${score} sits below the 1.0 preferred threshold.`;
+  } else if (input.riskScore < 1.5) {
+    tierSentence = `Score ${score} sits in the standard band (1.0 to 1.5).`;
+  } else {
+    tierSentence = `Score ${score} sits at or above the 1.5 high-risk threshold.`;
+  }
+  const lifeWord = input.totalLives === 1 ? "covered life" : "covered lives";
+  const demoSentence =
+    `Group of ${input.totalLives} ${lifeWord}, average age ${input.averageAge.toFixed(1)}, ` +
+    `${input.femalePct.toFixed(0)}% female.`;
+  const directionSentence =
+    "Per the age/gender risk table, older bands carry higher per-member scores " +
+    "that raise the group average; younger bands pull it down.";
+  return `${tierSentence} ${demoSentence} ${directionSentence}`;
 }
 
 export async function generateActuarialAnalysis(input: GroupAnalysisInput): Promise<string> {

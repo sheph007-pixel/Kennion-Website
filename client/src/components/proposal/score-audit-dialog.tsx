@@ -215,7 +215,7 @@ export function ScoreAuditDialog({ open, onOpenChange, group, census }: Props) {
               <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <div className="text-sm font-semibold text-foreground">AI audit · verified</div>
+                  <div className="text-sm font-semibold text-foreground">Score summary</div>
                   <div className="font-mono text-[11px] text-muted-foreground">
                     {review.data.engineVersion}
                   </div>
