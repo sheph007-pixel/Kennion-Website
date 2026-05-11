@@ -30,7 +30,7 @@ import path from "path";
 import crypto from "crypto";
 import type { CensusEntry } from "@shared/schema";
 import { blockDemographicRisk, legacyAgeBand } from "./risk-factors";
-import { priceGroup as priceGroupRate, type CensusMember as RateCensusMember } from "./rate-engine";
+import { priceGroup as priceGroupRate, loadFactorTables, type CensusMember as RateCensusMember } from "./rate-engine";
 
 // ────────────────────────────────────────────────────────────────────────
 // Types
@@ -560,25 +560,56 @@ export function screenGroup(input: ScreenInput): ScreenResult {
       census: rateCensus,
       effectiveDate: input.effectiveDate,
     });
-    const claimsPmpm = aiPredictedPmpy / 12;
+    const factorTables = loadFactorTables();
+
+    // Book-average plan claims_unadjusted across all plans in the rate
+    // engine — used to scale the AI's plan-agnostic prediction to plan-
+    // specific claims. Bronze pays half of Platinum on the same population
+    // because of plan design; this normalization captures that.
+    const allPlanClaims = Object.values(factorTables.plan_base_pmpm_6to1)
+      .map((p: any) => p.claims_unadjusted)
+      .filter((c: any) => typeof c === "number" && c > 0) as number[];
+    const bookAvgClaimsU =
+      allPlanClaims.length > 0
+        ? allPlanClaims.reduce((a, b) => a + b, 0) / allPlanClaims.length
+        : 150;
+
+    // AI's plan-agnostic prediction translated to PMPM and trended forward.
+    // The AI was trained on actual paid claims across whatever plan mix
+    // existed in the training data — treat that as the book-average plan
+    // and scale up/down for richer/cheaper plans below.
+    const trend = factorTables.trend_rate ? Math.pow(1 + factorTables.trend_rate, 1) : 1.07;
+    const aiPmpmBookPlan = aiPredictedPmpy / 12;  // AI's prediction at book-avg plan design
+
     const PLANS_TO_SHOW = ["Deluxe Platinum", "Freedom Bronze"];
     for (const planName of PLANS_TO_SHOW) {
       const tiered = pricing.plan_rates[planName];
-      if (!tiered) continue;
-      // total monthly premium = sum over households of (tier rate at this plan)
+      const planFactors = factorTables.plan_base_pmpm_6to1[planName];
+      if (!tiered || !planFactors) continue;
+
+      // Total monthly funding from rate engine using actual tier mix
       const fundingMonthly =
         tierMix.EE  * tiered.EE +
         tierMix.ECH * tiered.EC +
         tierMix.ESP * tiered.ES +
         tierMix.FAM * tiered.EF;
       const fundingPmpm = N > 0 ? fundingMonthly / N : 0;
-      const lossRatio = fundingPmpm > 0 ? claimsPmpm / fundingPmpm : 0;
-      const margin = fundingMonthly - (aiPredictedPmpy * N) / 12;
+
+      // Plan-specific predicted claims:
+      //   AI's book-plan PMPM × (plan claims / book-avg plan claims)
+      // Bronze's claims_unadjusted ($87.47) is about half Platinum's
+      // ($172.67) because cost-sharing reduces what the plan pays out.
+      const planFactor = (planFactors.claims_unadjusted ?? bookAvgClaimsU) / bookAvgClaimsU;
+      const planClaimsPmpm = aiPmpmBookPlan * planFactor;
+      const planClaimsMonthly = planClaimsPmpm * N;
+
+      const lossRatio = fundingPmpm > 0 ? planClaimsPmpm / fundingPmpm : 0;
+      const margin = fundingMonthly - planClaimsMonthly;
       plan_projections.push({
         plan: planName,
         funding_monthly: Math.round(fundingMonthly),
         funding_pmpm: round2(fundingPmpm),
-        claims_pmpm: round2(claimsPmpm),
+        claims_pmpm: round2(planClaimsPmpm),
         loss_ratio: round4(lossRatio),
         margin: Math.round(margin),
       });
