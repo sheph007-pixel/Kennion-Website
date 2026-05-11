@@ -1929,7 +1929,7 @@ export async function registerRoutes(
       // "v2" literal forces a regenerate after the narrative engine swap
       // (LLM → deterministic template) so no stale wrong-direction prose
       // survives the deploy.
-      const fingerprint = `v2:${group.id}:${group.updatedAt?.toISOString?.() ?? ""}:${rows.length}:${overallAvgRisk.toFixed(4)}`;
+      const fingerprint = `v3:${group.id}:${group.updatedAt?.toISOString?.() ?? ""}:${rows.length}:${overallAvgRisk.toFixed(4)}`;
       let h = 0x811c9dc5;
       for (let i = 0; i < fingerprint.length; i++) {
         h ^= fingerprint.charCodeAt(i);
@@ -1965,7 +1965,7 @@ export async function registerRoutes(
         ageBands,
         totals: { females: totalFemale, males: totalMale, total: totalFemale + totalMale },
         overallAvgRisk,
-        engineVersion: "risk-v1",
+        engineVersion: "risk-v2",
       });
     } catch (err: any) {
       log(`Score review error: ${err?.message || err}`, "routes");

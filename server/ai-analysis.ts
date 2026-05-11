@@ -14,14 +14,21 @@ interface GroupAnalysisInput {
   companyName: string;
 }
 
-// Deterministic 2-3 sentence summary for the score-audit dialog. The
-// table above this prose already shows every per-band number, so the
-// prose only needs to state tier+threshold, demographic mix, and the
-// directional rule (lower score = better). Was previously an LLM call;
+// Deterministic underwriter-flavored summary for the score-audit dialog.
+// Uses the per-band data to point out specifically where the lift comes
+// from, how the demographics compare to industry benchmarks, and the
+// share of lives sitting in each tier band. Was previously an LLM call;
 // gpt-4o-mini produced direction-reversed text ("higher older-band
 // scores contribute positively to the overall score") because the
-// prompt did not state the directionality. Plain template avoids that
-// class of bug entirely and is free + instant.
+// prompt did not state the directionality. A template avoids that
+// class of bug entirely and reads more like an underwriter's note
+// than a generic confirmation.
+//
+// Benchmarks match the long-form `generateActuarialAnalysis` prompt
+// below so the two surfaces tell a consistent story.
+const BENCHMARK_MEDIAN_AGE = 36.7;
+const BENCHMARK_FEMALE_PCT = 51;
+
 export async function generateScoreReview(input: {
   companyName: string;
   riskScore: number;
@@ -31,23 +38,72 @@ export async function generateScoreReview(input: {
   femalePct: number;
   bands: { band: string; total: number; avgRiskScore: number }[];
 }): Promise<string> {
-  const score = input.riskScore.toFixed(2);
+  const score = input.riskScore;
+  const scoreStr = score.toFixed(2);
+  const populated = input.bands.filter((b) => b.total > 0);
+
+  // Tier + threshold.
   let tierSentence: string;
-  if (input.riskScore < 1.0) {
-    tierSentence = `Score ${score} sits below the 1.0 preferred threshold.`;
-  } else if (input.riskScore < 1.5) {
-    tierSentence = `Score ${score} sits in the standard band (1.0 to 1.5).`;
+  if (score < 1.0) {
+    tierSentence = `Score ${scoreStr} places ${input.companyName} in the preferred tier (below 1.00).`;
+  } else if (score < 1.5) {
+    tierSentence = `Score ${scoreStr} places ${input.companyName} in the standard band (1.00 to 1.49).`;
   } else {
-    tierSentence = `Score ${score} sits at or above the 1.5 high-risk threshold.`;
+    tierSentence = `Score ${scoreStr} places ${input.companyName} at or above the 1.50 high-risk threshold.`;
   }
+
+  // Demographic shape vs industry benchmarks. Calls direction explicitly
+  // so the prose can't read as a vague "supports a preferred classification".
+  const ageDelta = input.averageAge - BENCHMARK_MEDIAN_AGE;
+  const ageNote =
+    Math.abs(ageDelta) < 2
+      ? `near the ${BENCHMARK_MEDIAN_AGE} industry median`
+      : ageDelta > 0
+        ? `above the ${BENCHMARK_MEDIAN_AGE} industry median`
+        : `below the ${BENCHMARK_MEDIAN_AGE} industry median`;
+  const femaleDelta = input.femalePct - BENCHMARK_FEMALE_PCT;
+  const femaleStr = input.femalePct.toFixed(0);
+  const femaleNote =
+    Math.abs(femaleDelta) < 3
+      ? `${femaleStr}% female near the ${BENCHMARK_FEMALE_PCT}% norm`
+      : femaleDelta > 0
+        ? `${femaleStr}% female versus a ${BENCHMARK_FEMALE_PCT}% norm`
+        : `${femaleStr}% female below the ${BENCHMARK_FEMALE_PCT}% norm`;
   const lifeWord = input.totalLives === 1 ? "covered life" : "covered lives";
   const demoSentence =
-    `Group of ${input.totalLives} ${lifeWord}, average age ${input.averageAge.toFixed(1)}, ` +
-    `${input.femalePct.toFixed(0)}% female.`;
-  const directionSentence =
-    "Per the age/gender risk table, older bands carry higher per-member scores " +
-    "that raise the group average; younger bands pull it down.";
-  return `${tierSentence} ${demoSentence} ${directionSentence}`;
+    `Group of ${input.totalLives} ${lifeWord} at average age ${input.averageAge.toFixed(1)}, ${ageNote}, ${femaleNote}.`;
+
+  // Lift sentence: the up-to-three populated bands with the highest
+  // per-member scores, but only when they're meaningfully above 1.00.
+  const topByScore = [...populated]
+    .filter((b) => b.avgRiskScore >= 1.0)
+    .sort((a, b) => b.avgRiskScore - a.avgRiskScore)
+    .slice(0, 3);
+  let liftSentence = "";
+  if (topByScore.length > 0) {
+    const parts = topByScore.map((b) => `${b.band} at ${b.avgRiskScore.toFixed(2)}`);
+    const joined =
+      parts.length === 1
+        ? parts[0]
+        : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+    liftSentence = ` The heaviest contributions come from ${joined}.`;
+  }
+
+  // Share of lives in high-risk vs preferred bands.
+  let highCount = 0;
+  let prefCount = 0;
+  for (const b of populated) {
+    if (b.avgRiskScore >= 1.5) highCount += b.total;
+    else if (b.avgRiskScore < 1.0) prefCount += b.total;
+  }
+  const denom = input.totalLives > 0 ? input.totalLives : 1;
+  const highPct = Math.round((highCount / denom) * 100);
+  const prefPct = Math.round((prefCount / denom) * 100);
+  const distSentence =
+    ` ${highCount} of ${input.totalLives} lives (${highPct}%) sit in bands at or above the 1.50 high-risk line; ` +
+    `${prefCount} (${prefPct}%) sit below 1.00 and pull the average down.`;
+
+  return tierSentence + " " + demoSentence + liftSentence + distSentence;
 }
 
 export async function generateActuarialAnalysis(input: GroupAnalysisInput): Promise<string> {

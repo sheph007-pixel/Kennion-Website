@@ -90,7 +90,10 @@ export function ScoreAuditDialog({ open, onOpenChange, group, census }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl" data-testid="dialog-score-audit">
+      <DialogContent
+        className="max-h-[90vh] max-w-3xl overflow-y-auto"
+        data-testid="dialog-score-audit"
+      >
         <DialogHeader>
           <DialogTitle className="sr-only">Kennion Score Audit</DialogTitle>
         </DialogHeader>
