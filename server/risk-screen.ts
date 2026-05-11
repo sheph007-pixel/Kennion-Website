@@ -413,14 +413,26 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   // ── 5. Composition component ──────────────────────────────────────────
   const cliff = pct_medicare_cliff;
   const conc = pct_top_county;
-  const smallGroup = employees.length < weights.small_group_threshold;
-  const sgAdj = smallGroup ? weights.small_group_load : 1.0;
+  // Sliding pool-variance load. Every level-funded group has variance
+  // because none is individually credible — the captive absorbs it. The
+  // load just reflects how much variance THIS group brings to the pool.
+  //    <  15 EE:  high variance (1.08)
+  //    < 50 EE:   moderate     (1.04)
+  //    < 150 EE:  light        (1.02)
+  //    ≥ 150 EE:  minimal      (1.00)
+  let sizeLoad = 1.00;
+  let sizeLabel = "Large group";
+  if (employees.length < 15) { sizeLoad = 1.08; sizeLabel = "Small group"; }
+  else if (employees.length < 50)  { sizeLoad = 1.04; sizeLabel = "Mid-size group"; }
+  else if (employees.length < 150) { sizeLoad = 1.02; sizeLabel = "Mid-to-large group"; }
   const compNormalized =
     (1 + weights.beta_medicare_cliff * cliff) *
     (1 + weights.beta_concentration  * conc) *
-    sgAdj;
+    sizeLoad;
   const compDrivers: string[] = [];
-  if (smallGroup) compDrivers.push(`Small group (${employees.length} EE) — volatility load applied`);
+  if (sizeLoad > 1.0) {
+    compDrivers.push(`${sizeLabel} (${employees.length} EE) — pool-variance load ${((sizeLoad - 1) * 100).toFixed(0)}%`);
+  }
   if (cliff >= 0.10) compDrivers.push(`Medicare-cliff exposure: ${(cliff*100).toFixed(0)}% within 5 yrs of 65`);
   if (conc >= 0.7) compDrivers.push(`High geographic concentration: ${(conc*100).toFixed(0)}% in one county`);
   const comp: ComponentScore = {
@@ -537,16 +549,29 @@ export function screenGroup(input: ScreenInput): ScreenResult {
   }
 
   // Composition — group structure facts.
-  if (employees.length < weights.small_group_threshold) {
+  // Pool-variance description — every level-funded group carries some.
+  if (employees.length < 15) {
     drivers.push({
       category: "Composition",
-      text: `Small group (${employees.length} EE) — credibility/volatility load applied`,
-      impact: +(weights.small_group_load - 1.0),
+      text: `Small group (${employees.length} EE) — high pool-variance load`,
+      impact: +0.08,
+    });
+  } else if (employees.length < 50) {
+    drivers.push({
+      category: "Composition",
+      text: `Mid-size group (${employees.length} EE) — moderate pool-variance load`,
+      impact: +0.04,
+    });
+  } else if (employees.length < 150) {
+    drivers.push({
+      category: "Composition",
+      text: `Mid-to-large group (${employees.length} EE) — light pool-variance load`,
+      impact: +0.02,
     });
   } else {
     drivers.push({
       category: "Composition",
-      text: `Group size ${employees.length} EE — sufficient credibility for full-experience rating`,
+      text: `Large group (${employees.length} EE) — minimal pool-variance load (captive absorbs)`,
       impact: 0,
     });
   }
