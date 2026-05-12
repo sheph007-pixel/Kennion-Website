@@ -199,43 +199,6 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
        .strokeColor(COLORS.border).lineWidth(0.5).stroke();
     y += 8;
 
-    // Plan projections grid (richest plan / cheapest plan funding vs claims)
-    const projs = (result as any).plan_projections;
-    if (projs && projs.length > 0) {
-      doc.fillColor(COLORS.text).font("Helvetica-Bold").fontSize(10.5)
-         .text("Funding vs Predicted Claims  ·  Richest Plan and Cheapest Plan", M, y);
-      y += 14;
-      // Header row
-      const colX = [M, M + innerW * 0.35, M + innerW * 0.52, M + innerW * 0.69, M + innerW * 0.84];
-      doc.font("Helvetica").fontSize(8).fillColor(COLORS.muted);
-      doc.text("Plan", colX[0], y);
-      doc.text("Funding PMPM", colX[1], y, { width: innerW*0.17, align: "right" });
-      doc.text("Claims PMPM", colX[2], y, { width: innerW*0.17, align: "right" });
-      doc.text("Loss Ratio", colX[3], y, { width: innerW*0.15, align: "right" });
-      doc.text("Margin / mo", colX[4], y, { width: innerW*0.16, align: "right" });
-      y += 12;
-      doc.moveTo(M, y).lineTo(W - M, y).strokeColor(COLORS.border).lineWidth(0.5).stroke();
-      y += 4;
-      for (const pr of projs) {
-        doc.font("Helvetica-Bold").fontSize(9).fillColor(COLORS.text);
-        doc.text(pr.plan, colX[0], y);
-        doc.font("Helvetica").fontSize(9);
-        doc.text(`$${pr.funding_pmpm.toLocaleString()}`, colX[1], y, { width: innerW*0.17, align: "right" });
-        doc.text(`$${pr.claims_pmpm.toLocaleString()}`, colX[2], y, { width: innerW*0.17, align: "right" });
-        const lrColor = pr.loss_ratio > 1 ? COLORS.highRisk : COLORS.preferred;
-        doc.font("Helvetica-Bold").fillColor(lrColor)
-           .text(`${(pr.loss_ratio*100).toFixed(0)}%`, colX[3], y, { width: innerW*0.15, align: "right" });
-        const marColor = pr.margin >= 0 ? COLORS.preferred : COLORS.highRisk;
-        doc.fillColor(marColor)
-           .text(`${pr.margin >= 0 ? "+" : ""}$${pr.margin.toLocaleString()}`, colX[4], y, { width: innerW*0.16, align: "right" });
-        y += 14;
-      }
-      y += 4;
-      doc.moveTo(M, y).lineTo(W - M, y)
-         .strokeColor(COLORS.border).lineWidth(0.5).stroke();
-      y += 8;
-    }
-
     // AI Summary + Top Drivers
     const colGap = 14;
     const summaryW = Math.floor(innerW * 0.45);

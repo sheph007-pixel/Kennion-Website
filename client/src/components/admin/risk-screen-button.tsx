@@ -203,38 +203,6 @@ export function RiskScreenButton({ groupId, effectiveDate }: { groupId: string; 
                 </ul>
               </div>
 
-              {(latest as any).plan_projections && (latest as any).plan_projections.length > 0 && (
-                <div className="pt-3 border-t">
-                  <div className="text-xs font-semibold mb-2">Funding vs Predicted Claims (richest plan / cheapest plan)</div>
-                  <table className="w-full text-xs">
-                    <thead className="text-muted-foreground">
-                      <tr className="border-b">
-                        <th className="text-left py-1 font-normal">Plan</th>
-                        <th className="text-right py-1 font-normal">Funding PMPM</th>
-                        <th className="text-right py-1 font-normal">Claims PMPM</th>
-                        <th className="text-right py-1 font-normal">Loss Ratio</th>
-                        <th className="text-right py-1 font-normal">Margin / mo</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(latest as any).plan_projections.map((p: any) => (
-                        <tr key={p.plan} className="border-b last:border-0">
-                          <td className="py-1 font-medium">{p.plan}</td>
-                          <td className="text-right tabular-nums">${p.funding_pmpm.toLocaleString()}</td>
-                          <td className="text-right tabular-nums">${p.claims_pmpm.toLocaleString()}</td>
-                          <td className={`text-right tabular-nums font-semibold ${p.loss_ratio > 1 ? "text-red-600" : "text-green-600"}`}>
-                            {(p.loss_ratio * 100).toFixed(0)}%
-                          </td>
-                          <td className={`text-right tabular-nums font-semibold ${p.margin >= 0 ? "text-green-600" : "text-red-600"}`}>
-                            {p.margin >= 0 ? "+" : ""}${p.margin.toLocaleString()}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
               <div className="grid grid-cols-5 gap-3 pt-2 border-t text-xs">
                 <div><div className="text-muted-foreground">Lives</div><div className="font-semibold">{latest.n_members}</div></div>
                 <div><div className="text-muted-foreground">Employees</div><div className="font-semibold">{latest.n_employees}</div></div>
