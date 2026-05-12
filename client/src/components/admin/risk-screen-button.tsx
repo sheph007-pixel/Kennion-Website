@@ -235,52 +235,6 @@ export function RiskScreenButton({ groupId, effectiveDate }: { groupId: string; 
                 </div>
               )}
 
-              <div className="pt-3 border-t">
-                <div className="text-xs font-semibold mb-2">12-Month Forecast (Kennion AI)</div>
-                <div className="grid grid-cols-4 gap-3 text-xs">
-                  <div>
-                    <div className="text-muted-foreground">Claims PMPM</div>
-                    <div className="font-bold text-base">
-                      {typeof (latest as any).predicted_pmpm === "number"
-                        ? `$${(latest as any).predicted_pmpm.toLocaleString()}`
-                        : "—"}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground">
-                      book mean ${(latest as any).book_mean_pmpm?.toLocaleString?.() ?? "—"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground">PMPY</div>
-                    <div className="font-semibold text-sm">
-                      {typeof (latest as any).predicted_pmpy === "number"
-                        ? `$${(latest as any).predicted_pmpy.toLocaleString()}`
-                        : "—"}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground">
-                      book ${(latest as any).book_mean_pmpy?.toLocaleString?.() ?? "—"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground">Annual claims</div>
-                    <div className="font-semibold text-sm">
-                      {typeof (latest as any).predicted_annual_claims === "number"
-                        ? `$${(latest as any).predicted_annual_claims.toLocaleString()}`
-                        : "—"}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground">12-mo paid</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground">Claims PEPM</div>
-                    <div className="font-semibold text-sm">
-                      {typeof (latest as any).predicted_pepm === "number"
-                        ? `$${(latest as any).predicted_pepm.toLocaleString()}`
-                        : "—"}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground">vs funding PEPM</div>
-                  </div>
-                </div>
-              </div>
-
               <div className="grid grid-cols-5 gap-3 pt-2 border-t text-xs">
                 <div><div className="text-muted-foreground">Lives</div><div className="font-semibold">{latest.n_members}</div></div>
                 <div><div className="text-muted-foreground">Employees</div><div className="font-semibold">{latest.n_employees}</div></div>

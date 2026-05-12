@@ -199,49 +199,6 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
        .strokeColor(COLORS.border).lineWidth(0.5).stroke();
     y += 8;
 
-    // 12-Month Forecast strip
-    const pred = (result as any).predicted_annual_claims;
-    const ppmpy = (result as any).predicted_pmpy;
-    const bookMean = (result as any).book_mean_pmpy ?? 6470;
-    const ppmpm = (result as any).predicted_pmpm;
-    const ppepm = (result as any).predicted_pepm;
-    const bookPmpm = (result as any).book_mean_pmpm ?? Math.round((bookMean as number)/12);
-    if (typeof pred === "number" && typeof ppmpy === "number") {
-      doc.fillColor(COLORS.text).font("Helvetica-Bold").fontSize(10.5)
-         .text("12-Month Forecast (Kennion AI)", M, y);
-      y += 14;
-      const col = innerW / 4;
-      // Order: PMPM (headline) | PMPY | Annual | PEPM
-      doc.font("Helvetica").fontSize(8).fillColor(COLORS.muted)
-         .text(`Predicted Claims PMPM`, M, y);
-      doc.font("Helvetica-Bold").fontSize(13).fillColor(COLORS.text)
-         .text(`$${(ppmpm ?? 0).toLocaleString()}`, M, y + 10);
-      doc.font("Helvetica").fontSize(7).fillColor(COLORS.muted)
-         .text(`book mean $${bookPmpm.toLocaleString()}`, M, y + 26);
-      doc.font("Helvetica").fontSize(8).fillColor(COLORS.muted)
-         .text(`Predicted PMPY`, M + col, y);
-      doc.font("Helvetica-Bold").fontSize(11).fillColor(COLORS.text)
-         .text(`$${ppmpy.toLocaleString()}`, M + col, y + 10);
-      doc.font("Helvetica").fontSize(7).fillColor(COLORS.muted)
-         .text(`book $${bookMean.toLocaleString()}`, M + col, y + 26);
-      doc.font("Helvetica").fontSize(8).fillColor(COLORS.muted)
-         .text(`Annual claims`, M + col*2, y);
-      doc.font("Helvetica-Bold").fontSize(11).fillColor(COLORS.text)
-         .text(`$${pred.toLocaleString()}`, M + col*2, y + 10);
-      doc.font("Helvetica").fontSize(7).fillColor(COLORS.muted)
-         .text(`predicted 12-mo paid`, M + col*2, y + 26);
-      doc.font("Helvetica").fontSize(8).fillColor(COLORS.muted)
-         .text(`Claims PEPM`, M + col*3, y);
-      doc.font("Helvetica-Bold").fontSize(11).fillColor(COLORS.text)
-         .text(`$${(ppepm ?? 0).toLocaleString()}`, M + col*3, y + 10);
-      doc.font("Helvetica").fontSize(7).fillColor(COLORS.muted)
-         .text(`compare to funding PEPM`, M + col*3, y + 26);
-      y += 42;
-      doc.moveTo(M, y).lineTo(W - M, y)
-         .strokeColor(COLORS.border).lineWidth(0.5).stroke();
-      y += 8;
-    }
-
     // Plan projections grid (richest plan / cheapest plan funding vs claims)
     const projs = (result as any).plan_projections;
     if (projs && projs.length > 0) {
