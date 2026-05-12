@@ -149,7 +149,8 @@ export function RiskScreenButton({ groupId, effectiveDate }: { groupId: string; 
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
+          <div className="overflow-y-auto px-6 pt-6 pb-2 flex-1">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {style.icon}
@@ -290,7 +291,9 @@ export function RiskScreenButton({ groupId, effectiveDate }: { groupId: string; 
             </div>
           )}
 
-          <DialogFooter className="gap-2">
+          </div>
+
+          <DialogFooter className="gap-2 px-6 py-4 border-t">
             {latest && (
               <Button
                 variant="outline"
