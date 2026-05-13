@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
-import { ArrowRight, Loader2, Mail, Building2, Phone, User, Lock, Check, LifeBuoy } from "lucide-react";
+import { ArrowRight, Loader2, Mail, Building2, Phone, User, Lock, Check, ShieldCheck, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -61,7 +61,7 @@ const registerFormSchema = z.object({
   }),
 });
 
-// Compact horizontal 3-step indicator.
+// Compact horizontal 3-step indicator. Slots into the white card.
 function Steps({ active }: { active: 1 | 2 | 3 }) {
   const items: { n: 1 | 2 | 3; label: string }[] = [
     { n: 1, label: "Submit info" },
@@ -89,7 +89,7 @@ function Steps({ active }: { active: 1 | 2 | 3 }) {
               </div>
               <div
                 className={
-                  "text-[11.5px] font-medium whitespace-nowrap " +
+                  "text-[11px] font-medium whitespace-nowrap " +
                   (state === "upcoming" ? "text-muted-foreground" : "text-foreground")
                 }
               >
@@ -99,7 +99,7 @@ function Steps({ active }: { active: 1 | 2 | 3 }) {
             {i < items.length - 1 && (
               <div
                 className={
-                  "h-px flex-1 mt-[14px] mx-1 " +
+                  "h-px flex-1 mt-[14px] mx-1.5 " +
                   (s.n < active ? "bg-primary" : "bg-border")
                 }
               />
@@ -108,38 +108,6 @@ function Steps({ active }: { active: 1 | 2 | 3 }) {
         );
       })}
     </div>
-  );
-}
-
-function SupportLine() {
-  return (
-    <p className="mt-6 text-center text-[12.5px] text-muted-foreground">
-      <LifeBuoy className="inline h-3.5 w-3.5 mr-1 align-[-2px] text-muted-foreground/80" />
-      Need help? Email{" "}
-      <a
-        href="mailto:support@kennion.com"
-        className="text-primary font-medium hover:underline underline-offset-4"
-        data-testid="link-support-email"
-      >
-        support@kennion.com
-      </a>
-    </p>
-  );
-}
-
-function Wordmark() {
-  return (
-    <Link href="/" className="inline-flex flex-col items-center group" data-testid="brand-wordmark">
-      <div
-        className="font-display font-[450] text-[22px] tracking-[-0.02em] leading-none group-hover:opacity-90 transition-opacity"
-        style={{ fontFamily: "Fraunces, Georgia, serif" }}
-      >
-        Kennion
-      </div>
-      <div className="text-[9.5px] font-mono uppercase tracking-[0.2em] text-muted-foreground mt-1.5">
-        Benefit Advisors
-      </div>
-    </Link>
   );
 }
 
@@ -198,216 +166,248 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background relative">
-      <div className="absolute right-4 top-3 z-10">
+    <div className="relative min-h-screen bg-background">
+      {/* Navy banner that the card overlaps - exact match to /login */}
+      <div
+        className="absolute inset-x-0 top-0 h-[260px] bg-gradient-to-b text-white"
+        style={{
+          backgroundImage:
+            "linear-gradient(180deg, hsl(215 55% 22%) 0%, hsl(215 50% 18%) 100%)",
+        }}
+        aria-hidden
+      />
+      <div className="absolute right-6 top-3 z-10">
         <ThemeToggle />
       </div>
 
-      <div className="flex justify-center px-4 sm:px-6 pt-8 sm:pt-10 pb-12">
-        <div className="w-full max-w-md">
-          <div className="flex justify-center mb-6">
-            <Wordmark />
+      <div className="relative mx-auto flex max-w-md flex-col items-center px-6 pt-16 pb-12">
+        <div className="text-center text-white">
+          <div className="text-2xl font-bold tracking-tight">
+            Kennion Benefit Advisors
           </div>
+          <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
+            Sales Portal
+          </div>
+        </div>
 
-          {pendingApproval ? (
-            <>
-              <h1 className="text-[24px] font-bold tracking-tight text-center" data-testid="text-pending-approval-title">
-                You&rsquo;re in line.
-              </h1>
-              <p className="mt-1.5 text-sm text-muted-foreground text-center">
-                Registered:{" "}
-                <span className="font-medium text-foreground" data-testid="text-submitted-email">{submittedEmail}</span>
-              </p>
+        {pendingApproval ? (
+          <Card className="mt-8 w-full p-7 shadow-lg" data-testid="card-pending-approval">
+            <h1 className="text-xl font-bold tracking-tight" data-testid="text-pending-approval-title">
+              You&rsquo;re in line.
+            </h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Registered:{" "}
+              <span className="font-medium text-foreground" data-testid="text-submitted-email">{submittedEmail}</span>
+            </p>
 
-              <div className="mt-7">
-                <Steps active={2} />
+            <div className="mt-6">
+              <Steps active={2} />
+            </div>
+
+            <p className="mt-6 text-sm text-muted-foreground leading-[1.55]">
+              Our team reviews every new account before granting access. You&rsquo;ll get an email at the address above as soon as your account is approved. There&rsquo;s nothing else you need to do.
+            </p>
+
+            <div className="mt-5 border-t pt-4 text-center text-xs text-muted-foreground">
+              <Link href="/" className="font-semibold text-primary hover:underline" data-testid="link-back-home">
+                Back to homepage
+              </Link>
+            </div>
+          </Card>
+        ) : (
+          <Card className="mt-8 w-full p-7 shadow-lg" data-testid="card-create-account">
+            <h1 className="text-xl font-bold tracking-tight" data-testid="text-register-title">
+              Create your account
+            </h1>
+
+            <div className="mt-5">
+              <Steps active={1} />
+            </div>
+
+            <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="firstName"
+                      placeholder="John"
+                      className="pl-9"
+                      {...form.register("firstName")}
+                      data-testid="input-first-name"
+                    />
+                  </div>
+                  {form.formState.errors.firstName && (
+                    <p className="text-xs text-destructive">{form.formState.errors.firstName.message}</p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    placeholder="Smith"
+                    {...form.register("lastName")}
+                    data-testid="input-last-name"
+                  />
+                  {form.formState.errors.lastName && (
+                    <p className="text-xs text-destructive">{form.formState.errors.lastName.message}</p>
+                  )}
+                </div>
               </div>
 
-              <Card className="mt-6 p-5">
-                <p className="text-sm text-muted-foreground leading-[1.55]">
-                  Our team reviews every new account before granting access. You&rsquo;ll get an email at the address above as soon as your account is approved. There&rsquo;s nothing else you need to do.
-                </p>
-              </Card>
-
-              <div className="text-center mt-5">
-                <Link href="/" className="text-sm text-primary font-medium hover:underline underline-offset-4" data-testid="link-back-home">
-                  Back to homepage
-                </Link>
+              <div className="space-y-1.5">
+                <Label htmlFor="email">Business Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@company.com"
+                    className="pl-9"
+                    {...form.register("email")}
+                    data-testid="input-email"
+                  />
+                </div>
+                {form.formState.errors.email && (
+                  <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
+                )}
               </div>
 
-              <SupportLine />
-            </>
-          ) : (
-            <>
-              <h1 className="text-[24px] font-bold tracking-tight text-center" data-testid="text-register-title">
-                Create your account
-              </h1>
-              <p className="mt-1.5 text-sm text-muted-foreground text-center">
-                Already have an account?{" "}
-                <Link href="/login" className="font-medium text-primary hover:underline underline-offset-4" data-testid="link-login">
-                  Sign in
-                </Link>
-              </p>
-
-              <div className="mt-7">
-                <Steps active={1} />
+              <div className="space-y-1.5">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Min 8 characters"
+                    className="pl-9"
+                    {...form.register("password")}
+                    data-testid="input-password"
+                  />
+                </div>
+                {form.formState.errors.password && (
+                  <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>
+                )}
               </div>
 
-              <Card className="mt-6 p-5 sm:p-6">
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3.5">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="firstName">First Name</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="firstName"
-                          placeholder="John"
-                          className="pl-9"
-                          {...form.register("firstName")}
-                          data-testid="input-first-name"
-                        />
-                      </div>
-                      {form.formState.errors.firstName && (
-                        <p className="text-xs text-destructive">{form.formState.errors.firstName.message}</p>
-                      )}
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        placeholder="Smith"
-                        {...form.register("lastName")}
-                        data-testid="input-last-name"
-                      />
-                      {form.formState.errors.lastName && (
-                        <p className="text-xs text-destructive">{form.formState.errors.lastName.message}</p>
-                      )}
-                    </div>
-                  </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="phone">Phone Number</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="(555) 123-4567"
+                    className="pl-9"
+                    {...form.register("phone")}
+                    data-testid="input-phone"
+                  />
+                </div>
+                {form.formState.errors.phone && (
+                  <p className="text-xs text-destructive">{form.formState.errors.phone.message}</p>
+                )}
+              </div>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="email">Business Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="you@company.com"
-                        className="pl-9"
-                        {...form.register("email")}
-                        data-testid="input-email"
-                      />
-                    </div>
-                    {form.formState.errors.email && (
-                      <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
-                    )}
-                  </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="companyName">Company Name</Label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="companyName"
+                    placeholder="Acme Corporation"
+                    className="pl-9"
+                    {...form.register("companyName")}
+                    data-testid="input-company-name"
+                  />
+                </div>
+                {form.formState.errors.companyName && (
+                  <p className="text-xs text-destructive">{form.formState.errors.companyName.message}</p>
+                )}
+              </div>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="password">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="Min 8 characters"
-                        className="pl-9"
-                        {...form.register("password")}
-                        data-testid="input-password"
-                      />
-                    </div>
-                    {form.formState.errors.password && (
-                      <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>
-                    )}
-                  </div>
+              <div className="grid grid-cols-[1fr_1.4fr] gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="state">State</Label>
+                  <Select
+                    value={form.watch("state") || ""}
+                    onValueChange={(v) =>
+                      form.setValue("state", v, { shouldValidate: true })
+                    }
+                  >
+                    <SelectTrigger id="state" data-testid="input-state">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {US_STATES.map((s) => (
+                        <SelectItem key={s.code} value={s.code}>
+                          {s.code} — {s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.state && (
+                    <p className="text-xs text-destructive">{form.formState.errors.state.message}</p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="zipCode">ZIP Code</Label>
+                  <Input
+                    id="zipCode"
+                    placeholder="35243"
+                    {...form.register("zipCode")}
+                    data-testid="input-zip-code"
+                  />
+                  {form.formState.errors.zipCode && (
+                    <p className="text-xs text-destructive">{form.formState.errors.zipCode.message}</p>
+                  )}
+                </div>
+              </div>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="(555) 123-4567"
-                        className="pl-9"
-                        {...form.register("phone")}
-                        data-testid="input-phone"
-                      />
-                    </div>
-                    {form.formState.errors.phone && (
-                      <p className="text-xs text-destructive">{form.formState.errors.phone.message}</p>
-                    )}
-                  </div>
+              <Button
+                type="submit"
+                className="w-full gap-1.5"
+                disabled={isLoading}
+                data-testid="button-register"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    Submit <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </form>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="companyName">Company Name</Label>
-                    <div className="relative">
-                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="companyName"
-                        placeholder="Acme Corporation"
-                        className="pl-9"
-                        {...form.register("companyName")}
-                        data-testid="input-company-name"
-                      />
-                    </div>
-                    {form.formState.errors.companyName && (
-                      <p className="text-xs text-destructive">{form.formState.errors.companyName.message}</p>
-                    )}
-                  </div>
+            <div className="mt-5 border-t pt-4 text-center text-xs text-muted-foreground">
+              Already have an account?{" "}
+              <Link href="/login" className="font-semibold text-primary hover:underline" data-testid="link-login">
+                Sign In
+              </Link>
+            </div>
+          </Card>
+        )}
 
-                  <div className="grid grid-cols-[1fr_1.4fr] gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="state">State</Label>
-                      <Select
-                        value={form.watch("state") || ""}
-                        onValueChange={(v) =>
-                          form.setValue("state", v, { shouldValidate: true })
-                        }
-                      >
-                        <SelectTrigger id="state" data-testid="input-state">
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {US_STATES.map((s) => (
-                            <SelectItem key={s.code} value={s.code}>
-                              {s.code} — {s.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {form.formState.errors.state && (
-                        <p className="text-xs text-destructive">{form.formState.errors.state.message}</p>
-                      )}
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="zipCode">ZIP Code</Label>
-                      <Input
-                        id="zipCode"
-                        placeholder="35243"
-                        {...form.register("zipCode")}
-                        data-testid="input-zip-code"
-                      />
-                      {form.formState.errors.zipCode && (
-                        <p className="text-xs text-destructive">{form.formState.errors.zipCode.message}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <Button type="submit" className="w-full mt-2" disabled={isLoading} data-testid="button-register">
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>Submit <ArrowRight className="ml-1 h-4 w-4" /></>
-                    )}
-                  </Button>
-                </form>
-              </Card>
-
-              <SupportLine />
-            </>
-          )}
+        {/* Trust + support footer - same pattern as /login */}
+        <div className="mt-6 flex items-center gap-2 text-[11px] text-muted-foreground">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          256-bit encryption &middot; SOC 2 Type II
+        </div>
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <LifeBuoy className="h-3.5 w-3.5" />
+          Need help?{" "}
+          <a
+            href="mailto:support@kennion.com"
+            className="font-medium text-primary hover:underline"
+            data-testid="link-support-email"
+          >
+            support@kennion.com
+          </a>
+        </div>
+        <div className="mt-2 text-[10px] text-muted-foreground">
+          © {new Date().getFullYear()} Kennion Benefit Advisors
         </div>
       </div>
     </div>
