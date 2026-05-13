@@ -166,7 +166,7 @@ export default function RegisterPage() {
               Submit Your Group
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground leading-[1.5]">
-              Once you create your account, you can submit your census and view your proposal.
+              Once you create your account, you can upload your census and view your employee benefits proposal.
             </p>
 
             <form onSubmit={form.handleSubmit(onSubmit)} className="mt-5 space-y-3">
