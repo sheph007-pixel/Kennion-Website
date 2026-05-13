@@ -174,7 +174,12 @@ export function RiskScreenButton({ groupId, effectiveDate }: { groupId: string; 
           {latest && (
             <div className="space-y-4">
               <div>
-                <div className="text-sm font-semibold mb-2">Score breakdown</div>
+                <div className="text-sm font-semibold mb-1">
+                  Score breakdown <span className="font-normal text-muted-foreground">(factors multiplied to get {latest.kri.toFixed(2)})</span>
+                </div>
+                <div className="text-xs text-muted-foreground mb-2">
+                  Each factor multiplies together with the AI adjustment to produce the Kennion Score.
+                </div>
                 {bar("Demographic", latest.demographic.normalized, "d")}
                 {bar("Geographic",  latest.geographic.normalized,  "g")}
                 {bar("Composition", latest.composition.normalized, "c")}

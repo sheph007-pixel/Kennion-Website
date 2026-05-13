@@ -41,7 +41,7 @@ import {
 } from "@shared/schema";
 import ConnectPgSimple from "connect-pg-simple";
 import { log } from "./index";
-import { sendMagicLinkEmail, sendProposalAcceptanceEmail, sendApprovalRequestEmail, sendApprovalGrantedEmail } from "./email";
+import { sendMagicLinkEmail, sendProposalAcceptanceEmail, sendApprovalRequestEmail, sendApprovalGrantedEmail, sendCensusUploadedAlertEmail } from "./email";
 import { pool, testConnection } from "./db";
 import { cleanCSVWithAI, generateValidationGuidance } from "./ai-csv-cleaner";
 import { generateActuarialAnalysis, generateScoreReview } from "./ai-analysis";
@@ -330,6 +330,46 @@ function escapeHtmlServer(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+// Fires a notification email to hunter@kennion.com on every self-service
+// census upload. Skips internal_sales quotes and admin-initiated uploads
+// (admins know what they did). Fire-and-forget: never blocks the user's
+// upload response on a mail error.
+async function fireCensusUploadedAlert(p: {
+  group: { id: string; companyName: string | null; source: string; riskScore: number | null; riskTier: string | null };
+  entries: Array<{ relationship: string | null }>;
+  uploader: { fullName: string; email: string; companyName: string | null };
+  isAdmin: boolean;
+  req: Request;
+}): Promise<void> {
+  if (p.group.source !== "self_service") return;
+  if (p.isAdmin) return;
+  try {
+    let employees = 0, spouses = 0, children = 0;
+    for (const e of p.entries) {
+      const r = (e.relationship || "").toUpperCase();
+      if (r === "EE") employees++;
+      else if (r === "SP") spouses++;
+      else children++;
+    }
+    await sendCensusUploadedAlertEmail({
+      uploaderName: p.uploader.fullName,
+      uploaderEmail: p.uploader.email,
+      uploaderCompany: p.uploader.companyName || "",
+      groupId: p.group.id,
+      groupCompanyName: p.group.companyName || "(no company)",
+      totalLives: p.entries.length,
+      employees,
+      spouses,
+      children,
+      riskScore: p.group.riskScore,
+      riskTier: p.group.riskTier,
+      baseUrl: getBaseUrl(p.req),
+    });
+  } catch (err: any) {
+    log(`[ALERT] census-upload alert failed for group ${p.group.id}: ${err?.message || err}`);
+  }
 }
 
 function getBaseUrl(req: Request): string {
@@ -1800,6 +1840,18 @@ export async function registerRoutes(
 
       const updatedGroup = await storage.getGroup(group.id);
 
+      // Notify Hunter that a new census has been uploaded (self-service only).
+      // Fire-and-forget so a mail failure never breaks the user's response.
+      if (updatedGroup) {
+        void fireCensusUploadedAlert({
+          group: updatedGroup,
+          entries,
+          uploader: user,
+          isAdmin: user.role === "admin",
+          req,
+        });
+      }
+
       res.json({
         message: "Census uploaded and analyzed successfully",
         group: updatedGroup,
@@ -2063,6 +2115,19 @@ export async function registerRoutes(
 
       const result = await replaceGroupCensus(id, group, incoming);
       if (!result.ok) return res.status(result.status).json(result.body);
+
+      // Notify Hunter that a census has been re-uploaded on a self-service
+      // group (skipped for internal_sales quotes and admin-initiated edits).
+      if (caller) {
+        void fireCensusUploadedAlert({
+          group: result.group,
+          entries: result.entries,
+          uploader: caller,
+          isAdmin,
+          req,
+        });
+      }
+
       res.json({ group: result.group, entries: result.entries });
     } catch (err: any) {
       log(`Census replace error: ${err.message}`, "routes");
@@ -2116,6 +2181,17 @@ export async function registerRoutes(
       // Consume the one-shot pending row so the next upload on this
       // session doesn't replay the same data.
       delete req.session.pendingCensus;
+
+      // Notify Hunter that a self-service user just uploaded a new census.
+      if (caller) {
+        void fireCensusUploadedAlert({
+          group: result.group,
+          entries: result.entries,
+          uploader: caller,
+          isAdmin,
+          req,
+        });
+      }
 
       res.json({ group: result.group, entries: result.entries });
     } catch (err: any) {

@@ -310,6 +310,72 @@ function joinOrDash(items: string[]): string {
   return items.length > 0 ? items.join(", ") : "—";
 }
 
+/**
+ * Notifies Hunter when a self-service user uploads or replaces a census so
+ * he can jump straight into the admin cockpit. Skipped for internal_sales
+ * quotes — the rep already knows.
+ */
+export async function sendCensusUploadedAlertEmail(p: {
+  uploaderName: string;
+  uploaderEmail: string;
+  uploaderCompany: string;
+  groupId: string;
+  groupCompanyName: string;
+  totalLives: number;
+  employees: number;
+  spouses: number;
+  children: number;
+  riskScore: number | null;
+  riskTier: string | null;
+  baseUrl: string;
+}): Promise<boolean> {
+  try {
+    const client = getResendClient();
+    const adminUrl = `${p.baseUrl.replace(/\/$/, "")}/admin/groups/${encodeURIComponent(p.groupId)}`;
+    const scoreText = p.riskScore != null ? p.riskScore.toFixed(2) : "—";
+    const tierText = p.riskTier ? p.riskTier.charAt(0).toUpperCase() + p.riskTier.slice(1) : "—";
+    const result = await client.emails.send({
+      from: FROM_EMAIL,
+      to: "hunter@kennion.com",
+      replyTo: p.uploaderEmail,
+      subject: `New census uploaded: ${p.groupCompanyName} - ${p.totalLives} lives`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #0f1828;">
+          <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px;">
+            <div style="font-family: ui-monospace, monospace; font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: #0e4992;">Kennion &middot; New Census</div>
+            <h2 style="color: #0f1828; margin: 6px 0 0; font-size: 18px; font-weight: 600;">${escapeHtml(p.groupCompanyName)}</h2>
+            <p style="color: #5b6679; font-size: 13px; margin: 4px 0 0;">A user just uploaded a census. Quick details below.</p>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.55;">
+            <tr><td style="padding: 6px 0; color: #5b6679; width: 130px;">Uploaded by</td><td style="padding: 6px 0; font-weight: 500;">${escapeHtml(p.uploaderName)}${p.uploaderCompany ? " (" + escapeHtml(p.uploaderCompany) + ")" : ""}</td></tr>
+            <tr><td style="padding: 6px 0; color: #5b6679;">Email</td><td style="padding: 6px 0;"><a href="mailto:${encodeURIComponent(p.uploaderEmail)}" style="color: #0e4992; text-decoration: none;">${escapeHtml(p.uploaderEmail)}</a></td></tr>
+            <tr><td style="padding: 6px 0; color: #5b6679;">Lives</td><td style="padding: 6px 0; font-weight: 500;">${p.totalLives} total &middot; ${p.employees} EE &middot; ${p.spouses} spouse${p.spouses === 1 ? "" : "s"} &middot; ${p.children} child${p.children === 1 ? "" : "ren"}</td></tr>
+            <tr><td style="padding: 6px 0; color: #5b6679;">Kennion Score</td><td style="padding: 6px 0; font-weight: 500;">${escapeHtml(scoreText)} &middot; ${escapeHtml(tierText)}</td></tr>
+          </table>
+
+          <div style="margin-top: 32px;">
+            <a href="${adminUrl}" style="display: inline-block; background: #0e4992; color: #ffffff; padding: 12px 22px; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 14px;">Open in admin</a>
+          </div>
+
+          <p style="margin-top: 28px; padding-top: 18px; border-top: 1px solid #e5e7eb; font-size: 11.5px; color: #5b6679; line-height: 1.5;">
+            Sent at ${new Date().toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "medium", timeStyle: "short" })} CT. Self-service uploads only - internal sales quotes do not trigger this alert.
+          </p>
+        </div>
+      `,
+    });
+    if (result.error) {
+      log(`[EMAIL ERROR] Census-uploaded alert Resend error: ${JSON.stringify(result.error)}`);
+      return false;
+    }
+    log(`[EMAIL SUCCESS] Census-uploaded alert sent to hunter@ for group ${p.groupId} (id: ${result.data?.id})`);
+    return true;
+  } catch (err: any) {
+    log(`[EMAIL ERROR] Failed to send census-uploaded alert for group ${p.groupId}: ${err.message}`);
+    return false;
+  }
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
