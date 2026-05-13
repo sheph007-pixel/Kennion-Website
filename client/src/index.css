@@ -358,3 +358,69 @@
     margin: 0.5in;
   }
 }
+
+/* === Kennion homepage redesign utilities === */
+
+.font-display {
+  font-family: 'Fraunces', Georgia, serif;
+  font-optical-sizing: auto;
+  font-variation-settings: 'opsz' 144, 'SOFT' 30;
+}
+.font-display em, .font-display .italic {
+  font-style: italic;
+  font-variation-settings: 'opsz' 144, 'SOFT' 70;
+}
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+.hairline { box-shadow: 0 0 0 1px hsl(var(--border)); }
+
+.grid-paper {
+  background-image:
+    linear-gradient(to right, rgba(15,30,60,.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15,30,60,.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes kn-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+.kn-scan { animation: kn-scan 1.2s linear infinite; }
+
+/* Custom range slider used by the savings calculator */
+.kn-range {
+  -webkit-appearance: none; appearance: none;
+  height: 4px;
+  background: linear-gradient(to right,
+    hsl(var(--primary)) 0%,
+    hsl(var(--primary)) var(--pct, 0%),
+    hsl(var(--border)) var(--pct, 0%),
+    hsl(var(--border)) 100%);
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+}
+.kn-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: white;
+  border: 2px solid hsl(var(--primary));
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  cursor: grab;
+  transition: transform .12s ease;
+}
+.kn-range::-webkit-slider-thumb:active { transform: scale(1.1); cursor: grabbing; }
+.kn-range::-moz-range-thumb {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: white;
+  border: 2px solid hsl(var(--primary));
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  cursor: grab;
+}
