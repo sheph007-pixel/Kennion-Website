@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ShieldCheck, ShieldAlert, ShieldQuestion, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,6 +63,7 @@ function bar(label: string, norm: number, key: string) {
 
 export function RiskScreenButton({ groupId, effectiveDate }: { groupId: string; effectiveDate?: Date | string }) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [latest, setLatest] = useState<ScreenResult | null>(null);
 
@@ -97,6 +98,15 @@ export function RiskScreenButton({ groupId, effectiveDate }: { groupId: string; 
     onSuccess: (data) => {
       setLatest(data);
       setOpen(true);
+      // The server writes data.kri/data.tier back to groups.riskScore /
+      // groups.riskTier on every run. Invalidate every cache that reads
+      // those fields so the body header pill, admin list, and proposal
+      // page all immediately reflect the new score instead of the
+      // stale value from before the run.
+      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/groups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/screen/latest", groupId] });
       toast({
         title: `Risk Screen: ${data.tier}`,
         description: `Score ${data.kri.toFixed(2)} - ${data.decision.replace(/_/g, " ")}`,

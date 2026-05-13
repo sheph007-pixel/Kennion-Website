@@ -332,6 +332,68 @@ function escapeHtmlServer(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
+// Runs the Kennion Risk Screen for a group's just-saved census, persists
+// the result to risk_screens, and writes the KRI + tier back to
+// groups.riskScore / groups.riskTier. Used by the upload paths so the
+// CUSTOMER sees the same authoritative Kennion Score the admin would
+// produce by clicking "Run Risk Screen" - eliminating the dual-scoring
+// problem where analyzeGroupRisk() produces one number at upload and
+// screenGroup() produces a different one later.
+//
+// Failure is non-fatal: if screening throws (e.g. malformed census), the
+// caller's analyzeGroupRisk() values stay in place as a safety net, the
+// error is logged, and the upload still succeeds.
+async function runAndPersistScreenForGroup(args: {
+  groupId: string;
+  censusEntries: Array<{ dateOfBirth: string; gender: string; relationship: string; zipCode: string; firstName?: string; lastName?: string }>;
+  groupName: string;
+  effectiveDate?: Date;
+}): Promise<{ kri: number; tier: "Preferred" | "Standard" | "High Risk" } | null> {
+  try {
+    const members = censusEntriesToScreenMembers(args.censusEntries as any);
+    const effectiveDate = args.effectiveDate ?? new Date();
+    const result = screenGroup({ census: members, effectiveDate, group: args.groupName });
+
+    // Render PDF (matches admin Re-run path so the artifacts are identical).
+    let pdfBase64 = "";
+    try {
+      const pdfBuf = await renderRiskScreenPDF(result, {
+        groupName: args.groupName,
+        censusId: args.groupId,
+      });
+      pdfBase64 = pdfBuf.toString("base64");
+    } catch (pdfErr: any) {
+      // PDF failure shouldn't break scoring - just log and skip the PDF.
+      log(`[risk-screen on upload] PDF render failed for ${args.groupId}: ${pdfErr?.message || pdfErr}`);
+    }
+
+    await storage.saveRiskScreen({
+      groupId: args.groupId,
+      modelVersion: result.model_version,
+      modelHash: result.model_hash,
+      kri: result.kri,
+      tier: result.tier,
+      decision: result.decision,
+      resultJson: result as any,
+      pdfBase64,
+    });
+
+    const legacyTier =
+      result.tier === "Preferred" ? "preferred" :
+      result.tier === "High Risk"  ? "high"      :
+                                     "standard";
+    await storage.updateGroup(args.groupId, {
+      riskScore: result.kri as any,
+      riskTier: legacyTier as any,
+    } as any);
+
+    return { kri: result.kri, tier: result.tier };
+  } catch (err: any) {
+    log(`[risk-screen on upload] failed for group ${args.groupId}: ${err?.message || err}`);
+    return null;
+  }
+}
+
 // Fires a notification email to hunter@kennion.com on every self-service
 // census upload. Skips internal_sales quotes and admin-initiated uploads
 // (admins know what they did). Fire-and-forget: never blocks the user's
@@ -969,6 +1031,15 @@ async function replaceGroupCensus(
     groupCharacteristics: analysis.characteristics,
     score: analysis.characteristics.qualificationScore,
     adminNotes,
+  });
+
+  // Run the Kennion Risk Screen and overwrite the legacy analyzeGroupRisk-
+  // based riskScore/riskTier with the authoritative KRI. Non-fatal: if
+  // screening fails, the legacy values stay so the upload still succeeds.
+  await runAndPersistScreenForGroup({
+    groupId: id,
+    censusEntries: entries,
+    groupName: group.companyName,
   });
 
   const updatedGroup = await storage.getGroup(id);
@@ -1838,6 +1909,18 @@ export async function registerRoutes(
 
       delete req.session.pendingCensus;
 
+      // Run the authoritative Kennion Risk Screen now so the customer sees
+      // the SAME score the admin's "Re-run" would produce. Overwrites the
+      // legacy analyzeGroupRisk-based riskScore/riskTier on success; falls
+      // back to the legacy values if screening throws (non-blocking).
+      await runAndPersistScreenForGroup({
+        groupId: group.id,
+        censusEntries: entries,
+        groupName: groupCompanyName,
+      });
+
+      // Re-fetch after the screen write so the response carries the final
+      // authoritative score + tier.
       const updatedGroup = await storage.getGroup(group.id);
 
       // Notify Hunter that a new census has been uploaded (self-service only).
