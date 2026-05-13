@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
-import { ArrowRight, Loader2, Mail, Building2, Phone, User, Lock, Clock } from "lucide-react";
+import { ArrowRight, Loader2, Mail, Building2, Phone, User, Lock, Check } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -69,6 +69,54 @@ const registerFormSchema = z.object({
     message: "Enter a 5-digit ZIP",
   }),
 });
+
+// 3-step process indicator. Shows where the prospect is in the
+// signup flow so they know what to expect before submitting.
+function Steps({ active }: { active: 1 | 2 | 3 }) {
+  const steps: { n: 1 | 2 | 3; label: string; sub: string }[] = [
+    { n: 1, label: "Submit your info",         sub: "Fill out the form below." },
+    { n: 2, label: "We approve your account",  sub: "Typically within 1 business day." },
+    { n: 3, label: "Sign in",                  sub: "We email you a sign-in link." },
+  ];
+  return (
+    <div className="mb-6 rounded-lg border border-border bg-muted/40 p-4" data-testid="register-steps">
+      <ol className="space-y-3">
+        {steps.map((s) => {
+          const state = s.n < active ? "done" : s.n === active ? "active" : "upcoming";
+          return (
+            <li key={s.n} className="flex items-start gap-3">
+              <div
+                className={
+                  "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-medium mt-0.5 " +
+                  (state === "done"
+                    ? "bg-primary text-primary-foreground"
+                    : state === "active"
+                    ? "bg-primary text-primary-foreground ring-4 ring-primary/15"
+                    : "bg-background text-muted-foreground border border-border")
+                }
+              >
+                {state === "done" ? <Check className="h-3 w-3" strokeWidth={3} /> : s.n}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div
+                  className={
+                    "text-[13.5px] font-medium leading-tight " +
+                    (state === "upcoming" ? "text-muted-foreground" : "text-foreground")
+                  }
+                >
+                  {s.label}
+                </div>
+                <div className="text-[12px] text-muted-foreground leading-snug mt-0.5">
+                  {s.sub}
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -140,35 +188,32 @@ export default function RegisterPage() {
       <div className="flex-1 flex items-start justify-center px-6 pt-6 pb-12">
         <div className="w-full max-w-md">
           {pendingApproval ? (
-            <div className="text-center space-y-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mx-auto">
-                <Clock className="h-8 w-8 text-primary" />
-              </div>
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-pending-approval-title">
-                Thanks — your account is pending approval
+            <>
+              <h1 className="mb-4 text-2xl font-bold tracking-tight" data-testid="text-pending-approval-title">
+                Thanks — you're in line
               </h1>
-              <p className="text-muted-foreground">
-                We received your registration for <span className="font-medium text-foreground" data-testid="text-submitted-email">{submittedEmail}</span>.
-              </p>
-              <Card className="p-6 text-left space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Our team reviews every new account before granting access. You'll receive an email at the address above as soon as your account is approved — typically within one business day.
+              <Steps active={2} />
+              <Card className="p-6 space-y-3">
+                <p className="text-sm">
+                  We received your registration for{" "}
+                  <span className="font-medium" data-testid="text-submitted-email">{submittedEmail}</span>.
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  In the meantime, you can close this tab. There's nothing else you need to do.
+                  Our team reviews every new account before granting access. You'll get an email at the address above as soon as your account is approved — typically within one business day. There's nothing else you need to do.
                 </p>
               </Card>
-              <div className="pt-2">
+              <div className="text-center mt-6">
                 <Link href="/" className="text-sm text-primary font-medium" data-testid="link-back-home">
                   Back to homepage
                 </Link>
               </div>
-            </div>
+            </>
           ) : (
             <>
               <h1 className="mb-4 text-2xl font-bold tracking-tight" data-testid="text-register-title">
                 Create Account
               </h1>
+              <Steps active={1} />
 
               <Card className="p-6">
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
