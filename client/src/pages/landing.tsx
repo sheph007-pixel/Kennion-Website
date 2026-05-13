@@ -199,7 +199,7 @@ function Nav() {
 
         <nav className="hidden md:flex items-center gap-7 text-[13.5px] text-muted-foreground">
           <a href="#how-it-works" className="hover:text-foreground">How It Works</a>
-          <a href="#features" className="hover:text-foreground">Platform</a>
+          <a href="#program" className="hover:text-foreground">Platform</a>
           <a href="#benefits" className="hover:text-foreground">Benefits</a>
           <a href="#contact" className="hover:text-foreground">Contact</a>
         </nav>
@@ -258,7 +258,7 @@ function Nav() {
       {open && (
         <div className="md:hidden border-t border-border bg-background px-6 py-4 text-sm">
           <a href="#how-it-works" className="block py-2">How It Works</a>
-          <a href="#features" className="block py-2">Platform</a>
+          <a href="#program" className="block py-2">Platform</a>
           <a href="#benefits" className="block py-2">Benefits</a>
           <a href="#contact" className="block py-2">Contact</a>
 
