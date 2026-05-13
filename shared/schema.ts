@@ -15,6 +15,13 @@ export const users = pgTable("users", {
   verified: boolean("verified").default(false).notNull(),
   magicToken: text("magic_token"),
   magicTokenExpiry: timestamp("magic_token_expiry"),
+  // Manual gatekeeper approval. Default 'approved' so existing rows
+  // auto-approve on db:push; new signups are explicitly set to 'pending'
+  // by /api/auth/register. Values: 'pending' | 'approved' | 'rejected'.
+  approvalStatus: text("approval_status").default("approved").notNull(),
+  approvalToken: text("approval_token"),
+  approvalTokenExpiry: timestamp("approval_token_expiry"),
+  approvedAt: timestamp("approved_at"),
   role: text("role").default("client").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -126,6 +133,10 @@ export const insertUserSchema = createInsertSchema(users).omit({
   verified: true,
   magicToken: true,
   magicTokenExpiry: true,
+  approvalStatus: true,
+  approvalToken: true,
+  approvalTokenExpiry: true,
+  approvedAt: true,
   role: true,
   createdAt: true,
 });
@@ -245,7 +256,6 @@ export const registerSchema = z.object({
     .string()
     .transform((s) => s.trim())
     .refine((s) => /^\d{5}(-\d{4})?$/.test(s), { message: "Enter a 5-digit ZIP (or ZIP+4)" }),
-  accessCode: z.string().min(1, "Access code is required"),
 });
 
 // Required details when creating an additional group under an existing

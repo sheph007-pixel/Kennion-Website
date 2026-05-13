@@ -18,8 +18,7 @@ interface AuthContextType {
     companyName: string;
     state: string;
     zipCode: string;
-    accessCode: string;
-  }) => Promise<{ message: string; email: string; verified?: boolean }>;
+  }) => Promise<{ message: string; email: string; verified?: boolean; pending?: boolean }>;
   verifyMagicLink: (token: string) => Promise<void>;
   login: (email: string, password: string) => Promise<AuthUser>;
   logout: () => Promise<void>;
@@ -58,10 +57,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     companyName: string;
     state: string;
     zipCode: string;
-    accessCode: string;
   }) => {
     const res = await apiRequest("POST", "/api/auth/register", data);
     const result = await res.json();
+    // result.pending = account awaiting Hunter's approval (do NOT prime auth)
+    // result.verified = legacy auto-approved flow (kept for safety)
     if (result.verified) {
       await primeAuthMe();
       resetOtherCaches();

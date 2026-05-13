@@ -199,6 +199,113 @@ export async function sendProposalAcceptanceEmail(
   }
 }
 
+/**
+ * Sends Hunter a one-click approve/reject email when a new prospect
+ * registers. The token in each URL IS the auth — no login required to
+ * click. Tokens expire after 14 days (enforced on the GET endpoint).
+ */
+export async function sendApprovalRequestEmail(p: {
+  prospectName: string;
+  prospectEmail: string;
+  companyName: string;
+  phone: string;
+  state: string;
+  zipCode: string;
+  approveUrl: string;
+  rejectUrl: string;
+}): Promise<boolean> {
+  try {
+    const client = getResendClient();
+    const result = await client.emails.send({
+      from: FROM_EMAIL,
+      to: "hunter@kennion.com",
+      replyTo: p.prospectEmail,
+      subject: `New signup pending approval: ${p.prospectName} - ${p.companyName}`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #0f1828;">
+          <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px;">
+            <h2 style="color: #0e4992; margin: 0; font-size: 18px; font-weight: 600;">Kennion · Pending Signup</h2>
+            <p style="color: #5b6679; font-size: 13px; margin: 4px 0 0;">A new prospect is awaiting your approval.</p>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.55;">
+            <tr><td style="padding: 6px 0; color: #5b6679; width: 130px;">Name</td><td style="padding: 6px 0; font-weight: 500;">${escapeHtml(p.prospectName)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #5b6679;">Company</td><td style="padding: 6px 0; font-weight: 500;">${escapeHtml(p.companyName)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #5b6679;">Business email</td><td style="padding: 6px 0;"><a href="mailto:${encodeURIComponent(p.prospectEmail)}" style="color: #0e4992; text-decoration: none;">${escapeHtml(p.prospectEmail)}</a></td></tr>
+            <tr><td style="padding: 6px 0; color: #5b6679;">Phone</td><td style="padding: 6px 0;"><a href="tel:${encodeURIComponent(p.phone)}" style="color: #0e4992; text-decoration: none;">${escapeHtml(p.phone)}</a></td></tr>
+            <tr><td style="padding: 6px 0; color: #5b6679;">Location</td><td style="padding: 6px 0;">${escapeHtml(p.state)} &middot; ${escapeHtml(p.zipCode)}</td></tr>
+          </table>
+
+          <div style="margin-top: 32px;">
+            <a href="${p.approveUrl}" style="display: inline-block; background: #0e4992; color: #ffffff; padding: 12px 22px; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 14px; margin-right: 10px;">Approve &amp; Notify</a>
+            <a href="${p.rejectUrl}" style="display: inline-block; background: #ffffff; color: #5b6679; padding: 12px 22px; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 14px; border: 1px solid #d9dde5;">Reject</a>
+          </div>
+
+          <p style="margin-top: 28px; padding-top: 18px; border-top: 1px solid #e5e7eb; font-size: 11.5px; color: #5b6679; line-height: 1.5;">
+            One-click action - no login required. Links expire in 14 days. If neither is clicked, the prospect's account stays pending.
+          </p>
+        </div>
+      `,
+    });
+    if (result.error) {
+      log(`[EMAIL ERROR] Approval-request email Resend error: ${JSON.stringify(result.error)}`);
+      return false;
+    }
+    log(`[EMAIL SUCCESS] Approval-request email sent to hunter@ for ${p.prospectEmail} (id: ${result.data?.id})`);
+    return true;
+  } catch (err: any) {
+    log(`[EMAIL ERROR] Failed to send approval-request email for ${p.prospectEmail}: ${err.message}`);
+    return false;
+  }
+}
+
+/**
+ * Sends the prospect a "you're in" email after Hunter approves them.
+ */
+export async function sendApprovalGrantedEmail(p: {
+  toEmail: string;
+  fullName: string;
+  loginUrl: string;
+}): Promise<boolean> {
+  try {
+    const client = getResendClient();
+    const firstName = p.fullName ? p.fullName.split(" ")[0] : "";
+    const greeting = firstName ? `Hi ${firstName},` : "Hi,";
+    const result = await client.emails.send({
+      from: FROM_EMAIL,
+      to: p.toEmail,
+      subject: "You're approved · Kennion Benefit Advisors",
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px; color: #0f1828;">
+          <div style="text-align: center; margin-bottom: 28px;">
+            <h2 style="color: #0e4992; margin: 0; font-size: 20px;">Kennion Benefit Advisors</h2>
+          </div>
+          <p style="font-size: 16px; line-height: 1.55;">${escapeHtml(greeting)}</p>
+          <p style="font-size: 16px; line-height: 1.55;">Your Kennion account has been approved. You can now sign in and submit your group for a quote.</p>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${p.loginUrl}" style="display: inline-block; background: #0e4992; color: #ffffff; padding: 13px 28px; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 15px;">Sign In</a>
+          </div>
+          <p style="font-size: 13.5px; line-height: 1.55; color: #5b6679;">
+            If you have questions, reply to this email and our team will get back to you.
+          </p>
+          <p style="font-size: 11.5px; color: #5b6679; margin-top: 28px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+            Kennion Benefit Advisors &middot; Vestavia, AL
+          </p>
+        </div>
+      `,
+    });
+    if (result.error) {
+      log(`[EMAIL ERROR] Approval-granted email Resend error: ${JSON.stringify(result.error)}`);
+      return false;
+    }
+    log(`[EMAIL SUCCESS] Approval-granted email sent to ${p.toEmail} (id: ${result.data?.id})`);
+    return true;
+  } catch (err: any) {
+    log(`[EMAIL ERROR] Failed to send approval-granted email for ${p.toEmail}: ${err.message}`);
+    return false;
+  }
+}
+
 function joinOrDash(items: string[]): string {
   return items.length > 0 ? items.join(", ") : "—";
 }

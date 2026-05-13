@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
-import { ArrowRight, Loader2, Mail, Building2, Phone, User, Key, Lock } from "lucide-react";
+import { ArrowRight, Loader2, Mail, Building2, Phone, User, Lock, Clock } from "lucide-react";
 import { KennionLogo } from "@/components/kennion-logo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -20,7 +20,6 @@ import { US_STATES } from "@shared/schema";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ClickToRevealPhone } from "@/components/click-to-reveal-phone";
 
 // Personal email domains blocklist
 const BLOCKED_EMAIL_DOMAINS = [
@@ -46,7 +45,6 @@ function isValidUSPhone(phone: string): boolean {
 }
 
 const registerFormSchema = z.object({
-  accessCode: z.string().min(1, "Access code is required"),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Please enter a valid email address").refine(
@@ -74,8 +72,8 @@ const registerFormSchema = z.object({
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
-  const [sentToEmail, setSentToEmail] = useState("");
+  const [pendingApproval, setPendingApproval] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
   const { register: registerUser } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -83,7 +81,6 @@ export default function RegisterPage() {
   const form = useForm<z.infer<typeof registerFormSchema>>({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
-      accessCode: "",
       firstName: "",
       lastName: "",
       email: "",
@@ -100,23 +97,24 @@ export default function RegisterPage() {
     try {
       const result = await registerUser(data);
 
-      // If verified (valid access code), redirect to dashboard immediately
-      if (result?.verified) {
-        toast({
-          title: "Welcome!",
-          description: "Your account has been created successfully.",
-        });
-        // Small delay to let the toast show
-        setTimeout(() => navigate("/dashboard"), 500);
-      } else {
-        // Fallback to email verification flow
-        setEmailSent(true);
-        setSentToEmail(data.email);
-        toast({
-          title: "Check your email",
-          description: "We sent you a secure sign-in link to verify your account.",
-        });
+      // New flow: account created, awaiting Hunter's manual approval.
+      // Backend returns { pending: true } and does NOT set a session.
+      if (result?.pending) {
+        setPendingApproval(true);
+        setSubmittedEmail(data.email);
+        return;
       }
+
+      // Legacy: if backend somehow returned verified, log them in.
+      if (result?.verified) {
+        toast({ title: "Welcome!", description: "Your account has been created successfully." });
+        setTimeout(() => navigate("/dashboard"), 500);
+        return;
+      }
+
+      // Defensive fallback.
+      setPendingApproval(true);
+      setSubmittedEmail(data.email);
     } catch (err: any) {
       const errMsg = err.message || "";
       const cleanMessage = errMsg.replace(/^\d+:\s*/, "").replace(/[{}"]|message:/g, "").trim() || "Please try again.";
@@ -141,26 +139,30 @@ export default function RegisterPage() {
 
       <div className="flex-1 flex items-start justify-center px-6 pt-6 pb-12">
         <div className="w-full max-w-md">
-          {emailSent ? (
+          {pendingApproval ? (
             <div className="text-center space-y-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mx-auto">
-                <Mail className="h-8 w-8 text-primary" />
+                <Clock className="h-8 w-8 text-primary" />
               </div>
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-check-email-title">Check your email</h1>
+              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-pending-approval-title">
+                Thanks — your account is pending approval
+              </h1>
               <p className="text-muted-foreground">
-                We sent a verification link to <span className="font-medium text-foreground" data-testid="text-sent-email">{sentToEmail}</span>
+                We received your registration for <span className="font-medium text-foreground" data-testid="text-submitted-email">{submittedEmail}</span>.
               </p>
               <Card className="p-6 text-left space-y-3">
-                <p className="text-sm text-muted-foreground">Click the link in the email to verify your account and sign in. The link expires in 15 minutes.</p>
-                <p className="text-sm text-muted-foreground">Didn't get the email? Check your spam folder or try again.</p>
+                <p className="text-sm text-muted-foreground">
+                  Our team reviews every new account before granting access. You'll receive an email at the address above as soon as your account is approved — typically within one business day.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  In the meantime, you can close this tab. There's nothing else you need to do.
+                </p>
               </Card>
-              <Button
-                variant="outline"
-                onClick={() => { setEmailSent(false); }}
-                data-testid="button-try-again"
-              >
-                Try again
-              </Button>
+              <div className="pt-2">
+                <Link href="/" className="text-sm text-primary font-medium" data-testid="link-back-home">
+                  Back to homepage
+                </Link>
+              </div>
             </div>
           ) : (
             <>
@@ -170,28 +172,6 @@ export default function RegisterPage() {
 
               <Card className="p-6">
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="accessCode">Access Code</Label>
-                    <div className="relative">
-                      <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="accessCode"
-                        type="text"
-                        placeholder="Enter your access code"
-                        className="pl-9"
-                        {...form.register("accessCode")}
-                        data-testid="input-access-code"
-                      />
-                    </div>
-                    {form.formState.errors.accessCode && (
-                      <p className="text-xs text-destructive">{form.formState.errors.accessCode.message}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      Need A Code? Text Hunter Shepherd{" "}
-                      <ClickToRevealPhone label="(click to reveal)" variant="link" className="text-xs inline-flex" />
-                    </p>
-                  </div>
-
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">First Name</Label>

@@ -41,7 +41,7 @@ import {
 } from "@shared/schema";
 import ConnectPgSimple from "connect-pg-simple";
 import { log } from "./index";
-import { sendMagicLinkEmail, sendProposalAcceptanceEmail } from "./email";
+import { sendMagicLinkEmail, sendProposalAcceptanceEmail, sendApprovalRequestEmail, sendApprovalGrantedEmail } from "./email";
 import { pool, testConnection } from "./db";
 import { cleanCSVWithAI, generateValidationGuidance } from "./ai-csv-cleaner";
 import { generateActuarialAnalysis, generateScoreReview } from "./ai-analysis";
@@ -119,6 +119,128 @@ async function requireAdmin(req: Request, res: Response, next: Function) {
     return res.status(403).json({ message: "Admin access required" });
   }
   next();
+}
+
+// ─── Manual approval gatekeeper helpers ─────────────────────────────
+// Used by GET /api/auth/approve/:token and /api/auth/reject/:token.
+// The token in the URL IS the auth — no login required for Hunter to
+// click. Expired/invalid tokens 400 and render an error page.
+
+type ApprovalDecisionResult =
+  | { ok: true; decision: "approved" | "rejected"; prospectName: string; prospectEmail: string; companyName: string }
+  | { ok: false; reason: "invalid" | "expired" | "already" };
+
+async function processApprovalDecision(
+  token: string,
+  decision: "approved" | "rejected",
+  req: Request,
+): Promise<ApprovalDecisionResult> {
+  if (!token || token.length < 16) return { ok: false, reason: "invalid" };
+  const user = await storage.getUserByApprovalToken(token);
+  if (!user) return { ok: false, reason: "invalid" };
+  if (!user.approvalTokenExpiry || new Date() > user.approvalTokenExpiry) {
+    // Clear the expired token so the row can be re-flowed if needed.
+    await storage.updateUser(user.id, { approvalToken: null, approvalTokenExpiry: null });
+    return { ok: false, reason: "expired" };
+  }
+  // Idempotency: if already decided, don't re-flip, don't re-email.
+  if (user.approvalStatus !== "pending") {
+    return { ok: false, reason: "already" };
+  }
+
+  await storage.updateUser(user.id, {
+    approvalStatus: decision,
+    approvedAt: decision === "approved" ? new Date() : null,
+    approvalToken: null,
+    approvalTokenExpiry: null,
+  });
+
+  if (decision === "approved") {
+    // Notify the prospect they can now log in. Non-fatal if mail fails.
+    try {
+      const loginUrl = `${getBaseUrl(req)}/login`;
+      await sendApprovalGrantedEmail({
+        toEmail: user.email,
+        fullName: user.fullName,
+        loginUrl,
+      });
+    } catch (mailErr: any) {
+      log(`[APPROVAL] Granted-email failed for ${user.email}: ${mailErr.message}`);
+    }
+  }
+
+  return {
+    ok: true,
+    decision,
+    prospectName: user.fullName,
+    prospectEmail: user.email,
+    companyName: user.companyName || "",
+  };
+}
+
+function renderApprovalResultPage(r: ApprovalDecisionResult): string {
+  const wrap = (title: string, body: string, color: string) => `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>${title} - Kennion</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f6f8fb; color: #0f1828; margin: 0; padding: 48px 24px; }
+  .card { max-width: 480px; margin: 64px auto; background: white; border-radius: 14px; box-shadow: 0 12px 48px -16px rgba(15,30,60,.18); padding: 36px 32px; }
+  .eyebrow { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: ${color}; }
+  h1 { font-size: 22px; margin: 8px 0 16px; font-weight: 600; letter-spacing: -.01em; }
+  p { font-size: 14.5px; line-height: 1.55; color: #5b6679; margin: 8px 0; }
+  .footer { margin-top: 28px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #5b6679; }
+</style></head><body>
+  <div class="card">
+    <div class="eyebrow">Kennion - Approval</div>
+    <h1>${title}</h1>
+    ${body}
+    <div class="footer">You can close this tab.</div>
+  </div>
+</body></html>`;
+
+  if (!r.ok) {
+    if (r.reason === "expired") {
+      return wrap(
+        "Link expired",
+        `<p>This approval link has expired. The prospect can re-register, or you can manage their account directly in the admin panel.</p>`,
+        "#b45309",
+      );
+    }
+    if (r.reason === "already") {
+      return wrap(
+        "Already decided",
+        `<p>This signup has already been processed. No further action needed.</p>`,
+        "#5b6679",
+      );
+    }
+    return wrap(
+      "Invalid link",
+      `<p>This approval link is not valid. It may have already been used.</p>`,
+      "#b91c1c",
+    );
+  }
+
+  if (r.decision === "approved") {
+    return wrap(
+      "Approved",
+      `<p><strong>${escapeHtmlServer(r.prospectName)}</strong>${r.companyName ? ` (${escapeHtmlServer(r.companyName)})` : ""} can now sign in.</p>
+       <p>We sent <strong>${escapeHtmlServer(r.prospectEmail)}</strong> a notification with a sign-in link.</p>`,
+      "#047857",
+    );
+  }
+  return wrap(
+    "Rejected",
+    `<p><strong>${escapeHtmlServer(r.prospectName)}</strong> will not be able to sign in. No email is sent to the prospect.</p>`,
+    "#5b6679",
+  );
+}
+
+function escapeHtmlServer(s: string): string {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function getBaseUrl(req: Request): string {
@@ -871,11 +993,6 @@ export async function registerRoutes(
     try {
       const data = registerSchema.parse(req.body);
 
-      // Validate access code
-      if (data.accessCode !== "8787") {
-        return res.status(400).json({ message: "Invalid access code. Please check your code and try again." });
-      }
-
       const fullName = `${data.firstName} ${data.lastName}`;
 
       const existing = await storage.getUserByEmail(data.email);
@@ -886,7 +1003,13 @@ export async function registerRoutes(
       // Hash password
       const hashedPassword = await bcrypt.hash(data.password, 10);
 
-      // Create user as verified (access code grants instant access)
+      // Generate approval token (used in the one-click approve/reject email links).
+      // 14-day expiry matches the message in the email body.
+      const approvalToken = generateMagicToken();
+      const approvalTokenExpiry = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
+      // Create user as PENDING approval. They cannot log in until
+      // Hunter clicks "Approve" in the email.
       const user = await storage.createUser({
         fullName,
         email: data.email,
@@ -898,25 +1021,55 @@ export async function registerRoutes(
         verified: true,
         magicToken: null,
         magicTokenExpiry: null,
+        approvalStatus: "pending",
+        approvalToken,
+        approvalTokenExpiry,
       });
 
-      // Log user in immediately. Persist the session to the store
-      // before responding so follow-up requests see the userId; see
-      // /api/auth/login for the same rationale.
-      req.session.userId = user.id;
-      await new Promise<void>((resolve, reject) => {
-        req.session.save((saveErr) => (saveErr ? reject(saveErr) : resolve()));
-      });
+      // Send Hunter the approve/reject email. Failure here is non-fatal —
+      // the account is on file, Hunter can approve manually if needed.
+      const baseUrl = getBaseUrl(req);
+      const approveUrl = `${baseUrl}/api/auth/approve/${approvalToken}`;
+      const rejectUrl = `${baseUrl}/api/auth/reject/${approvalToken}`;
+      try {
+        await sendApprovalRequestEmail({
+          prospectName: fullName,
+          prospectEmail: data.email,
+          companyName: data.companyName,
+          phone: data.phone,
+          state: data.state,
+          zipCode: data.zipCode,
+          approveUrl,
+          rejectUrl,
+        });
+      } catch (mailErr: any) {
+        log(`[REGISTER] Approval email failed for ${data.email}: ${mailErr.message}`);
+      }
 
+      // Do NOT log the user in. They're pending until approved.
       res.json({
-        message: "Account created successfully",
+        message: "Account created. Awaiting approval.",
         email: data.email,
-        verified: true
+        pending: true,
       });
     } catch (err: any) {
       log(`Registration error: ${err.message}`);
       res.status(400).json({ message: err.message || "Registration failed" });
     }
+  });
+
+  // Hunter clicks "Approve" in his email -> this endpoint. Token IS the auth.
+  // Returns a plain HTML confirmation page (no SPA routing needed).
+  app.get("/api/auth/approve/:token", async (req: Request, res: Response) => {
+    const { token } = req.params;
+    const result = await processApprovalDecision(token, "approved", req);
+    res.status(result.ok ? 200 : 400).type("html").send(renderApprovalResultPage(result));
+  });
+
+  app.get("/api/auth/reject/:token", async (req: Request, res: Response) => {
+    const { token } = req.params;
+    const result = await processApprovalDecision(token, "rejected", req);
+    res.status(result.ok ? 200 : 400).type("html").send(renderApprovalResultPage(result));
   });
 
   app.post("/api/auth/verify-magic-link", async (req: Request, res: Response) => {
@@ -970,6 +1123,14 @@ export async function registerRoutes(
       const valid = await bcrypt.compare(data.password, user.password);
       if (!valid) {
         return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Gatekeeper: block pending and rejected accounts. Generic message for
+      // rejected so we don't leak that someone was specifically declined.
+      if (user.approvalStatus !== "approved") {
+        return res.status(403).json({
+          message: "Your account is awaiting approval. You'll receive an email once it's reviewed.",
+        });
       }
 
       req.session.userId = user.id;
