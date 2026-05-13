@@ -1,9 +1,9 @@
-import { useState, Fragment } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
-import { ArrowRight, Loader2, Mail, Building2, Phone, User, Lock, Check, ShieldCheck, LifeBuoy } from "lucide-react";
+import { ArrowRight, Loader2, Mail, Building2, Phone, User, Lock, ShieldCheck, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -60,56 +60,6 @@ const registerFormSchema = z.object({
     message: "Enter a 5-digit ZIP",
   }),
 });
-
-// Compact horizontal 3-step indicator. Slots into the white card.
-function Steps({ active }: { active: 1 | 2 | 3 }) {
-  const items: { n: 1 | 2 | 3; label: string }[] = [
-    { n: 1, label: "Submit info" },
-    { n: 2, label: "We approve" },
-    { n: 3, label: "Sign in" },
-  ];
-  return (
-    <div className="flex items-start" data-testid="register-steps">
-      {items.map((s, i) => {
-        const state = s.n < active ? "done" : s.n === active ? "active" : "upcoming";
-        return (
-          <Fragment key={s.n}>
-            <div className="flex flex-col items-center gap-1.5 shrink-0">
-              <div
-                className={
-                  "flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-medium " +
-                  (state === "done"
-                    ? "bg-primary text-primary-foreground"
-                    : state === "active"
-                    ? "bg-primary text-primary-foreground ring-4 ring-primary/15"
-                    : "bg-background text-muted-foreground border border-border")
-                }
-              >
-                {state === "done" ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : s.n}
-              </div>
-              <div
-                className={
-                  "text-[11px] font-medium whitespace-nowrap " +
-                  (state === "upcoming" ? "text-muted-foreground" : "text-foreground")
-                }
-              >
-                {s.label}
-              </div>
-            </div>
-            {i < items.length - 1 && (
-              <div
-                className={
-                  "h-px flex-1 mt-[14px] mx-1.5 " +
-                  (s.n < active ? "bg-primary" : "bg-border")
-                }
-              />
-            )}
-          </Fragment>
-        );
-      })}
-    </div>
-  );
-}
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -200,12 +150,8 @@ export default function RegisterPage() {
               <span className="font-medium text-foreground" data-testid="text-submitted-email">{submittedEmail}</span>
             </p>
 
-            <div className="mt-6">
-              <Steps active={2} />
-            </div>
-
-            <p className="mt-6 text-sm text-muted-foreground leading-[1.55]">
-              Our team reviews every new account before granting access. You&rsquo;ll get an email at the address above as soon as your account is approved. There&rsquo;s nothing else you need to do.
+            <p className="mt-5 text-sm text-muted-foreground leading-[1.55]">
+              Our team reviews every new account before granting access. You&rsquo;ll get a confirmation email at the address above as soon as your account is approved. There&rsquo;s nothing else you need to do.
             </p>
 
             <div className="mt-5 border-t pt-4 text-center text-xs text-muted-foreground">
@@ -219,10 +165,9 @@ export default function RegisterPage() {
             <h1 className="text-xl font-bold tracking-tight" data-testid="text-register-title">
               Create your account
             </h1>
-
-            <div className="mt-5">
-              <Steps active={1} />
-            </div>
+            <p className="mt-2 text-sm text-muted-foreground leading-[1.55]">
+              Sign up to submit your group and view your proposal. You&rsquo;ll receive a confirmation email once your account is approved.
+            </p>
 
             <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-4">
               <div className="grid grid-cols-2 gap-3">
