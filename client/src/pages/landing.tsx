@@ -842,7 +842,7 @@ function printSavingsReport({ employees, avgAge, monthlyBill, annualSavings, mon
   <div class="meta">
     <b>Personalized Savings Estimate</b><br>
     Generated ${today}<br>
-    <span class="verified">✓ AI verified</span>
+    <span class="verified">✓ Estimate Ready</span>
   </div>
 </header>
 
@@ -1079,7 +1079,7 @@ function SavingsCalculator() {
                     <span className={`w-1.5 h-1.5 rounded-full ${analyzing ? "bg-amber-500 animate-pulse" : "bg-emerald-500"}`} />
                     {analyzing ? "Underwriting engine · running" : "Underwriting engine · ready"}
                   </span>
-                  <span>Kennion™ v4.2</span>
+                  <span>Kennion Estimator</span>
                 </div>
 
                 {/* Indeterminate scan bar */}
@@ -1119,7 +1119,7 @@ function SavingsCalculator() {
                       {analyzing ? "Analyzing" : `Qualified · ${tier} Risk`}
                     </span>
                   </div>
-                  <span className="text-[10.5px] font-mono text-white/50">Kennion Rater · v4.2</span>
+                  <span className="text-[10.5px] font-mono text-white/50">Kennion Estimator</span>
                 </div>
 
                 <div className="px-7 lg:px-9 py-8 lg:py-10">
@@ -1132,7 +1132,7 @@ function SavingsCalculator() {
                     <span className="text-emerald-300 font-mono tabular-nums">−{livePct}%</span>
                     <span className={`inline-flex items-center gap-1 text-[10.5px] font-mono uppercase tracking-[0.14em] px-2 py-0.5 rounded-full transition-colors ${analyzing ? "bg-amber-400/15 text-amber-200" : "bg-emerald-400/15 text-emerald-300"}`}>
                       {analyzing ? <Loader2 size={10} strokeWidth={2.4} className="animate-spin"/> : <Check size={10} strokeWidth={2.4}/>}
-                      {analyzing ? "Verifying…" : "AI verified"}
+                      {analyzing ? "Calculating…" : "Estimate Ready"}
                     </span>
                   </div>
 
