@@ -161,17 +161,17 @@ export default function RegisterPage() {
             </div>
           </Card>
         ) : (
-          <Card className="mt-8 w-full p-7 shadow-lg" data-testid="card-create-account">
+          <Card className="mt-8 w-full p-6 shadow-lg" data-testid="card-create-account">
             <h1 className="text-xl font-bold tracking-tight" data-testid="text-register-title">
               Create your account
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground leading-[1.55]">
+            <p className="mt-1.5 text-sm text-muted-foreground leading-[1.5]">
               Sign up to submit your group and view your proposal. You&rsquo;ll receive a confirmation email once your account is approved.
             </p>
 
-            <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="mt-5 space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <Label htmlFor="firstName">First Name</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -187,7 +187,7 @@ export default function RegisterPage() {
                     <p className="text-xs text-destructive">{form.formState.errors.firstName.message}</p>
                   )}
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <Label htmlFor="lastName">Last Name</Label>
                   <Input
                     id="lastName"
@@ -201,7 +201,7 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label htmlFor="email">Business Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -219,7 +219,7 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -237,43 +237,44 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="phone">Phone Number</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="(555) 123-4567"
-                    className="pl-9"
-                    {...form.register("phone")}
-                    data-testid="input-phone"
-                  />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="(555) 123-4567"
+                      className="pl-9"
+                      {...form.register("phone")}
+                      data-testid="input-phone"
+                    />
+                  </div>
+                  {form.formState.errors.phone && (
+                    <p className="text-xs text-destructive">{form.formState.errors.phone.message}</p>
+                  )}
                 </div>
-                {form.formState.errors.phone && (
-                  <p className="text-xs text-destructive">{form.formState.errors.phone.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="companyName">Company Name</Label>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="companyName"
-                    placeholder="Acme Corporation"
-                    className="pl-9"
-                    {...form.register("companyName")}
-                    data-testid="input-company-name"
-                  />
+                <div className="space-y-1">
+                  <Label htmlFor="companyName">Company</Label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="companyName"
+                      placeholder="Acme Corp"
+                      className="pl-9"
+                      {...form.register("companyName")}
+                      data-testid="input-company-name"
+                    />
+                  </div>
+                  {form.formState.errors.companyName && (
+                    <p className="text-xs text-destructive">{form.formState.errors.companyName.message}</p>
+                  )}
                 </div>
-                {form.formState.errors.companyName && (
-                  <p className="text-xs text-destructive">{form.formState.errors.companyName.message}</p>
-                )}
               </div>
 
               <div className="grid grid-cols-[1fr_1.4fr] gap-3">
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <Label htmlFor="state">State</Label>
                   <Select
                     value={form.watch("state") || ""}
@@ -296,7 +297,7 @@ export default function RegisterPage() {
                     <p className="text-xs text-destructive">{form.formState.errors.state.message}</p>
                   )}
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <Label htmlFor="zipCode">ZIP Code</Label>
                   <Input
                     id="zipCode"
@@ -312,7 +313,7 @@ export default function RegisterPage() {
 
               <Button
                 type="submit"
-                className="w-full gap-1.5"
+                className="w-full gap-1.5 mt-1"
                 disabled={isLoading}
                 data-testid="button-register"
               >
@@ -326,7 +327,7 @@ export default function RegisterPage() {
               </Button>
             </form>
 
-            <div className="mt-5 border-t pt-4 text-center text-xs text-muted-foreground">
+            <div className="mt-4 border-t pt-3 text-center text-xs text-muted-foreground">
               Already have an account?{" "}
               <Link href="/login" className="font-semibold text-primary hover:underline" data-testid="link-login">
                 Sign In
