@@ -199,7 +199,7 @@ function Nav() {
 
         <nav className="hidden md:flex items-center gap-7 text-[13.5px] text-muted-foreground">
           <a href="#how-it-works" className="hover:text-foreground">How It Works</a>
-          <a href="#program" className="hover:text-foreground">Platform</a>
+          <a href="#program" className="hover:text-foreground">Program</a>
           <a href="#benefits" className="hover:text-foreground">Benefits</a>
           <a href="#contact" className="hover:text-foreground">Contact</a>
         </nav>
@@ -258,7 +258,7 @@ function Nav() {
       {open && (
         <div className="md:hidden border-t border-border bg-background px-6 py-4 text-sm">
           <a href="#how-it-works" className="block py-2">How It Works</a>
-          <a href="#program" className="block py-2">Platform</a>
+          <a href="#program" className="block py-2">Program</a>
           <a href="#benefits" className="block py-2">Benefits</a>
           <a href="#contact" className="block py-2">Contact</a>
 
@@ -937,7 +937,14 @@ function SavingsCalculator() {
   const reductionPct = Math.round(savingsPct * 100);
   const newBill = monthlyBill - targetSavings;
   const tier = employees >= 20 ? "Preferred" : "Standard";
-  const af = ageFactor(avgAge);
+
+  // Single source of truth for every dollar/percent on the result card.
+  // Tied to displaySavings (the tweened value) so all numbers move in lockstep.
+  const liveMonthly = displaySavings;
+  const liveAnnual = liveMonthly * 12;
+  const livePct = monthlyBill > 0 ? Math.round((liveMonthly / monthlyBill) * 100) : 0;
+  const liveNewBill = Math.max(0, monthlyBill - liveMonthly);
+  const liveNewBillPct = monthlyBill > 0 ? Math.round((liveNewBill / monthlyBill) * 100) : 100;
 
   // Pulse "analyzing", tween savings number on any input change
   useEffect(() => {
@@ -965,7 +972,6 @@ function SavingsCalculator() {
 
   const fmt = (n) => "$" + n.toLocaleString();
   const billPct = 100;
-  const newBillPct = Math.round((newBill / monthlyBill) * 100);
 
   // Vague engine phrases — cycle during analysis, don't expose actual math
   const phrases = [
@@ -976,15 +982,13 @@ function SavingsCalculator() {
     "Finalizing estimate…",
   ];
   const [phraseIdx, setPhraseIdx] = useState(0);
-  const [flickerPct, setFlickerPct] = useState(reductionPct);
   useEffect(() => {
-    if (!analyzing) { setFlickerPct(reductionPct); return; }
+    if (!analyzing) return;
     const id = setInterval(() => {
       setPhraseIdx((i) => (i + 1) % phrases.length);
-      setFlickerPct(10 + Math.floor(Math.random() * 13));
-    }, 95);
+    }, 220);
     return () => clearInterval(id);
-  }, [analyzing, reductionPct]);
+  }, [analyzing]);
 
   return (
     <section id="calculator" className="py-24 lg:py-32 bg-background">
@@ -1121,11 +1125,11 @@ function SavingsCalculator() {
                 <div className="px-7 lg:px-9 py-8 lg:py-10">
                   <div className="text-[10.5px] uppercase tracking-[0.14em] text-white/70">Estimated annual savings on group health</div>
                   <div className="mt-2 font-display font-[450] text-[44px] sm:text-[56px] lg:text-[88px] leading-none tracking-[-0.035em] tabular-nums">
-                    {fmt(annualSavings)}
+                    {fmt(liveAnnual)}
                   </div>
                   <div className="mt-2.5 flex items-baseline flex-wrap gap-x-3 gap-y-1 text-[13.5px]">
-                    <span className="text-white/75 tabular-nums">{fmt(displaySavings)}/mo saved</span>
-                    <span className="text-emerald-300 font-mono tabular-nums">−{flickerPct}%</span>
+                    <span className="text-white/75 tabular-nums">{fmt(liveMonthly)}/mo saved</span>
+                    <span className="text-emerald-300 font-mono tabular-nums">−{livePct}%</span>
                     <span className={`inline-flex items-center gap-1 text-[10.5px] font-mono uppercase tracking-[0.14em] px-2 py-0.5 rounded-full transition-colors ${analyzing ? "bg-amber-400/15 text-amber-200" : "bg-emerald-400/15 text-emerald-300"}`}>
                       {analyzing ? <Loader2 size={10} strokeWidth={2.4} className="animate-spin"/> : <Check size={10} strokeWidth={2.4}/>}
                       {analyzing ? "Verifying…" : "AI verified"}
@@ -1143,16 +1147,16 @@ function SavingsCalculator() {
                     <div className="flex items-center gap-3">
                       <div className="w-[60px] text-[11px] font-mono uppercase tracking-[0.12em]" style={{ color: "hsl(210 85% 70%)" }}>Kennion</div>
                       <div className="flex-1 h-2 rounded-full bg-white/15 overflow-hidden">
-                        <div className="h-full" style={{ width: `${newBillPct}%`, transition: "width .6s ease-out", background: "hsl(210 85% 62%)" }} />
+                        <div className="h-full" style={{ width: `${liveNewBillPct}%`, transition: "width .6s ease-out", background: "hsl(210 85% 62%)" }} />
                       </div>
-                      <div className="w-[100px] text-right font-mono text-[12.5px] tabular-nums" style={{ color: "hsl(210 85% 78%)" }}>{fmt(newBill)}</div>
+                      <div className="w-[100px] text-right font-mono text-[12.5px] tabular-nums" style={{ color: "hsl(210 85% 78%)" }}>{fmt(liveNewBill)}</div>
                     </div>
                   </div>
 
                   <div className="mt-7 grid grid-cols-3 gap-px bg-white/15 rounded-xl overflow-hidden">
                     {[
-                      { l: "Monthly savings", v: fmt(targetSavings) },
-                      { l: "Rate reduction", v: `−${flickerPct}%` },
+                      { l: "Monthly savings", v: fmt(liveMonthly) },
+                      { l: "Rate reduction", v: `−${livePct}%` },
                       { l: "Risk tier",      v: tier },
                     ].map((s) => (
                       <div key={s.l} className="bg-[hsl(215_35%_14%)] px-4 py-4">
