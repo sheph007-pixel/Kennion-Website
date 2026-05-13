@@ -136,14 +136,16 @@ function BrandPanel() {
       />
 
       <div className="relative z-10">
-        <Link href="/">
-          <img
-            src="https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/attachments/production/5004437337/logo/qGPs3ykt503dCIwP_qHVHmcxV3JVHXZucQ.png"
-            alt="Kennion Benefit Advisors"
-            className="h-9 w-auto cursor-pointer"
-            style={{ filter: "brightness(0) invert(1)" }}
-            data-testid="brand-logo"
-          />
+        <Link href="/" className="inline-block group" data-testid="brand-wordmark">
+          <div
+            className="font-display font-[450] text-[30px] tracking-[-0.02em] leading-none group-hover:opacity-90 transition-opacity"
+            style={{ fontFamily: "Fraunces, Georgia, serif" }}
+          >
+            Kennion
+          </div>
+          <div className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-white/55 mt-2">
+            Benefit Advisors
+          </div>
         </Link>
       </div>
 
