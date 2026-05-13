@@ -163,10 +163,10 @@ export default function RegisterPage() {
         ) : (
           <Card className="mt-8 w-full p-6 shadow-lg" data-testid="card-create-account">
             <h1 className="text-xl font-bold tracking-tight" data-testid="text-register-title">
-              Create your account
+              Submit Your Group
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground leading-[1.5]">
-              Sign up to submit your group and view your proposal. You&rsquo;ll receive a confirmation email once your account is approved.
+              Once you create your account, you can submit your census and view your proposal.
             </p>
 
             <form onSubmit={form.handleSubmit(onSubmit)} className="mt-5 space-y-3">
