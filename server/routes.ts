@@ -122,9 +122,34 @@ async function requireAdmin(req: Request, res: Response, next: Function) {
 }
 
 // ─── Manual approval gatekeeper helpers ─────────────────────────────
-// Used by GET /api/auth/approve/:token and /api/auth/reject/:token.
-// The token in the URL IS the auth — no login required for Hunter to
-// click. Expired/invalid tokens 400 and render an error page.
+// Two-step flow to defeat email-client URL prefetch (Outlook/Gmail/M365
+// security scanners hit every link in incoming mail). GET renders a
+// confirmation page (no mutation, safe for bots). POST performs the
+// decision. The token in the URL IS the auth either way; the human
+// signs off by clicking the confirm button.
+
+type PendingLookupResult =
+  | { ok: true; name: string; email: string; company: string; phone: string; state: string; zip: string }
+  | { ok: false; reason: "invalid" | "expired" | "already" };
+
+async function lookupPendingByToken(token: string): Promise<PendingLookupResult> {
+  if (!token || token.length < 16) return { ok: false, reason: "invalid" };
+  const user = await storage.getUserByApprovalToken(token);
+  if (!user) return { ok: false, reason: "invalid" };
+  if (!user.approvalTokenExpiry || new Date() > user.approvalTokenExpiry) {
+    return { ok: false, reason: "expired" };
+  }
+  if (user.approvalStatus !== "pending") return { ok: false, reason: "already" };
+  return {
+    ok: true,
+    name: user.fullName,
+    email: user.email,
+    company: user.companyName || "",
+    phone: user.phone || "",
+    state: user.state || "",
+    zip: user.zipCode || "",
+  };
+}
 
 type ApprovalDecisionResult =
   | { ok: true; decision: "approved" | "rejected"; prospectName: string; prospectEmail: string; companyName: string }
@@ -232,6 +257,70 @@ function renderApprovalResultPage(r: ApprovalDecisionResult): string {
     `<p><strong>${escapeHtmlServer(r.prospectName)}</strong> will not be able to sign in. No email is sent to the prospect.</p>`,
     "#5b6679",
   );
+}
+
+// Confirmation page (rendered on GET). Shows the prospect's details and
+// a single button that POSTs back to the same URL to perform the decision.
+// Email security scanners only follow GETs, so they hit this page and
+// stop -- they never trigger the mutating POST.
+function renderConfirmPage(
+  lookup: PendingLookupResult,
+  decision: "approved" | "rejected",
+  token: string,
+): string {
+  if (!lookup.ok) return renderApprovalResultPage({ ok: false, reason: lookup.reason });
+
+  const isApprove = decision === "approved";
+  const title = isApprove ? "Confirm approval" : "Confirm rejection";
+  const accentColor = isApprove ? "#047857" : "#b45309";
+  const btnText = isApprove ? "Approve & Notify" : "Reject";
+  const btnBg = isApprove ? "#0e4992" : "#b91c1c";
+  const intro = isApprove
+    ? "Approve this signup? The prospect will receive a sign-in link by email."
+    : "Reject this signup? The prospect will not be notified.";
+  const oppositeAction = isApprove ? "reject" : "approve";
+  const oppositeLabel = isApprove ? "Reject instead" : "Approve instead";
+  const formAction = `/api/auth/${isApprove ? "approve" : "reject"}/${encodeURIComponent(token)}`;
+  const altUrl = `/api/auth/${oppositeAction}/${encodeURIComponent(token)}`;
+
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${title} - Kennion</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f6f8fb; color: #0f1828; margin: 0; padding: 32px 24px; }
+  .card { max-width: 480px; margin: 48px auto; background: white; border-radius: 14px; box-shadow: 0 12px 48px -16px rgba(15,30,60,.18); padding: 32px 32px; }
+  .eyebrow { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: ${accentColor}; }
+  h1 { font-size: 22px; margin: 8px 0 12px; font-weight: 600; letter-spacing: -.01em; }
+  p.intro { font-size: 14.5px; line-height: 1.55; color: #5b6679; margin: 0 0 22px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; line-height: 1.5; margin: 0 0 26px; }
+  td { padding: 6px 0; vertical-align: top; }
+  td.lbl { color: #5b6679; width: 120px; }
+  td.val { font-weight: 500; }
+  td.val a { color: #0e4992; text-decoration: none; }
+  .row-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  button.primary { background: ${btnBg}; color: white; border: 0; padding: 11px 22px; font-size: 14px; font-weight: 500; border-radius: 6px; cursor: pointer; }
+  button.primary:hover { opacity: .92; }
+  a.alt { font-size: 13px; color: #5b6679; text-decoration: none; padding: 11px 14px; }
+  a.alt:hover { color: #0f1828; }
+  .footer { margin-top: 22px; padding-top: 14px; border-top: 1px solid #e5e7eb; font-size: 11.5px; color: #5b6679; line-height: 1.5; }
+</style></head><body>
+  <div class="card">
+    <div class="eyebrow">Kennion - Approval</div>
+    <h1>${title}</h1>
+    <p class="intro">${intro}</p>
+    <table>
+      <tr><td class="lbl">Name</td><td class="val">${escapeHtmlServer(lookup.name)}</td></tr>
+      <tr><td class="lbl">Company</td><td class="val">${escapeHtmlServer(lookup.company || "-")}</td></tr>
+      <tr><td class="lbl">Business email</td><td class="val"><a href="mailto:${encodeURIComponent(lookup.email)}">${escapeHtmlServer(lookup.email)}</a></td></tr>
+      <tr><td class="lbl">Phone</td><td class="val">${escapeHtmlServer(lookup.phone || "-")}</td></tr>
+      <tr><td class="lbl">Location</td><td class="val">${escapeHtmlServer(lookup.state || "-")} &middot; ${escapeHtmlServer(lookup.zip || "-")}</td></tr>
+    </table>
+    <form method="POST" action="${formAction}" class="row-actions">
+      <button type="submit" class="primary">${btnText}</button>
+      <a class="alt" href="${altUrl}">${oppositeLabel}</a>
+    </form>
+    <div class="footer">Click the button to confirm. Link expires 14 days after the signup.</div>
+  </div>
+</body></html>`;
 }
 
 function escapeHtmlServer(s: string): string {
@@ -1058,15 +1147,35 @@ export async function registerRoutes(
     }
   });
 
-  // Hunter clicks "Approve" in his email -> this endpoint. Token IS the auth.
-  // Returns a plain HTML confirmation page (no SPA routing needed).
+  // Two-step approval flow (defeats email-client URL prefetch).
+  // GET renders a confirmation page; the page POSTs back to perform the
+  // actual decision. Bots only fetch the GET, so they can't trigger the
+  // state change.
   app.get("/api/auth/approve/:token", async (req: Request, res: Response) => {
+    const { token } = req.params;
+    const lookup = await lookupPendingByToken(token);
+    res
+      .status(lookup.ok ? 200 : 400)
+      .type("html")
+      .send(renderConfirmPage(lookup, "approved", token));
+  });
+
+  app.get("/api/auth/reject/:token", async (req: Request, res: Response) => {
+    const { token } = req.params;
+    const lookup = await lookupPendingByToken(token);
+    res
+      .status(lookup.ok ? 200 : 400)
+      .type("html")
+      .send(renderConfirmPage(lookup, "rejected", token));
+  });
+
+  app.post("/api/auth/approve/:token", async (req: Request, res: Response) => {
     const { token } = req.params;
     const result = await processApprovalDecision(token, "approved", req);
     res.status(result.ok ? 200 : 400).type("html").send(renderApprovalResultPage(result));
   });
 
-  app.get("/api/auth/reject/:token", async (req: Request, res: Response) => {
+  app.post("/api/auth/reject/:token", async (req: Request, res: Response) => {
     const { token } = req.params;
     const result = await processApprovalDecision(token, "rejected", req);
     res.status(result.ok ? 200 : 400).type("html").send(renderApprovalResultPage(result));
