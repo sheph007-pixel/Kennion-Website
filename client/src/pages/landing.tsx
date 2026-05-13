@@ -999,7 +999,7 @@ function SavingsCalculator() {
             Group Health · Live Estimate
           </div>
           <h2 className="font-display font-[450] text-[44px] lg:text-[60px] leading-[0.98] tracking-[-0.03em] mt-5">
-            Your group health rates <span className="italic" style={{ color: "hsl(var(--primary))" }}>don't have to</span> climb every year.
+            Your group health rates <span className="italic mr-[0.25em]" style={{ color: "hsl(var(--primary))" }}>don't have to</span> climb every year.
           </h2>
           <p className="mt-5 text-[16.5px] leading-[1.6] text-muted-foreground max-w-xl">
             Renewal after renewal, the number only goes one way. We built our program to change that. Plug in your group below and see what's possible.
