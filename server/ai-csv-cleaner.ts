@@ -20,28 +20,53 @@ interface CSVCleaningResult {
 }
 
 /**
- * Standardize relationship value using simple rules
+ * Standardize relationship value using simple rules.
+ *
+ * Returns `recognized: false` when the value doesn't match any known
+ * relationship vocabulary. Callers MUST treat the fallback "EE" as a
+ * placeholder and surface the unrecognized case to the user — silently
+ * defaulting dependents to "Employee" produces wildly wrong rates
+ * because the rate engine multiplies the per-EE composite by the
+ * (inflated) employee count.
  */
-function standardizeRelationship(value: string): "EE" | "SP" | "CH" {
+function standardizeRelationship(value: string): { code: "EE" | "SP" | "CH"; recognized: boolean } {
   const normalized = value.trim().toUpperCase();
+  if (!normalized) return { code: "EE", recognized: false };
 
-  // Employee patterns
-  if (["EE", "E", "EMP", "EMPLOYEE", "STAFF", "WORKER", "MEMBER"].includes(normalized)) {
-    return "EE";
+  // Employee / primary subscriber patterns
+  if (["EE", "E", "EMP", "EMPLOYEE", "STAFF", "WORKER", "MEMBER",
+       "SELF", "PRIMARY", "SUBSCRIBER", "INSURED", "ENROLLEE"].includes(normalized)) {
+    return { code: "EE", recognized: true };
   }
 
-  // Spouse patterns
-  if (["SP", "S", "SPOUSE", "PARTNER", "WIFE", "HUSBAND"].includes(normalized)) {
-    return "SP";
+  // Spouse / domestic partner patterns
+  if (["SP", "S", "SPOUSE", "PARTNER", "WIFE", "HUSBAND",
+       "DP", "DOMESTIC PARTNER", "DOMESTIC-PARTNER",
+       "CIVIL UNION", "CU"].includes(normalized)) {
+    return { code: "SP", recognized: true };
   }
 
-  // Child patterns
-  if (["CH", "C", "CHILD", "CHILDREN", "DEP", "DEPENDENT", "KID", "SON", "DAUGHTER"].includes(normalized)) {
-    return "CH";
+  // Child / dependent patterns
+  if (["CH", "C", "CHILD", "CHILDREN", "DEP", "DEPENDENT", "DEPENDANT",
+       "KID", "SON", "DAUGHTER", "STEPCHILD", "STEP-CHILD",
+       "ADOPTED", "FOSTER", "WARD"].includes(normalized)) {
+    return { code: "CH", recognized: true };
   }
 
-  // Default to Employee if unrecognized
-  return "EE";
+  // Loose prefix matches catch trailing qualifiers ("Spouse of John",
+  // "Child 1", "Dependent — Disabled") without paving over typos.
+  if (normalized.startsWith("SPOUS") || normalized.startsWith("HUSBAN") || normalized.startsWith("WIFE")) {
+    return { code: "SP", recognized: true };
+  }
+  if (normalized.startsWith("CHILD") || normalized.startsWith("DEPEND") ||
+      normalized.startsWith("SON") || normalized.startsWith("DAUGHT")) {
+    return { code: "CH", recognized: true };
+  }
+  if (normalized.startsWith("EMPLOY") || normalized.startsWith("SUBSCR")) {
+    return { code: "EE", recognized: true };
+  }
+
+  return { code: "EE", recognized: false };
 }
 
 /**
@@ -76,10 +101,12 @@ CSV Headers: ${headers.join(", ")}
 Required Fields:
 - First Name (person's first/given name)
 - Last Name (person's last/family/surname)
-- Type (relationship: Employee/EE/Spouse/SP/Child/CH/Dependent)
+- Type (FAMILY relationship to the employee: Employee/EE/Spouse/SP/Child/CH/Dependent — values like "Employee", "Spouse", "Child", "EE", "SP", "CH", "Self", "Dependent". Common header names: "Relationship", "Tier", "Member Type", "Role", "Relation")
 - Date of Birth (DOB, birthday, birth date)
 - Gender (sex, M/F/Male/Female)
 - Zip Code (postal code, zip)
+
+CRITICAL: For "Type", ONLY map a column that distinguishes employees from their spouse/children. Do NOT map columns about employment status ("Full-Time/Part-Time"), coverage tier ("EE Only/Family"), enrollment status ("Active/Cancelled"), or job title — map those to "ignore".
 
 Return ONLY a JSON object mapping each header to ONE of these fields. If a header doesn't match any field, map it to "ignore".
 Format: {"Header Name": "First Name", "Another Header": "Last Name", ...}
@@ -168,6 +195,9 @@ export async function cleanCSVWithAI(
     throw new Error(`Could not detect required columns: ${missingFields.join(", ")}. Please ensure your CSV contains columns for first name, last name, relationship type, date of birth, gender, and zip code.`);
   }
 
+  let unrecognizedRelCount = 0;
+  const unrecognizedRawSamples = new Set<string>();
+
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
 
@@ -181,7 +211,8 @@ export async function cleanCSVWithAI(
       const zip = row[fieldToHeader["Zip Code"]!]?.toString().trim() || "";
 
       // Standardize using simple rules
-      const relationship = standardizeRelationship(rawType);
+      const relResult = standardizeRelationship(rawType);
+      const relationship = relResult.code;
       const gender = standardizeGender(rawGender);
 
       const issues: string[] = [];
@@ -189,6 +220,15 @@ export async function cleanCSVWithAI(
       if (!lastName) issues.push("Missing last name");
       if (!dob) issues.push("Missing date of birth");
       if (!zip) issues.push("Missing zip code");
+      if (!relResult.recognized) {
+        unrecognizedRelCount++;
+        if (rawType) {
+          unrecognizedRawSamples.add(rawType);
+          issues.push(`Unrecognized relationship "${rawType}" — defaulted to Employee`);
+        } else {
+          issues.push("Missing relationship — defaulted to Employee");
+        }
+      }
 
       if (issues.length > 0) {
         warnings.push(`Row ${i + 1}: ${issues.join(", ")}`);
@@ -209,10 +249,48 @@ export async function cleanCSVWithAI(
     }
   }
 
+  // If we couldn't recognize the relationship for any row at all, the
+  // "Type" column we mapped is almost certainly the wrong one (or its
+  // values use a vocabulary we don't know). Defaulting everything to
+  // "Employee" produces nonsensical pricing — fail loudly so the user
+  // sees it and can fix the CSV.
+  if (cleanedData.length > 0 && unrecognizedRelCount === cleanedData.length) {
+    const typeHeader = fieldToHeader["Type"];
+    const sample = Array.from(unrecognizedRawSamples).slice(0, 5);
+    const sampleText = sample.length
+      ? `Found values like ${sample.map((s) => `"${s}"`).join(", ")}.`
+      : `The column appears to be empty.`;
+    throw new Error(
+      `Couldn't read the relationship/dependent column. We treated "${typeHeader}" as the relationship column, ` +
+      `but none of its values match known formats (Employee/EE, Spouse/SP, Child/CH, Dependent). ${sampleText} ` +
+      `Please update your CSV so the relationship column uses values like "EE", "SP", "CH" (or "Employee", "Spouse", "Child") — ` +
+      `or rename your real relationship column to "Relationship" so the importer can find it.`
+    );
+  }
+
+  const eeRows = cleanedData.filter((c) => c.relationship === "EE").length;
+  const spRows = cleanedData.filter((c) => c.relationship === "SP").length;
+  const chRows = cleanedData.filter((c) => c.relationship === "CH").length;
+
+  // Mixed-but-suspicious: some rows classified, many fell through to
+  // the EE default. Surface as a top-level warning rather than blocking
+  // — a small all-employee group is legitimate, but the user should
+  // see this before confirming.
+  if (unrecognizedRelCount > 0 && unrecognizedRelCount < cleanedData.length) {
+    warnings.unshift(
+      `${unrecognizedRelCount} of ${cleanedData.length} rows had unrecognized relationship values and were defaulted to Employee. ` +
+      `Result: ${eeRows} Employee / ${spRows} Spouse / ${chRows} Child. Please verify before confirming.`
+    );
+  }
+
+  let confidence: "high" | "medium" | "low" = "high";
+  if (unrecognizedRelCount > 0) confidence = "medium";
+  if (unrecognizedRelCount > cleanedData.length / 2) confidence = "low";
+
   return {
     cleanedData,
-    confidence: "high",
-    summary: `AI detected and mapped ${headers.length} columns. Processed ${cleanedData.length} rows with auto-standardized values.`,
+    confidence,
+    summary: `AI detected and mapped ${headers.length} columns. Processed ${cleanedData.length} rows: ${eeRows} Employee, ${spRows} Spouse, ${chRows} Child.`,
     warnings,
     columnMapping
   };
