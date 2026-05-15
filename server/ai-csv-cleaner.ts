@@ -269,14 +269,36 @@ export async function cleanCSVWithAI(
   if (cleanedData.length > 0 && unrecognizedRelCount === cleanedData.length) {
     const typeHeader = fieldToHeader["Type"];
     const sample = Array.from(unrecognizedRawSamples).slice(0, 5);
-    const sampleText = sample.length
-      ? `Found values like ${sample.map((s) => `"${s}"`).join(", ")}.`
-      : `The column appears to be empty.`;
+
+    if (sample.length > 0) {
+      throw new Error(
+        `Couldn't read the relationship/dependent column. We treated "${typeHeader}" as the relationship column, ` +
+        `but none of its values match known formats (Employee/EE, Spouse/SP, Child/CH, Dependent). ` +
+        `Found values like ${sample.map((s) => `"${s}"`).join(", ")}. ` +
+        `Please update your CSV so the relationship column uses values like "EE", "SP", "CH" (or "Employee", "Spouse", "Child") — ` +
+        `or rename your real relationship column to "Relationship" so the importer can find it.`
+      );
+    }
+
+    // Empty-column path: surface per-column fill counts so the user can
+    // see WHICH columns actually have data and which look empty. This
+    // turns "the column appears to be empty" into actionable info — if
+    // the rep sees that another column has the relationship values,
+    // they know to rename it; if every column is empty, they know the
+    // upload is genuinely blank.
+    const detectedCols = actualRowKeys.slice(0, 10);
+    const fillCounts = detectedCols.map((k) => {
+      const filled = rows.reduce(
+        (n, r) => n + (r[k] != null && String(r[k]).trim() !== "" ? 1 : 0),
+        0,
+      );
+      return `"${k}" (${filled}/${rows.length} filled)`;
+    });
     throw new Error(
-      `Couldn't read the relationship/dependent column. We treated "${typeHeader}" as the relationship column, ` +
-      `but none of its values match known formats (Employee/EE, Spouse/SP, Child/CH, Dependent). ${sampleText} ` +
-      `Please update your CSV so the relationship column uses values like "EE", "SP", "CH" (or "Employee", "Spouse", "Child") — ` +
-      `or rename your real relationship column to "Relationship" so the importer can find it.`
+      `Couldn't read the relationship/dependent column. We tried column "${typeHeader}" but every cell in it was empty across all ${rows.length} rows. ` +
+      `Detected columns in your CSV: ${fillCounts.join(", ")}. ` +
+      `If your relationship values are in a different column, rename it to "Relationship" (or "Type") and re-upload. ` +
+      `If the relationship column really is blank, fill it with "EE" / "SP" / "CH" (or "Employee" / "Spouse" / "Child") for each row.`
     );
   }
 
