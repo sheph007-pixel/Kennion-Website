@@ -1628,6 +1628,12 @@ export async function registerRoutes(
       const parsed = Papa.parse(csvText, {
         header: true,
         skipEmptyLines: true,
+        // Strip a UTF-8 BOM and surrounding whitespace from headers so
+        // an Excel / Google Sheets export doesn't end up keying every
+        // row by "﻿First Name" — that mismatch versus the
+        // AI mapper's clean "First Name" was the root cause of
+        // census uploads silently zeroing out dependents.
+        transformHeader: (h: string) => h.replace(/^﻿/, "").trim(),
       });
 
       if (parsed.errors.length > 0 && parsed.data.length === 0) {
@@ -3363,7 +3369,11 @@ export async function registerRoutes(
       if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
       const csvText = req.file.buffer.toString("utf-8");
-      const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+      const parsed = Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (h: string) => h.replace(/^﻿/, "").trim(),
+      });
       if (parsed.errors.length > 0 && parsed.data.length === 0) {
         return res.status(400).json({ message: "CSV parsing error: " + parsed.errors[0].message });
       }
@@ -3662,7 +3672,11 @@ export async function registerRoutes(
           try {
             // 1. Parse CSV
             const csvText = file.buffer.toString("utf-8");
-            const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+            const parsed = Papa.parse(csvText, {
+              header: true,
+              skipEmptyLines: true,
+              transformHeader: (h: string) => h.replace(/^﻿/, "").trim(),
+            });
             if (parsed.errors.length > 0 && parsed.data.length === 0) {
               throw new Error(`CSV parsing error: ${parsed.errors[0].message}`);
             }

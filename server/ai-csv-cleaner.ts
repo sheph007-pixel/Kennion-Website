@@ -180,10 +180,22 @@ export async function cleanCSVWithAI(
     "Zip Code": null
   };
 
+  // Belt-and-suspenders: even if the parse layer normalizes headers,
+  // the AI mapper occasionally echoes a header with subtle drift
+  // (BOM, trailing space, case). Resolve each AI-returned header back
+  // to the closest actual row key so `row[fieldToHeader[field]]`
+  // hits the real column instead of returning undefined for every row.
+  const actualRowKeys = rows.length > 0 ? Object.keys(rows[0]) : headers;
+  const normalizeKey = (s: string) => s.replace(/^﻿/, "").trim().toLowerCase();
+  const keyByNormalized = new Map<string, string>();
+  for (const k of actualRowKeys) {
+    keyByNormalized.set(normalizeKey(k), k);
+  }
+
   for (const [header, field] of Object.entries(columnMapping)) {
-    if (field !== "ignore") {
-      fieldToHeader[field] = header;
-    }
+    if (field === "ignore") continue;
+    const resolved = keyByNormalized.get(normalizeKey(header)) ?? header;
+    fieldToHeader[field] = resolved;
   }
 
   // Check for missing required fields
