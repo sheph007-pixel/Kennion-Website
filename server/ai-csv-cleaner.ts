@@ -108,6 +108,8 @@ Required Fields:
 
 CRITICAL: For "Type", ONLY map a column that distinguishes employees from their spouse/children. Do NOT map columns about employment status ("Full-Time/Part-Time"), coverage tier ("EE Only/Family"), enrollment status ("Active/Cancelled"), or job title — map those to "ignore".
 
+CRITICAL: Use the headers EXACTLY as provided, character-for-character — do NOT abbreviate, reformat, strip parentheses, or remove punctuation. If the header is "Relationship (EE / SP / CH)" your JSON key MUST be "Relationship (EE / SP / CH)", not "Relationship".
+
 Return ONLY a JSON object mapping each header to ONE of these fields. If a header doesn't match any field, map it to "ignore".
 Format: {"Header Name": "First Name", "Another Header": "Last Name", ...}
 
@@ -182,9 +184,12 @@ export async function cleanCSVWithAI(
 
   // Belt-and-suspenders: even if the parse layer normalizes headers,
   // the AI mapper occasionally echoes a header with subtle drift
-  // (BOM, trailing space, case). Resolve each AI-returned header back
-  // to the closest actual row key so `row[fieldToHeader[field]]`
-  // hits the real column instead of returning undefined for every row.
+  // (BOM, trailing space, case) or — more dangerously — SHORTENS the
+  // header in its response. Real example: a column actually named
+  // "Relationship (EE / SP / CH)" comes back from the model as just
+  // "Relationship". Resolve each AI-returned header back to the
+  // closest actual row key so `row[fieldToHeader[field]]` hits the
+  // real column instead of returning undefined for every row.
   const actualRowKeys = rows.length > 0 ? Object.keys(rows[0]) : headers;
   const normalizeKey = (s: string) => s.replace(/^﻿/, "").trim().toLowerCase();
   const keyByNormalized = new Map<string, string>();
@@ -192,10 +197,29 @@ export async function cleanCSVWithAI(
     keyByNormalized.set(normalizeKey(k), k);
   }
 
+  const resolveHeader = (aiHeader: string): string => {
+    const normAi = normalizeKey(aiHeader);
+    if (!normAi) return aiHeader;
+    // 1. Exact normalized match — the common case.
+    const exact = keyByNormalized.get(normAi);
+    if (exact) return exact;
+    // 2. Fuzzy: the AI returned a shortened / paraphrased form. Find
+    // actual keys that either contain the AI's normalized string or
+    // are contained by it. Only commit if exactly one candidate
+    // matches — ambiguity falls through so the missing-fields check
+    // fires with a clear error rather than silently picking a wrong
+    // column.
+    const candidates = actualRowKeys.filter((k) => {
+      const normK = normalizeKey(k);
+      return normK.includes(normAi) || normAi.includes(normK);
+    });
+    if (candidates.length === 1) return candidates[0];
+    return aiHeader;
+  };
+
   for (const [header, field] of Object.entries(columnMapping)) {
     if (field === "ignore") continue;
-    const resolved = keyByNormalized.get(normalizeKey(header)) ?? header;
-    fieldToHeader[field] = resolved;
+    fieldToHeader[field] = resolveHeader(header);
   }
 
   // Check for missing required fields
