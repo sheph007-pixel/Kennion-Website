@@ -642,7 +642,11 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
 
     if (dob && !isNaN(dob.getTime())) {
       const age = Math.floor((now.getTime() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-      if (age > 0 && age < 120) {
+      // Newborns enrolled as covered dependents legitimately compute
+      // to age 0; rejecting them dropped 2 babies off a recent 278-
+      // member census and tripped the table-vs-census mismatch check.
+      // Negative ages still get filtered (typo DOBs in the future).
+      if (age >= 0 && age < 120) {
         ages.push(age);
         const rel = entry.relationship.toUpperCase();
         if (rel === "EE" || rel === "EMPLOYEE") {
@@ -754,7 +758,9 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
     if (dob && !isNaN(dob.getTime())) {
       const now = new Date();
       const age = Math.floor((now.getTime() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-      if (age > 0 && age < 120) {
+      // Match the inclusion rule above — accept age 0 so newborn
+      // dependents bucket into the "low risk" segment correctly.
+      if (age >= 0 && age < 120) {
         const personRiskScore = getRiskScoreForPerson(age, entry.gender);
         if (personRiskScore < 1.0) lowRisk++;
         else if (personRiskScore < 1.5) avgRisk++;
