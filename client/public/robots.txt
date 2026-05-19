@@ -1,0 +1,130 @@
+# Kennion Benefit Advisors - robots.txt
+# Only the marketing homepage is discoverable. Everything else is private:
+# authenticated dashboards, admin tooling, individual quote tokens, and the
+# API. The HTTP response on those routes also carries X-Robots-Tag: noindex
+# as a belt-and-braces second layer.
+
+User-agent: *
+Allow: /$
+Allow: /favicon.png
+Allow: /sitemap.xml
+Allow: /llms.txt
+Disallow: /register
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /admin
+Disallow: /admin/
+Disallow: /proposals
+Disallow: /report/
+Disallow: /q/
+Disallow: /api/
+
+# Explicit allow for major AI / LLM crawlers on the homepage. Same policy as
+# the wildcard above; listed by name so the site is unambiguously crawlable
+# for AI search products.
+User-agent: GPTBot
+Allow: /$
+Allow: /favicon.png
+Allow: /llms.txt
+Allow: /sitemap.xml
+Disallow: /
+
+User-agent: ChatGPT-User
+Allow: /$
+Allow: /favicon.png
+Allow: /llms.txt
+Allow: /sitemap.xml
+Disallow: /
+
+User-agent: OAI-SearchBot
+Allow: /$
+Allow: /favicon.png
+Allow: /llms.txt
+Allow: /sitemap.xml
+Disallow: /
+
+User-agent: Google-Extended
+Allow: /$
+Allow: /favicon.png
+Allow: /llms.txt
+Allow: /sitemap.xml
+Disallow: /
+
+User-agent: Googlebot
+Allow: /$
+Allow: /favicon.png
+Allow: /llms.txt
+Allow: /sitemap.xml
+Disallow: /register
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /admin
+Disallow: /admin/
+Disallow: /proposals
+Disallow: /report/
+Disallow: /q/
+Disallow: /api/
+
+User-agent: PerplexityBot
+Allow: /$
+Allow: /favicon.png
+Allow: /llms.txt
+Allow: /sitemap.xml
+Disallow: /
+
+User-agent: ClaudeBot
+Allow: /$
+Allow: /favicon.png
+Allow: /llms.txt
+Allow: /sitemap.xml
+Disallow: /
+
+User-agent: anthropic-ai
+Allow: /$
+Allow: /favicon.png
+Allow: /llms.txt
+Allow: /sitemap.xml
+Disallow: /
+
+User-agent: Claude-Web
+Allow: /$
+Allow: /favicon.png
+Allow: /llms.txt
+Allow: /sitemap.xml
+Disallow: /
+
+User-agent: cohere-ai
+Allow: /$
+Allow: /favicon.png
+Allow: /llms.txt
+Allow: /sitemap.xml
+Disallow: /
+
+User-agent: Bingbot
+Allow: /$
+Allow: /favicon.png
+Allow: /llms.txt
+Allow: /sitemap.xml
+Disallow: /register
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /admin
+Disallow: /admin/
+Disallow: /proposals
+Disallow: /report/
+Disallow: /q/
+Disallow: /api/
+
+Sitemap: https://www.kennion.com/sitemap.xml

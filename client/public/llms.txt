@@ -1,0 +1,44 @@
+# Kennion Benefit Advisors
+
+> An employee benefits agency headquartered in Vestavia, Alabama. Kennion designs and administers private group health, dental, vision, supplemental, and level-funded insurance programs for employer groups across the United States. Our proprietary actuarial rating engine delivers premium coverage at significantly lower rates than groups can access through traditional broker channels.
+
+Kennion Benefit Advisors operates a private benefits program that is not available through outside brokers or consultants. The program combines an in-house actuarial rating engine with composite reference-based pricing to produce risk-adjusted premiums for small and mid-sized employer groups. Underwriting and approval are required, and not all groups are accepted.
+
+## Services
+
+- [Group Health Insurance](https://www.kennion.com/): 15+ medical plan designs including level-funded, self-funded, and fully-insured options. Composite reference-based pricing with in-house actuarial underwriting.
+- [Level-Funded Health Plans](https://www.kennion.com/): Level-funded medical plans for small and mid-sized employer groups. Combines the cash-flow predictability of fully-insured with the savings potential of self-funded.
+- [Group Dental Insurance](https://www.kennion.com/): 6+ dental plan designs bundled with the Kennion benefits program.
+- [Group Vision Insurance](https://www.kennion.com/): 3+ vision plan designs bundled with the Kennion benefits program.
+- [Supplemental Insurance](https://www.kennion.com/): 10+ supplemental coverages including accident, critical illness, and hospital indemnity.
+
+## How It Works
+
+1. **Submit your group.** Employers register at kennion.com and upload a census.
+2. **Risk screen.** The Kennion Risk Screen runs a deterministic underwriting model on the census (demographic, geographic, and family-composition factors plus an AI residual trained on Kennion's claims history) to classify the group as Preferred Risk, Standard Risk, or High Risk.
+3. **Receive a proposal.** Qualified groups receive a custom proposal with monthly rates across 15+ medical plan designs, plus dental, vision, and supplemental options.
+4. **Enroll.** Approved groups onboard and begin coverage on the chosen effective date.
+
+## About
+
+- **Headquarters:** 2828 Old 280 Court, Vestavia, Alabama 35243
+- **Coverage area:** United States, with concentration in the Southeast (AL, GA, MS, TN, FL)
+- **Founder:** Hunter Shepherd
+- **Experience:** Decades building benefits programs nationwide
+- **Differentiator:** Private program with in-house actuarial rating - not available through traditional broker channels
+
+## Tools and Disclosures
+
+- **Live savings estimator:** Available on the homepage; provides an illustrative monthly and annual savings estimate based on group size, average age, and current monthly bill. Estimates are illustrative only; exact rates require a census submission and underwriting review.
+- **Kennion Risk Screen:** Proprietary group-level underwriting model; tier classification only - the screen does not produce a bindable rate. Plans are priced by the Kennion Actuarial Rater after the screen completes.
+
+## Contact
+
+- **Submit a group:** https://www.kennion.com/register
+- **Schedule a call:** https://calendly.com/kennion/call
+- **General support:** support@kennion.com
+- **Sales (Hunter Shepherd):** hunter@kennion.com - 205-641-0469
+
+## What This Site Indexes
+
+Only the homepage (https://www.kennion.com/) is publicly indexable. Customer dashboards, the admin cockpit, individual quote pages, login flows, and the API are intentionally not indexed - they require authentication and are not relevant to public discovery.
