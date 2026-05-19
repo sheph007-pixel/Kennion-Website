@@ -1707,15 +1707,11 @@ function Footer() {
           </div>
         </div>
 
-        {/* Address + compliance */}
-        <div className="mt-14 pt-6 border-t border-white/10 grid md:grid-cols-2 gap-6 text-[12px] text-white/55">
+        {/* Address */}
+        <div className="mt-14 pt-6 border-t border-white/10 text-[12px] text-white/55">
           <div className="flex items-start gap-2">
             <MapPin size={13} className="text-white/55 mt-[2px]" />
             <span>2828 Old 280 Court<br />Vestavia, AL 35243</span>
-          </div>
-          <div className="md:text-right">
-            <div className="text-[10.5px] uppercase tracking-[0.16em] font-mono text-white/45 mb-1.5">Compliance</div>
-            <div>HIPAA &middot; ERISA &middot; Bank-grade encryption</div>
           </div>
         </div>
 
