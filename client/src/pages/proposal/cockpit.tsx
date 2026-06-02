@@ -217,23 +217,23 @@ export function ProposalCockpit({
                     Supplemental
                   </TabPill>
                 </TabsList>
-                {!isPublic && (
-                  <button
-                    type="button"
-                    className="ml-auto inline-flex items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover-elevate"
-                    onClick={() => {
-                      const q = selectedPlan ? `?plan=${encodeURIComponent(selectedPlan.name)}` : "";
-                      const base = isAdminView
+                <button
+                  type="button"
+                  className="ml-auto inline-flex items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover-elevate"
+                  onClick={() => {
+                    const q = selectedPlan ? `?plan=${encodeURIComponent(selectedPlan.name)}` : "";
+                    const base = isPublic
+                      ? `/q/${(resolvedMode as { kind: "public"; token: string }).token}/plan-details`
+                      : isAdminView
                         ? `/admin/groups/${group.id}/plan-details`
                         : `/dashboard/${group.id}/plan-details`;
-                      navigate(`${base}${q}`);
-                    }}
-                    data-testid="button-compare-plan-details"
-                  >
-                    Compare plan details
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                )}
+                    navigate(`${base}${q}`);
+                  }}
+                  data-testid="button-compare-plan-details"
+                >
+                  Compare plan details
+                  <ArrowRight className="h-4 w-4" />
+                </button>
               </div>
 
               <TabsContent value="medical" className="mt-5 min-h-[640px] space-y-4">

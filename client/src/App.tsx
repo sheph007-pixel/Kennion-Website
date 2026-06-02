@@ -22,6 +22,7 @@ import AdminQuotesPage from "@/pages/admin/quotes/index";
 import AdminQuoteWizardPage from "@/pages/admin/quotes/new";
 import AdminQuotesBulkPage from "@/pages/admin/quotes/bulk";
 import PublicQuotePage from "@/pages/quote/[token]";
+import PublicPlanDetailsPage from "@/pages/quote/plan-details";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
 import { Redirect } from "wouter";
@@ -127,6 +128,7 @@ function Router() {
         <ProtectedRoute component={AdminQuotesPage} adminOnly />
       </Route>
       {/* Public share link — logged out, token-gated, no PHI. */}
+      <Route path="/q/:token/plan-details" component={PublicPlanDetailsPage} />
       <Route path="/q/:token" component={PublicQuotePage} />
       {/* Legacy admin deep links redirect to the unified admin home. */}
       <Route path="/admin/dashboard">
