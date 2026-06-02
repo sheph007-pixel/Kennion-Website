@@ -219,7 +219,7 @@ export function ProposalCockpit({
                 </TabsList>
                 <button
                   type="button"
-                  className="ml-auto inline-flex items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover-elevate"
+                  className="ml-auto inline-flex items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-sm font-semibold text-foreground hover-elevate"
                   onClick={() => {
                     const q = selectedPlan ? `?plan=${encodeURIComponent(selectedPlan.name)}` : "";
                     const base = isPublic
@@ -231,7 +231,7 @@ export function ProposalCockpit({
                   }}
                   data-testid="button-compare-plan-details"
                 >
-                  Compare plan details
+                  Compare Plan Details
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
