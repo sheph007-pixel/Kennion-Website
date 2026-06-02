@@ -127,19 +127,24 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
     doc.font("Helvetica-Bold").fontSize(8.5).fillColor(COLORS.muted)
        .text("AI Adjustment", aiBoxX, aiBoxY + 6, { width: aiBoxW, align: "center" });
     const adj = result.ai_residual.clamped;
-    const isZero = Math.abs(adj) < 0.005;
-    const adjColor = isZero ? COLORS.muted
+    // The placeholder ("Not yet active") belongs only when the residual model
+    // genuinely didn't run — in that case screenGroup() leaves the drivers
+    // array empty. A small-but-real adjustment (e.g. -0.2%) is still active
+    // and must show its value, otherwise the box contradicts the Top Risk
+    // Drivers list that already reports the AI residual on the same page.
+    const modelActive = result.ai_residual.drivers.length > 0;
+    const adjColor = !modelActive ? COLORS.muted
                    : adj > 0.01 ? COLORS.highRisk
                    : adj < -0.01 ? COLORS.preferred
                    : COLORS.text;
-    doc.font("Helvetica-Bold").fontSize(isZero ? 14 : 18).fillColor(adjColor)
-       .text(isZero ? "Not yet active" : `${adj >= 0 ? "+" : ""}${(adj * 100).toFixed(1)}%`,
-             aiBoxX, aiBoxY + (isZero ? 26 : 22),
+    doc.font("Helvetica-Bold").fontSize(modelActive ? 18 : 14).fillColor(adjColor)
+       .text(modelActive ? `${adj >= 0 ? "+" : ""}${(adj * 100).toFixed(1)}%` : "Not yet active",
+             aiBoxX, aiBoxY + (modelActive ? 22 : 26),
              { width: aiBoxW, align: "center" });
     doc.font("Helvetica").fontSize(7).fillColor(COLORS.muted)
-       .text(isZero
-             ? "Pending block calibration\n(activates in v1.1)"
-             : "AI adjustment\nlimited to ±10%",
+       .text(modelActive
+             ? "AI adjustment\nlimited to ±10%"
+             : "Pending block calibration\n(activates in v1.1)",
              aiBoxX, aiBoxY + 48,
              { width: aiBoxW, align: "center" });
 
