@@ -13,6 +13,14 @@ export interface RenderOpts {
   censusId?: string;
 }
 
+// Bump whenever the visual output of renderRiskScreenPDF changes in a way
+// that should retroactively apply to already-stored PDFs. The startup
+// backfill (server/backfill-screen-pdfs.ts) re-renders any stored screen
+// whose stamped version is older than this, then leaves it alone.
+//   1 = original layout
+//   2 = AI Adjustment box keys off whether the model ran, not |adj| < 0.5%
+export const PDF_RENDER_VERSION = 2;
+
 const COLORS = {
   preferred: "#0F8A4A",
   standard:  "#1F5BB5",

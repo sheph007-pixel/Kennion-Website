@@ -48,6 +48,8 @@ export interface IStorage {
   getRiskScreen(id: string): Promise<RiskScreen | undefined>;
   getRiskScreensByGroupId(groupId: string): Promise<RiskScreen[]>;
   getLatestRiskScreenForGroup(groupId: string): Promise<RiskScreen | undefined>;
+  getAllRiskScreens(): Promise<RiskScreen[]>;
+  updateRiskScreenPdf(id: string, pdfBase64: string, resultJson: unknown): Promise<void>;
 
   // Internal sales quotes — admin-driven flow that mints a sharable
   // /q/:token link for prospects. Same scoring and rates as
@@ -321,6 +323,16 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(riskScreens.createdAt))
       .limit(1);
     return row;
+  }
+
+  async getAllRiskScreens(): Promise<RiskScreen[]> {
+    return db.select().from(riskScreens).orderBy(desc(riskScreens.createdAt));
+  }
+
+  async updateRiskScreenPdf(id: string, pdfBase64: string, resultJson: unknown): Promise<void> {
+    await db.update(riskScreens)
+      .set({ pdfBase64, resultJson: resultJson as any })
+      .where(eq(riskScreens.id, id));
   }
 }
 

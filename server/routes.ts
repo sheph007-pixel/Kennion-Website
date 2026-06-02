@@ -27,7 +27,7 @@ import {
   loadScreenTables,
   reloadScreenTables,
 } from "./risk-screen";
-import { renderRiskScreenPDF } from "./risk-screen-pdf";
+import { renderRiskScreenPDF, PDF_RENDER_VERSION } from "./risk-screen-pdf";
 import {
   magicLinkRequestSchema,
   magicLinkVerifySchema,
@@ -367,6 +367,7 @@ async function runAndPersistScreenForGroup(args: {
       log(`[risk-screen on upload] PDF render failed for ${args.groupId}: ${pdfErr?.message || pdfErr}`);
     }
 
+    (result as any)._pdfRenderVersion = PDF_RENDER_VERSION;
     await storage.saveRiskScreen({
       groupId: args.groupId,
       modelVersion: result.model_version,
@@ -3185,6 +3186,7 @@ export async function registerRoutes(
       });
       const pdfBase64 = pdfBuf.toString("base64");
 
+      (result as any)._pdfRenderVersion = PDF_RENDER_VERSION;
       const saved = await storage.saveRiskScreen({
         groupId,
         modelVersion: result.model_version,

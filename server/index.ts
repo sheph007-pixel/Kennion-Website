@@ -74,6 +74,15 @@ app.use((req, res, next) => {
     console.error("Seed failed (non-fatal):", err.message);
   }
 
+  // Re-render any Risk Screen PDFs left stale by an older renderer version.
+  // Self-limiting: skips rows already at the current PDF_RENDER_VERSION.
+  try {
+    const { backfillScreenPdfs } = await import("./backfill-screen-pdfs");
+    await backfillScreenPdfs();
+  } catch (err: any) {
+    console.error("Screen PDF backfill failed (non-fatal):", err.message);
+  }
+
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     if (res.headersSent) {
       return next(err);
