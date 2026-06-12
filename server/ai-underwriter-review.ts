@@ -53,13 +53,13 @@ const REVIEW_SCHEMA = {
     narrative: {
       type: "string",
       description:
-        "2-4 short paragraphs in a senior underwriter's voice assessing whether the deterministic tier is the right call for this group.",
+        "ONE short paragraph (3-5 sentences) in a senior underwriter's voice: whether the tier is the right call and the single most important thing a human should know. Do not restate component scores or counts already shown to the admin.",
     },
     key_concerns: {
       type: "array",
       items: { type: "string" },
       description:
-        "Specific concerns grounded in the provided drivers/projections. Empty if none.",
+        "At most 3 short, specific concerns grounded in the provided drivers/projections. Empty if none.",
     },
     borderline: { type: "boolean" },
   },
@@ -82,10 +82,11 @@ How to read the numbers:
 
 Verdict guidance:
 - "CONCUR" when the components, drivers, and projections coherently support the tier.
-- "FLAG_FOR_REVIEW" when something deserves a human look before relying on the tier: KRI within ~0.10 of a threshold, components pointing in conflicting directions, a single driver dominating the composite, loss ratios that contradict the tier, very small groups where one life swings the math, or heavy concentration risk (age cliff, single county, family-tier skew).
+- "FLAG_FOR_REVIEW" only when the RISK picture deserves a human look before relying on the tier: KRI within ~0.10 of a threshold, components pointing in strongly conflicting directions, a single driver dominating the composite, loss ratios that contradict the tier, very small groups where one life swings the math, or heavy concentration risk (age cliff, single county).
+- Do NOT flag or comment on census data quality, enrollment-data reconciliation, or apparent inconsistencies between counts - the census is validated upstream and some derived aggregates are approximations. Judge the risk, not the data plumbing.
 - Set "borderline" true whenever the KRI is within ~0.10 of either threshold, regardless of verdict.
 
-Write the narrative in plain professional English, grounded only in the data provided. Never invent member-level facts - you are given aggregates only. Keep it tight: 2-4 short paragraphs.`;
+Write in plain professional English, grounded only in the data provided. Never invent member-level facts - you are given aggregates only. Be brief: ONE paragraph of 3-5 sentences, at most 3 key concerns. The admin already sees the score, tier, component bars, and drivers - add judgment, not a recap.`;
 
 // Whitelist of aggregate fields sent to the API. Building the payload by
 // explicit field selection (rather than passing the whole ScreenResult)
@@ -111,7 +112,10 @@ function buildReviewInput(s: ScreenResult) {
       median_age: s.median_age,
       avg_age: s.avg_age,
       pct_female: s.pct_female,
-      family_tier_mix: s.family_tier_mix,
+      // family_tier_mix is intentionally excluded: it's derived from census
+      // row-order household chaining and is unreliable when rows aren't
+      // grouped by household — feeding it to the model produced false
+      // "data integrity" flags.
       top_county: s.top_county,
       pct_top_county: s.pct_top_county,
       pct_medicare_cliff: s.pct_medicare_cliff,

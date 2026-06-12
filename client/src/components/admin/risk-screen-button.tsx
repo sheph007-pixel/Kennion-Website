@@ -205,10 +205,15 @@ export function RiskScreenButton({ groupId, effectiveDate }: { groupId: string; 
                 {bar("Composition", latest.composition.normalized, "c")}
               </div>
 
-              <div>
-                <div className="text-sm font-semibold mb-1">AI Summary</div>
-                <p className="text-sm text-muted-foreground">{latest.ai_summary}</p>
-              </div>
+              {/* One AI section: the Claude underwriter review replaces the
+                  deterministic AI Summary display when present (the summary
+                  stays stored in result_json for audit). */}
+              {!latest.claude_review && (
+                <div>
+                  <div className="text-sm font-semibold mb-1">AI Summary</div>
+                  <p className="text-sm text-muted-foreground">{latest.ai_summary}</p>
+                </div>
+              )}
 
               {latest.claude_review && (
                 <div className="rounded-md border p-3 space-y-2" data-testid="section-underwriter-review">
