@@ -37,7 +37,8 @@ working until the requested change is live on www.kennion.com and verified.
 - `SESSION_SECRET` — Express session secret
 - `RESEND_API_KEY` — Email service
 - `OPENAI_API_KEY` — AI-powered CSV cleaning
-- `ANTHROPIC_API_KEY` — Claude AI underwriter review on the risk screen
+- `ANTHROPIC_API_KEY` (or legacy `CLAUDE`, which is what the Railway
+  service uses) — Claude AI underwriter review on the risk screen
   (advisory only; everything degrades gracefully when unset)
 - `PORT` — defaults to 5000
 
