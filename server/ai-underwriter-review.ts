@@ -1,20 +1,21 @@
 /**
  * Claude AI Underwriter Review — ADVISORY ONLY.
  *
- * Runs after screenGroup() and gives the admin a structured second opinion
- * on the deterministic Kennion Risk Screen result: does an experienced
- * underwriter's read of the drivers agree with the tier, and is there
- * anything a human should look at before quoting?
+ * Runs after screenGroup() and writes the underwriter's file note for the
+ * group: a single short plain-English paragraph, as if a senior medical
+ * underwriter had just underwritten the group and summarized the result.
+ * The screen's deterministic decision (Preferred/Standard → quote, High
+ * Risk → decline) is already made before this runs; the note explains it.
  *
  * Hard rules (do not "enhance" these away):
  *  - The output NEVER changes kri / tier / decision / groups.riskTier or
- *    any gating. The deterministic screen is the sole accept/decline gate.
+ *    any gating, and the UI/PDF derive the approve/decline badge from the
+ *    deterministic screen — never from this module's output.
  *  - Only AGGREGATE ScreenResult fields are sent to the API — counts,
  *    ages, percentages, driver text. Never census rows, names, DOBs,
  *    or per-member data (see CLAUDE.md sensitive-data rules).
- *  - Failure is non-fatal: missing ANTHROPIC_API_KEY, API errors, or a
- *    refusal on both models all return null and the screen persists
- *    exactly as it does today.
+ *  - Failure is non-fatal: missing key, API errors, or a refusal on both
+ *    models all return null and the screen persists exactly as before.
  *
  * Model upgrades: change PRIMARY_MODEL when a newer Claude model ships.
  */
@@ -34,59 +35,49 @@ const FALLBACK_MODEL = "claude-opus-4-8";
 const REQUEST_TIMEOUT_MS = 60_000;
 
 export interface UnderwriterReview {
-  verdict: "CONCUR" | "FLAG_FOR_REVIEW"; // concur with the deterministic tier, or recommend a human look
-  confidence: "high" | "medium" | "low";
-  narrative: string;        // underwriter-voice assessment
-  key_concerns: string[];   // specific, driver-grounded concerns (may be empty)
-  borderline: boolean;      // KRI sits near a tier threshold
-  model: string;            // which model actually served the review
-  reviewed_at: string;      // ISO timestamp
+  summary: string;   // the underwriter's note — one paragraph, 3-4 sentences
+  model: string;     // which model actually served the review
+  reviewed_at: string;
 }
 
 // Structured-outputs schema: guarantees the response parses into the shape
-// above (structured outputs require additionalProperties: false throughout).
+// above (structured outputs require additionalProperties: false).
 const REVIEW_SCHEMA = {
   type: "object",
   properties: {
-    verdict: { type: "string", enum: ["CONCUR", "FLAG_FOR_REVIEW"] },
-    confidence: { type: "string", enum: ["high", "medium", "low"] },
-    narrative: {
+    summary: {
       type: "string",
       description:
-        "ONE short paragraph (3-5 sentences) in a senior underwriter's voice: whether the tier is the right call and the single most important thing a human should know. Do not restate component scores or counts already shown to the admin.",
+        "The underwriting file note: ONE paragraph, 3-4 sentences, 60-90 words, plain English.",
     },
-    key_concerns: {
-      type: "array",
-      items: { type: "string" },
-      description:
-        "At most 3 short, specific concerns grounded in the provided drivers/projections. Empty if none.",
-    },
-    borderline: { type: "boolean" },
   },
-  required: ["verdict", "confidence", "narrative", "key_concerns", "borderline"],
+  required: ["summary"],
   additionalProperties: false,
 } as const;
 
 // Directionality is stated explicitly because an earlier LLM narrative
 // (gpt-4o-mini score review, see server/ai-analysis.ts) produced
 // direction-reversed text when the prompt left it implicit.
-const SYSTEM_PROMPT = `You are a senior group-health underwriter at Kennion reviewing the output of the deterministic Kennion Risk Screen (KRS). Your review is ADVISORY: the deterministic tier is the binding decision, and your job is to say whether you concur and what a human underwriter should double-check.
+const SYSTEM_PROMPT = `You are a senior medical underwriter at Kennion. You have just finished underwriting a group using our AI risk screen, and you are writing the short file note that goes on the group's record. The screening decision is already made and is given to you - Preferred and Standard tiers are approved to quote, High Risk is declined. Your note explains the result; it never argues with it or second-guesses it.
 
-How to read the numbers:
-- The Kennion Risk Index (KRI) is calibrated so 1.00 = the book median. HIGHER is WORSE (more expected cost), lower is better.
-- Tier thresholds: KRI below the preferred threshold = Preferred (quote), below the high-risk threshold = Standard (quote), at or above it = High Risk (decline). Both thresholds are given in the input.
-- Component scores (demographic, geographic, composition) are normalized the same way: above 1.00 pushes cost up, below 1.00 pulls it down.
+Write EXACTLY this shape, so every group's note reads the same length:
+- Sentence 1: the group, its size, the tier it underwrote to, and the result ("...underwrites to our Standard tier and is approved to quote." / "...underwrites as High Risk and is declined.").
+- Sentences 2-3: WHY, in plain English a business owner could follow - the age and gender mix, the local health environment, and how expected claims compare to a typical group.
+- Optional sentence 4: one thing worth keeping an eye on, only if genuinely worth saying.
+One paragraph. 60-90 words. No bullets, no headings.
+
+Voice and content rules:
+- Plain professional English, like a self-funded underwriting note. Confident, not hedged.
+- NEVER use system jargon: do not say "AI residual", "composite", "deterministic", "component", "normalized", "KRI", "threshold", "model", or "loss ratio". Translate the data into underwriting English (e.g. "claims for similar groups have run a bit above what the demographics alone suggest").
+- At most one or two numbers in the whole note (e.g. average age, or expected cost vs. typical). The admin already sees every score on screen.
+- Do not comment on census data quality or count reconciliation - the census is validated upstream. Judge the risk, not the data plumbing.
+- Never invent member-level facts - you are given aggregates only.
+
+How to read the data you are given (for your own reasoning, not to recite):
+- Scores are calibrated so 1.00 = a typical group; HIGHER is WORSE (more expected cost), lower is better.
 - Driver "impact" values: positive = increases risk, negative = decreases risk.
-- predicted_pmpm vs book_mean_pmpm: predicted above book mean = adverse.
-- plan_projections loss_ratio: predicted claims / premium funding. Above 1.00 = the plan would lose money on this group.
-
-Verdict guidance:
-- "CONCUR" when the components, drivers, and projections coherently support the tier.
-- "FLAG_FOR_REVIEW" only when the RISK picture deserves a human look before relying on the tier: KRI within ~0.10 of a threshold, components pointing in strongly conflicting directions, a single driver dominating the composite, loss ratios that contradict the tier, very small groups where one life swings the math, or heavy concentration risk (age cliff, single county).
-- Do NOT flag or comment on census data quality, enrollment-data reconciliation, or apparent inconsistencies between counts - the census is validated upstream and some derived aggregates are approximations. Judge the risk, not the data plumbing.
-- Set "borderline" true whenever the KRI is within ~0.10 of either threshold, regardless of verdict.
-
-Write in plain professional English, grounded only in the data provided. Never invent member-level facts - you are given aggregates only. Be brief: ONE paragraph of 3-5 sentences, at most 3 key concerns. The admin already sees the score, tier, component bars, and drivers - add judgment, not a recap.`;
+- predicted_pmpm above book_mean_pmpm = expected claims above a typical group.
+- plan_projections loss_ratio above 1.00 = the plan would lose money on this group at current funding.`;
 
 // Whitelist of aggregate fields sent to the API. Building the payload by
 // explicit field selection (rather than passing the whole ScreenResult)
@@ -102,9 +93,9 @@ function buildReviewInput(s: ScreenResult) {
       preferred_below: weights.thresholds.preferred,
       high_risk_at_or_above: weights.thresholds.high_risk,
     },
-    model_version: s.model_version,
     effective_date: s.effective_date,
     group_profile: {
+      group_name: s.group,
       n_members: s.n_members,
       n_employees: s.n_employees,
       n_spouses: s.n_spouses,
@@ -146,7 +137,7 @@ async function callModel(model: string, screen: ScreenResult): Promise<Underwrit
   const response = await client.messages.create(
     {
       model,
-      max_tokens: 4096,
+      max_tokens: 2048,
       system: SYSTEM_PROMPT,
       // No `thinking` param: Fable 5 has thinking always on and rejects
       // explicit config. No temperature/top_p: removed on this model family.
@@ -158,7 +149,7 @@ async function callModel(model: string, screen: ScreenResult): Promise<Underwrit
         {
           role: "user",
           content:
-            "Review this Kennion Risk Screen result and return your structured underwriter review.\n\n" +
+            "Write the underwriting file note for this screened group.\n\n" +
             JSON.stringify(buildReviewInput(screen)),
         },
       ],
@@ -173,21 +164,11 @@ async function callModel(model: string, screen: ScreenResult): Promise<Underwrit
     throw new Error("no text content in model response");
   }
   const parsed = JSON.parse(textBlock.text);
-  if (
-    (parsed.verdict !== "CONCUR" && parsed.verdict !== "FLAG_FOR_REVIEW") ||
-    !["high", "medium", "low"].includes(parsed.confidence) ||
-    typeof parsed.narrative !== "string" || parsed.narrative.trim() === "" ||
-    !Array.isArray(parsed.key_concerns) ||
-    typeof parsed.borderline !== "boolean"
-  ) {
+  if (typeof parsed.summary !== "string" || parsed.summary.trim() === "") {
     throw new Error("model response failed shape validation");
   }
   return {
-    verdict: parsed.verdict,
-    confidence: parsed.confidence,
-    narrative: parsed.narrative.trim(),
-    key_concerns: parsed.key_concerns.map((c: unknown) => String(c)).filter(Boolean),
-    borderline: parsed.borderline,
+    summary: parsed.summary.trim(),
     model: response.model,
     reviewed_at: new Date().toISOString(),
   };

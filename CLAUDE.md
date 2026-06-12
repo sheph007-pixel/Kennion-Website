@@ -47,11 +47,15 @@ working until the requested change is live on www.kennion.com and verified.
 `server/ai-underwriter-review.ts` runs after every `screenGroup()` call
 (both the customer upload path and the admin re-run path in
 `server/routes.ts`) and asks Claude (`claude-fable-5`, with automatic
-fallback to `claude-opus-4-8` on a safety-classifier refusal) for a
-structured second opinion on the deterministic Kennion Risk Screen:
-verdict (CONCUR / FLAG_FOR_REVIEW), confidence, narrative, key concerns.
-The result is nested at `result_json.claude_review` in `risk_screens`
-and rendered in the admin Risk Screen dialog and on the screen PDF.
+fallback to `claude-opus-4-8` on a safety-classifier refusal) to write
+the underwriter's file note for the group: ONE plain-English paragraph
+(3-4 sentences, 60-90 words) explaining the screen's already-made
+decision — no jargon, no verdict of its own. The approve/decline badge
+shown next to the note is derived from the deterministic
+`tier`/`decision`, never from the AI. The result is nested at
+`result_json.claude_review` in `risk_screens` and rendered in the admin
+Risk Screen dialog and on the screen PDF (in place of the deterministic
+`ai_summary`, which stays stored for audit).
 
 Hard rules:
 

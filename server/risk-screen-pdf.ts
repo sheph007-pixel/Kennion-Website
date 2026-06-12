@@ -23,7 +23,9 @@ export interface RenderOpts {
 //   3 = AI Underwriter Review band (Claude, advisory) above the decision strip
 //   4 = Claude review replaces the AI Summary section when present (one AI
 //       section, no separate band)
-export const PDF_RENDER_VERSION = 4;
+//   5 = review simplified to a single underwriting note; approve/decline
+//       sub-line derived from the screen decision, not the AI
+export const PDF_RENDER_VERSION = 5;
 
 const COLORS = {
   preferred: "#0F8A4A",
@@ -226,17 +228,18 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
     const driversW = innerW - summaryW - colGap;
 
     doc.fillColor(COLORS.text).font("Helvetica-Bold").fontSize(10.5)
-       .text(review ? "AI Underwriter Review" : "AI Summary", M, y);
+       .text(review ? "Underwriting Review" : "AI Summary", M, y);
     if (review) {
-      const verdictColor = review.verdict === "CONCUR" ? COLORS.preferred : COLORS.standard;
-      doc.font("Helvetica-Bold").fontSize(8).fillColor(verdictColor)
-         .text(
-           review.verdict === "CONCUR"
-             ? `CONCURS WITH ${result.tier.toUpperCase()} TIER  ·  ADVISORY`
-             : "FLAGGED FOR HUMAN REVIEW  ·  ADVISORY",
-           M, y + 14, { width: summaryW });
+      // Sub-line mirrors the deterministic screen decision — never the AI.
+      const approved = result.decision !== "DECLINE";
+      doc.font("Helvetica-Bold").fontSize(8)
+         .fillColor(approved ? COLORS.preferred : COLORS.highRisk)
+         .text(approved ? "APPROVED TO QUOTE  ·  AI UNDERWRITER" : "DECLINED  ·  AI UNDERWRITER",
+               M, y + 14, { width: summaryW });
+      // summary (current shape) ?? narrative (reviews stored before v2)
+      const noteText = (review.summary ?? (review as any).narrative ?? "").replace(/\s+/g, " ");
       doc.font("Helvetica").fontSize(9).fillColor(COLORS.text)
-         .text(review.narrative.replace(/\s+/g, " "), M, y + 26,
+         .text(noteText, M, y + 26,
                { width: summaryW, height: 150, ellipsis: true, lineGap: 2 });
     } else {
       doc.font("Helvetica").fontSize(9).fillColor(COLORS.text)
