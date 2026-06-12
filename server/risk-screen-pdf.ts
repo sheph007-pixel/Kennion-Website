@@ -6,6 +6,7 @@
  */
 import PDFDocument from "pdfkit";
 import type { ScreenResult, RiskTier } from "./risk-screen";
+import type { UnderwriterReview } from "./ai-underwriter-review";
 
 export interface RenderOpts {
   groupName?: string;
@@ -19,7 +20,8 @@ export interface RenderOpts {
 // whose stamped version is older than this, then leaves it alone.
 //   1 = original layout
 //   2 = AI Adjustment box keys off whether the model ran, not |adj| < 0.5%
-export const PDF_RENDER_VERSION = 2;
+//   3 = AI Underwriter Review band (Claude, advisory) above the decision strip
+export const PDF_RENDER_VERSION = 3;
 
 const COLORS = {
   preferred: "#0F8A4A",
@@ -213,6 +215,7 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
     y += 8;
 
     // AI Summary + Top Drivers
+    const hasReview = !!(result as any).claude_review;
     const colGap = 14;
     const summaryW = Math.floor(innerW * 0.45);
     const driversX = M + summaryW + colGap;
@@ -246,12 +249,39 @@ export function renderRiskScreenPDF(result: ScreenResult, opts: RenderOpts = {})
            .text(txt, driversX + chipW + 4, dy,
                  { width: driversW - chipW - 4, lineGap: 1, height: h });
         dy += Math.max(h, 11) + 4;
-        if (dy > y + 170) break;
+        // Stop earlier when the review band below needs its 70px of space.
+        if (dy > y + (hasReview ? 100 : 170)) break;
       }
     }
 
-    // Decision band (anchored bottom)
+    // AI Underwriter Review band (advisory) — only when the Claude review
+    // ran for this screen. Anchored above the decision strip so screens
+    // without a review render exactly as before.
     const decisionY = H - M - 56;
+    const review = (result as any).claude_review as UnderwriterReview | undefined;
+    if (review) {
+      const boxH = 62;
+      const boxY = decisionY - boxH - 8;
+      // Opaque fill so a long AI Summary paragraph can never bleed through.
+      doc.roundedRect(M, boxY, innerW, boxH, 4)
+         .fillColor("white").fill();
+      doc.roundedRect(M, boxY, innerW, boxH, 4)
+         .strokeColor(COLORS.border).lineWidth(0.5).stroke();
+      doc.font("Helvetica-Bold").fontSize(8.5).fillColor(COLORS.muted)
+         .text("AI UNDERWRITER REVIEW  ·  ADVISORY", M + 8, boxY + 6);
+      const verdictColor = review.verdict === "CONCUR" ? COLORS.preferred : COLORS.standard;
+      doc.font("Helvetica-Bold").fontSize(8.5).fillColor(verdictColor)
+         .text(
+           review.verdict === "CONCUR"
+             ? `CONCURS WITH ${result.tier.toUpperCase()} TIER`
+             : "FLAGGED FOR HUMAN REVIEW",
+           M + 8, boxY + 6, { width: innerW - 16, align: "right" });
+      doc.font("Helvetica").fontSize(8).fillColor(COLORS.text)
+         .text(review.narrative.replace(/\s+/g, " "), M + 8, boxY + 18,
+               { width: innerW - 16, height: boxH - 24, ellipsis: true, lineGap: 1 });
+    }
+
+    // Decision band (anchored bottom)
     let decisionLabel: string;
     let decisionColor: string;
     if (result.decision === "DECLINE") {

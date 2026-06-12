@@ -37,7 +37,34 @@ working until the requested change is live on www.kennion.com and verified.
 - `SESSION_SECRET` — Express session secret
 - `RESEND_API_KEY` — Email service
 - `OPENAI_API_KEY` — AI-powered CSV cleaning
+- `ANTHROPIC_API_KEY` — Claude AI underwriter review on the risk screen
+  (advisory only; everything degrades gracefully when unset)
 - `PORT` — defaults to 5000
+
+## AI Underwriter Review (Claude) — advisory only
+
+`server/ai-underwriter-review.ts` runs after every `screenGroup()` call
+(both the customer upload path and the admin re-run path in
+`server/routes.ts`) and asks Claude (`claude-fable-5`, with automatic
+fallback to `claude-opus-4-8` on a safety-classifier refusal) for a
+structured second opinion on the deterministic Kennion Risk Screen:
+verdict (CONCUR / FLAG_FOR_REVIEW), confidence, narrative, key concerns.
+The result is nested at `result_json.claude_review` in `risk_screens`
+and rendered in the admin Risk Screen dialog and on the screen PDF.
+
+Hard rules:
+
+- **The review NEVER gates.** It must not change `kri`, `tier`,
+  `decision`, `groups.riskScore`, `groups.riskTier`, or the High-Risk
+  proposal block. The deterministic KRS is the sole accept/decline gate.
+  Do not "enhance" the review into the gating path.
+- **Aggregate data only.** Only whitelisted `ScreenResult` aggregates go
+  to the API (see `buildReviewInput`) — never census rows, names, DOBs,
+  or per-member data.
+- **Failure is non-fatal.** No key / API error / double refusal ⇒
+  `claude_review` is simply absent and the screen persists as before.
+- **Model upgrades** = change `PRIMARY_MODEL` in
+  `server/ai-underwriter-review.ts`.
 
 ## Railway deployment
 

@@ -33,6 +33,16 @@ type ScreenResult = {
   composition: { normalized: number };
   ai_summary: string;
   top_drivers: Array<{ category: string; text: string; impact: number }>;
+  // Advisory Claude underwriter review — present only when ANTHROPIC_API_KEY
+  // was configured when the screen ran. Never affects tier/decision.
+  claude_review?: {
+    verdict: "CONCUR" | "FLAG_FOR_REVIEW";
+    confidence: "high" | "medium" | "low";
+    narrative: string;
+    key_concerns: string[];
+    borderline: boolean;
+    model: string;
+  };
 };
 
 function tierStyle(tier?: string) {
@@ -199,6 +209,45 @@ export function RiskScreenButton({ groupId, effectiveDate }: { groupId: string; 
                 <div className="text-sm font-semibold mb-1">AI Summary</div>
                 <p className="text-sm text-muted-foreground">{latest.ai_summary}</p>
               </div>
+
+              {latest.claude_review && (
+                <div className="rounded-md border p-3 space-y-2" data-testid="section-underwriter-review">
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-semibold">AI Underwriter Review</div>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-white text-xs font-semibold ${
+                        latest.claude_review.verdict === "CONCUR"
+                          ? "bg-green-600"
+                          : "bg-amber-500"
+                      }`}
+                    >
+                      {latest.claude_review.verdict === "CONCUR" ? "Concurs with tier" : "Flag for review"}
+                    </span>
+                    {latest.claude_review.borderline && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded border text-xs text-muted-foreground">
+                        Borderline
+                      </span>
+                    )}
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {latest.claude_review.confidence} confidence · advisory
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">{latest.claude_review.narrative}</p>
+                  {latest.claude_review.key_concerns.length > 0 && (
+                    <ul className="space-y-1">
+                      {latest.claude_review.key_concerns.map((c, i) => (
+                        <li key={i} className="text-sm flex gap-2">
+                          <span className="text-amber-600">•</span>
+                          <span className="flex-1">{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="text-xs text-muted-foreground">
+                    Claude ({latest.claude_review.model}) · does not affect the Kennion Score or tier
+                  </div>
+                </div>
+              )}
 
               <div>
                 <div className="text-sm font-semibold mb-1">Top drivers</div>

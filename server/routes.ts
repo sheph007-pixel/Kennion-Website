@@ -28,6 +28,7 @@ import {
   reloadScreenTables,
 } from "./risk-screen";
 import { renderRiskScreenPDF, PDF_RENDER_VERSION } from "./risk-screen-pdf";
+import { generateUnderwriterReview } from "./ai-underwriter-review";
 import {
   magicLinkRequestSchema,
   magicLinkVerifySchema,
@@ -353,6 +354,12 @@ async function runAndPersistScreenForGroup(args: {
     const members = censusEntriesToScreenMembers(args.censusEntries as any);
     const effectiveDate = args.effectiveDate ?? new Date();
     const result = screenGroup({ census: members, effectiveDate, group: args.groupName });
+
+    // Advisory Claude underwriter review. Attached to the result JSON only —
+    // it never changes kri/tier/decision or any gating, and failure is
+    // non-fatal (null when ANTHROPIC_API_KEY is unset or the call fails).
+    const review = await generateUnderwriterReview(result).catch(() => null);
+    if (review) (result as any).claude_review = review;
 
     // Render PDF (matches admin Re-run path so the artifacts are identical).
     let pdfBase64 = "";
@@ -3178,6 +3185,10 @@ export async function registerRoutes(
         effectiveDate,
         group: (group as any).companyName || (group as any).name || groupId,
       });
+
+      // Advisory Claude underwriter review — result JSON only, never gates.
+      const review = await generateUnderwriterReview(result).catch(() => null);
+      if (review) (result as any).claude_review = review;
 
       const pdfBuf = await renderRiskScreenPDF(result, {
         groupName: (group as any).companyName || (group as any).name,
