@@ -1,4 +1,5 @@
-import { getOpenAIClient } from "./ai-client";
+import { callOpenAIWithFallback } from "./ai-client";
+import { OPENAI_MODEL_CHAIN } from "./model-config";
 
 interface GroupAnalysisInput {
   riskScore: number;
@@ -107,8 +108,6 @@ export async function generateScoreReview(input: {
 }
 
 export async function generateActuarialAnalysis(input: GroupAnalysisInput): Promise<string> {
-  const openai = getOpenAIClient();
-
   const femalePercentage = ((input.femaleCount / (input.maleCount + input.femaleCount || 1)) * 100).toFixed(1);
   const avgFamilySize = (input.totalLives / (input.employeeCount || 1)).toFixed(2);
   const dependencyRatio = (((input.spouseCount || 0) + (input.childrenCount || 0)) / (input.employeeCount || 1)).toFixed(2);
@@ -160,8 +159,7 @@ Instructions:
 Write ONLY the analysis text. No preamble, no "Here's the analysis" - just start with the analysis itself.`;
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+    const completion = await callOpenAIWithFallback({
       messages: [
         {
           role: "system",
@@ -174,7 +172,7 @@ Write ONLY the analysis text. No preamble, no "Here's the analysis" - just start
       ],
       temperature: 0.7,
       max_tokens: 600
-    });
+    }, OPENAI_MODEL_CHAIN);
 
     return completion.choices[0].message.content || "Analysis pending - please check back shortly.";
   } catch (error) {

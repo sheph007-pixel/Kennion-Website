@@ -14,12 +14,19 @@
  *  - Only AGGREGATE ScreenResult fields are sent to the API — counts,
  *    ages, percentages, driver text. Never census rows, names, DOBs,
  *    or per-member data (see CLAUDE.md sensitive-data rules).
- *  - Failure is non-fatal: missing key, API errors, or a refusal on both
- *    models all return null and the screen persists exactly as before.
+ *  - Failure is non-fatal: missing key, API errors, or a refusal across the
+ *    whole model chain all return null and the screen persists as before.
  *
- * Model upgrades: change PRIMARY_MODEL when a newer Claude model ships.
+ * Model selection: the ordered fallback chain lives in server/model-config.ts
+ * (CLAUDE_MODEL_CHAIN). The review uses the best model that's actually
+ * working, walking the chain on a refusal OR an availability/transient error
+ * (model unavailable, no access, overloaded, rate-limited). To upgrade the
+ * model, edit that file (or set the CLAUDE_MODEL_CHAIN env var).
  */
-import { getAnthropicClient, anthropicAvailable } from "./anthropic-client";
+import {
+  anthropicAvailable,
+  callClaudeWithFallback,
+} from "./anthropic-client";
 import { loadScreenTables, type ScreenResult } from "./risk-screen";
 
 // Local logger (not `log` from ./index): importing the server entry would
@@ -28,10 +35,6 @@ function log(message: string) {
   console.log(`[underwriter-review] ${message}`);
 }
 
-const PRIMARY_MODEL = "claude-fable-5";
-// Fable 5's safety classifiers can (rarely) decline a benign request with
-// stop_reason "refusal". When that happens we retry once on Opus.
-const FALLBACK_MODEL = "claude-opus-4-8";
 const REQUEST_TIMEOUT_MS = 60_000;
 
 export interface UnderwriterReview {
@@ -128,15 +131,12 @@ function buildReviewInput(s: ScreenResult) {
   };
 }
 
-class RefusalError extends Error {
-  constructor() { super("model refused the request"); }
-}
-
-async function callModel(model: string, screen: ScreenResult): Promise<UnderwriterReview> {
-  const client = getAnthropicClient();
-  const response = await client.messages.create(
+async function callModelWithFallback(screen: ScreenResult): Promise<UnderwriterReview> {
+  // Walk CLAUDE_MODEL_CHAIN: the helper advances to the next model on a
+  // refusal or an availability/transient error, so we always use the best
+  // model that's actually working.
+  const { response } = await callClaudeWithFallback(
     {
-      model,
       max_tokens: 2048,
       system: SYSTEM_PROMPT,
       // No `thinking` param: Fable 5 has thinking always on and rejects
@@ -154,10 +154,8 @@ async function callModel(model: string, screen: ScreenResult): Promise<Underwrit
         },
       ],
     },
-    { timeout: REQUEST_TIMEOUT_MS },
+    { requestOptions: { timeout: REQUEST_TIMEOUT_MS } },
   );
-
-  if (response.stop_reason === "refusal") throw new RefusalError();
 
   const textBlock = response.content.find((b) => b.type === "text");
   if (!textBlock || textBlock.type !== "text") {
@@ -179,17 +177,11 @@ export async function generateUnderwriterReview(
 ): Promise<UnderwriterReview | null> {
   if (!anthropicAvailable()) return null;
   try {
-    return await callModel(PRIMARY_MODEL, screen);
+    return await callModelWithFallback(screen);
   } catch (err: any) {
-    if (err instanceof RefusalError) {
-      try {
-        return await callModel(FALLBACK_MODEL, screen);
-      } catch (fallbackErr: any) {
-        log(`fallback (${FALLBACK_MODEL}) failed: ${fallbackErr?.message || fallbackErr}`);
-        return null;
-      }
-    }
-    log(`${PRIMARY_MODEL} failed: ${err?.message || err}`);
+    // Non-fatal: no model in the chain produced a usable note. The screen
+    // persists exactly as before, just without the advisory review.
+    log(`underwriter review unavailable: ${err?.message || err}`);
     return null;
   }
 }

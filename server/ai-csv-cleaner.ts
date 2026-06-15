@@ -1,4 +1,5 @@
-import { getOpenAIClient } from "./ai-client";
+import { callOpenAIWithFallback } from "./ai-client";
+import { OPENAI_MODEL_CHAIN, OPENAI_MODEL_CHAIN_FAST } from "./model-config";
 
 interface CleanedRow {
   firstName: string;
@@ -116,9 +117,7 @@ Format: {"Header Name": "First Name", "Another Header": "Last Name", ...}
 Be flexible - match variations like "FirstName", "first_name", "fname", "DOB", "BirthDate", etc.`;
 
   try {
-    const openai = getOpenAIClient();
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+    const completion = await callOpenAIWithFallback({
       messages: [
         {
           role: "system",
@@ -132,7 +131,7 @@ Be flexible - match variations like "FirstName", "first_name", "fname", "DOB", "
       temperature: 0.1,
       max_tokens: 500,
       response_format: { type: "json_object" }
-    });
+    }, OPENAI_MODEL_CHAIN_FAST);
 
     const mapping = JSON.parse(completion.choices[0].message.content || "{}");
     return mapping;
@@ -376,9 +375,7 @@ Generate a clear, helpful message that:
 Keep it under 150 words. Be friendly and solution-focused.`;
 
   try {
-    const openai = getOpenAIClient();
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+    const completion = await callOpenAIWithFallback({
       messages: [
         {
           role: "system",
@@ -391,7 +388,7 @@ Keep it under 150 words. Be friendly and solution-focused.`;
       ],
       temperature: 0.7,
       max_tokens: 300
-    });
+    }, OPENAI_MODEL_CHAIN);
 
     return completion.choices[0].message.content || "Please review and correct the data validation errors before uploading.";
   } catch (error) {

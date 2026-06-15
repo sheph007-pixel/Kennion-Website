@@ -42,12 +42,19 @@ working until the requested change is live on www.kennion.com and verified.
   (advisory only; everything degrades gracefully when unset)
 - `PORT` — defaults to 5000
 
+Optional model overrides (comma-separated, best model first) — each
+defaults to a sensible chain in `server/model-config.ts`; set these to bump
+models on Railway without a code change:
+
+- `CLAUDE_MODEL_CHAIN` — e.g. `claude-fable-5,claude-opus-4-8,claude-sonnet-4-6`
+- `OPENAI_MODEL_CHAIN` — long-form prose, e.g. `gpt-4o`
+- `OPENAI_MODEL_CHAIN_FAST` — cheap structured tasks, e.g. `gpt-4o-mini,gpt-4o`
+
 ## AI Underwriter Review (Claude) — advisory only
 
 `server/ai-underwriter-review.ts` runs after every `screenGroup()` call
 (both the customer upload path and the admin re-run path in
-`server/routes.ts`) and asks Claude (`claude-fable-5`, with automatic
-fallback to `claude-opus-4-8` on a safety-classifier refusal) to write
+`server/routes.ts`) and asks Claude to write
 the underwriter's file note for the group: ONE plain-English paragraph
 (3-4 sentences, 60-90 words) explaining the screen's already-made
 decision — no jargon, no verdict of its own. The approve/decline badge
@@ -66,10 +73,19 @@ Hard rules:
 - **Aggregate data only.** Only whitelisted `ScreenResult` aggregates go
   to the API (see `buildReviewInput`) — never census rows, names, DOBs,
   or per-member data.
-- **Failure is non-fatal.** No key / API error / double refusal ⇒
+- **Model selection + fallback.** The ordered chain lives in
+  `server/model-config.ts` (`CLAUDE_MODEL_CHAIN`, default
+  `claude-fable-5 → claude-opus-4-8 → claude-sonnet-4-6`). The shared
+  `callClaudeWithFallback` helper in `server/anthropic-client.ts` walks the
+  chain and advances to the next model on a safety-classifier **refusal**
+  OR an **availability/transient error** (model unavailable/404, no
+  access/403, overloaded/529, rate-limited/429, 5xx) — so the review always
+  uses the best model that's actually working.
+- **Failure is non-fatal.** No key / every model failing or refusing ⇒
   `claude_review` is simply absent and the screen persists as before.
-- **Model upgrades** = change `PRIMARY_MODEL` in
-  `server/ai-underwriter-review.ts`.
+- **Model upgrades** = edit `CLAUDE_MODEL_CHAIN` in
+  `server/model-config.ts` (or set the `CLAUDE_MODEL_CHAIN` env var). Do not
+  hard-code model IDs back into `server/ai-underwriter-review.ts`.
 
 ## Railway deployment
 
