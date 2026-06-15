@@ -747,7 +747,7 @@ function printSavingsReport({ employees, avgAge, monthlyBill, annualSavings, mon
 <title>Kennion Savings Estimate</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
   *,*::before,*::after { box-sizing: border-box; }
   :root {
@@ -760,7 +760,7 @@ function printSavingsReport({ employees, avgAge, monthlyBill, annualSavings, mon
   }
   html, body { margin: 0; }
   body {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     color: var(--fg);
     background: white;
     -webkit-font-smoothing: antialiased;
