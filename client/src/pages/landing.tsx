@@ -478,15 +478,8 @@ function Hero({ openContact }) {
         <div className="relative">
           <div className="hidden lg:block absolute -left-6 top-2 bottom-2 w-px bg-kn-accent opacity-60" />
 
-          <Reveal>
-            <div className="inline-flex items-center gap-2 text-[11.5px] uppercase tracking-[0.18em] font-medium text-muted-foreground">
-              <span className="inline-block w-6 h-px bg-kn-accent" />
-              Kennion Benefit Advisors &middot; 50+ Years
-            </div>
-          </Reveal>
-
           <Reveal delay={80}>
-            <h1 className="font-display font-[700] mt-7 text-[44px] sm:text-[64px] lg:text-[88px] xl:text-[100px] leading-[0.98] sm:leading-[0.96] tracking-[-0.04em] text-foreground">
+            <h1 className="font-display font-[700] text-[44px] sm:text-[64px] lg:text-[88px] xl:text-[100px] leading-[0.98] sm:leading-[0.96] tracking-[-0.04em] text-foreground">
               Benefits<br />
               Built to<br />
               <span className="text-kn-accent">Perform.</span>
