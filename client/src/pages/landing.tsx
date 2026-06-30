@@ -31,20 +31,6 @@ import {
   Building2, Megaphone,
 } from "lucide-react";
 
-declare global {
-  interface Window { Calendly?: any; }
-}
-
-function openCalendly(e?: React.MouseEvent) {
-  if (e) e.preventDefault();
-  const url = "https://calendly.com/kennion/call";
-  if (typeof window !== "undefined" && window.Calendly && typeof window.Calendly.initPopupWidget === "function") {
-    window.Calendly.initPopupWidget({ url });
-  } else {
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
-}
-
 const KENNION_LOGO_URL = "https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/attachments/production/5004437337/logo/qGPs3ykt503dCIwP_qHVHmcxV3JVHXZucQ.png";
 const KENNION_BUILDING_URL = "https://images.squarespace-cdn.com/content/v1/650a374c4246d47a3dbe7afb/1695168363204-7SHD3HNS7AARCJU8LO2L/The%2BLindsey%2BBuilding-14.jpg";
 const VIDEO_THUMB_HERO = "https://vumbnail.com/1004137913.jpg";
@@ -205,7 +191,7 @@ function ContactModal({ open, onClose }) {
         <div className="flex items-start justify-between gap-4 px-7 py-5 border-b border-border bg-muted">
           <div>
             <div className="text-[10.5px] font-mono uppercase tracking-[0.16em] text-primary">Get in Touch</div>
-            <h2 className="font-display font-[600] text-[24px] leading-tight tracking-[-0.02em] mt-1">Talk to an Advisor</h2>
+            <h2 className="font-display font-[600] text-[24px] leading-tight tracking-[-0.02em] mt-1">Talk To An Advisor</h2>
             <p className="text-[13px] text-muted-foreground mt-1">Tell us about your company and we'll be in touch within one business day.</p>
           </div>
           <button onClick={onClose} aria-label="Close" className="w-9 h-9 grid place-items-center rounded-md hover:bg-black/[.04] text-muted-foreground hover:text-foreground shrink-0">
@@ -345,7 +331,7 @@ function Nav({ openContact }) {
           <div className="w-px h-5 bg-border mx-2" />
 
           <button onClick={openContact} className="inline-flex items-center gap-1.5 text-[13.5px] font-medium text-primary-foreground bg-primary hover:opacity-90 px-3.5 py-2 rounded-md shadow-sm transition-opacity">
-            Talk to an Advisor
+            Talk To An Advisor
             <ArrowRight size={14} strokeWidth={2}/>
           </button>
         </div>
@@ -363,7 +349,7 @@ function Nav({ openContact }) {
           <a href="#why-us" className="block py-2" onClick={() => setOpen(false)}>Why Kennion</a>
 
           <div className="mt-4 pt-4 border-t border-border">
-            <button onClick={() => { setOpen(false); openContact(); }} className="block w-full text-center font-medium text-primary-foreground bg-primary px-4 py-2.5 rounded-md">Talk to an Advisor</button>
+            <button onClick={() => { setOpen(false); openContact(); }} className="block w-full text-center font-medium text-primary-foreground bg-primary px-4 py-2.5 rounded-md">Talk To An Advisor</button>
           </div>
 
           <div className="mt-5 pt-4 border-t border-border">
@@ -482,12 +468,9 @@ function Hero({ openContact }) {
           <Reveal delay={240}>
             <div className="mt-9 flex flex-wrap items-center gap-3">
               <button onClick={openContact} className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-3 rounded-md shadow-sm transition-opacity">
-                Talk to an Advisor
+                Talk To An Advisor
                 <ChevronRight size={15} strokeWidth={2}/>
               </button>
-              <a href="#solutions" className="inline-flex items-center gap-1.5 text-[14.5px] font-medium border border-border px-5 py-3 rounded-md transition-colors text-foreground hover:bg-black/[.03]">
-                Explore Capabilities
-              </a>
             </div>
           </Reveal>
 
@@ -794,7 +777,7 @@ function HowItWorks({ openContact }) {
 
         <Reveal className="mt-12 text-center">
           <button onClick={openContact} className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-3 rounded-md shadow-sm">
-            Start the Conversation
+            Talk To An Advisor
             <ArrowRight size={15} strokeWidth={2}/>
           </button>
         </Reveal>
@@ -922,7 +905,7 @@ function WhyKennion({ openContact }) {
             </p>
             <div className="mt-8">
               <button onClick={openContact} className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-3 rounded-md shadow-sm">
-                Talk to an Advisor
+                Talk To An Advisor
                 <ArrowRight size={15} strokeWidth={2}/>
               </button>
             </div>
@@ -1037,15 +1020,6 @@ function Contact() {
                   <dd className="mt-0.5">2828 Old 280 Court, Vestavia, AL 35243</dd>
                 </div>
               </div>
-              <div className="flex items-start gap-3 border-t border-border pt-4">
-                <Calendar size={15} className="text-primary mt-0.5 shrink-0"/>
-                <div>
-                  <dt className="text-[11px] uppercase tracking-[0.1em] text-muted-foreground">Schedule</dt>
-                  <dd className="mt-0.5">
-                    <a href="https://calendly.com/kennion/call" onClick={openCalendly} className="text-primary hover:underline underline-offset-4 cursor-pointer">Book a call online</a>
-                  </dd>
-                </div>
-              </div>
             </dl>
           </Reveal>
 
@@ -1130,14 +1104,9 @@ function FinalCTA({ openContact }) {
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <button onClick={openContact} className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-white text-primary hover:bg-white/95 px-6 py-3 rounded-md shadow-sm">
-            Talk to an Advisor
+            Talk To An Advisor
             <ArrowRight size={15} strokeWidth={2}/>
           </button>
-          <a href="https://calendly.com/kennion/call" onClick={openCalendly}
-             className="inline-flex items-center gap-1.5 text-[14.5px] font-medium border border-white/25 text-white hover:bg-white/10 px-6 py-3 rounded-md transition-colors cursor-pointer">
-            <Calendar size={15} strokeWidth={1.8}/>
-            Schedule a Call
-          </a>
         </div>
       </div>
     </section>
@@ -1249,7 +1218,7 @@ function Footer({ openContact }) {
             <button onClick={openContact}
                className="mt-6 inline-flex items-center gap-2 text-[13px] font-medium bg-white text-[hsl(215_35%_14%)] hover:bg-white/95 px-4 py-2.5 rounded-md cursor-pointer">
               <Mail size={14} strokeWidth={1.8}/>
-              Get in Touch
+              Talk To An Advisor
             </button>
           </div>
 
@@ -1269,7 +1238,7 @@ function Footer({ openContact }) {
               <li><a href="#who-we-serve" className="hover:text-white">Who We Serve</a></li>
               <li><a href="#how-it-works" className="hover:text-white">How It Works</a></li>
               <li><a href="#why-us" className="hover:text-white">Why Kennion</a></li>
-              <li><button onClick={openContact} className="hover:text-white text-left">Get in Touch</button></li>
+              <li><button onClick={openContact} className="hover:text-white text-left">Talk To An Advisor</button></li>
             </ul>
           </div>
 
