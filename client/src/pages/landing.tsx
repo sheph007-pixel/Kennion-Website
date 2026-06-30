@@ -1,4 +1,4 @@
-// Kennion homepage — employee benefits agency pivot
+// Kennion homepage: employee benefits agency pivot
 // Single-file: includes all sections, calculator, modals, motion primitives.
 //
 // REQUIRES (one-time setup in client/index.html <head>):
@@ -51,7 +51,7 @@ const VIDEO_THUMB_HERO = "https://vumbnail.com/1004137913.jpg";
 const VIDEO_THUMB_BENEFITS = "https://vumbnail.com/1060997796.jpg";
 
 // ─────────────────────────────────────────────────────────────────────
-// MOTION PRIMITIVES — scroll reveals + animated counters
+// MOTION PRIMITIVES: scroll reveals + animated counters
 // ─────────────────────────────────────────────────────────────────────
 function useInView(threshold = 0.15) {
   const ref = useRef(null);
@@ -386,8 +386,8 @@ function Hero() {
 
           <Reveal delay={160}>
             <p className="mt-7 text-[17.5px] leading-[1.55] max-w-[36rem] text-muted-foreground">
-              For over 50 years, Kennion has helped employers across the country build better benefit programs —
-              group health, dental, vision, and supplemental coverage, from 40+ top-rated carriers,
+              For over 50 years, Kennion has helped employers across the country build better benefit programs.
+              Group health, dental, vision, and supplemental coverage from 40+ top-rated carriers,
               consolidated into one monthly invoice.
             </p>
           </Reveal>
@@ -426,7 +426,7 @@ function Hero() {
 // ─────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────
-// COVERAGE — what we cover, video, plan counts
+// COVERAGE: what we cover, video, plan counts
 // ─────────────────────────────────────────────────────────────────────
 function Coverage() {
   const videos = [
@@ -440,7 +440,7 @@ function Coverage() {
     { t: "Health",       n: "15", desc: "Medical plans from top national and regional carriers, designed to fit any group." },
     { t: "Dental",       n: "6",  desc: "Preventive-first dental coverage with broad network access and competitive rates." },
     { t: "Vision",       n: "3",  desc: "Comprehensive eye care benefits including exams, frames, and contacts." },
-    { t: "Supplemental", n: "10", desc: "Voluntary benefits — life, accident, critical illness, and more — at group rates." },
+    { t: "Supplemental", n: "10", desc: "Voluntary benefits at group rates: life, accident, critical illness, and more." },
   ];
   return (
     <section id="solutions" className="relative py-24 lg:py-32 bg-muted border-y border-border">
@@ -499,7 +499,7 @@ function Coverage() {
               The full benefits suite. <span className="italic" style={{ color: "hsl(var(--primary))" }}>From one trusted team.</span>
             </h2>
             <p className="mt-5 text-[16px] leading-[1.65] text-muted-foreground">
-              Decades of carrier relationships mean you get access to more plan options and better rates than you'll find anywhere else. Every line of coverage — health, dental, vision, supplemental — built into one program, billed on one invoice, serviced by one dedicated team.
+              Decades of carrier relationships mean you get access to more plan options and better rates than you'll find anywhere else. Every line of coverage: health, dental, vision, and supplemental. One program, one invoice, one dedicated team.
             </p>
 
             <div className="mt-7 grid grid-cols-3 gap-4">
@@ -541,13 +541,13 @@ function Coverage() {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// HOW IT WORKS — agency process
+// HOW IT WORKS: agency process
 // ─────────────────────────────────────────────────────────────────────
 function HowItWorks() {
   const steps = [
     {
       n: "01", t: "Share Your Census",
-      body: "Upload your employee roster through our secure portal. Takes about five minutes — we handle the rest.",
+      body: "Upload your employee roster through our secure portal. Takes about five minutes. We handle the rest.",
       preview: <CensusPreview />,
     },
     {
@@ -578,7 +578,7 @@ function HowItWorks() {
             How It <span className="italic" style={{ color: "hsl(var(--primary))" }}>Works</span>
           </h2>
           <p className="mt-5 text-[16.5px] leading-[1.6] text-muted-foreground max-w-xl">
-            From census upload to active coverage, we make the whole process straightforward — and keep it that way year after year.
+            From census upload to active coverage, we make the whole process straightforward, and keep it that way year after year.
           </p>
         </Reveal>
 
@@ -666,7 +666,7 @@ function ServicePreview() {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// SAVINGS CALCULATOR — interactive lead-gen estimator
+// SAVINGS CALCULATOR: interactive lead-gen estimator
 // ─────────────────────────────────────────────────────────────────────
 const NATL_SINGLE_AVG_MONTHLY = 777;
 const NATL_FAMILY_AVG_MONTHLY = 2249;
@@ -799,7 +799,7 @@ function printSavingsReport({ employees, avgAge, monthlyBill, annualSavings, mon
   </div>
 </div>
 <div style="margin-top: 10px; font-size: 13px; color: var(--muted);">
-  A <span style="color: var(--accent); font-weight: 500;">${reductionPct}% rate reduction</span> vs your current premium — based on Kennion's carrier network for your group size and demographics.
+  A <span style="color: var(--accent); font-weight: 500;">${reductionPct}% rate reduction</span> vs your current premium, based on Kennion's carrier network for your group size and demographics.
 </div>
 
 <hr class="rule">
@@ -1181,19 +1181,19 @@ function Field({ label, value, min, max, step, onChange, format, ticks = [] }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// WHY KENNION — differentiators
+// WHY KENNION: differentiators
 // ─────────────────────────────────────────────────────────────────────
 function WhyKennion() {
   const differentiators = [
     {
       icon: Building2,
       title: "40+ Carrier Relationships",
-      body: "Direct access to top national and regional carriers means we can find the right fit for any group — and negotiate from a position of volume.",
+      body: "Direct access to top national and regional carriers means we can find the right fit for any group and negotiate from a position of volume.",
     },
     {
       icon: FileText,
       title: "One Consolidated Invoice",
-      body: "Health, dental, vision, supplemental — all your coverage lines on a single monthly bill. No more juggling statements from five different carriers.",
+      body: "Health, dental, vision, and supplemental: all on a single monthly bill. No more juggling statements from five different carriers.",
     },
     {
       icon: Users,
@@ -1203,7 +1203,7 @@ function WhyKennion() {
     {
       icon: HeartPulse,
       title: "Dedicated Account Team",
-      body: "You get a real team — not a call center. Your advisor handles claims questions, billing issues, mid-year changes, and anything else that comes up.",
+      body: "You get a real team, not a call center. Your advisor handles claims questions, billing issues, mid-year changes, and anything else that comes up.",
     },
     {
       icon: Calendar,
@@ -1213,7 +1213,7 @@ function WhyKennion() {
     {
       icon: Shield,
       title: "ACA & Compliance Support",
-      body: "Reporting, notices, minimum essential coverage — we keep you current so you can focus on running your business, not deciphering federal regulations.",
+      body: "Reporting, notices, minimum essential coverage. We keep you current so you can focus on running your business, not deciphering federal regulations.",
     },
   ];
 
@@ -1230,7 +1230,7 @@ function WhyKennion() {
               The difference an <span className="italic" style={{ color: "hsl(var(--primary))" }}>experienced team</span> makes.
             </h2>
             <p className="mt-5 text-[16px] leading-[1.6] text-muted-foreground max-w-md">
-              Fifty years of carrier relationships, technology built for today's HR teams, and an advisory model that puts your interests first — not the insurer's.
+              Fifty years of carrier relationships, technology built for today's HR teams, and an advisory model that puts your interests first, not the insurer's.
             </p>
             <div className="mt-8">
               <Link href="/register" className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-3 rounded-md shadow-sm">
@@ -1287,7 +1287,7 @@ function Testimonial() {
           <div className="mt-14 pt-7 border-t border-border max-w-2xl mx-auto text-[14px] leading-[1.6] text-muted-foreground">
             <span className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-primary block mb-2">Why our clients stay</span>
             When you work with an independent advisor who has deep carrier relationships and no quota to fill,
-            <span className="text-foreground font-medium"> your renewal gets shopped every year</span> — not rubber-stamped.
+            <span className="text-foreground font-medium"> your renewal gets shopped every year</span>, not rubber-stamped.
             That's why our retention rate has stayed above 95% for over a decade.
           </div>
         </Reveal>
@@ -1321,7 +1321,7 @@ function Contact() {
             <div className="text-[11px] font-mono uppercase tracking-[0.14em] text-primary">For Employers</div>
             <h3 className="mt-2 text-[22px] font-semibold tracking-[-0.01em]">Ready to See What Your Group Could Save?</h3>
             <p className="mt-3 text-[14.5px] leading-[1.6] text-muted-foreground">
-              Upload your employee census and we'll come back with actual carrier proposals — plan by plan, side by side — within 24–48 hours.
+              Upload your employee census and we'll come back with actual carrier proposals, plan by plan and side by side, within 24-48 hours.
             </p>
             <Link href="/register" className="mt-6 inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-3 rounded-md shadow-sm">
               Get a Quote
@@ -1401,12 +1401,12 @@ function FinalCTA() {
           Better benefits start with a better advisor.
         </h2>
         <p className="mt-5 text-[17px] leading-[1.55] text-white/85 max-w-xl mx-auto">
-          Share your census and we'll come back with real carrier proposals — no obligation,
+          Share your census and we'll come back with real carrier proposals with no obligation,
           no cost, no pressure. Just a clear picture of what your group could have.
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <Link href="/register" className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-white text-primary hover:bg-white/95 px-6 py-3 rounded-md shadow-sm">
-            Get a Quote — It's Free
+            Get a Free Quote
             <ArrowRight size={15} strokeWidth={2}/>
           </Link>
           <a href="https://calendly.com/kennion/call" onClick={openCalendly}
@@ -1428,7 +1428,7 @@ const LEGAL_CONTENT = {
     title: "Privacy Policy",
     updated: "Effective May 2026",
     sections: [
-      { h: "Information We Collect", b: "We collect information you voluntarily provide when you contact us or submit a quote request — typically your name, company, email address, phone number, and group census data. We also collect standard analytics information about how you use our site, including pages visited, referring source, and device type." },
+      { h: "Information We Collect", b: "We collect information you voluntarily provide when you contact us or submit a quote request, typically your name, company, email address, phone number, and group census data. We also collect standard analytics information about how you use our site, including pages visited, referring source, and device type." },
       { h: "How We Use Your Information", b: "We use your information to respond to your inquiries, generate proposals, deliver our services, communicate updates about your account or coverage, and improve our website. We do not sell your personal information." },
       { h: "How We Share Information", b: "We share information with carriers, third-party administrators, and other service providers necessary to deliver our services. We may also disclose information when required by law, in response to a subpoena, or to protect our rights, safety, or property." },
       { h: "Data Security", b: "We use industry-standard administrative, technical, and physical safeguards to protect your information. No method of transmission over the Internet or electronic storage is 100% secure, and we cannot guarantee absolute security." },
@@ -1445,7 +1445,7 @@ const LEGAL_CONTENT = {
     sections: [
       { h: "Acceptance of Terms", b: "By accessing or using this website, you agree to be bound by these Terms of Use and our Privacy Policy. If you do not agree, please do not use the site." },
       { h: "Use of the Site", b: "You may use this site for lawful business inquiry and informational purposes. You may not scrape, copy, redistribute, reverse engineer, or otherwise misuse the site or its content. Automated access without our written permission is prohibited." },
-      { h: "Intellectual Property", b: "All content on this site — including text, graphics, logos, images, software, and design — is the property of Kennion Benefit Advisors or its licensors and is protected by U.S. and international copyright, trademark, and other intellectual property laws. You may not reproduce, modify, distribute, or create derivative works without our written consent." },
+      { h: "Intellectual Property", b: "All content on this site, including text, graphics, logos, images, software, and design, is the property of Kennion Benefit Advisors or its licensors and is protected by U.S. and international copyright, trademark, and other intellectual property laws. You may not reproduce, modify, distribute, or create derivative works without our written consent." },
       { h: "Informational Only", b: "The rate estimates, savings calculator, and other interactive features on this site are illustrative and provided for general informational purposes only. They are not insurance quotes, contracts, or binding offers. Actual rates and eligibility are determined only after submission and underwriting review of a complete group census by the applicable carrier." },
       { h: "No Professional Advice", b: "Nothing on this site constitutes legal, tax, financial, or insurance advice. You should consult a qualified professional before making decisions based on information from this site." },
       { h: "Disclaimers", b: "This site is provided \"as is\" and \"as available,\" without warranties of any kind, express or implied, including warranties of merchantability, fitness for a particular purpose, or non-infringement. We do not warrant that the site will be uninterrupted, error-free, or free of viruses or other harmful components." },
@@ -1520,7 +1520,7 @@ function Footer() {
             <div className="font-display font-[450] text-[28px] tracking-[-0.02em] leading-none">Kennion</div>
             <div className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-white/55 mt-2">Benefit Advisors · 50+ Years</div>
             <p className="mt-5 text-[13.5px] leading-[1.55] text-white/65 max-w-[26rem]">
-              An independent employee benefits agency helping employers nationwide for over 50 years. Group health, dental, vision, and supplemental coverage across fully insured, self-funded, and private programs — consolidated into one monthly invoice.
+              An independent employee benefits agency helping employers nationwide for over 50 years. Group health, dental, vision, and supplemental coverage across fully insured, self-funded, and private programs, all consolidated into one monthly invoice.
             </p>
             <a href="https://calendly.com/kennion/call" onClick={openCalendly}
                className="mt-6 inline-flex items-center gap-2 text-[13px] font-medium bg-white text-[hsl(215_35%_14%)] hover:bg-white/95 px-4 py-2.5 rounded-md cursor-pointer">
