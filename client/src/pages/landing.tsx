@@ -206,7 +206,7 @@ function ContactModal({ open, onClose }) {
           <div>
             <div className="text-[10.5px] font-mono uppercase tracking-[0.16em] text-primary">Get in Touch</div>
             <h2 className="font-display font-[600] text-[24px] leading-tight tracking-[-0.02em] mt-1">Talk to an Advisor</h2>
-            <p className="text-[13px] text-muted-foreground mt-1">Tell us about your group and we'll be in touch within one business day.</p>
+            <p className="text-[13px] text-muted-foreground mt-1">Tell us about your company and we'll be in touch within one business day.</p>
           </div>
           <button onClick={onClose} aria-label="Close" className="w-9 h-9 grid place-items-center rounded-md hover:bg-black/[.04] text-muted-foreground hover:text-foreground shrink-0">
             <X size={18}/>
@@ -388,9 +388,9 @@ function AdvisoryDashCard() {
   const metrics = [
     { label: "Client Retention", value: "95%+", note: "year over year" },
     { label: "Time to Proposal", value: "24-48h", note: "guaranteed" },
-    { label: "Markets Served", value: "All Sizes", note: "2 to 10,000+ lives" },
+    { label: "Companies Served", value: "All Sizes", note: "2 to 10,000+ employees" },
   ];
-  const tags = ["Fully Insured", "Level-Funded", "Self-Funded", "Captive", "Voluntary Benefits", "Compliance"];
+  const tags = ["Health Plans", "Dental & Vision", "Life & Disability", "Mental Health", "Cost Savings", "HR Support"];
   return (
     <div className="relative">
       <div className="absolute -inset-6 -z-10 rounded-[28px] grid-paper opacity-50" />
@@ -501,8 +501,8 @@ function Hero({ openContact }) {
 
           <Reveal delay={320}>
             <div className="mt-12 flex flex-wrap items-center gap-x-7 gap-y-3 text-[12.5px] text-muted-foreground">
-              <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Small groups to enterprise</div>
-              <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Full funding spectrum</div>
+              <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Small businesses to large employers</div>
+              <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Plans built around your budget</div>
               <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Employers nationwide</div>
             </div>
           </Reveal>
@@ -529,18 +529,18 @@ function Solutions() {
     },
     {
       icon: FileText,
-      title: "Plan Design & Funding Analysis",
-      body: "Fully insured, level-funded, self-funded, captive, or private programs. We model every structure so you choose with full visibility into cost, risk, and employee impact.",
+      title: "The Right Plan at the Right Price",
+      body: "There are many ways to build and pay for a benefits program. We find the one that gives your people great coverage at the best possible price, and we show you exactly how the numbers work.",
     },
     {
       icon: Users,
-      title: "Digital Enrollment & HR Technology",
-      body: "Modern, paperless enrollment for your entire workforce. Integrated with your payroll and HRIS, with digital ID cards and mobile access for every member.",
+      title: "Simple, Paperless Enrollment",
+      body: "Modern, paperless enrollment for your whole team. It connects with the systems you already use, with digital ID cards and mobile access for every employee.",
     },
     {
       icon: HeartPulse,
-      title: "Employee Wellbeing Programs",
-      body: "Mental health, chronic disease management, and population health initiatives that improve outcomes, lower cost, and support recruitment and retention.",
+      title: "Healthier, Happier Employees",
+      body: "Mental health support, wellness programs, and the kind of care that keeps your team healthy and productive, lowers cost, and makes people glad they work for you.",
     },
     {
       icon: Handshake,
@@ -549,8 +549,8 @@ function Solutions() {
     },
     {
       icon: CheckCircle2,
-      title: "Compliance & Risk Management",
-      body: "ACA reporting, ERISA filings, non-discrimination testing, SBC distributions, and more. We keep your organization current so you can focus on your business.",
+      title: "Compliance Made Simple",
+      body: "All the rules, filings, and fine print that come with offering benefits, handled for you. We keep your organization covered and current so you can focus on your business.",
     },
   ];
 
@@ -595,7 +595,7 @@ function Solutions() {
               {[
                 { v: "50+", l: "Years of advisory expertise" },
                 { v: "95%+", l: "Client retention rate" },
-                { v: "All", l: "Funding models supported" },
+                { v: "All", l: "Your benefits in one place" },
               ].map((s, i) => (
                 <div key={i} className="border-t border-border pt-3">
                   <div className="font-display font-[600] text-[36px] leading-none tracking-[-0.03em] text-foreground">
@@ -681,20 +681,20 @@ function WhoWeServe() {
     {
       tag: "Small & Growing Companies",
       heading: "Build a program that competes with the big guys.",
-      body: "When you're under 100 lives, every dollar matters. We help smaller employers access carrier options and funding strategies that were once reserved for much larger organizations, without needing a large HR team to manage them.",
-      items: ["2-99 employees", "Fully insured and level-funded options", "Simple, guided enrollment", "Consolidated billing across all lines"],
+      body: "When you're a smaller company, every dollar matters. We help you get the kind of benefits and pricing that used to be reserved for big companies, without needing a big HR team to manage it.",
+      items: ["2-99 employees", "Great coverage at a price that fits", "Simple, guided enrollment", "One bill for everything"],
     },
     {
       tag: "Middle Market",
       heading: "Sophisticated benefits without the complexity.",
-      body: "You have enough employees to explore self-funded and captive arrangements, but not always the internal expertise to evaluate them confidently. That's exactly what we're here for.",
-      items: ["100-999 employees", "Self-funded and level-funded analysis", "Proven cost-management strategies", "Multi-location and multi-state programs"],
+      body: "You're big enough to unlock smarter, more cost-effective ways to offer benefits, but you don't always have the in-house expertise to pull them off. That's exactly what we're here for.",
+      items: ["100-999 employees", "Smarter ways to control cost", "Proven strategies that work", "Multi-location and multi-state support"],
     },
     {
       tag: "Large & Complex Employers",
       heading: "Purpose-built programs for organizations that demand more.",
-      body: "High-performing benefit programs require deep actuarial insight, advanced funding strategies, and a team that operates as an extension of your HR leadership. We've built our practice to deliver exactly that.",
-      items: ["1,000+ employees", "Self-funded and captive structures", "Alternative funding and stop-loss strategies", "Population health and wellbeing strategy"],
+      body: "Programs at this scale demand serious expertise and a team that works like an extension of your own leadership. We've built our practice to deliver exactly that.",
+      items: ["1,000+ employees", "Advanced cost-saving strategies", "Programs built for complex needs", "Wellbeing programs that perform"],
     },
   ];
 
@@ -750,7 +750,7 @@ function HowItWorks({ openContact }) {
     },
     {
       n: "02", t: "Design",
-      body: "We model every viable funding structure and program design, then present your options with full transparency into cost, risk, and employee impact.",
+      body: "We map out your best options and show you exactly what each one means for your costs and your people, in plain language, so the right choice is obvious.",
       preview: <DesignPreview />,
     },
     {
@@ -827,10 +827,10 @@ function AssessPreview() {
 }
 
 function DesignPreview() {
-  const rows = [["Fully Insured","$412"],["Level-Funded","$388"],["Self-Funded","$361"]];
+  const rows = [["Your Plan Today","$412"],["Our Recommendation","$361"],["Premium Option","$448"]];
   return (
     <div className="h-full w-full p-3 font-mono text-[9.5px] leading-[1.4]">
-      <div className="text-[8.5px] uppercase tracking-[0.12em] text-muted-foreground mb-1.5">Funding Analysis &middot; EE Rate</div>
+      <div className="text-[8.5px] uppercase tracking-[0.12em] text-muted-foreground mb-1.5">Plan Options &middot; Per Employee</div>
       {rows.map(([plan, rate], i) => (
         <div key={i} className={`flex items-center justify-between py-0.5 border-b border-dashed border-border last:border-0 ${i===1?"text-primary font-medium":""}`}>
           <span className="truncate">{plan}</span>
@@ -885,8 +885,8 @@ function WhyKennion({ openContact }) {
     },
     {
       icon: FileText,
-      title: "Full Funding Spectrum",
-      body: "Fully insured, level-funded, self-funded, captive, and private programs. We model all of them and help you choose with complete transparency into cost and risk.",
+      title: "Coverage That Fits Your Budget",
+      body: "There's no one-size-fits-all in benefits. We know every way to build and pay for a program, and we find the one that gives your people more while costing you less.",
     },
     {
       icon: Users,
@@ -906,7 +906,7 @@ function WhyKennion({ openContact }) {
     {
       icon: Shield,
       title: "Compliance, Handled",
-      body: "ACA, ERISA, non-discrimination testing, SBC distributions, and the rest of the alphabet soup. We keep your organization current and compliant so you never have to think about it.",
+      body: "All the rules, filings, and fine print that come with offering benefits. We handle every bit of it so you stay covered and never have to think about it.",
     },
   ];
 
@@ -1065,7 +1065,7 @@ function Contact() {
             <div className="bg-card rounded-2xl hairline shadow-[0_20px_50px_-20px_rgba(15,30,60,.18)] overflow-hidden">
               <div className="px-7 py-5 border-b border-border bg-muted">
                 <div className="text-[10.5px] font-mono uppercase tracking-[0.16em] text-primary">Inquire</div>
-                <h3 className="font-display font-[600] text-[22px] tracking-[-0.02em] mt-1">Tell us about your group</h3>
+                <h3 className="font-display font-[600] text-[22px] tracking-[-0.02em] mt-1">Tell us about your company</h3>
                 <p className="text-[13px] text-muted-foreground mt-0.5">No obligation. We'll respond within one business day.</p>
               </div>
 
@@ -1260,7 +1260,7 @@ function Footer({ openContact }) {
             <div className="font-display font-[600] text-[28px] tracking-[-0.02em] leading-none">Kennion</div>
             <div className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-white/55 mt-2">Benefit Advisors &middot; 50+ Years</div>
             <p className="mt-5 text-[13.5px] leading-[1.55] text-white/65 max-w-[26rem]">
-              A technology-driven, full-service employee benefits agency with over 50 years of advisory expertise. Serving employers of all sizes, nationwide, across fully insured, self-funded, and alternative funding programs.
+              A technology-driven, full-service employee benefits agency. For over 50 years we've helped employers of all sizes, nationwide, give their people better benefits and taken great care of them along the way.
             </p>
             <button onClick={openContact}
                className="mt-6 inline-flex items-center gap-2 text-[13px] font-medium bg-white text-[hsl(215_35%_14%)] hover:bg-white/95 px-4 py-2.5 rounded-md cursor-pointer">
@@ -1273,7 +1273,7 @@ function Footer({ openContact }) {
             <div className="text-[10.5px] uppercase tracking-[0.16em] font-mono text-white/55 mb-4">Capabilities</div>
             <ul className="space-y-2.5 text-[13.5px] text-white/80">
               <li><a href="#solutions" className="hover:text-white">Benefits Strategy</a></li>
-              <li><a href="#solutions" className="hover:text-white">Plan Design &amp; Funding</a></li>
+              <li><a href="#solutions" className="hover:text-white">Plan Design</a></li>
               <li><a href="#solutions" className="hover:text-white">Digital Enrollment</a></li>
               <li><a href="#solutions" className="hover:text-white">Compliance Support</a></li>
             </ul>
