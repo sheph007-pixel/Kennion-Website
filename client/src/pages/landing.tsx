@@ -26,9 +26,9 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import {
   ArrowRight, ChevronRight, ChevronDown, X, Menu, Check, CheckCircle2,
-  Play, MapPin, Mail, Calendar,
+  Play, MapPin, Mail,
   ArrowUpRight, Shield, Users, FileText, HeartPulse, Eye, Smile,
-  Building2, Megaphone, Wallet, Sliders, Laptop, GraduationCap, Handshake,
+  Building2, Megaphone, Wallet, Sliders, Laptop, Handshake,
 } from "lucide-react";
 
 const KENNION_LOGO_URL = "https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/attachments/production/5004437337/logo/qGPs3ykt503dCIwP_qHVHmcxV3JVHXZucQ.png";
@@ -654,17 +654,17 @@ function ImpactBand() {
 // ─────────────────────────────────────────────────────────────────────
 // WHY LEADING EMPLOYERS CHOOSE KENNION (differentiators)
 // ─────────────────────────────────────────────────────────────────────
-function WhyChooseKennion() {
+function WhyChooseKennion({ openContact }) {
   const items = [
     { icon: Building2,     title: "Open Market Access",           body: "We work across a wide variety of carriers and partners, never tied to any one of them." },
     { icon: Wallet,        title: "Smarter Cost Control",          body: "We find the smarter, more cost-effective way to build your program, and keep it that way." },
     { icon: Sliders,       title: "Funding Strategies That Fit",   body: "The right approach for your size and situation, explained in plain terms so the choice is clear." },
     { icon: Laptop,        title: "Technology-Driven Enrollment",  body: "Modern, paperless enrollment that connects with the systems you already use." },
-    { icon: GraduationCap, title: "Proven Employee Education",     body: "We help your people understand and actually use the benefits they have." },
+    { icon: Users,         title: "Real Support, Real People",     body: "When something needs fixing, a real person who knows your account picks up and gets it done, fast. No runaround." },
     { icon: Handshake,     title: "Long-Term Client Partnerships", body: "Relationships measured in decades, not renewal cycles." },
   ];
   return (
-    <section className="py-24 lg:py-32 bg-muted border-y border-border">
+    <section id="why-us" className="py-24 lg:py-32 bg-muted border-y border-border">
       <div className="mx-auto max-w-7xl px-6">
         <Reveal className="max-w-2xl mb-14">
           <div className="inline-flex items-center gap-2 text-[11.5px] uppercase tracking-[0.18em] font-medium text-muted-foreground">
@@ -693,6 +693,13 @@ function WhyChooseKennion() {
             );
           })}
         </div>
+
+        <Reveal className="mt-12">
+          <button onClick={openContact} className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-3 rounded-md shadow-sm">
+            Talk To An Advisor
+            <ArrowRight size={15} strokeWidth={2}/>
+          </button>
+        </Reveal>
       </div>
     </section>
   );
@@ -895,88 +902,6 @@ function OptimizePreview() {
         </div>
       ))}
     </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// WHY KENNION
-// ─────────────────────────────────────────────────────────────────────
-function WhyKennion({ openContact }) {
-  const differentiators = [
-    {
-      icon: Building2,
-      title: "Deep Carrier Access",
-      body: "Decades of national carrier relationships and buying power give our clients access to programs and pricing that most agencies simply can't match.",
-    },
-    {
-      icon: FileText,
-      title: "Coverage That Fits Your Budget",
-      body: "There's no one-size-fits-all in benefits. We know every way to build and pay for a program, and we find the one that gives your people more while costing you less.",
-    },
-    {
-      icon: Users,
-      title: "Technology, Backed by Real People",
-      body: "Benefits are complicated. Our technology makes them simpler: paperless enrollment, mobile access, and far fewer headaches, so your team spends less time on busywork and more time on the people who matter.",
-    },
-    {
-      icon: HeartPulse,
-      title: "Real Support, Real People",
-      body: "You get a real team, not a call center. When something needs fixing, a person who knows your account picks up and gets it done, fast. No runaround, no dropped balls.",
-    },
-    {
-      icon: Calendar,
-      title: "Long-Term Solutions That Work",
-      body: "We know what works and what doesn't. Instead of chasing quick fixes, we build programs designed to perform for years and stay close to make sure they do. Solutions, not transactions.",
-    },
-    {
-      icon: Shield,
-      title: "Compliance Support",
-      body: "Benefits compliance is complicated and always changing. We help you understand what applies to you and keep you pointed in the right direction, so you're never caught off guard.",
-    },
-  ];
-
-  return (
-    <section id="why-us" className="py-24 lg:py-32">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="grid lg:grid-cols-[1fr_1.5fr] gap-12 lg:gap-20 items-start">
-          <Reveal>
-            <div className="inline-flex items-center gap-2 text-[11.5px] uppercase tracking-[0.18em] font-medium text-muted-foreground">
-              <span className="inline-block w-6 h-px bg-kn-accent" />
-              Why Kennion
-            </div>
-            <h2 className="font-display font-[600] text-[44px] lg:text-[60px] leading-[0.98] tracking-[-0.03em] mt-5">
-              The difference an <span className="text-kn-accent">experienced team</span> makes.
-            </h2>
-            <p className="mt-5 text-[16px] leading-[1.6] text-muted-foreground max-w-md">
-              Fifty years of relationships, programs we know will perform, and a team that does what it says. That's why clients come to us, and why they stay.
-            </p>
-            <div className="mt-8">
-              <button onClick={openContact} className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-3 rounded-md shadow-sm">
-                Talk To An Advisor
-                <ArrowRight size={15} strokeWidth={2}/>
-              </button>
-            </div>
-          </Reveal>
-
-          <Reveal delay={120}>
-            <div className="grid sm:grid-cols-2 gap-px bg-border rounded-xl overflow-hidden hairline">
-              {differentiators.map((d) => {
-                const Icon = d.icon;
-                return (
-                  <div key={d.title} className="bg-card p-6 flex flex-col gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Icon size={16} strokeWidth={1.8} className="text-primary"/>
-                    </div>
-                    <h3 className="text-[15px] font-semibold tracking-[-0.01em]">{d.title}</h3>
-                    <p className="text-[13.5px] leading-[1.6] text-muted-foreground">{d.body}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </Reveal>
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -1329,10 +1254,9 @@ export default function LandingPage() {
       <Hero openContact={openContact} />
       <Solutions />
       <ImpactBand />
-      <WhyChooseKennion />
+      <WhyChooseKennion openContact={openContact} />
       <WhoWeServe />
       <HowItWorks openContact={openContact} />
-      <WhyKennion openContact={openContact} />
       <Testimonial />
       <Contact />
       <FinalCTA openContact={openContact} />
