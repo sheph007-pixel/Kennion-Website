@@ -28,7 +28,7 @@ import {
   ArrowRight, ChevronRight, ChevronDown, X, Menu, Check, CheckCircle2,
   Play, MapPin, Mail, Calendar,
   ArrowUpRight, Shield, Users, FileText, HeartPulse, Eye, Smile,
-  Building2, Handshake,
+  Building2, Megaphone,
 } from "lucide-react";
 
 declare global {
@@ -253,10 +253,6 @@ function ContactModal({ open, onClose }) {
               <textarea value={form.message} onChange={set("message")} rows={3}
                 placeholder="Tell us about your current benefits situation or what you're looking for..."
                 className="w-full text-[13.5px] border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
-            </div>
-            {/* Honeypot: hidden from humans; bots that fill it are dropped server-side */}
-            <div aria-hidden="true" className="absolute left-[-9999px] top-[-9999px] w-px h-px overflow-hidden" tabIndex={-1}>
-              <label>Website<input type="text" tabIndex={-1} autoComplete="off" value={form.website} onChange={set("website")} /></label>
             </div>
             {status === "error" && (
               <p className="text-[12.5px] text-red-600">Something went wrong. Please try again or email support@kennion.com.</p>
@@ -559,9 +555,9 @@ function Solutions() {
       body: "Mental health support, wellness programs, and the kind of care that keeps your team healthy and productive, lowers cost, and makes people glad they work for you.",
     },
     {
-      icon: Handshake,
-      title: "Real Service & Support",
-      body: "Benefits get complicated fast. When something needs fixing, a real person who knows your account answers and gets it resolved, quickly. That is the part most agencies forget.",
+      icon: Megaphone,
+      title: "Employee Education & Communication",
+      body: "Great benefits only matter if your people understand them. We help your employees know what they have and how to use it, with clear communication all year, not just at enrollment.",
     },
     {
       icon: CheckCircle2,
@@ -654,7 +650,7 @@ function ImpactBand() {
     { v: "50+", l: "Years advising employers nationwide" },
     { v: "Nationwide", l: "Access, coast to coast" },
     { v: "85-95%", l: "Client retention, year over year" },
-    { v: "100%", l: "Independent and client-first" },
+    { v: "100%", l: "Client-first, every time" },
   ];
   return (
     <section className="relative bg-primary text-primary-foreground overflow-hidden">
@@ -670,7 +666,7 @@ function ImpactBand() {
             A national agency with a <span className="text-kn-accent">personal touch.</span>
           </h2>
           <p className="mt-4 text-[15.5px] leading-[1.6] text-white/75 max-w-2xl">
-            One of the fastest-growing independent benefits agencies in the country, trusted by employers from coast to coast. Deep enough to deliver the best of the best, focused enough to know your name.
+            Trusted by employers across the country for over 50 years. Big enough to deliver the best of the best, small enough to know your name.
           </p>
         </Reveal>
 
@@ -707,13 +703,13 @@ function WhoWeServe() {
       tag: "Growing Companies",
       heading: "Benefits that grow right along with you.",
       body: "As you add people, your benefits get more complicated and more expensive. We bring smarter, more cost-effective options and handle the moving parts so growth never becomes a headache.",
-      items: ["50-200 employees", "Smarter ways to control cost", "Proven strategies that work", "Multi-location and multi-state support"],
+      items: ["51-200 employees", "Smarter ways to control cost", "Proven strategies that work", "Multi-location and multi-state support"],
     },
     {
       tag: "Mid-Market Employers",
       heading: "Sophisticated benefits, without the complexity.",
       body: "At this size you can do more with your benefits, but you don't always have the in-house expertise to pull it off. We work like part of your team to make it happen.",
-      items: ["200-500 employees", "Advanced cost-saving strategies", "A team that works like part of yours", "Wellbeing programs that perform"],
+      items: ["201-500 employees", "Advanced cost-saving strategies", "A team that works like part of yours", "Wellbeing programs that perform"],
     },
   ];
 
@@ -910,7 +906,7 @@ function WhyKennion({ openContact }) {
     {
       icon: Users,
       title: "Technology, Backed by Real People",
-      body: "Benefits are complicated. Our technology makes them simpler, paperless enrollment, mobile access, fewer headaches, and real people stand behind it to fix anything that comes up, fast.",
+      body: "Benefits are complicated. Our technology makes them simpler, paperless enrollment, mobile access, and far fewer headaches, so your team spends less time on busywork and more time on the people who matter.",
     },
     {
       icon: HeartPulse,
@@ -1127,10 +1123,6 @@ function Contact() {
                     <textarea value={form.message} onChange={set("message")} rows={4}
                       placeholder="Tell us about your current benefits situation or what you're looking for..."
                       className="w-full text-[13.5px] border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
-                  </div>
-                  {/* Honeypot: hidden from humans; bots that fill it are dropped server-side */}
-                  <div aria-hidden="true" className="absolute left-[-9999px] top-[-9999px] w-px h-px overflow-hidden" tabIndex={-1}>
-                    <label>Website<input type="text" tabIndex={-1} autoComplete="off" value={form.website} onChange={set("website")} /></label>
                   </div>
                   {status === "error" && (
                     <p className="text-[12.5px] text-red-600">Something went wrong. Please try again or email support@kennion.com.</p>
