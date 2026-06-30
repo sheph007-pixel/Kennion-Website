@@ -861,8 +861,8 @@ function OptimizePreview() {
       {[
         { l: "Annual Renewal Review", s: "Scheduled" },
         { l: "Claims Analytics", s: "Live" },
-        { l: "Market Re-shop", s: "In Progress" },
-        { l: "Cost Trend", s: "-4.2%" },
+        { l: "Renewal Strategy", s: "On Track" },
+        { l: "Cost Trend", s: "Managed" },
       ].map((item, i) => (
         <div key={i} className="flex items-center justify-between text-[9.5px]">
           <span className="text-muted-foreground">{item.l}</span>
@@ -900,8 +900,8 @@ function WhyKennion({ openContact }) {
     },
     {
       icon: Calendar,
-      title: "Relentless Renewal Advocacy",
-      body: "We re-shop your program every year. If the market has something better, we find it. You shouldn't accept a double-digit increase just because it's renewal season.",
+      title: "Proactive Renewal Strategy",
+      body: "We manage your program year-round so renewals are planned, not reacted to. Data-driven cost containment, utilization insight, and early action keep your trend in check and your renewals predictable.",
     },
     {
       icon: Shield,
@@ -979,8 +979,8 @@ function Testimonial() {
 
           <div className="mt-14 pt-7 border-t border-border max-w-2xl mx-auto text-[14px] leading-[1.6] text-muted-foreground">
             <span className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-primary block mb-2">Why our clients stay</span>
-            When you work with an independent advisor who has deep carrier relationships and no quota to fill,
-            <span className="text-foreground font-medium"> your renewal gets shopped every year</span>, not rubber-stamped.
+            When you work with an independent advisor whose only agenda is your outcome, you get
+            <span className="text-foreground font-medium"> a partner who manages cost and quality all year</span>, not just at renewal.
             That's why our retention rate has stayed above 95% for over a decade.
           </div>
         </Reveal>
