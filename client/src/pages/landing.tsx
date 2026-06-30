@@ -27,7 +27,7 @@ import { Link } from "wouter";
 import {
   ArrowRight, ChevronRight, ChevronDown, X, Menu, Check, CheckCircle2,
   Play, MapPin, Mail, Calendar,
-  ArrowUpRight, Shield, Users, FileText, HeartPulse,
+  ArrowUpRight, Shield, Users, FileText, HeartPulse, Eye, Smile,
   Building2, Handshake,
 } from "lucide-react";
 
@@ -384,13 +384,19 @@ function Nav({ openContact }) {
 // ─────────────────────────────────────────────────────────────────────
 // HERO
 // ─────────────────────────────────────────────────────────────────────
-function AdvisoryDashCard() {
-  const metrics = [
-    { label: "Client Retention", value: "85-95%", note: "year over year" },
-    { label: "Time to Proposal", value: "24-48h", note: "guaranteed" },
-    { label: "Who We Serve", value: "2-500", note: "employees, our focus" },
+function BenefitsPackageCard() {
+  const lines = [
+    { icon: HeartPulse, label: "Group Health",  tag: "Included", desc: "Medical plans your team will actually use" },
+    { icon: Smile,      label: "Dental",        tag: "Included", desc: "Cleanings, fillings, and major work" },
+    { icon: Eye,        label: "Vision",        tag: "Included", desc: "Exams, glasses, and contacts" },
+    { icon: Shield,     label: "Supplemental",  tag: "Included", desc: "Life, accident, and more" },
   ];
-  const tags = ["Health Plans", "Dental & Vision", "Life & Disability", "Mental Health", "Cost Savings", "HR Support"];
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setActive((i) => (i + 1) % lines.length), 2200);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div className="relative">
       <div className="absolute -inset-6 -z-10 rounded-[28px] grid-paper opacity-50" />
@@ -401,43 +407,53 @@ function AdvisoryDashCard() {
             <span className="w-2.5 h-2.5 rounded-full bg-border" />
             <span className="w-2.5 h-2.5 rounded-full bg-border" />
           </div>
-          <div className="text-[11px] font-mono text-muted-foreground">Kennion Advisory Platform</div>
+          <div className="text-[11px] font-mono text-muted-foreground">kennion.com / benefits</div>
           <div className="w-12" />
         </div>
 
         <div className="p-5">
-          <div className="mb-4">
-            <div className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">Performance Overview</div>
-            <div className="text-[15px] font-semibold mt-0.5">Client Outcomes at a Glance</div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 mb-5">
-            {metrics.map((m) => (
-              <div key={m.label} className="bg-muted rounded-lg p-2.5 text-center">
-                <div className="font-display font-[600] text-[16px] leading-none tracking-[-0.02em] text-foreground">{m.value}</div>
-                <div className="text-[9px] text-muted-foreground mt-1 leading-tight">{m.label}</div>
-                <div className="text-[8px] font-mono mt-0.5 text-kn-accent">{m.note}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mb-4">
-            <div className="text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground mb-2">Program Expertise</div>
-            <div className="flex flex-wrap gap-1.5">
-              {tags.map((c) => (
-                <span key={c} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-kn-accent-soft text-[9.5px] font-medium text-kn-accent">
-                  <Check size={8} strokeWidth={2.5}/>
-                  {c}
-                </span>
-              ))}
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <div className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">Benefits Package</div>
+              <div className="text-[15px] font-semibold mt-0.5">Sample Group &middot; 45 employees</div>
+            </div>
+            <div className="text-[10.5px] font-mono px-2 py-1 rounded-md bg-emerald-500/15 text-emerald-700 shrink-0">
+              ACTIVE
             </div>
           </div>
 
-          <div className="pt-3 border-t border-border flex items-center justify-between">
-            <div className="text-[11px] text-muted-foreground">Advisory-led. Technology-powered.</div>
-            <div className="flex items-center gap-1 text-[9.5px] font-mono text-emerald-700 bg-emerald-500/10 px-2 py-1 rounded-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"/>
-              Active
+          <div className="space-y-2">
+            {lines.map((line, i) => {
+              const Icon = line.icon;
+              const isActive = i === active;
+              return (
+                <div
+                  key={line.label}
+                  className={`flex items-center gap-3 p-2.5 rounded-lg transition-all duration-500 cursor-default ${isActive ? "bg-kn-accent-soft hairline" : "hover:bg-muted"}`}
+                >
+                  <div className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 transition-colors duration-500 ${isActive ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
+                    <Icon size={15} strokeWidth={1.8}/>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className={`text-[13px] font-medium transition-colors ${isActive ? "text-foreground" : "text-foreground/80"}`}>{line.label}</div>
+                      <div className="text-[10.5px] font-mono text-kn-accent shrink-0">{line.tag}</div>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground truncate mt-0.5">{line.desc}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
+            <div>
+              <div className="text-[10.5px] font-mono uppercase tracking-[0.12em] text-muted-foreground">Consolidated invoice</div>
+              <div className="text-[12.5px] font-medium mt-0.5">Everything in one bill, every month</div>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-700 bg-emerald-500/10 px-2 py-1 rounded-md">
+              <Check size={11} strokeWidth={2.5}/>
+              Simplified
             </div>
           </div>
         </div>
@@ -509,7 +525,7 @@ function Hero({ openContact }) {
         </div>
 
         <Reveal delay={200} className="relative">
-          <AdvisoryDashCard />
+          <BenefitsPackageCard />
         </Reveal>
       </div>
     </section>
@@ -549,8 +565,8 @@ function Solutions() {
     },
     {
       icon: CheckCircle2,
-      title: "Compliance Made Simple",
-      body: "All the rules, filings, and fine print that come with offering benefits, handled for you. We keep your organization covered and current so you can focus on your business.",
+      title: "Compliance Guidance",
+      body: "Benefits come with a lot of rules, filings, and fine print. We help you stay on top of it all and point you in the right direction, so nothing catches you off guard.",
     },
   ];
 
@@ -905,8 +921,8 @@ function WhyKennion({ openContact }) {
     },
     {
       icon: Shield,
-      title: "Compliance, Handled",
-      body: "All the rules, filings, and fine print that come with offering benefits. We handle every bit of it so you stay covered and never have to think about it.",
+      title: "Compliance Support",
+      body: "Benefits compliance is complicated and always changing. We help you understand what applies to you and keep you pointed in the right direction, so you're never caught off guard.",
     },
   ];
 
