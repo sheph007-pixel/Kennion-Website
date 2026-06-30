@@ -382,10 +382,10 @@ function Nav({ openContact }) {
 // ─────────────────────────────────────────────────────────────────────
 function BenefitsPackageCard() {
   const lines = [
-    { icon: HeartPulse, label: "Group Health",  tag: "Included", desc: "Medical plans your team will actually use" },
-    { icon: Smile,      label: "Dental",        tag: "Included", desc: "Cleanings, fillings, and major work" },
-    { icon: Eye,        label: "Vision",        tag: "Included", desc: "Exams, glasses, and contacts" },
-    { icon: Shield,     label: "Supplemental",  tag: "Included", desc: "Life, accident, and more" },
+    { icon: HeartPulse, label: "Group Health",  tag: "Included" },
+    { icon: Smile,      label: "Dental",        tag: "Included" },
+    { icon: Eye,        label: "Vision",        tag: "Included" },
+    { icon: Shield,     label: "Supplemental",  tag: "Included" },
   ];
   const [active, setActive] = useState(0);
   useEffect(() => {
@@ -397,16 +397,6 @@ function BenefitsPackageCard() {
     <div className="relative">
       <div className="absolute -inset-6 -z-10 rounded-[28px] grid-paper opacity-50" />
       <div className="relative rounded-2xl bg-card hairline shadow-[0_24px_60px_-30px_rgba(15,30,60,.35)] overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-muted">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-border" />
-            <span className="w-2.5 h-2.5 rounded-full bg-border" />
-            <span className="w-2.5 h-2.5 rounded-full bg-border" />
-          </div>
-          <div className="text-[11px] font-mono text-muted-foreground">kennion.com / benefits</div>
-          <div className="w-12" />
-        </div>
-
         <div className="p-5">
           <div className="flex items-start justify-between gap-3 mb-4">
             <div>
@@ -430,12 +420,9 @@ function BenefitsPackageCard() {
                   <div className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 transition-colors duration-500 ${isActive ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
                     <Icon size={15} strokeWidth={1.8}/>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className={`text-[13px] font-medium transition-colors ${isActive ? "text-foreground" : "text-foreground/80"}`}>{line.label}</div>
-                      <div className="text-[10.5px] font-mono text-kn-accent shrink-0">{line.tag}</div>
-                    </div>
-                    <div className="text-[11px] text-muted-foreground truncate mt-0.5">{line.desc}</div>
+                  <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                    <div className={`text-[13.5px] font-medium transition-colors ${isActive ? "text-foreground" : "text-foreground/80"}`}>{line.label}</div>
+                    <div className="text-[10.5px] font-mono text-kn-accent shrink-0">{line.tag}</div>
                   </div>
                 </div>
               );
