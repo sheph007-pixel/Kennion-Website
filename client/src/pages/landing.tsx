@@ -28,7 +28,7 @@ import {
   ArrowRight, ChevronRight, ChevronDown, X, Menu, Check, CheckCircle2,
   Play, MapPin, Mail, Calendar,
   ArrowUpRight, Shield, Users, FileText, HeartPulse,
-  Building2,
+  Building2, Handshake,
 } from "lucide-react";
 
 declare global {
@@ -525,7 +525,7 @@ function Solutions() {
     {
       icon: Shield,
       title: "Benefits Strategy & Advisory",
-      body: "We assess your current program, benchmark it against the market, and build a multi-year strategy aligned with your goals, your workforce, and your budget.",
+      body: "We learn your current program, draw on what we know works after decades of advising employers, and build a multi-year strategy aligned with your goals, your workforce, and your budget.",
     },
     {
       icon: FileText,
@@ -540,12 +540,12 @@ function Solutions() {
     {
       icon: HeartPulse,
       title: "Employee Wellbeing Programs",
-      body: "Mental health, chronic disease management, and population health initiatives that improve outcomes, reduce claims, and support recruitment and retention.",
+      body: "Mental health, chronic disease management, and population health initiatives that improve outcomes, lower cost, and support recruitment and retention.",
     },
     {
-      icon: ArrowUpRight,
-      title: "Data, Analytics & Benchmarking",
-      body: "Real-time claims analytics and market benchmarking give you the information to make confident decisions at every renewal and mid-year review.",
+      icon: Handshake,
+      title: "Real Service & Support",
+      body: "Benefits get complicated fast. When something needs fixing, a real person who knows your account answers and gets it resolved, quickly. That is the part most agencies forget.",
     },
     {
       icon: CheckCircle2,
@@ -688,13 +688,13 @@ function WhoWeServe() {
       tag: "Middle Market",
       heading: "Sophisticated benefits without the complexity.",
       body: "You have enough employees to explore self-funded and captive arrangements, but not always the internal expertise to evaluate them confidently. That's exactly what we're here for.",
-      items: ["100-999 employees", "Self-funded and level-funded analysis", "Claims benchmarking and reporting", "Multi-location and multi-state programs"],
+      items: ["100-999 employees", "Self-funded and level-funded analysis", "Proven cost-management strategies", "Multi-location and multi-state programs"],
     },
     {
       tag: "Large & Complex Employers",
       heading: "Purpose-built programs for organizations that demand more.",
       body: "High-performing benefit programs require deep actuarial insight, advanced funding strategies, and a team that operates as an extension of your HR leadership. We've built our practice to deliver exactly that.",
-      items: ["1,000+ employees", "Self-funded and captive structures", "Alternative funding and stop-loss strategies", "Integrated analytics and population health"],
+      items: ["1,000+ employees", "Self-funded and captive structures", "Alternative funding and stop-loss strategies", "Population health and wellbeing strategy"],
     },
   ];
 
@@ -760,7 +760,7 @@ function HowItWorks({ openContact }) {
     },
     {
       n: "04", t: "Optimize",
-      body: "Benefits management doesn't stop at go-live. We monitor utilization, run your renewal, and find ways to improve your program every single year.",
+      body: "Benefits management doesn't stop at go-live. We stay close, take care of the details, and keep improving your program for the long term, doing exactly what we said we would.",
       preview: <OptimizePreview />,
     },
   ];
@@ -812,10 +812,10 @@ function AssessPreview() {
   return (
     <div className="h-full w-full p-3 space-y-2">
       {[
-        { label: "Current spend", val: "Reviewed" },
-        { label: "Utilization", val: "Analyzed" },
-        { label: "Market benchmarks", val: "Pulled" },
-        { label: "Goals identified", val: "Documented" },
+        { label: "Current program", val: "Reviewed" },
+        { label: "Your priorities", val: "Documented" },
+        { label: "What's working", val: "Identified" },
+        { label: "Where we can help", val: "Flagged" },
       ].map((item, i) => (
         <div key={i} className="flex items-center justify-between text-[9.5px]">
           <span className="text-muted-foreground">{item.label}</span>
@@ -859,14 +859,14 @@ function OptimizePreview() {
   return (
     <div className="h-full w-full p-3 space-y-2.5">
       {[
-        { l: "Annual Renewal Review", s: "Scheduled" },
-        { l: "Claims Analytics", s: "Live" },
-        { l: "Renewal Strategy", s: "On Track" },
-        { l: "Cost Trend", s: "Managed" },
+        { l: "Dedicated Service Team", s: "Active" },
+        { l: "Proactive Check-ins", s: "Ongoing" },
+        { l: "Issues Resolved", s: "Same Day" },
+        { l: "Program Health", s: "Strong" },
       ].map((item, i) => (
         <div key={i} className="flex items-center justify-between text-[9.5px]">
           <span className="text-muted-foreground">{item.l}</span>
-          <span className={`font-mono ${item.l === "Cost Trend" ? "text-emerald-600" : "text-primary"}`}>{item.s}</span>
+          <span className={`font-mono ${item.l === "Program Health" ? "text-emerald-600" : "text-primary"}`}>{item.s}</span>
         </div>
       ))}
     </div>
@@ -890,23 +890,23 @@ function WhyKennion({ openContact }) {
     },
     {
       icon: Users,
-      title: "Technology-Driven Platform",
-      body: "Modern digital enrollment, HRIS integrations, real-time analytics, and mobile access for every employee. Built for how HR teams actually work.",
+      title: "Technology, Backed by Real People",
+      body: "Benefits are complicated. Our technology makes them simpler, paperless enrollment, mobile access, fewer headaches, and real people stand behind it to fix anything that comes up, fast.",
     },
     {
       icon: HeartPulse,
-      title: "Dedicated Advisory Team",
-      body: "You get a real team, not a call center. Your advisor handles renewals, claims escalations, compliance updates, and anything else that comes up, year-round.",
+      title: "Real Support, Real People",
+      body: "You get a real team, not a call center. When something needs fixing, a person who knows your account picks up and gets it done, fast. We do what we say we will do.",
     },
     {
       icon: Calendar,
-      title: "Proactive Renewal Strategy",
-      body: "We manage your program year-round so renewals are planned, not reacted to. Data-driven cost containment, utilization insight, and early action keep your trend in check and your renewals predictable.",
+      title: "Long-Term Solutions That Work",
+      body: "We know what works and what doesn't. Instead of chasing quick fixes, we build programs designed to perform for years and stay close to make sure they do. Solutions, not transactions.",
     },
     {
       icon: Shield,
-      title: "Compliance & Analytics",
-      body: "ACA, ERISA, non-discrimination testing, SBC distributions, and real-time claims benchmarking. We keep you current and give you the data to make better decisions.",
+      title: "Compliance, Handled",
+      body: "ACA, ERISA, non-discrimination testing, SBC distributions, and the rest of the alphabet soup. We keep your organization current and compliant so you never have to think about it.",
     },
   ];
 
@@ -923,7 +923,7 @@ function WhyKennion({ openContact }) {
               The difference an <span className="text-kn-accent">experienced team</span> makes.
             </h2>
             <p className="mt-5 text-[16px] leading-[1.6] text-muted-foreground max-w-md">
-              Fifty years of carrier relationships, a technology platform built for scale, and an advisory model that puts your interests first.
+              Fifty years of relationships, programs we know will perform, and a team that does what it says. That's why clients come to us, and why they stay.
             </p>
             <div className="mt-8">
               <button onClick={openContact} className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-3 rounded-md shadow-sm">
@@ -979,8 +979,8 @@ function Testimonial() {
 
           <div className="mt-14 pt-7 border-t border-border max-w-2xl mx-auto text-[14px] leading-[1.6] text-muted-foreground">
             <span className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-primary block mb-2">Why our clients stay</span>
-            When you work with an independent advisor whose only agenda is your outcome, you get
-            <span className="text-foreground font-medium"> a partner who manages cost and quality all year</span>, not just at renewal.
+            Clients partner with us because we know what works. They stay because of
+            <span className="text-foreground font-medium"> how we take care of them</span>, year after year, and because we do what we say we will do.
             That's why our retention rate has stayed above 95% for over a decade.
           </div>
         </Reveal>
@@ -1275,7 +1275,7 @@ function Footer({ openContact }) {
               <li><a href="#solutions" className="hover:text-white">Benefits Strategy</a></li>
               <li><a href="#solutions" className="hover:text-white">Plan Design &amp; Funding</a></li>
               <li><a href="#solutions" className="hover:text-white">Digital Enrollment</a></li>
-              <li><a href="#solutions" className="hover:text-white">Compliance &amp; Analytics</a></li>
+              <li><a href="#solutions" className="hover:text-white">Compliance Support</a></li>
             </ul>
           </div>
 
