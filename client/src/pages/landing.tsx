@@ -424,31 +424,6 @@ function Hero() {
 // ─────────────────────────────────────────────────────────────────────
 // STATS BAND
 // ─────────────────────────────────────────────────────────────────────
-function StatsBand() {
-  const stats = [
-    { v: "50+",    l: "Years in Business" },
-    { v: "40+",    l: "Carrier Relationships" },
-    { v: "500+",   l: "Employer Clients" },
-    { v: "95%",    l: "Client Retention Rate" },
-  ];
-  return (
-    <section className="border-y border-border bg-background">
-      <div className="mx-auto max-w-7xl px-6 py-14">
-        <div className="grid md:grid-cols-4 gap-px bg-border rounded-xl overflow-hidden hairline">
-          {stats.map((s, i) => (
-            <Reveal key={i} delay={i * 80} className="bg-background p-7">
-              <AnimatedNumber
-                value={s.v}
-                className="font-display font-[450] text-[48px] sm:text-[56px] leading-none tracking-[-0.03em] text-foreground tabular-nums"
-              />
-              <div className="mt-3 text-[12.5px] uppercase tracking-[0.12em] text-muted-foreground">{s.l}</div>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────────
 // COVERAGE — what we cover, video, plan counts
@@ -1612,7 +1587,6 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background text-foreground antialiased">
       <Nav />
       <Hero />
-      <StatsBand />
       <Coverage />
       <HowItWorks />
       <SavingsCalculator />
