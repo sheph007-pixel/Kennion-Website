@@ -345,11 +345,13 @@ export default function RegisterPage() {
           <LifeBuoy className="h-3.5 w-3.5" />
           Need help?{" "}
           <a
-            href="mailto:support@kennion.com"
+            href="https://go.kennion.com/support"
+            target="_blank"
+            rel="noopener noreferrer"
             className="font-medium text-primary hover:underline"
-            data-testid="link-support-email"
+            data-testid="link-support"
           >
-            support@kennion.com
+            Open a support ticket
           </a>
         </div>
         <div className="mt-2 text-[10px] text-muted-foreground">

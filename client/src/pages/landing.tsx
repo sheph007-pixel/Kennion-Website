@@ -255,7 +255,7 @@ function ContactModal({ open, onClose }) {
                 className="w-full text-[13.5px] border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
             </div>
             {status === "error" && (
-              <p className="text-[12.5px] text-red-600">Something went wrong. Please try again or email support@kennion.com.</p>
+              <p className="text-[12.5px] text-red-600">Something went wrong. Please try again in a moment.</p>
             )}
             <div className="flex items-center justify-between pt-1">
               <p className="text-[11.5px] text-muted-foreground">No obligation. Response within one business day.</p>
@@ -1051,13 +1051,6 @@ function Contact() {
                 </div>
               </div>
               <div className="flex items-start gap-3 border-t border-border pt-4">
-                <Mail size={15} className="text-primary mt-0.5 shrink-0"/>
-                <div>
-                  <dt className="text-[11px] uppercase tracking-[0.1em] text-muted-foreground">Email</dt>
-                  <dd className="mt-0.5"><a href="mailto:support@kennion.com" className="text-primary hover:underline underline-offset-4">support@kennion.com</a></dd>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 border-t border-border pt-4">
                 <Calendar size={15} className="text-primary mt-0.5 shrink-0"/>
                 <div>
                   <dt className="text-[11px] uppercase tracking-[0.1em] text-muted-foreground">Schedule</dt>
@@ -1118,7 +1111,7 @@ function Contact() {
                       className="w-full text-[13.5px] border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
                   </div>
                   {status === "error" && (
-                    <p className="text-[12.5px] text-red-600">Something went wrong. Please try again or email support@kennion.com.</p>
+                    <p className="text-[12.5px] text-red-600">Something went wrong. Please try again in a moment.</p>
                   )}
                   <button type="submit" disabled={status === "sending"}
                     className="w-full inline-flex items-center justify-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-60 px-5 py-3 rounded-md shadow-sm">
@@ -1180,7 +1173,7 @@ const LEGAL_CONTENT = {
       { h: "Cookies & Tracking", b: "Our site uses cookies and similar technologies for functionality and analytics. You can disable cookies in your browser settings, though some site features may not work as intended." },
       { h: "Children's Privacy", b: "Our site is not directed to children under 13, and we do not knowingly collect personal information from children." },
       { h: "Changes to This Policy", b: "We may update this policy from time to time. The effective date above reflects the most recent revision. Continued use of the site after changes are posted constitutes acceptance of those changes." },
-      { h: "Contact", b: "Questions about this policy can be directed to support@kennion.com." },
+      { h: "Contact", b: "Questions about this policy can be submitted through the contact form on our website." },
     ],
   },
   terms: {
@@ -1196,7 +1189,7 @@ const LEGAL_CONTENT = {
       { h: "Limitation of Liability", b: "To the fullest extent permitted by law, Kennion Benefit Advisors and its affiliates will not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or related to your use of this site, even if we have been advised of the possibility of such damages." },
       { h: "Governing Law", b: "These Terms are governed by the laws of the State of Alabama, without regard to its conflict of laws principles. Any dispute will be brought exclusively in the state or federal courts located in Jefferson County, Alabama." },
       { h: "Changes to These Terms", b: "We may revise these Terms at any time. Revisions take effect when posted. Your continued use of the site after revisions are posted constitutes acceptance of the updated Terms." },
-      { h: "Contact", b: "Questions about these Terms can be directed to support@kennion.com." },
+      { h: "Contact", b: "Questions about these Terms can be submitted through the contact form on our website." },
     ],
   },
 };
@@ -1298,7 +1291,6 @@ function Footer({ openContact }) {
             <ul className="space-y-2.5 text-[13.5px] text-white/80">
               <li><a href="https://go.kennion.com/support" target="_blank" rel="noopener noreferrer" className="hover:text-white">Support</a></li>
               <li><a href="http://go.kennion.com/enroll" target="_blank" rel="noopener noreferrer" className="hover:text-white">Enrollment</a></li>
-              <li><a href="mailto:support@kennion.com" className="hover:text-white">support@kennion.com</a></li>
             </ul>
           </div>
         </div>
