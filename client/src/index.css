@@ -361,15 +361,35 @@
 
 /* === Kennion homepage redesign utilities === */
 
+/* Modern, bold, tech-driven display face (OneDigital-style). Headlines use a
+   heavy geometric sans; the old serif italic accent is now a cyan brand
+   accent so two-tone headlines read clean and contemporary. */
 .font-display {
-  font-family: 'Fraunces', Georgia, serif;
-  font-optical-sizing: auto;
-  font-variation-settings: 'opsz' 144, 'SOFT' 30;
+  font-family: 'Space Grotesk', 'Plus Jakarta Sans', system-ui, sans-serif;
+  letter-spacing: -0.02em;
 }
 .font-display em, .font-display .italic {
-  font-style: italic;
-  font-variation-settings: 'opsz' 144, 'SOFT' 70;
+  font-style: normal;
+  color: hsl(var(--kn-accent));
 }
+
+/* Cyan/teal brand accent pulled from the Kennion logo gradient. Kept in its
+   own namespaced vars so it never collides with shadcn's --accent token that
+   the rest of the app depends on. */
+:root {
+  --kn-accent: 191 91% 37%;
+  --kn-accent-deep: 198 90% 27%;
+}
+.dark {
+  --kn-accent: 188 86% 52%;
+  --kn-accent-deep: 191 80% 60%;
+}
+.text-kn-accent { color: hsl(var(--kn-accent)); }
+.bg-kn-accent { background-color: hsl(var(--kn-accent)); }
+.bg-kn-accent-soft { background-color: hsl(var(--kn-accent) / 0.1); }
+.border-kn-accent { border-color: hsl(var(--kn-accent)); }
+.ring-kn-accent { --tw-ring-color: hsl(var(--kn-accent)); }
+
 .font-mono {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
 }

@@ -9,8 +9,8 @@
 //   <script src="https://assets.calendly.com/assets/external/widget.js" async></script>
 //
 // And add to client/src/index.css:
-//   .font-display { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; }
-//   .font-display em, .font-display .italic { font-style: italic; }
+//   .font-display { font-family: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em; }
+//   .font-display em, .font-display .italic { font-style: normal; color: hsl(var(--kn-accent)); }
 //   .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
 //   .hairline { box-shadow: 0 0 0 1px hsl(var(--border)); }
 //   @keyframes fadein { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
@@ -22,13 +22,13 @@
 //   .kn-range::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: white; border: 2px solid hsl(var(--primary)); box-shadow: 0 2px 8px rgba(0,0,0,.18); cursor: grab; }
 //   .grid-paper { background-image: linear-gradient(to right, rgba(15,30,60,.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(15,30,60,.05) 1px, transparent 1px); background-size: 32px 32px; }
 
-import { useState, useEffect, useRef, useMemo, Fragment } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import {
   ArrowRight, ChevronRight, ChevronDown, X, Menu, Check, CheckCircle2,
   Play, MapPin, Mail, Calendar,
-  ArrowUpRight, Shield, Users, FileText, HeartPulse, Eye, Smile,
-  Building2, Phone,
+  ArrowUpRight, Shield, Users, FileText, HeartPulse,
+  Building2,
 } from "lucide-react";
 
 declare global {
@@ -162,9 +162,124 @@ function VideoModal({ open, onClose, videoId }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// CONTACT MODAL
+// ─────────────────────────────────────────────────────────────────────
+function ContactModal({ open, onClose }) {
+  const [form, setForm] = useState({ name: "", company: "", email: "", employees: "", message: "", website: "" });
+  const [status, setStatus] = useState("idle");
+
+  useEffect(() => {
+    if (!open) { setStatus("idle"); return; }
+    const esc = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", esc);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", esc);
+      document.body.style.overflow = "";
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setStatus("sending");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error("failed");
+      setStatus("sent");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="relative w-full max-w-lg flex flex-col bg-card rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between gap-4 px-7 py-5 border-b border-border bg-muted">
+          <div>
+            <div className="text-[10.5px] font-mono uppercase tracking-[0.16em] text-primary">Get in Touch</div>
+            <h2 className="font-display font-[600] text-[24px] leading-tight tracking-[-0.02em] mt-1">Talk to an Advisor</h2>
+            <p className="text-[13px] text-muted-foreground mt-1">Tell us about your group and we'll be in touch within one business day.</p>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="w-9 h-9 grid place-items-center rounded-md hover:bg-black/[.04] text-muted-foreground hover:text-foreground shrink-0">
+            <X size={18}/>
+          </button>
+        </div>
+
+        {status === "sent" ? (
+          <div className="px-7 py-12 text-center">
+            <div className="w-12 h-12 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 size={22} className="text-emerald-600"/>
+            </div>
+            <h3 className="font-display text-[22px] tracking-[-0.01em]">Message Received</h3>
+            <p className="mt-2 text-[14px] text-muted-foreground">We'll reach out within one business day.</p>
+            <button onClick={onClose} className="mt-6 text-[13px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-2.5 rounded-md">Close</button>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="px-7 py-6 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11.5px] font-medium mb-1.5">Your Name <span className="text-primary">*</span></label>
+                <input required value={form.name} onChange={set("name")} placeholder="Jane Smith"
+                  className="w-full text-[13.5px] border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+              <div>
+                <label className="block text-[11.5px] font-medium mb-1.5">Company <span className="text-primary">*</span></label>
+                <input required value={form.company} onChange={set("company")} placeholder="Acme Corp"
+                  className="w-full text-[13.5px] border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11.5px] font-medium mb-1.5">Email <span className="text-primary">*</span></label>
+                <input required type="email" value={form.email} onChange={set("email")} placeholder="jane@acme.com"
+                  className="w-full text-[13.5px] border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+              <div>
+                <label className="block text-[11.5px] font-medium mb-1.5">Employee Count</label>
+                <input value={form.employees} onChange={set("employees")} placeholder="e.g. 45"
+                  className="w-full text-[13.5px] border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[11.5px] font-medium mb-1.5">Message</label>
+              <textarea value={form.message} onChange={set("message")} rows={3}
+                placeholder="Tell us about your current benefits situation or what you're looking for..."
+                className="w-full text-[13.5px] border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
+            </div>
+            {/* Honeypot: hidden from humans; bots that fill it are dropped server-side */}
+            <div aria-hidden="true" className="absolute left-[-9999px] top-[-9999px] w-px h-px overflow-hidden" tabIndex={-1}>
+              <label>Website<input type="text" tabIndex={-1} autoComplete="off" value={form.website} onChange={set("website")} /></label>
+            </div>
+            {status === "error" && (
+              <p className="text-[12.5px] text-red-600">Something went wrong. Please try again or email support@kennion.com.</p>
+            )}
+            <div className="flex items-center justify-between pt-1">
+              <p className="text-[11.5px] text-muted-foreground">No obligation. Response within one business day.</p>
+              <button type="submit" disabled={status === "sending"}
+                className="inline-flex items-center gap-1.5 text-[13.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-60 px-5 py-2.5 rounded-md shadow-sm">
+                {status === "sending" ? "Sending..." : "Send Message"}
+                {status !== "sending" && <ArrowRight size={14} strokeWidth={2}/>}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // NAV
 // ─────────────────────────────────────────────────────────────────────
-function Nav() {
+function Nav({ openContact }) {
   const [open, setOpen] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
   const portalRef = useRef(null);
@@ -192,9 +307,9 @@ function Nav() {
 
         <nav className="hidden md:flex items-center gap-7 text-[13.5px] text-muted-foreground">
           <a href="#solutions" className="hover:text-foreground">Solutions</a>
+          <a href="#who-we-serve" className="hover:text-foreground">Who We Serve</a>
           <a href="#how-it-works" className="hover:text-foreground">How It Works</a>
           <a href="#why-us" className="hover:text-foreground">Why Kennion</a>
-          <a href="#contact" className="hover:text-foreground">Contact</a>
         </nav>
 
         <div className="hidden md:flex items-center gap-1.5">
@@ -233,11 +348,10 @@ function Nav() {
 
           <div className="w-px h-5 bg-border mx-2" />
 
-          <Link href="/login" className="text-[13px] text-foreground hover:bg-black/[.04] px-3 py-2 rounded-md transition-colors">Sign In</Link>
-          <Link href="/register" className="inline-flex items-center gap-1.5 text-[13.5px] font-medium text-primary-foreground bg-primary hover:opacity-90 px-3.5 py-2 rounded-md shadow-sm transition-opacity">
-            Get a Quote
+          <button onClick={openContact} className="inline-flex items-center gap-1.5 text-[13.5px] font-medium text-primary-foreground bg-primary hover:opacity-90 px-3.5 py-2 rounded-md shadow-sm transition-opacity">
+            Talk to an Advisor
             <ArrowRight size={14} strokeWidth={2}/>
-          </Link>
+          </button>
         </div>
 
         <button className="md:hidden w-9 h-9 grid place-items-center rounded-md hover:bg-black/5" onClick={() => setOpen(!open)} aria-label="Menu">
@@ -247,14 +361,13 @@ function Nav() {
 
       {open && (
         <div className="md:hidden border-t border-border bg-background px-6 py-4 text-sm">
-          <a href="#solutions" className="block py-2">Solutions</a>
-          <a href="#how-it-works" className="block py-2">How It Works</a>
-          <a href="#why-us" className="block py-2">Why Kennion</a>
-          <a href="#contact" className="block py-2">Contact</a>
+          <a href="#solutions" className="block py-2" onClick={() => setOpen(false)}>Solutions</a>
+          <a href="#who-we-serve" className="block py-2" onClick={() => setOpen(false)}>Who We Serve</a>
+          <a href="#how-it-works" className="block py-2" onClick={() => setOpen(false)}>How It Works</a>
+          <a href="#why-us" className="block py-2" onClick={() => setOpen(false)}>Why Kennion</a>
 
-          <div className="mt-4 pt-4 border-t border-border space-y-2">
-            <Link href="/login" className="block text-center text-[14px] font-medium text-foreground border border-border px-4 py-2.5 rounded-md">Sign In</Link>
-            <Link href="/register" className="block text-center font-medium text-primary-foreground bg-primary px-4 py-2.5 rounded-md">Get a Quote</Link>
+          <div className="mt-4 pt-4 border-t border-border">
+            <button onClick={() => { setOpen(false); openContact(); }} className="block w-full text-center font-medium text-primary-foreground bg-primary px-4 py-2.5 rounded-md">Talk to an Advisor</button>
           </div>
 
           <div className="mt-5 pt-4 border-t border-border">
@@ -271,19 +384,13 @@ function Nav() {
 // ─────────────────────────────────────────────────────────────────────
 // HERO
 // ─────────────────────────────────────────────────────────────────────
-function BenefitsPackageCard() {
-  const lines = [
-    { icon: HeartPulse, label: "Group Health",   plans: "15+ plans", carrier: "Fully insured · Self-funded · Level-funded" },
-    { icon: Smile,      label: "Dental",          plans: "6+ plans",  carrier: "Preventive-first · Broad network access" },
-    { icon: Eye,        label: "Vision",           plans: "3+ plans",  carrier: "Exams · Frames · Contacts · Lasik" },
-    { icon: Shield,     label: "Supplemental",     plans: "10+ plans", carrier: "Life · Accident · Critical Illness · Hospital" },
+function AdvisoryDashCard() {
+  const metrics = [
+    { label: "Client Retention", value: "95%+", note: "year over year" },
+    { label: "Time to Proposal", value: "24-48h", note: "guaranteed" },
+    { label: "Markets Served", value: "All Sizes", note: "2 to 10,000+ lives" },
   ];
-  const [active, setActive] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setActive((i) => (i + 1) % lines.length), 2200);
-    return () => clearInterval(id);
-  }, []);
-
+  const tags = ["Fully Insured", "Level-Funded", "Self-Funded", "Captive", "Voluntary Benefits", "Compliance"];
   return (
     <div className="relative">
       <div className="absolute -inset-6 -z-10 rounded-[28px] grid-paper opacity-50" />
@@ -294,53 +401,43 @@ function BenefitsPackageCard() {
             <span className="w-2.5 h-2.5 rounded-full bg-border" />
             <span className="w-2.5 h-2.5 rounded-full bg-border" />
           </div>
-          <div className="text-[11px] font-mono text-muted-foreground">kennion.com / benefits</div>
+          <div className="text-[11px] font-mono text-muted-foreground">Kennion Advisory Platform</div>
           <div className="w-12" />
         </div>
 
         <div className="p-5">
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <div>
-              <div className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">Benefits Package</div>
-              <div className="text-[15px] font-semibold mt-0.5">Sample Group · 45 employees</div>
-            </div>
-            <div className="text-[10.5px] font-mono px-2 py-1 rounded-md bg-emerald-500/15 text-emerald-700 shrink-0">
-              ACTIVE
+          <div className="mb-4">
+            <div className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">Performance Overview</div>
+            <div className="text-[15px] font-semibold mt-0.5">Client Outcomes at a Glance</div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 mb-5">
+            {metrics.map((m) => (
+              <div key={m.label} className="bg-muted rounded-lg p-2.5 text-center">
+                <div className="font-display font-[600] text-[16px] leading-none tracking-[-0.02em] text-foreground">{m.value}</div>
+                <div className="text-[9px] text-muted-foreground mt-1 leading-tight">{m.label}</div>
+                <div className="text-[8px] font-mono mt-0.5 text-kn-accent">{m.note}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mb-4">
+            <div className="text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground mb-2">Program Expertise</div>
+            <div className="flex flex-wrap gap-1.5">
+              {tags.map((c) => (
+                <span key={c} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-kn-accent-soft text-[9.5px] font-medium text-kn-accent">
+                  <Check size={8} strokeWidth={2.5}/>
+                  {c}
+                </span>
+              ))}
             </div>
           </div>
 
-          <div className="space-y-2">
-            {lines.map((line, i) => {
-              const Icon = line.icon;
-              const isActive = i === active;
-              return (
-                <div
-                  key={line.label}
-                  className={`flex items-center gap-3 p-2.5 rounded-lg transition-all duration-500 cursor-default ${isActive ? "bg-primary/[0.08] hairline" : "hover:bg-muted"}`}
-                >
-                  <div className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 transition-colors duration-500 ${isActive ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
-                    <Icon size={15} strokeWidth={1.8}/>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className={`text-[13px] font-medium transition-colors ${isActive ? "text-foreground" : "text-foreground/80"}`}>{line.label}</div>
-                      <div className="text-[10.5px] font-mono text-primary shrink-0">{line.plans}</div>
-                    </div>
-                    <div className="text-[11px] text-muted-foreground truncate mt-0.5">{line.carrier}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-            <div>
-              <div className="text-[10.5px] font-mono uppercase tracking-[0.12em] text-muted-foreground">Consolidated invoice</div>
-              <div className="text-[12.5px] font-medium mt-0.5">All lines · one bill · every month</div>
-            </div>
-            <div className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-700 bg-emerald-500/10 px-2 py-1 rounded-md">
-              <Check size={11} strokeWidth={2.5}/>
-              Simplified
+          <div className="pt-3 border-t border-border flex items-center justify-between">
+            <div className="text-[11px] text-muted-foreground">Advisory-led. Technology-powered.</div>
+            <div className="flex items-center gap-1 text-[9.5px] font-mono text-emerald-700 bg-emerald-500/10 px-2 py-1 rounded-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"/>
+              Active
             </div>
           </div>
         </div>
@@ -349,13 +446,13 @@ function BenefitsPackageCard() {
   );
 }
 
-function Hero() {
+function Hero({ openContact }) {
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 -z-10">
         <div className="absolute inset-x-0 top-0 h-[480px] bg-gradient-to-b from-[hsl(var(--primary) / 0.06)] to-transparent" />
         <div className="absolute right-[-200px] top-[-100px] w-[640px] h-[640px] rounded-full bg-primary/[0.07] blur-3xl" />
-        <div className="absolute left-[-160px] bottom-[-160px] w-[420px] h-[420px] rounded-full bg-[hsl(var(--primary) / 0.04)] blur-3xl" />
+        <div className="absolute left-[-160px] bottom-[-160px] w-[420px] h-[420px] rounded-full bg-[hsl(var(--kn-accent) / 0.05)] blur-3xl" />
         <svg className="absolute inset-0 w-full h-full opacity-[0.04] mix-blend-overlay" aria-hidden="true">
           <filter id="hero-noise">
             <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch" />
@@ -367,54 +464,52 @@ function Hero() {
 
       <div className="mx-auto max-w-7xl px-6 pt-12 pb-24 lg:pt-16 lg:pb-32 grid lg:grid-cols-[1.08fr_0.92fr] gap-x-14 gap-y-14 items-center">
         <div className="relative">
-          <div className="hidden lg:block absolute -left-6 top-2 bottom-2 w-px bg-primary opacity-50" />
+          <div className="hidden lg:block absolute -left-6 top-2 bottom-2 w-px bg-kn-accent opacity-60" />
 
           <Reveal>
             <div className="inline-flex items-center gap-2 text-[11.5px] uppercase tracking-[0.18em] font-medium text-muted-foreground">
-              <span className="inline-block w-6 h-px bg-primary" />
-              Kennion Benefit Advisors · 50+ Years in Employee Benefits
+              <span className="inline-block w-6 h-px bg-kn-accent" />
+              Kennion Benefit Advisors &middot; 50+ Years
             </div>
           </Reveal>
 
           <Reveal delay={80}>
-            <h1 className="font-display font-[450] mt-7 text-[44px] sm:text-[64px] lg:text-[88px] xl:text-[100px] leading-[0.98] sm:leading-[0.96] tracking-[-0.035em] text-foreground">
-              More Plans.<br />
-              <span className="italic" style={{ color: "hsl(var(--primary))" }}>Better Rates.</span><br />
-              One Team.
+            <h1 className="font-display font-[700] mt-7 text-[44px] sm:text-[64px] lg:text-[88px] xl:text-[100px] leading-[0.98] sm:leading-[0.96] tracking-[-0.04em] text-foreground">
+              Benefits<br />
+              Built to<br />
+              <span className="text-kn-accent">Perform.</span>
             </h1>
           </Reveal>
 
           <Reveal delay={160}>
             <p className="mt-7 text-[17.5px] leading-[1.55] max-w-[36rem] text-muted-foreground">
-              For over 50 years, Kennion has helped employers across the country build better benefit programs.
-              Group health, dental, vision, and supplemental coverage from 40+ top-rated carriers,
-              consolidated into one monthly invoice.
+              Kennion is a technology-driven benefits agency with access to a wide variety of carriers, programs, and partners. We help employers of every size design the best possible benefits program, control cost, and improve outcomes for the company and its people.
             </p>
           </Reveal>
 
           <Reveal delay={240}>
             <div className="mt-9 flex flex-wrap items-center gap-3">
-              <Link href="/register" className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-3 rounded-md shadow-sm transition-opacity">
-                Get a Quote
+              <button onClick={openContact} className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-3 rounded-md shadow-sm transition-opacity">
+                Talk to an Advisor
                 <ChevronRight size={15} strokeWidth={2}/>
-              </Link>
+              </button>
               <a href="#solutions" className="inline-flex items-center gap-1.5 text-[14.5px] font-medium border border-border px-5 py-3 rounded-md transition-colors text-foreground hover:bg-black/[.03]">
-                See What We Cover
+                Explore Capabilities
               </a>
             </div>
           </Reveal>
 
           <Reveal delay={320}>
             <div className="mt-12 flex flex-wrap items-center gap-x-7 gap-y-3 text-[12.5px] text-muted-foreground">
-              <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>No obligation</div>
-              <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Free proposal</div>
-              <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Results within 24–48 hours</div>
+              <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Small groups to enterprise</div>
+              <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Full funding spectrum</div>
+              <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Employers nationwide</div>
             </div>
           </Reveal>
         </div>
 
         <Reveal delay={200} className="relative">
-          <BenefitsPackageCard />
+          <AdvisoryDashCard />
         </Reveal>
       </div>
     </section>
@@ -422,26 +517,43 @@ function Hero() {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// STATS BAND
+// SOLUTIONS: capabilities grid + video
 // ─────────────────────────────────────────────────────────────────────
-
-// ─────────────────────────────────────────────────────────────────────
-// COVERAGE: what we cover, video, plan counts
-// ─────────────────────────────────────────────────────────────────────
-function Coverage() {
-  const videos = [
-    { id: "1004137913", thumb: VIDEO_THUMB_HERO,     label: "Overview",   duration: "1:42" },
-    { id: "1060997796", thumb: VIDEO_THUMB_BENEFITS, label: "Quick look", duration: "0:45" },
-  ];
-  const [activeVideo, setActiveVideo] = useState(0);
+function Solutions() {
   const [videoOpen, setVideoOpen] = useState(false);
-  const v = videos[activeVideo];
-  const plans = [
-    { t: "Health",       n: "15", desc: "Medical plans from top national and regional carriers, designed to fit any group." },
-    { t: "Dental",       n: "6",  desc: "Preventive-first dental coverage with broad network access and competitive rates." },
-    { t: "Vision",       n: "3",  desc: "Comprehensive eye care benefits including exams, frames, and contacts." },
-    { t: "Supplemental", n: "10", desc: "Voluntary benefits at group rates: life, accident, critical illness, and more." },
+  const capabilities = [
+    {
+      icon: Shield,
+      title: "Benefits Strategy & Advisory",
+      body: "We assess your current program, benchmark it against the market, and build a multi-year strategy aligned with your goals, your workforce, and your budget.",
+    },
+    {
+      icon: FileText,
+      title: "Plan Design & Funding Analysis",
+      body: "Fully insured, level-funded, self-funded, captive, or private programs. We model every structure so you choose with full visibility into cost, risk, and employee impact.",
+    },
+    {
+      icon: Users,
+      title: "Digital Enrollment & HR Technology",
+      body: "Modern, paperless enrollment for your entire workforce. Integrated with your payroll and HRIS, with digital ID cards and mobile access for every member.",
+    },
+    {
+      icon: HeartPulse,
+      title: "Employee Wellbeing Programs",
+      body: "Mental health, chronic disease management, and population health initiatives that improve outcomes, reduce claims, and support recruitment and retention.",
+    },
+    {
+      icon: ArrowUpRight,
+      title: "Data, Analytics & Benchmarking",
+      body: "Real-time claims analytics and market benchmarking give you the information to make confident decisions at every renewal and mid-year review.",
+    },
+    {
+      icon: CheckCircle2,
+      title: "Compliance & Risk Management",
+      body: "ACA reporting, ERISA filings, non-discrimination testing, SBC distributions, and more. We keep your organization current so you can focus on your business.",
+    },
   ];
+
   return (
     <section id="solutions" className="relative py-24 lg:py-32 bg-muted border-y border-border">
       <div className="absolute inset-0 opacity-[0.35] pointer-events-none"
@@ -452,7 +564,7 @@ function Coverage() {
           <Reveal>
             <button onClick={() => setVideoOpen(true)}
                     className="group relative block w-full overflow-hidden rounded-2xl hairline shadow-[0_30px_80px_-30px_rgba(15,30,60,0.4)]">
-              <img key={v.id} src={v.thumb} alt={v.label}
+              <img src={VIDEO_THUMB_HERO} alt="Kennion overview"
                    className="w-full aspect-video object-cover group-hover:scale-[1.02] transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-black/15 to-transparent group-hover:from-black/45 transition-colors" />
               <div className="absolute inset-0 flex items-center justify-center">
@@ -462,55 +574,32 @@ function Coverage() {
               </div>
               <div className="absolute top-4 left-4 inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/55 backdrop-blur text-white text-[10.5px] font-mono uppercase tracking-[0.14em]">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                Watch{v.duration ? ` · ${v.duration}` : ""}
+                Watch &middot; 1:42
               </div>
             </button>
-
-            <div className="mt-4 inline-flex items-center gap-1 p-1 rounded-xl bg-card hairline">
-              {videos.map((vid, i) => (
-                <button
-                  key={vid.id}
-                  onClick={() => setActiveVideo(i)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-[12.5px] font-medium transition-colors ${
-                    activeVideo === i
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
-                  aria-pressed={activeVideo === i}
-                >
-                  <Play size={11} strokeWidth={2.2} className={activeVideo === i ? "text-white" : ""}/>
-                  {vid.label}
-                  {vid.duration && (
-                    <span className={`text-[10.5px] font-mono ${activeVideo === i ? "text-white/75" : "text-muted-foreground/70"}`}>
-                      {vid.duration}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
           </Reveal>
 
           <Reveal delay={120}>
             <div className="inline-flex items-center gap-2 text-[11.5px] uppercase tracking-[0.18em] font-medium text-muted-foreground">
-              <span className="inline-block w-6 h-px bg-primary" />
-              What We Cover
+              <span className="inline-block w-6 h-px bg-kn-accent" />
+              Our Capabilities
             </div>
-            <h2 className="font-display font-[450] text-[34px] lg:text-[44px] leading-[1.02] tracking-[-0.03em] mt-5">
-              The full benefits suite. <span className="italic" style={{ color: "hsl(var(--primary))" }}>From one trusted team.</span>
+            <h2 className="font-display font-[600] text-[34px] lg:text-[44px] leading-[1.02] tracking-[-0.03em] mt-5">
+              A full-service platform. <span className="text-kn-accent">One trusted team.</span>
             </h2>
             <p className="mt-5 text-[16px] leading-[1.65] text-muted-foreground">
-              Decades of carrier relationships mean you get access to more plan options and better rates than you'll find anywhere else. Every line of coverage: health, dental, vision, and supplemental. One program, one invoice, one dedicated team.
+              From strategy and plan design to enrollment technology, compliance, and ongoing management, Kennion is a single source for your entire benefits program. We tell you what to do, how to do it, and stand behind it, so your team gets the best of the best without the complexity.
             </p>
 
             <div className="mt-7 grid grid-cols-3 gap-4">
               {[
-                { v: "50+", l: "Years building benefits programs" },
-                { v: "40+", l: "Top-rated carrier relationships" },
-                { v: "1",   l: "Consolidated monthly invoice" },
+                { v: "50+", l: "Years of advisory expertise" },
+                { v: "95%+", l: "Client retention rate" },
+                { v: "All", l: "Funding models supported" },
               ].map((s, i) => (
                 <div key={i} className="border-t border-border pt-3">
-                  <div className="font-display font-[450] text-[36px] leading-none tracking-[-0.03em] text-foreground">
-                    {s.v}<span className="text-primary">.</span>
+                  <div className="font-display font-[600] text-[36px] leading-none tracking-[-0.03em] text-foreground">
+                    {s.v}<span className="text-kn-accent">.</span>
                   </div>
                   <div className="mt-2 text-[11.5px] leading-[1.45] text-muted-foreground">{s.l}</div>
                 </div>
@@ -520,65 +609,175 @@ function Coverage() {
         </div>
 
         <Reveal delay={80} className="mt-14 lg:mt-16">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border rounded-2xl overflow-hidden hairline">
-            {plans.map(p => (
-              <div key={p.t} className="bg-background p-6 lg:p-8">
-                <div className="flex items-baseline gap-1">
-                  <span className="font-display font-[450] text-[56px] lg:text-[64px] leading-none tracking-[-0.04em] tabular-nums">{p.n}</span>
-                  <span className="font-display font-[450] text-[32px] lg:text-[36px] leading-none text-primary">+</span>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-border rounded-2xl overflow-hidden hairline">
+            {capabilities.map((c) => {
+              const Icon = c.icon;
+              return (
+                <div key={c.title} className="bg-background p-6 lg:p-8">
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                    <Icon size={16} strokeWidth={1.8} className="text-primary"/>
+                  </div>
+                  <h3 className="font-semibold text-[15px] tracking-[-0.01em]">{c.title}</h3>
+                  <p className="mt-2 text-[13px] leading-[1.6] text-muted-foreground">{c.body}</p>
                 </div>
-                <div className="mt-3 text-[10.5px] font-mono uppercase tracking-[0.16em] text-muted-foreground">Plans</div>
-                <div className="mt-3 pt-3 border-t border-border font-display font-[450] text-[20px] lg:text-[22px] tracking-[-0.01em]">{p.t}</div>
-                <div className="mt-2 text-[12.5px] text-muted-foreground leading-[1.5]">{p.desc}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Reveal>
       </div>
-      <VideoModal open={videoOpen} onClose={() => setVideoOpen(false)} videoId={v.id} />
+      <VideoModal open={videoOpen} onClose={() => setVideoOpen(false)} videoId="1004137913" />
     </section>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// HOW IT WORKS: agency process
+// IMPACT BAND: firm-level proof points (no carrier / plan counts)
 // ─────────────────────────────────────────────────────────────────────
-function HowItWorks() {
-  const steps = [
-    {
-      n: "01", t: "Share Your Census",
-      body: "Upload your employee roster through our secure portal. Takes about five minutes. We handle the rest.",
-      preview: <CensusPreview />,
-    },
-    {
-      n: "02", t: "Review Proposals",
-      body: "We shop your group across our carrier network and return side-by-side proposals within 24–48 hours.",
-      preview: <ProposalPreview />,
-    },
-    {
-      n: "03", t: "Enroll Online",
-      body: "Paperless enrollment for every employee. Digital ID cards, mobile access, and no stacks of forms.",
-      preview: <EnrollPreview />,
-    },
-    {
-      n: "04", t: "Ongoing Service",
-      body: "Your dedicated team handles claims questions, annual renewals, compliance updates, and HR support.",
-      preview: <ServicePreview />,
-    },
+function ImpactBand() {
+  const stats = [
+    { v: "50+", l: "Years advising employers nationwide" },
+    { v: "50", l: "U.S. states served, coast to coast" },
+    { v: "95%+", l: "Client retention, year over year" },
+    { v: "100%", l: "Independent and client-first" },
   ];
   return (
-    <section id="how-it-works" className="py-24 lg:py-32">
+    <section className="relative bg-primary text-primary-foreground overflow-hidden">
+      <div className="absolute inset-0 grid-paper opacity-[0.06]" />
+      <div className="absolute right-[-140px] top-[-140px] w-[460px] h-[460px] rounded-full bg-[hsl(var(--kn-accent)/0.18)] blur-3xl" />
+      <div className="relative mx-auto max-w-7xl px-6 py-20 lg:py-24">
+        <Reveal className="max-w-3xl">
+          <div className="inline-flex items-center gap-2 text-[11.5px] uppercase tracking-[0.18em] font-medium text-white/70">
+            <span className="inline-block w-6 h-px bg-kn-accent" />
+            The Kennion Difference
+          </div>
+          <h2 className="font-display font-[600] text-[32px] lg:text-[46px] leading-[1.04] tracking-[-0.03em] mt-5">
+            A national agency with a <span className="text-kn-accent">personal touch.</span>
+          </h2>
+          <p className="mt-4 text-[15.5px] leading-[1.6] text-white/75 max-w-2xl">
+            One of the fastest-growing independent benefits agencies in the country, trusted by employers from coast to coast. Deep enough to deliver the best of the best, focused enough to know your name.
+          </p>
+        </Reveal>
+
+        <div className="mt-12 grid grid-cols-2 lg:grid-cols-4 gap-px bg-white/10 rounded-2xl overflow-hidden">
+          {stats.map((s) => (
+            <div key={s.l} className="bg-primary p-7 lg:p-8">
+              <div className="font-display font-[600] text-[44px] lg:text-[54px] leading-none tracking-[-0.04em]">
+                <AnimatedNumber value={s.v} />
+              </div>
+              <div className="mt-3 text-[12.5px] leading-[1.45] text-white/70">{s.l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// WHO WE SERVE
+// ─────────────────────────────────────────────────────────────────────
+function WhoWeServe() {
+  const segments = [
+    {
+      tag: "Small & Growing Companies",
+      heading: "Build a program that competes with the big guys.",
+      body: "When you're under 100 lives, every dollar matters. We help smaller employers access carrier options and funding strategies that were once reserved for much larger organizations, without needing a large HR team to manage them.",
+      items: ["2-99 employees", "Fully insured and level-funded options", "Simple, guided enrollment", "Consolidated billing across all lines"],
+    },
+    {
+      tag: "Middle Market",
+      heading: "Sophisticated benefits without the complexity.",
+      body: "You have enough employees to explore self-funded and captive arrangements, but not always the internal expertise to evaluate them confidently. That's exactly what we're here for.",
+      items: ["100-999 employees", "Self-funded and level-funded analysis", "Claims benchmarking and reporting", "Multi-location and multi-state programs"],
+    },
+    {
+      tag: "Large & Complex Employers",
+      heading: "Purpose-built programs for organizations that demand more.",
+      body: "High-performing benefit programs require deep actuarial insight, advanced funding strategies, and a team that operates as an extension of your HR leadership. We've built our practice to deliver exactly that.",
+      items: ["1,000+ employees", "Self-funded and captive structures", "Alternative funding and stop-loss strategies", "Integrated analytics and population health"],
+    },
+  ];
+
+  return (
+    <section id="who-we-serve" className="py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <Reveal className="max-w-2xl mb-14">
           <div className="inline-flex items-center gap-2 text-[11.5px] uppercase tracking-[0.18em] font-medium text-muted-foreground">
-            <span className="inline-block w-6 h-px bg-primary" />
-            Process
+            <span className="inline-block w-6 h-px bg-kn-accent" />
+            Who We Serve
           </div>
-          <h2 className="font-display font-[450] text-[44px] lg:text-[60px] leading-[0.98] tracking-[-0.03em] mt-5">
-            How It <span className="italic" style={{ color: "hsl(var(--primary))" }}>Works</span>
+          <h2 className="font-display font-[600] text-[44px] lg:text-[60px] leading-[0.98] tracking-[-0.03em] mt-5">
+            Every market.<br /><span className="text-kn-accent">Every size.</span>
           </h2>
           <p className="mt-5 text-[16.5px] leading-[1.6] text-muted-foreground max-w-xl">
-            From census upload to active coverage, we make the whole process straightforward, and keep it that way year after year.
+            From a growing small business to a national enterprise, we have the expertise, the technology, and the carrier relationships to serve you well.
+          </p>
+        </Reveal>
+
+        <div className="grid md:grid-cols-3 gap-px bg-border rounded-xl overflow-hidden hairline">
+          {segments.map((s, i) => (
+            <Reveal key={s.tag} delay={i * 80}>
+              <div className="bg-card p-8 h-full flex flex-col">
+                <div className="text-[10.5px] font-mono uppercase tracking-[0.16em] text-primary mb-3">{s.tag}</div>
+                <h3 className="font-display font-[600] text-[22px] leading-[1.15] tracking-[-0.015em]">{s.heading}</h3>
+                <p className="mt-3 text-[13.5px] leading-[1.6] text-muted-foreground flex-1">{s.body}</p>
+                <ul className="mt-5 pt-5 border-t border-border space-y-2">
+                  {s.items.map((item) => (
+                    <li key={item} className="flex items-start gap-2 text-[12.5px] text-muted-foreground">
+                      <Check size={12} className="text-primary mt-0.5 shrink-0" strokeWidth={2.5}/>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// HOW IT WORKS: Assess > Design > Implement > Optimize
+// ─────────────────────────────────────────────────────────────────────
+function HowItWorks({ openContact }) {
+  const steps = [
+    {
+      n: "01", t: "Assess",
+      body: "We start by understanding your current program, your people, and your goals. Benefits strategy begins with listening, not with a product sheet.",
+      preview: <AssessPreview />,
+    },
+    {
+      n: "02", t: "Design",
+      body: "We model every viable funding structure and program design, then present your options with full transparency into cost, risk, and employee impact.",
+      preview: <DesignPreview />,
+    },
+    {
+      n: "03", t: "Implement",
+      body: "Our technology platform makes rollout straightforward: digital enrollment, carrier integrations, and a guided experience for your HR team and your employees.",
+      preview: <ImplementPreview />,
+    },
+    {
+      n: "04", t: "Optimize",
+      body: "Benefits management doesn't stop at go-live. We monitor utilization, run your renewal, and find ways to improve your program every single year.",
+      preview: <OptimizePreview />,
+    },
+  ];
+
+  return (
+    <section id="how-it-works" className="py-24 lg:py-32 bg-muted border-y border-border">
+      <div className="mx-auto max-w-7xl px-6">
+        <Reveal className="max-w-2xl mb-14">
+          <div className="inline-flex items-center gap-2 text-[11.5px] uppercase tracking-[0.18em] font-medium text-muted-foreground">
+            <span className="inline-block w-6 h-px bg-kn-accent" />
+            Our Process
+          </div>
+          <h2 className="font-display font-[600] text-[44px] lg:text-[60px] leading-[0.98] tracking-[-0.03em] mt-5">
+            How We <span className="text-kn-accent">Work</span>
+          </h2>
+          <p className="mt-5 text-[16.5px] leading-[1.6] text-muted-foreground max-w-xl">
+            A disciplined advisory process built around your organization. We don't hand you a binder and disappear. We manage your benefits program like a strategic partner, year after year.
           </p>
         </Reveal>
 
@@ -586,7 +785,7 @@ function HowItWorks() {
           {steps.map((s) => (
             <div key={s.n} className="bg-card p-6 flex flex-col">
               <div className="flex items-baseline justify-between">
-                <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-primary">Step {s.n}</span>
+                <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-primary">{s.n}</span>
                 <ArrowRight size={14} className="text-muted-foreground"/>
               </div>
               <div className="mt-4 h-32 rounded-md bg-muted hairline overflow-hidden">
@@ -597,34 +796,41 @@ function HowItWorks() {
             </div>
           ))}
         </div>
+
+        <Reveal className="mt-12 text-center">
+          <button onClick={openContact} className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-3 rounded-md shadow-sm">
+            Start the Conversation
+            <ArrowRight size={15} strokeWidth={2}/>
+          </button>
+        </Reveal>
       </div>
     </section>
   );
 }
 
-function CensusPreview() {
+function AssessPreview() {
   return (
-    <div className="h-full w-full p-3 font-mono text-[9.5px] leading-[1.3] text-muted-foreground">
-      <div className="grid grid-cols-[1fr_auto_auto] gap-x-2 gap-y-0.5">
-        <div className="text-foreground">Employee</div>
-        <div className="text-foreground">Age</div>
-        <div className="text-foreground">Tier</div>
-        {[["M.Allen",42,"FAM"],["J.Singh",35,"ESP"],["A.Reyes",28,"EE"],["T.Hayes",51,"ECH"],["P.Quinn",46,"FAM"],["S.Park",33,"EE"],["R.Mehta",58,"ESP"]].map((r,i)=>(
-          <Fragment key={i}>
-            <div className="truncate">{r[0]}</div>
-            <div>{r[1]}</div>
-            <div>{r[2]}</div>
-          </Fragment>
-        ))}
-      </div>
+    <div className="h-full w-full p-3 space-y-2">
+      {[
+        { label: "Current spend", val: "Reviewed" },
+        { label: "Utilization", val: "Analyzed" },
+        { label: "Market benchmarks", val: "Pulled" },
+        { label: "Goals identified", val: "Documented" },
+      ].map((item, i) => (
+        <div key={i} className="flex items-center justify-between text-[9.5px]">
+          <span className="text-muted-foreground">{item.label}</span>
+          <span className="font-mono text-primary">{item.val}</span>
+        </div>
+      ))}
     </div>
   );
 }
-function ProposalPreview() {
-  const rows = [["Fully Insured A","$412"],["Self-Funded Option","$388"],["Level-Funded Plan","$401"],["Private Program","$374"]];
+
+function DesignPreview() {
+  const rows = [["Fully Insured","$412"],["Level-Funded","$388"],["Self-Funded","$361"]];
   return (
     <div className="h-full w-full p-3 font-mono text-[9.5px] leading-[1.4]">
-      <div className="text-[8.5px] uppercase tracking-[0.12em] text-muted-foreground mb-1.5">Medical · EE Rate</div>
+      <div className="text-[8.5px] uppercase tracking-[0.12em] text-muted-foreground mb-1.5">Funding Analysis &middot; EE Rate</div>
       {rows.map(([plan, rate], i) => (
         <div key={i} className={`flex items-center justify-between py-0.5 border-b border-dashed border-border last:border-0 ${i===1?"text-primary font-medium":""}`}>
           <span className="truncate">{plan}</span>
@@ -634,101 +840,102 @@ function ProposalPreview() {
     </div>
   );
 }
-function EnrollPreview() {
+
+function ImplementPreview() {
   return (
     <div className="h-full w-full p-3 flex flex-col justify-center gap-2">
-      {[["Sarah M.","Enrolled","emerald"],["James T.","Enrolled","emerald"],["Lisa K.","Pending","amber"],["Mike R.","Enrolled","emerald"]].map(([name,status,color],i)=>(
+      {[["Carrier Setup","Complete"],["HR Integration","Complete"],["Employee Enrollment","Active"],["Go-Live","Confirmed"]].map(([name,status],i)=>(
         <div key={i} className="flex items-center gap-2 text-[9.5px]">
-          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${color==="emerald"?"bg-emerald-500":"bg-amber-400"}`}/>
+          <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-emerald-500"/>
           <span className="text-muted-foreground truncate flex-1">{name}</span>
-          <span className={`font-mono ${color==="emerald"?"text-emerald-600":"text-amber-600"}`}>{status}</span>
+          <span className="font-mono text-emerald-600">{status}</span>
         </div>
       ))}
     </div>
   );
 }
-function ServicePreview() {
+
+function OptimizePreview() {
   return (
     <div className="h-full w-full p-3 space-y-2.5">
       {[
-        { l: "Open Enrollment", s: "Nov 1–15" },
-        { l: "Renewal Review", s: "Scheduled" },
-        { l: "Claims Support", s: "Available" },
-        { l: "ACA Compliance", s: "Current" },
+        { l: "Annual Renewal Review", s: "Scheduled" },
+        { l: "Claims Analytics", s: "Live" },
+        { l: "Market Re-shop", s: "In Progress" },
+        { l: "Cost Trend", s: "-4.2%" },
       ].map((item, i) => (
         <div key={i} className="flex items-center justify-between text-[9.5px]">
           <span className="text-muted-foreground">{item.l}</span>
-          <span className="font-mono text-emerald-600">{item.s}</span>
+          <span className={`font-mono ${item.l === "Cost Trend" ? "text-emerald-600" : "text-primary"}`}>{item.s}</span>
         </div>
       ))}
     </div>
   );
 }
 
-
 // ─────────────────────────────────────────────────────────────────────
-// WHY KENNION: differentiators
+// WHY KENNION
 // ─────────────────────────────────────────────────────────────────────
-function WhyKennion() {
+function WhyKennion({ openContact }) {
   const differentiators = [
     {
       icon: Building2,
-      title: "40+ Carrier Relationships",
-      body: "Direct access to top national and regional carriers means we can find the right fit for any group and negotiate from a position of volume.",
+      title: "Deep Carrier Access",
+      body: "Decades of national carrier relationships and buying power give our clients access to programs and pricing that most agencies simply can't match.",
     },
     {
       icon: FileText,
-      title: "One Consolidated Invoice",
-      body: "Health, dental, vision, and supplemental: all on a single monthly bill. No more juggling statements from five different carriers.",
+      title: "Full Funding Spectrum",
+      body: "Fully insured, level-funded, self-funded, captive, and private programs. We model all of them and help you choose with complete transparency into cost and risk.",
     },
     {
       icon: Users,
-      title: "Streamlined Online Enrollment",
-      body: "Paperless enrollment, digital ID cards, and mobile access for every member. Less HR paperwork, fewer headaches at open enrollment.",
+      title: "Technology-Driven Platform",
+      body: "Modern digital enrollment, HRIS integrations, real-time analytics, and mobile access for every employee. Built for how HR teams actually work.",
     },
     {
       icon: HeartPulse,
-      title: "Dedicated Account Team",
-      body: "You get a real team, not a call center. Your advisor handles claims questions, billing issues, mid-year changes, and anything else that comes up.",
+      title: "Dedicated Advisory Team",
+      body: "You get a real team, not a call center. Your advisor handles renewals, claims escalations, compliance updates, and anything else that comes up, year-round.",
     },
     {
       icon: Calendar,
-      title: "Annual Renewal Advocacy",
-      body: "We go back to the market every year on your behalf. If a carrier won't hold the line, we move. You shouldn't have to accept a double-digit increase.",
+      title: "Relentless Renewal Advocacy",
+      body: "We re-shop your program every year. If the market has something better, we find it. You shouldn't accept a double-digit increase just because it's renewal season.",
     },
     {
       icon: Shield,
-      title: "ACA & Compliance Support",
-      body: "Reporting, notices, minimum essential coverage. We keep you current so you can focus on running your business, not deciphering federal regulations.",
+      title: "Compliance & Analytics",
+      body: "ACA, ERISA, non-discrimination testing, SBC distributions, and real-time claims benchmarking. We keep you current and give you the data to make better decisions.",
     },
   ];
 
   return (
-    <section id="why-us" className="py-24 lg:py-32 bg-muted border-y border-border">
+    <section id="why-us" className="py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid lg:grid-cols-[1fr_1.5fr] gap-12 lg:gap-20 items-start">
           <Reveal>
             <div className="inline-flex items-center gap-2 text-[11.5px] uppercase tracking-[0.18em] font-medium text-muted-foreground">
-              <span className="inline-block w-6 h-px bg-primary" />
+              <span className="inline-block w-6 h-px bg-kn-accent" />
               Why Kennion
             </div>
-            <h2 className="font-display font-[450] text-[44px] lg:text-[60px] leading-[0.98] tracking-[-0.03em] mt-5">
-              The difference an <span className="italic" style={{ color: "hsl(var(--primary))" }}>experienced team</span> makes.
+            <h2 className="font-display font-[600] text-[44px] lg:text-[60px] leading-[0.98] tracking-[-0.03em] mt-5">
+              The difference an <span className="text-kn-accent">experienced team</span> makes.
             </h2>
             <p className="mt-5 text-[16px] leading-[1.6] text-muted-foreground max-w-md">
-              Fifty years of carrier relationships, technology built for today's HR teams, and an advisory model that puts your interests first, not the insurer's.
+              Fifty years of carrier relationships, a technology platform built for scale, and an advisory model that puts your interests first.
             </p>
             <div className="mt-8">
-              <Link href="/register" className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-3 rounded-md shadow-sm">
-                Get a Proposal
+              <button onClick={openContact} className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-3 rounded-md shadow-sm">
+                Talk to an Advisor
                 <ArrowRight size={15} strokeWidth={2}/>
-              </Link>
+              </button>
             </div>
           </Reveal>
 
           <Reveal delay={120}>
             <div className="grid sm:grid-cols-2 gap-px bg-border rounded-xl overflow-hidden hairline">
-              {differentiators.map((d, i) => {
+              {differentiators.map((d) => {
                 const Icon = d.icon;
                 return (
                   <div key={d.title} className="bg-card p-6 flex flex-col gap-3">
@@ -753,15 +960,15 @@ function WhyKennion() {
 // ─────────────────────────────────────────────────────────────────────
 function Testimonial() {
   return (
-    <section className="py-24 lg:py-32 border-y border-border">
+    <section className="py-24 lg:py-32 bg-muted border-y border-border">
       <div className="mx-auto max-w-4xl px-6 text-center">
         <Reveal>
           <div className="inline-flex items-center gap-2 text-[11.5px] uppercase tracking-[0.18em] font-medium text-muted-foreground">
-            <span className="inline-block w-6 h-px bg-primary" />
+            <span className="inline-block w-6 h-px bg-kn-accent" />
             From a competitor
-            <span className="inline-block w-6 h-px bg-primary" />
+            <span className="inline-block w-6 h-px bg-kn-accent" />
           </div>
-          <blockquote className="font-display font-[450] text-[30px] sm:text-[42px] lg:text-[54px] leading-[1.12] tracking-[-0.025em] mt-8 text-balance">
+          <blockquote className="font-display font-[600] text-[30px] sm:text-[42px] lg:text-[54px] leading-[1.12] tracking-[-0.025em] mt-8 text-balance">
             &ldquo;Y&rsquo;all are unbeatable in the market with the prospects that we have met with that are current Kennion clients.&rdquo;
           </blockquote>
           <figcaption className="mt-8 text-[14px] text-muted-foreground">
@@ -783,93 +990,141 @@ function Testimonial() {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// CONTACT
+// CONTACT: inline form
 // ─────────────────────────────────────────────────────────────────────
 function Contact() {
+  const [form, setForm] = useState({ name: "", company: "", email: "", employees: "", message: "", website: "" });
+  const [status, setStatus] = useState("idle");
+
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setStatus("sending");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error("failed");
+      setStatus("sent");
+    } catch {
+      setStatus("error");
+    }
+  };
+
   return (
     <section id="contact" className="py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-6">
-        <Reveal className="max-w-2xl mb-14">
-          <div className="inline-flex items-center gap-2 text-[11.5px] uppercase tracking-[0.18em] font-medium text-muted-foreground">
-            <span className="inline-block w-6 h-px bg-primary" />
-            Contact
-          </div>
-          <h2 className="font-display font-[450] text-[44px] lg:text-[60px] leading-[0.98] tracking-[-0.03em] mt-5">
-            Let&rsquo;s <span className="italic" style={{ color: "hsl(var(--primary))" }}>talk benefits.</span>
-          </h2>
-          <p className="mt-5 text-[16.5px] leading-[1.6] text-muted-foreground max-w-xl">
-            Whether you're shopping for the first time or unhappy with your renewal, we can help. There's no obligation and no cost to see what we can do.
-          </p>
-        </Reveal>
-
-        <div className="grid md:grid-cols-2 gap-px bg-border rounded-2xl overflow-hidden hairline">
-          <div className="bg-card p-8 lg:p-10">
-            <div className="text-[11px] font-mono uppercase tracking-[0.14em] text-primary">For Employers</div>
-            <h3 className="mt-2 text-[22px] font-semibold tracking-[-0.01em]">Ready to See What Your Group Could Save?</h3>
-            <p className="mt-3 text-[14.5px] leading-[1.6] text-muted-foreground">
-              Upload your employee census and we'll come back with actual carrier proposals, plan by plan and side by side, within 24-48 hours.
+        <div className="grid lg:grid-cols-[1fr_1.25fr] gap-12 lg:gap-20 items-start">
+          <Reveal>
+            <div className="inline-flex items-center gap-2 text-[11.5px] uppercase tracking-[0.18em] font-medium text-muted-foreground">
+              <span className="inline-block w-6 h-px bg-kn-accent" />
+              Contact
+            </div>
+            <h2 className="font-display font-[600] text-[44px] lg:text-[56px] leading-[0.98] tracking-[-0.03em] mt-5">
+              Let&rsquo;s talk <span className="text-kn-accent">benefits.</span>
+            </h2>
+            <p className="mt-5 text-[16.5px] leading-[1.6] text-muted-foreground">
+              Whether you're building a program from scratch, unhappy with your current broker, or just curious what the market looks like right now, we're a great first call.
             </p>
-            <Link href="/register" className="mt-6 inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-3 rounded-md shadow-sm">
-              Get a Quote
-              <ArrowRight size={15} strokeWidth={2}/>
-            </Link>
-          </div>
-          <div className="bg-card p-8 lg:p-10">
-            <div className="text-[11px] font-mono uppercase tracking-[0.14em] text-primary">Existing Clients</div>
-            <h3 className="mt-2 text-[22px] font-semibold tracking-[-0.01em]">Current Client or Member?</h3>
-            <p className="mt-3 text-[14.5px] leading-[1.6] text-muted-foreground">
-              Your account team is standing by. Open a support ticket and someone will be in touch the same business day.
-            </p>
-            <a href="https://go.kennion.com/support" target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-1.5 text-[14.5px] font-medium text-foreground border border-border hover:bg-black/[.03] px-5 py-3 rounded-md">
-              Submit A Ticket
-              <ArrowRight size={15} strokeWidth={2}/>
-            </a>
-          </div>
-        </div>
 
-        <div className="mt-16 grid lg:grid-cols-2 gap-8 lg:gap-14 items-center">
-          <div className="relative overflow-hidden rounded-2xl hairline">
-            <img src={KENNION_BUILDING_URL} alt="Kennion Benefit Advisors headquarters" className="w-full aspect-[4/3] object-cover object-center" />
-          </div>
-          <div>
-            <h3 className="font-display text-[32px] lg:text-[40px] leading-[1.05] tracking-[-0.02em]">
-              Kennion Benefit Advisors
-            </h3>
-            <p className="mt-2 text-[15px] text-muted-foreground">Based in Alabama · Serving employers nationwide</p>
-            <dl className="mt-8 grid sm:grid-cols-2 gap-x-6 gap-y-5 text-[14px]">
-              <div className="border-t border-border pt-4">
-                <dt className="text-muted-foreground text-[12px] uppercase tracking-[0.1em]">Address</dt>
-                <dd className="mt-1 flex items-start gap-2">
-                  <MapPin size={15} className="text-primary mt-0.5"/>
-                  <span>2828 Old 280 Court<br />Vestavia, Alabama 35243</span>
-                </dd>
+            <div className="mt-10 relative overflow-hidden rounded-2xl hairline">
+              <img src={KENNION_BUILDING_URL} alt="Kennion Benefit Advisors" className="w-full aspect-[4/3] object-cover object-center" />
+            </div>
+
+            <dl className="mt-8 space-y-4 text-[14px]">
+              <div className="flex items-start gap-3 border-t border-border pt-4">
+                <MapPin size={15} className="text-primary mt-0.5 shrink-0"/>
+                <div>
+                  <dt className="text-[11px] uppercase tracking-[0.1em] text-muted-foreground">Headquarters</dt>
+                  <dd className="mt-0.5">2828 Old 280 Court, Vestavia, AL 35243</dd>
+                </div>
               </div>
-              <div className="border-t border-border pt-4">
-                <dt className="text-muted-foreground text-[12px] uppercase tracking-[0.1em]">Email</dt>
-                <dd className="mt-1 flex items-center gap-2">
-                  <Mail size={15} className="text-primary"/>
-                  <a href="mailto:support@kennion.com" className="text-primary hover:underline underline-offset-4">support@kennion.com</a>
-                </dd>
+              <div className="flex items-start gap-3 border-t border-border pt-4">
+                <Mail size={15} className="text-primary mt-0.5 shrink-0"/>
+                <div>
+                  <dt className="text-[11px] uppercase tracking-[0.1em] text-muted-foreground">Email</dt>
+                  <dd className="mt-0.5"><a href="mailto:support@kennion.com" className="text-primary hover:underline underline-offset-4">support@kennion.com</a></dd>
+                </div>
               </div>
-              <div className="border-t border-border pt-4">
-                <dt className="text-muted-foreground text-[12px] uppercase tracking-[0.1em]">Phone</dt>
-                <dd className="mt-1 flex items-center gap-2">
-                  <Phone size={15} className="text-primary"/>
-                  <a href="tel:+12056410469" className="text-primary hover:underline underline-offset-4">205-641-0469</a>
-                </dd>
-              </div>
-              <div className="border-t border-border pt-4">
-                <dt className="text-muted-foreground text-[12px] uppercase tracking-[0.1em]">Schedule</dt>
-                <dd className="mt-1">
-                  <a href="https://calendly.com/kennion/call" onClick={openCalendly}
-                     className="inline-flex items-center gap-1.5 text-primary hover:underline underline-offset-4 cursor-pointer">
-                    <Calendar size={15}/>
-                    Book a call online
-                  </a>
-                </dd>
+              <div className="flex items-start gap-3 border-t border-border pt-4">
+                <Calendar size={15} className="text-primary mt-0.5 shrink-0"/>
+                <div>
+                  <dt className="text-[11px] uppercase tracking-[0.1em] text-muted-foreground">Schedule</dt>
+                  <dd className="mt-0.5">
+                    <a href="https://calendly.com/kennion/call" onClick={openCalendly} className="text-primary hover:underline underline-offset-4 cursor-pointer">Book a call online</a>
+                  </dd>
+                </div>
               </div>
             </dl>
-          </div>
+          </Reveal>
+
+          <Reveal delay={120}>
+            <div className="bg-card rounded-2xl hairline shadow-[0_20px_50px_-20px_rgba(15,30,60,.18)] overflow-hidden">
+              <div className="px-7 py-5 border-b border-border bg-muted">
+                <div className="text-[10.5px] font-mono uppercase tracking-[0.16em] text-primary">Inquire</div>
+                <h3 className="font-display font-[600] text-[22px] tracking-[-0.02em] mt-1">Tell us about your group</h3>
+                <p className="text-[13px] text-muted-foreground mt-0.5">No obligation. We'll respond within one business day.</p>
+              </div>
+
+              {status === "sent" ? (
+                <div className="px-7 py-14 text-center">
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle2 size={24} className="text-emerald-600"/>
+                  </div>
+                  <h4 className="font-display text-[20px] tracking-[-0.01em]">Message Received</h4>
+                  <p className="mt-2 text-[14px] text-muted-foreground">We'll be in touch within one business day.</p>
+                </div>
+              ) : (
+                <form onSubmit={submit} className="px-7 py-6 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11.5px] font-medium mb-1.5">Name <span className="text-primary">*</span></label>
+                      <input required value={form.name} onChange={set("name")} placeholder="Jane Smith"
+                        className="w-full text-[13.5px] border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    </div>
+                    <div>
+                      <label className="block text-[11.5px] font-medium mb-1.5">Company <span className="text-primary">*</span></label>
+                      <input required value={form.company} onChange={set("company")} placeholder="Acme Corp"
+                        className="w-full text-[13.5px] border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11.5px] font-medium mb-1.5">Email <span className="text-primary">*</span></label>
+                      <input required type="email" value={form.email} onChange={set("email")} placeholder="jane@acme.com"
+                        className="w-full text-[13.5px] border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    </div>
+                    <div>
+                      <label className="block text-[11.5px] font-medium mb-1.5">Employee Count</label>
+                      <input value={form.employees} onChange={set("employees")} placeholder="e.g. 45"
+                        className="w-full text-[13.5px] border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[11.5px] font-medium mb-1.5">Message</label>
+                    <textarea value={form.message} onChange={set("message")} rows={4}
+                      placeholder="Tell us about your current benefits situation or what you're looking for..."
+                      className="w-full text-[13.5px] border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
+                  </div>
+                  {/* Honeypot: hidden from humans; bots that fill it are dropped server-side */}
+                  <div aria-hidden="true" className="absolute left-[-9999px] top-[-9999px] w-px h-px overflow-hidden" tabIndex={-1}>
+                    <label>Website<input type="text" tabIndex={-1} autoComplete="off" value={form.website} onChange={set("website")} /></label>
+                  </div>
+                  {status === "error" && (
+                    <p className="text-[12.5px] text-red-600">Something went wrong. Please try again or email support@kennion.com.</p>
+                  )}
+                  <button type="submit" disabled={status === "sending"}
+                    className="w-full inline-flex items-center justify-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-60 px-5 py-3 rounded-md shadow-sm">
+                    {status === "sending" ? "Sending..." : "Send Message"}
+                    {status !== "sending" && <ArrowRight size={15} strokeWidth={2}/>}
+                  </button>
+                </form>
+              )}
+            </div>
+          </Reveal>
         </div>
       </div>
     </section>
@@ -879,7 +1134,7 @@ function Contact() {
 // ─────────────────────────────────────────────────────────────────────
 // FINAL CTA
 // ─────────────────────────────────────────────────────────────────────
-function FinalCTA() {
+function FinalCTA({ openContact }) {
   return (
     <section className="py-24 lg:py-32 bg-primary text-primary-foreground">
       <div className="mx-auto max-w-3xl px-6 text-center">
@@ -887,14 +1142,13 @@ function FinalCTA() {
           Better benefits start with a better advisor.
         </h2>
         <p className="mt-5 text-[17px] leading-[1.55] text-white/85 max-w-xl mx-auto">
-          Share your census and we'll come back with real carrier proposals with no obligation,
-          no cost, no pressure. Just a clear picture of what your group could have.
+          We bring decades of market expertise, access to a wide variety of carriers and partners, and a technology platform built for scale. Let's build the best possible benefits program for your company and your people.
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-          <Link href="/register" className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-white text-primary hover:bg-white/95 px-6 py-3 rounded-md shadow-sm">
-            Get a Free Quote
+          <button onClick={openContact} className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-white text-primary hover:bg-white/95 px-6 py-3 rounded-md shadow-sm">
+            Talk to an Advisor
             <ArrowRight size={15} strokeWidth={2}/>
-          </Link>
+          </button>
           <a href="https://calendly.com/kennion/call" onClick={openCalendly}
              className="inline-flex items-center gap-1.5 text-[14.5px] font-medium border border-white/25 text-white hover:bg-white/10 px-6 py-3 rounded-md transition-colors cursor-pointer">
             <Calendar size={15} strokeWidth={1.8}/>
@@ -914,7 +1168,7 @@ const LEGAL_CONTENT = {
     title: "Privacy Policy",
     updated: "Effective May 2026",
     sections: [
-      { h: "Information We Collect", b: "We collect information you voluntarily provide when you contact us or submit a quote request, typically your name, company, email address, phone number, and group census data. We also collect standard analytics information about how you use our site, including pages visited, referring source, and device type." },
+      { h: "Information We Collect", b: "We collect information you voluntarily provide when you contact us or submit a quote request, typically your name, company, email address, and group census data. We also collect standard analytics information about how you use our site, including pages visited, referring source, and device type." },
       { h: "How We Use Your Information", b: "We use your information to respond to your inquiries, generate proposals, deliver our services, communicate updates about your account or coverage, and improve our website. We do not sell your personal information." },
       { h: "How We Share Information", b: "We share information with carriers, third-party administrators, and other service providers necessary to deliver our services. We may also disclose information when required by law, in response to a subpoena, or to protect our rights, safety, or property." },
       { h: "Data Security", b: "We use industry-standard administrative, technical, and physical safeguards to protect your information. No method of transmission over the Internet or electronic storage is 100% secure, and we cannot guarantee absolute security." },
@@ -932,9 +1186,9 @@ const LEGAL_CONTENT = {
       { h: "Acceptance of Terms", b: "By accessing or using this website, you agree to be bound by these Terms of Use and our Privacy Policy. If you do not agree, please do not use the site." },
       { h: "Use of the Site", b: "You may use this site for lawful business inquiry and informational purposes. You may not scrape, copy, redistribute, reverse engineer, or otherwise misuse the site or its content. Automated access without our written permission is prohibited." },
       { h: "Intellectual Property", b: "All content on this site, including text, graphics, logos, images, software, and design, is the property of Kennion Benefit Advisors or its licensors and is protected by U.S. and international copyright, trademark, and other intellectual property laws. You may not reproduce, modify, distribute, or create derivative works without our written consent." },
-      { h: "Informational Only", b: "Rate illustrations and other interactive features on this site are provided for general informational purposes only. They are not insurance quotes, contracts, or binding offers. Actual rates and eligibility are determined only after submission and underwriting review of a complete group census by the applicable carrier." },
+      { h: "Informational Only", b: "Content on this site is provided for general informational purposes only and does not constitute insurance quotes, contracts, or binding offers. Actual rates and eligibility are determined only after underwriting review of a complete group census by the applicable carrier." },
       { h: "No Professional Advice", b: "Nothing on this site constitutes legal, tax, financial, or insurance advice. You should consult a qualified professional before making decisions based on information from this site." },
-      { h: "Disclaimers", b: "This site is provided \"as is\" and \"as available,\" without warranties of any kind, express or implied, including warranties of merchantability, fitness for a particular purpose, or non-infringement. We do not warrant that the site will be uninterrupted, error-free, or free of viruses or other harmful components." },
+      { h: "Disclaimers", b: "This site is provided as is and as available, without warranties of any kind, express or implied, including warranties of merchantability, fitness for a particular purpose, or non-infringement. We do not warrant that the site will be uninterrupted, error-free, or free of viruses or other harmful components." },
       { h: "Limitation of Liability", b: "To the fullest extent permitted by law, Kennion Benefit Advisors and its affiliates will not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or related to your use of this site, even if we have been advised of the possibility of such damages." },
       { h: "Governing Law", b: "These Terms are governed by the laws of the State of Alabama, without regard to its conflict of laws principles. Any dispute will be brought exclusively in the state or federal courts located in Jefferson County, Alabama." },
       { h: "Changes to These Terms", b: "We may revise these Terms at any time. Revisions take effect when posted. Your continued use of the site after revisions are posted constitutes acceptance of the updated Terms." },
@@ -963,7 +1217,7 @@ function LegalModal({ kind, onClose }) {
         <div className="flex items-start justify-between gap-4 px-7 py-5 border-b border-border bg-muted">
           <div>
             <div className="text-[10.5px] font-mono uppercase tracking-[0.16em] text-primary">Legal</div>
-            <h2 className="font-display font-[450] text-[26px] leading-tight tracking-[-0.02em] mt-1 text-foreground">{c.title}</h2>
+            <h2 className="font-display font-[600] text-[26px] leading-tight tracking-[-0.02em] mt-1 text-foreground">{c.title}</h2>
             <div className="text-[11.5px] font-mono uppercase tracking-[0.12em] text-muted-foreground mt-1">{c.updated}</div>
           </div>
           <button onClick={onClose} aria-label="Close" className="w-9 h-9 grid place-items-center rounded-md hover:bg-black/[.04] text-muted-foreground hover:text-foreground">
@@ -995,7 +1249,7 @@ function LegalModal({ kind, onClose }) {
 // ─────────────────────────────────────────────────────────────────────
 // FOOTER
 // ─────────────────────────────────────────────────────────────────────
-function Footer() {
+function Footer({ openContact }) {
   const year = new Date().getFullYear();
   const [legalOpen, setLegalOpen] = useState(null);
   return (
@@ -1003,35 +1257,35 @@ function Footer() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid md:grid-cols-[1.5fr_1fr_1fr_1fr] gap-10 lg:gap-14">
           <div>
-            <div className="font-display font-[450] text-[28px] tracking-[-0.02em] leading-none">Kennion</div>
-            <div className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-white/55 mt-2">Benefit Advisors · 50+ Years</div>
+            <div className="font-display font-[600] text-[28px] tracking-[-0.02em] leading-none">Kennion</div>
+            <div className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-white/55 mt-2">Benefit Advisors &middot; 50+ Years</div>
             <p className="mt-5 text-[13.5px] leading-[1.55] text-white/65 max-w-[26rem]">
-              An independent employee benefits agency helping employers nationwide for over 50 years. Group health, dental, vision, and supplemental coverage across fully insured, self-funded, and private programs, all consolidated into one monthly invoice.
+              A technology-driven, full-service employee benefits agency with over 50 years of advisory expertise. Serving employers of all sizes, nationwide, across fully insured, self-funded, and alternative funding programs.
             </p>
-            <a href="https://calendly.com/kennion/call" onClick={openCalendly}
+            <button onClick={openContact}
                className="mt-6 inline-flex items-center gap-2 text-[13px] font-medium bg-white text-[hsl(215_35%_14%)] hover:bg-white/95 px-4 py-2.5 rounded-md cursor-pointer">
-              <Calendar size={14} strokeWidth={1.8}/>
-              Schedule A Call
-            </a>
+              <Mail size={14} strokeWidth={1.8}/>
+              Get in Touch
+            </button>
           </div>
 
           <div>
-            <div className="text-[10.5px] uppercase tracking-[0.16em] font-mono text-white/55 mb-4">Solutions</div>
+            <div className="text-[10.5px] uppercase tracking-[0.16em] font-mono text-white/55 mb-4">Capabilities</div>
             <ul className="space-y-2.5 text-[13.5px] text-white/80">
-              <li><a href="#solutions" className="hover:text-white">Group Health</a></li>
-              <li><a href="#solutions" className="hover:text-white">Dental</a></li>
-              <li><a href="#solutions" className="hover:text-white">Vision</a></li>
-              <li><a href="#solutions" className="hover:text-white">Supplemental</a></li>
+              <li><a href="#solutions" className="hover:text-white">Benefits Strategy</a></li>
+              <li><a href="#solutions" className="hover:text-white">Plan Design &amp; Funding</a></li>
+              <li><a href="#solutions" className="hover:text-white">Digital Enrollment</a></li>
+              <li><a href="#solutions" className="hover:text-white">Compliance &amp; Analytics</a></li>
             </ul>
           </div>
 
           <div>
             <div className="text-[10.5px] uppercase tracking-[0.16em] font-mono text-white/55 mb-4">Company</div>
             <ul className="space-y-2.5 text-[13.5px] text-white/80">
+              <li><a href="#who-we-serve" className="hover:text-white">Who We Serve</a></li>
               <li><a href="#how-it-works" className="hover:text-white">How It Works</a></li>
               <li><a href="#why-us" className="hover:text-white">Why Kennion</a></li>
-              <li><a href="#contact" className="hover:text-white">Contact</a></li>
-              <li><Link href="/register" className="hover:text-white">Get a Quote</Link></li>
+              <li><button onClick={openContact} className="hover:text-white text-left">Get in Touch</button></li>
             </ul>
           </div>
 
@@ -1048,12 +1302,12 @@ function Footer() {
         <div className="mt-14 pt-6 border-t border-white/10 text-[12px] text-white/55">
           <div className="flex items-start gap-2">
             <MapPin size={13} className="text-white/55 mt-[2px]" />
-            <span>2828 Old 280 Court<br />Vestavia, AL 35243</span>
+            <span>2828 Old 280 Court, Vestavia, AL 35243</span>
           </div>
         </div>
 
         <div className="mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-[11.5px] text-white/45">
-          <span>© {year} Kennion Benefit Advisors. All rights reserved.</span>
+          <span>&#169; {year} Kennion Benefit Advisors. All rights reserved.</span>
           <div className="flex items-center gap-5">
             <button onClick={() => setLegalOpen("privacy")} className="hover:text-white/80 transition-colors">Privacy</button>
             <button onClick={() => setLegalOpen("terms")} className="hover:text-white/80 transition-colors">Terms</button>
@@ -1065,20 +1319,25 @@ function Footer() {
   );
 }
 
-
 // === ROOT ===
 export default function LandingPage() {
+  const [contactOpen, setContactOpen] = useState(false);
+  const openContact = () => setContactOpen(true);
+
   return (
     <div className="min-h-screen bg-background text-foreground antialiased">
-      <Nav />
-      <Hero />
-      <Coverage />
-      <HowItWorks />
-      <WhyKennion />
+      <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} />
+      <Nav openContact={openContact} />
+      <Hero openContact={openContact} />
+      <Solutions />
+      <ImpactBand />
+      <WhoWeServe />
+      <HowItWorks openContact={openContact} />
+      <WhyKennion openContact={openContact} />
       <Testimonial />
       <Contact />
-      <FinalCTA />
-      <Footer />
+      <FinalCTA openContact={openContact} />
+      <Footer openContact={openContact} />
     </div>
   );
 }

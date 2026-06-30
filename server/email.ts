@@ -376,6 +376,84 @@ export async function sendCensusUploadedAlertEmail(p: {
   }
 }
 
+/**
+ * Sends Hunter a lead notification when a prospect submits the public
+ * contact / quote-inquiry form on the marketing site. No login, no DB
+ * write — the form data flows straight into this email and is gone.
+ * replyTo is set to the prospect so Hunter can reply directly. Non-fatal:
+ * returns false on any failure so the route can report a clean error.
+ */
+export async function sendContactInquiryEmail(p: {
+  name: string;
+  company: string;
+  email: string;
+  employees: string;
+  message: string;
+}): Promise<boolean> {
+  try {
+    const client = getResendClient();
+    const employeesText = p.employees?.trim() ? p.employees.trim() : "Not provided";
+    const messageHtml = p.message?.trim()
+      ? escapeHtml(p.message.trim()).replace(/\n/g, "<br>")
+      : "<span style=\"color:#9aa3b2;\">No message provided.</span>";
+    const result = await client.emails.send({
+      from: FROM_EMAIL,
+      to: "hunter@kennion.com",
+      replyTo: p.email,
+      subject: `New quote inquiry: ${p.company} (${p.name})`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #0f1828;">
+          <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px;">
+            <div style="font-family: ui-monospace, monospace; font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: #0e4992;">Kennion &middot; New Inquiry</div>
+            <h2 style="color: #0f1828; margin: 6px 0 0; font-size: 18px; font-weight: 600;">${escapeHtml(p.company)}</h2>
+            <p style="color: #5b6679; font-size: 13px; margin: 4px 0 0;">A prospect submitted the contact form on the website.</p>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.55;">
+            <tr><td style="padding: 6px 0; color: #5b6679; width: 130px;">Name</td><td style="padding: 6px 0; font-weight: 500;">${escapeHtml(p.name)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #5b6679;">Company</td><td style="padding: 6px 0; font-weight: 500;">${escapeHtml(p.company)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #5b6679;">Email</td><td style="padding: 6px 0;"><a href="mailto:${encodeURIComponent(p.email)}" style="color: #0e4992; text-decoration: none;">${escapeHtml(p.email)}</a></td></tr>
+            <tr><td style="padding: 6px 0; color: #5b6679;">Employees</td><td style="padding: 6px 0; font-weight: 500;">${escapeHtml(employeesText)}</td></tr>
+          </table>
+
+          <div style="margin-top: 20px; padding: 16px 18px; background: #f4f6f9; border-radius: 8px;">
+            <div style="font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; color: #5b6679; margin-bottom: 8px;">Message</div>
+            <div style="font-size: 14px; line-height: 1.6; color: #0f1828;">${messageHtml}</div>
+          </div>
+
+          <div style="margin-top: 28px;">
+            <a href="mailto:${encodeURIComponent(p.email)}" style="display: inline-block; background: #0e4992; color: #ffffff; padding: 12px 22px; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 14px;">Reply to ${escapeHtml(p.name)}</a>
+          </div>
+
+          <p style="margin-top: 28px; padding-top: 18px; border-top: 1px solid #e5e7eb; font-size: 11.5px; color: #5b6679; line-height: 1.5;">
+            Submitted ${new Date().toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "medium", timeStyle: "short" })} CT via the kennion.com contact form. Reply directly to reach the prospect.
+          </p>
+        </div>
+      `,
+      text: [
+        "New quote inquiry from the Kennion website.",
+        "",
+        `Name: ${p.name}`,
+        `Company: ${p.company}`,
+        `Email: ${p.email}`,
+        `Employees: ${employeesText}`,
+        "",
+        "Message:",
+        p.message?.trim() ? p.message.trim() : "(none)",
+      ].join("\n"),
+    });
+    if (result.error) {
+      log(`[EMAIL ERROR] Contact inquiry Resend error: ${JSON.stringify(result.error)}`);
+      return false;
+    }
+    log(`[EMAIL SUCCESS] Contact inquiry sent to hunter@ from ${p.email} (${p.company}) (id: ${result.data?.id})`);
+    return true;
+  } catch (err: any) {
+    log(`[EMAIL ERROR] Failed to send contact inquiry from ${p.email}: ${err.message}`);
+    return false;
+  }
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

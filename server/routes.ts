@@ -39,10 +39,11 @@ import {
   resetPasswordSchema,
   updateGroupStatusSchema,
   internalSalesQuoteInputSchema,
+  contactInquirySchema,
 } from "@shared/schema";
 import ConnectPgSimple from "connect-pg-simple";
 import { log } from "./index";
-import { sendMagicLinkEmail, sendProposalAcceptanceEmail, sendApprovalRequestEmail, sendApprovalGrantedEmail, sendCensusUploadedAlertEmail } from "./email";
+import { sendMagicLinkEmail, sendProposalAcceptanceEmail, sendApprovalRequestEmail, sendApprovalGrantedEmail, sendCensusUploadedAlertEmail, sendContactInquiryEmail } from "./email";
 import { pool, testConnection } from "./db";
 import { cleanCSVWithAI, generateValidationGuidance } from "./ai-csv-cleaner";
 import { generateActuarialAnalysis, generateScoreReview } from "./ai-analysis";
@@ -1474,6 +1475,38 @@ export async function registerRoutes(
       verified: user.verified,
       createdAt: user.createdAt,
     });
+  });
+
+  // Public contact / quote-inquiry form on the marketing site. No auth, no
+  // DB write: validated, then handed straight to Resend → hunter@kennion.com.
+  // The `website` field is a honeypot — bots fill it, humans never see it, so
+  // a non-empty value means spam and we drop it while returning a clean 200.
+  app.post("/api/contact", async (req: Request, res: Response) => {
+    try {
+      const data = contactInquirySchema.parse(req.body);
+
+      if (data.website && data.website.trim().length > 0) {
+        log(`[CONTACT] Honeypot tripped — dropping silent spam submission`);
+        return res.json({ ok: true });
+      }
+
+      const sent = await sendContactInquiryEmail({
+        name: data.name,
+        company: data.company,
+        email: data.email,
+        employees: data.employees ?? "",
+        message: data.message ?? "",
+      });
+
+      if (!sent) {
+        return res.status(502).json({ message: "We couldn't send your message right now. Please email support@kennion.com." });
+      }
+
+      res.json({ ok: true });
+    } catch (err: any) {
+      log(`Contact form error: ${err.message}`);
+      res.status(400).json({ message: err.message || "Failed to submit contact form" });
+    }
   });
 
   // User management endpoints

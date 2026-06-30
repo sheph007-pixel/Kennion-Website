@@ -318,6 +318,20 @@ export const resetPasswordSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
+// Public contact / quote-inquiry form on the marketing site. Posts to
+// /api/contact, which emails hunter@kennion.com. No login, no DB write.
+// `website` is a honeypot: a hidden field real users never fill — if it
+// arrives non-empty we silently drop the submission as bot spam.
+export const contactInquirySchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(120),
+  company: z.string().trim().min(1, "Company is required").max(160),
+  email: z.string().trim().email("Valid email required").max(160),
+  employees: z.string().trim().max(40).optional().default(""),
+  message: z.string().trim().max(4000).optional().default(""),
+  website: z.string().max(200).optional().default(""), // honeypot — real users leave this empty
+});
+export type ContactInquiry = z.infer<typeof contactInquirySchema>;
+
 export const insertGroupSchema = createInsertSchema(groups).omit({
   id: true,
   status: true,
