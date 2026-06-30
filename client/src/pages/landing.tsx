@@ -386,9 +386,9 @@ function Nav({ openContact }) {
 // ─────────────────────────────────────────────────────────────────────
 function AdvisoryDashCard() {
   const metrics = [
-    { label: "Client Retention", value: "95%+", note: "year over year" },
+    { label: "Client Retention", value: "85-95%", note: "year over year" },
     { label: "Time to Proposal", value: "24-48h", note: "guaranteed" },
-    { label: "Companies Served", value: "All Sizes", note: "2 to 10,000+ employees" },
+    { label: "Who We Serve", value: "2-500", note: "employees, our focus" },
   ];
   const tags = ["Health Plans", "Dental & Vision", "Life & Disability", "Mental Health", "Cost Savings", "HR Support"];
   return (
@@ -501,7 +501,7 @@ function Hero({ openContact }) {
 
           <Reveal delay={320}>
             <div className="mt-12 flex flex-wrap items-center gap-x-7 gap-y-3 text-[12.5px] text-muted-foreground">
-              <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Small businesses to large employers</div>
+              <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Small and mid-market employers</div>
               <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Plans built around your budget</div>
               <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Employers nationwide</div>
             </div>
@@ -594,7 +594,7 @@ function Solutions() {
             <div className="mt-7 grid grid-cols-3 gap-4">
               {[
                 { v: "50+", l: "Years of advisory expertise" },
-                { v: "95%+", l: "Client retention rate" },
+                { v: "85-95%", l: "Client retention rate" },
                 { v: "All", l: "Your benefits in one place" },
               ].map((s, i) => (
                 <div key={i} className="border-t border-border pt-3">
@@ -636,8 +636,8 @@ function Solutions() {
 function ImpactBand() {
   const stats = [
     { v: "50+", l: "Years advising employers nationwide" },
-    { v: "50", l: "U.S. states served, coast to coast" },
-    { v: "95%+", l: "Client retention, year over year" },
+    { v: "Nationwide", l: "Access, coast to coast" },
+    { v: "85-95%", l: "Client retention, year over year" },
     { v: "100%", l: "Independent and client-first" },
   ];
   return (
@@ -679,22 +679,22 @@ function ImpactBand() {
 function WhoWeServe() {
   const segments = [
     {
-      tag: "Small & Growing Companies",
+      tag: "Small Businesses",
       heading: "Build a program that competes with the big guys.",
       body: "When you're a smaller company, every dollar matters. We help you get the kind of benefits and pricing that used to be reserved for big companies, without needing a big HR team to manage it.",
-      items: ["2-99 employees", "Great coverage at a price that fits", "Simple, guided enrollment", "One bill for everything"],
+      items: ["2-50 employees", "Great coverage at a price that fits", "Simple, guided enrollment", "One bill for everything"],
     },
     {
-      tag: "Middle Market",
-      heading: "Sophisticated benefits without the complexity.",
-      body: "You're big enough to unlock smarter, more cost-effective ways to offer benefits, but you don't always have the in-house expertise to pull them off. That's exactly what we're here for.",
-      items: ["100-999 employees", "Smarter ways to control cost", "Proven strategies that work", "Multi-location and multi-state support"],
+      tag: "Growing Companies",
+      heading: "Benefits that grow right along with you.",
+      body: "As you add people, your benefits get more complicated and more expensive. We bring smarter, more cost-effective options and handle the moving parts so growth never becomes a headache.",
+      items: ["50-200 employees", "Smarter ways to control cost", "Proven strategies that work", "Multi-location and multi-state support"],
     },
     {
-      tag: "Large & Complex Employers",
-      heading: "Purpose-built programs for organizations that demand more.",
-      body: "Programs at this scale demand serious expertise and a team that works like an extension of your own leadership. We've built our practice to deliver exactly that.",
-      items: ["1,000+ employees", "Advanced cost-saving strategies", "Programs built for complex needs", "Wellbeing programs that perform"],
+      tag: "Mid-Market Employers",
+      heading: "Sophisticated benefits, without the complexity.",
+      body: "At this size you can do more with your benefits, but you don't always have the in-house expertise to pull it off. We work like part of your team to make it happen.",
+      items: ["200-500 employees", "Advanced cost-saving strategies", "A team that works like part of yours", "Wellbeing programs that perform"],
     },
   ];
 
@@ -707,10 +707,10 @@ function WhoWeServe() {
             Who We Serve
           </div>
           <h2 className="font-display font-[600] text-[44px] lg:text-[60px] leading-[0.98] tracking-[-0.03em] mt-5">
-            Every market.<br /><span className="text-kn-accent">Every size.</span>
+            Built for small and<br /><span className="text-kn-accent">mid-market employers.</span>
           </h2>
           <p className="mt-5 text-[16.5px] leading-[1.6] text-muted-foreground max-w-xl">
-            From a growing small business to a national enterprise, we have the expertise, the technology, and the carrier relationships to serve you well.
+            From a small business to a 500-person company, we bring the expertise, the technology, and the relationships to give your people benefits they'll love, without the big-company runaround.
           </p>
         </Reveal>
 
@@ -981,7 +981,7 @@ function Testimonial() {
             <span className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-primary block mb-2">Why our clients stay</span>
             Clients partner with us because we know what works. They stay because of
             <span className="text-foreground font-medium"> how we take care of them</span>, year after year, and because we do what we say we will do.
-            That's why our retention rate has stayed above 95% for over a decade.
+            That's why our client retention runs 85 to 95%, year after year.
           </div>
         </Reveal>
       </div>
@@ -1260,7 +1260,7 @@ function Footer({ openContact }) {
             <div className="font-display font-[600] text-[28px] tracking-[-0.02em] leading-none">Kennion</div>
             <div className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-white/55 mt-2">Benefit Advisors &middot; 50+ Years</div>
             <p className="mt-5 text-[13.5px] leading-[1.55] text-white/65 max-w-[26rem]">
-              A technology-driven, full-service employee benefits agency. For over 50 years we've helped employers of all sizes, nationwide, give their people better benefits and taken great care of them along the way.
+              A technology-driven, full-service employee benefits agency. For over 50 years we've helped small and mid-market employers, nationwide, give their people better benefits and taken great care of them along the way.
             </p>
             <button onClick={openContact}
                className="mt-6 inline-flex items-center gap-2 text-[13px] font-medium bg-white text-[hsl(215_35%_14%)] hover:bg-white/95 px-4 py-2.5 rounded-md cursor-pointer">
