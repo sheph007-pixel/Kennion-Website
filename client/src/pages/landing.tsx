@@ -677,8 +677,11 @@ function ImpactBand() {
         <div className="mt-12 grid grid-cols-2 lg:grid-cols-4 gap-px bg-white/10 rounded-2xl overflow-hidden">
           {stats.map((s) => (
             <div key={s.l} className="bg-primary p-7 lg:p-8">
-              <div className="font-display font-[600] text-[44px] lg:text-[54px] leading-none tracking-[-0.04em]">
-                <AnimatedNumber value={s.v} />
+              <div className="flex items-end min-h-[44px] lg:min-h-[54px]">
+                <AnimatedNumber
+                  value={s.v}
+                  className={`font-display font-[600] leading-[0.9] tracking-[-0.04em] whitespace-nowrap ${/[a-z]/i.test(s.v) ? "text-[30px] lg:text-[38px]" : "text-[44px] lg:text-[54px]"}`}
+                />
               </div>
               <div className="mt-3 text-[12.5px] leading-[1.45] text-white/70">{s.l}</div>
             </div>
