@@ -1210,8 +1210,7 @@ function Footer({ openContact }) {
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid md:grid-cols-[1.5fr_1fr_1fr_1fr] gap-10 lg:gap-14">
           <div>
-            <div className="font-display font-[600] text-[28px] tracking-[-0.02em] leading-none">Kennion</div>
-            <div className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-white/55 mt-2">Benefit Advisors &middot; 50+ Years</div>
+            <div className="font-display font-[600] text-[22px] tracking-[-0.02em] leading-tight">Kennion Benefit Advisors</div>
             <p className="mt-5 text-[13.5px] leading-[1.55] text-white/65 max-w-[26rem]">
               A technology-driven, full-service employee benefits agency. For over 50 years we've helped small and mid-market employers, nationwide, give their people better benefits and taken great care of them along the way.
             </p>
