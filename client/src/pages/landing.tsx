@@ -28,7 +28,7 @@ import {
   ArrowRight, ChevronRight, ChevronDown, X, Menu, Check, CheckCircle2,
   Play, MapPin, Mail, Calendar,
   ArrowUpRight, Shield, Users, FileText, HeartPulse, Eye, Smile,
-  Building2, Megaphone,
+  Building2, Megaphone, Wallet, Sliders, Laptop, GraduationCap, Handshake,
 } from "lucide-react";
 
 const KENNION_LOGO_URL = "https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/attachments/production/5004437337/logo/qGPs3ykt503dCIwP_qHVHmcxV3JVHXZucQ.png";
@@ -645,6 +645,53 @@ function ImpactBand() {
               <div className="mt-3 text-[12.5px] leading-[1.45] text-white/70">{s.l}</div>
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// WHY LEADING EMPLOYERS CHOOSE KENNION (differentiators)
+// ─────────────────────────────────────────────────────────────────────
+function WhyChooseKennion() {
+  const items = [
+    { icon: Building2,     title: "Open Market Access",           body: "We work across a wide variety of carriers and partners, never tied to any one of them." },
+    { icon: Wallet,        title: "Smarter Cost Control",          body: "We find the smarter, more cost-effective way to build your program, and keep it that way." },
+    { icon: Sliders,       title: "Funding Strategies That Fit",   body: "The right approach for your size and situation, explained in plain terms so the choice is clear." },
+    { icon: Laptop,        title: "Technology-Driven Enrollment",  body: "Modern, paperless enrollment that connects with the systems you already use." },
+    { icon: GraduationCap, title: "Proven Employee Education",     body: "We help your people understand and actually use the benefits they have." },
+    { icon: Handshake,     title: "Long-Term Client Partnerships", body: "Relationships measured in decades, not renewal cycles." },
+  ];
+  return (
+    <section className="py-24 lg:py-32 bg-muted border-y border-border">
+      <div className="mx-auto max-w-7xl px-6">
+        <Reveal className="max-w-2xl mb-14">
+          <div className="inline-flex items-center gap-2 text-[11.5px] uppercase tracking-[0.18em] font-medium text-muted-foreground">
+            <span className="inline-block w-6 h-px bg-kn-accent" />
+            What Sets Us Apart
+          </div>
+          <h2 className="font-display font-[600] text-[40px] lg:text-[56px] leading-[1.0] tracking-[-0.03em] mt-5">
+            Why leading employers<br /><span className="text-kn-accent">choose Kennion.</span>
+          </h2>
+          <p className="mt-5 text-[16.5px] leading-[1.6] text-muted-foreground max-w-xl">
+            Plenty of agencies can quote a plan. These are the things that make us the partner employers stay with for the long haul.
+          </p>
+        </Reveal>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-border rounded-xl overflow-hidden hairline">
+          {items.map((d) => {
+            const Icon = d.icon;
+            return (
+              <div key={d.title} className="bg-card p-7 flex flex-col gap-3">
+                <div className="w-10 h-10 rounded-lg bg-kn-accent-soft flex items-center justify-center">
+                  <Icon size={18} strokeWidth={1.8} className="text-kn-accent"/>
+                </div>
+                <h3 className="text-[16px] font-semibold tracking-[-0.01em]">{d.title}</h3>
+                <p className="text-[13.5px] leading-[1.6] text-muted-foreground">{d.body}</p>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -1282,6 +1329,7 @@ export default function LandingPage() {
       <Hero openContact={openContact} />
       <Solutions />
       <ImpactBand />
+      <WhyChooseKennion />
       <WhoWeServe />
       <HowItWorks openContact={openContact} />
       <WhyKennion openContact={openContact} />
