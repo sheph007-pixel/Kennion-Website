@@ -372,7 +372,7 @@ function Hero() {
           <Reveal>
             <div className="inline-flex items-center gap-2 text-[11.5px] uppercase tracking-[0.18em] font-medium text-muted-foreground">
               <span className="inline-block w-6 h-px bg-primary" />
-              Kennion Benefit Advisors · Est. 1972
+              Kennion Benefit Advisors · 50+ Years in Employee Benefits
             </div>
           </Reveal>
 
@@ -807,7 +807,7 @@ function printSavingsReport({ employees, avgAge, monthlyBill, annualSavings, mon
 <header>
   <div class="brand">
     <div class="brand-name">Kennion</div>
-    <div class="brand-sub">Benefit Advisors · Est. 1972</div>
+    <div class="brand-sub">Benefit Advisors · 50+ Years</div>
   </div>
   <div class="meta">
     <b>Personalized Savings Estimate</b><br>
@@ -854,7 +854,7 @@ function printSavingsReport({ employees, avgAge, monthlyBill, annualSavings, mon
 </div>
 
 <footer>
-  <span>Kennion Benefit Advisors &middot; Vestavia, AL · Est. 1972</span>
+  <span>Kennion Benefit Advisors &middot; Vestavia, AL · 50+ Years in Employee Benefits</span>
   <span>Illustrative estimate. Final rates determined by census and carrier underwriting.</span>
 </footer>
 
@@ -1374,7 +1374,7 @@ function Contact() {
             <h3 className="font-display text-[32px] lg:text-[40px] leading-[1.05] tracking-[-0.02em]">
               Kennion Benefit Advisors
             </h3>
-            <p className="mt-2 text-[15px] text-muted-foreground">Vestavia Hills, AL · Serving employers nationwide since 1972</p>
+            <p className="mt-2 text-[15px] text-muted-foreground">Based in Alabama · Serving employers nationwide</p>
             <dl className="mt-8 grid sm:grid-cols-2 gap-x-6 gap-y-5 text-[14px]">
               <div className="border-t border-border pt-4">
                 <dt className="text-muted-foreground text-[12px] uppercase tracking-[0.1em]">Address</dt>
@@ -1543,7 +1543,7 @@ function Footer() {
         <div className="grid md:grid-cols-[1.5fr_1fr_1fr_1fr] gap-10 lg:gap-14">
           <div>
             <div className="font-display font-[450] text-[28px] tracking-[-0.02em] leading-none">Kennion</div>
-            <div className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-white/55 mt-2">Benefit Advisors · Est. 1972</div>
+            <div className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-white/55 mt-2">Benefit Advisors · 50+ Years</div>
             <p className="mt-5 text-[13.5px] leading-[1.55] text-white/65 max-w-[26rem]">
               An independent employee benefits agency helping employers nationwide for over 50 years. Group health, dental, vision, and supplemental coverage across fully insured, self-funded, and private programs — consolidated into one monthly invoice.
             </p>
