@@ -515,7 +515,7 @@ function Solutions() {
     {
       icon: HeartPulse,
       title: "Healthier, Happier Employees",
-      body: "Mental health support, wellness programs, and the kind of care that keeps your team healthy and productive, lowers cost, and makes people glad they work for you.",
+      body: "Mental health support and wellness programs that keep your team healthy and productive, lower your costs, and make people glad they work for you.",
     },
     {
       icon: Megaphone,
@@ -869,12 +869,12 @@ function WhyKennion({ openContact }) {
     {
       icon: Users,
       title: "Technology, Backed by Real People",
-      body: "Benefits are complicated. Our technology makes them simpler, paperless enrollment, mobile access, and far fewer headaches, so your team spends less time on busywork and more time on the people who matter.",
+      body: "Benefits are complicated. Our technology makes them simpler: paperless enrollment, mobile access, and far fewer headaches, so your team spends less time on busywork and more time on the people who matter.",
     },
     {
       icon: HeartPulse,
       title: "Real Support, Real People",
-      body: "You get a real team, not a call center. When something needs fixing, a person who knows your account picks up and gets it done, fast. We do what we say we will do.",
+      body: "You get a real team, not a call center. When something needs fixing, a person who knows your account picks up and gets it done, fast. No runaround, no dropped balls.",
     },
     {
       icon: Calendar,
