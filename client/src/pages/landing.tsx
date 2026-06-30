@@ -273,10 +273,10 @@ function Nav() {
 // ─────────────────────────────────────────────────────────────────────
 function BenefitsPackageCard() {
   const lines = [
-    { icon: HeartPulse, label: "Group Health",   plans: "15+ plans", carrier: "Blue Cross · Cigna · Aetna" },
-    { icon: Smile,      label: "Dental",          plans: "6+ plans",  carrier: "Delta Dental · Guardian" },
-    { icon: Eye,        label: "Vision",           plans: "3+ plans",  carrier: "VSP · EyeMed" },
-    { icon: Shield,     label: "Supplemental",     plans: "10+ plans", carrier: "Aflac · Sun Life · MetLife" },
+    { icon: HeartPulse, label: "Group Health",   plans: "15+ plans", carrier: "Fully insured · Self-funded · Level-funded" },
+    { icon: Smile,      label: "Dental",          plans: "6+ plans",  carrier: "Preventive-first · Broad network access" },
+    { icon: Eye,        label: "Vision",           plans: "3+ plans",  carrier: "Exams · Frames · Contacts · Lasik" },
+    { icon: Shield,     label: "Supplemental",     plans: "10+ plans", carrier: "Life · Accident · Critical Illness · Hospital" },
   ];
   const [active, setActive] = useState(0);
   useEffect(() => {
@@ -386,7 +386,7 @@ function Hero() {
 
           <Reveal delay={160}>
             <p className="mt-7 text-[17.5px] leading-[1.55] max-w-[36rem] text-muted-foreground">
-              For over 50 years, Kennion has helped Alabama's employers build better benefit programs —
+              For over 50 years, Kennion has helped employers across the country build better benefit programs —
               group health, dental, vision, and supplemental coverage, from 40+ top-rated carriers,
               consolidated into one monthly invoice.
             </p>
@@ -646,7 +646,7 @@ function CensusPreview() {
   );
 }
 function ProposalPreview() {
-  const rows = [["BCBS Premier","$412"],["Cigna Choice","$398"],["Aetna Select","$427"],["UHC Core","$441"]];
+  const rows = [["Fully Insured A","$412"],["Self-Funded Option","$388"],["Level-Funded Plan","$401"],["Private Program","$374"]];
   return (
     <div className="h-full w-full p-3 font-mono text-[9.5px] leading-[1.4]">
       <div className="text-[8.5px] uppercase tracking-[0.12em] text-muted-foreground mb-1.5">Medical · EE Rate</div>
@@ -1374,7 +1374,7 @@ function Contact() {
             <h3 className="font-display text-[32px] lg:text-[40px] leading-[1.05] tracking-[-0.02em]">
               Kennion Benefit Advisors
             </h3>
-            <p className="mt-2 text-[15px] text-muted-foreground">Vestavia Hills, Alabama · Serving employers nationwide since 1972</p>
+            <p className="mt-2 text-[15px] text-muted-foreground">Vestavia Hills, AL · Serving employers nationwide since 1972</p>
             <dl className="mt-8 grid sm:grid-cols-2 gap-x-6 gap-y-5 text-[14px]">
               <div className="border-t border-border pt-4">
                 <dt className="text-muted-foreground text-[12px] uppercase tracking-[0.1em]">Address</dt>
@@ -1545,7 +1545,7 @@ function Footer() {
             <div className="font-display font-[450] text-[28px] tracking-[-0.02em] leading-none">Kennion</div>
             <div className="text-[10.5px] font-mono uppercase tracking-[0.18em] text-white/55 mt-2">Benefit Advisors · Est. 1972</div>
             <p className="mt-5 text-[13.5px] leading-[1.55] text-white/65 max-w-[26rem]">
-              An independent employee benefits agency serving Alabama's employers for over 50 years. Group health, dental, vision, and supplemental coverage from 40+ top-rated carriers — consolidated into one program and one monthly invoice.
+              An independent employee benefits agency helping employers nationwide for over 50 years. Group health, dental, vision, and supplemental coverage across fully insured, self-funded, and private programs — consolidated into one monthly invoice.
             </p>
             <a href="https://calendly.com/kennion/call" onClick={openCalendly}
                className="mt-6 inline-flex items-center gap-2 text-[13px] font-medium bg-white text-[hsl(215_35%_14%)] hover:bg-white/95 px-4 py-2.5 rounded-md cursor-pointer">
