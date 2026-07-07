@@ -14,7 +14,7 @@ Kennion Benefit Advisors operates a private benefits program that is not availab
 
 ## How It Works
 
-1. **Submit your group.** Employers register at kennion.com and upload a census.
+1. **Get in touch.** Employers reach out through the contact form at kennion.com to start a conversation with a Kennion advisor.
 2. **Risk screen.** The Kennion Risk Screen runs a deterministic underwriting model on the census (demographic, geographic, and family-composition factors plus an AI residual trained on Kennion's claims history) to classify the group as Preferred Risk, Standard Risk, or High Risk.
 3. **Receive a proposal.** Qualified groups receive a custom proposal with monthly rates across 15+ medical plan designs, plus dental, vision, and supplemental options.
 4. **Enroll.** Approved groups onboard and begin coverage on the chosen effective date.
@@ -34,7 +34,7 @@ Kennion Benefit Advisors operates a private benefits program that is not availab
 
 ## Contact
 
-- **Submit a group:** https://www.kennion.com/register
+- **Get in touch:** https://www.kennion.com/#contact
 - **Schedule a call:** https://calendly.com/kennion/call
 - **Existing client support:** https://go.kennion.com/support
 - **Sales (Hunter Shepherd):** hunter@kennion.com - 205-641-0469

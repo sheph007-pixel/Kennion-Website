@@ -6,7 +6,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ThemeProvider } from "@/components/theme-provider";
 import LandingPage from "@/pages/landing";
-import RegisterPage from "@/pages/register";
 import LoginPage from "@/pages/login";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
@@ -72,7 +71,7 @@ function Router() {
     <Switch>
       <Route path="/" component={LandingPage} />
       <Route path="/register">
-        <PublicRoute component={RegisterPage} />
+        <Redirect to="/" />
       </Route>
       <Route path="/login">
         <PublicRoute component={LoginPage} />
