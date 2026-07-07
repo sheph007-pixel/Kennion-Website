@@ -473,14 +473,6 @@ function Hero({ openContact }) {
               </button>
             </div>
           </Reveal>
-
-          <Reveal delay={320}>
-            <div className="mt-12 flex flex-wrap items-center gap-x-7 gap-y-3 text-[12.5px] text-muted-foreground">
-              <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Small and mid-market employers</div>
-              <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Plans built around your budget</div>
-              <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary"/>Employers nationwide</div>
-            </div>
-          </Reveal>
         </div>
 
         <Reveal delay={200} className="relative">
