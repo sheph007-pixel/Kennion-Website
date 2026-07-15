@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import { ThemeProvider } from "@/components/theme-provider";
 import LandingPage from "@/pages/landing";
 import LoginPage from "@/pages/login";
+import RegisterPage from "@/pages/register";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import AuthVerifyPage from "@/pages/auth-verify";
@@ -71,7 +72,7 @@ function Router() {
     <Switch>
       <Route path="/" component={LandingPage} />
       <Route path="/register">
-        <Redirect to="/" />
+        <PublicRoute component={RegisterPage} />
       </Route>
       <Route path="/login">
         <PublicRoute component={LoginPage} />
