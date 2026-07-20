@@ -34,6 +34,7 @@ import {
   magicLinkVerifySchema,
   loginSchema,
   registerSchema,
+  quoteRequestSchema,
   newGroupDetailsSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
@@ -42,7 +43,7 @@ import {
 } from "@shared/schema";
 import ConnectPgSimple from "connect-pg-simple";
 import { log } from "./index";
-import { sendMagicLinkEmail, sendProposalAcceptanceEmail, sendApprovalRequestEmail, sendApprovalGrantedEmail, sendCensusUploadedAlertEmail } from "./email";
+import { sendMagicLinkEmail, sendProposalAcceptanceEmail, sendApprovalRequestEmail, sendApprovalGrantedEmail, sendCensusUploadedAlertEmail, sendQuoteRequestEmail } from "./email";
 import { pool, testConnection } from "./db";
 import { cleanCSVWithAI, generateValidationGuidance } from "./ai-csv-cleaner";
 import { generateActuarialAnalysis, generateScoreReview } from "./ai-analysis";
@@ -1203,72 +1204,43 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/auth/register", async (req: Request, res: Response) => {
+  // Public self-registration is CLOSED. Prospects no longer create portal
+  // accounts — the marketing site routes them to the "Request a Proposal"
+  // form (POST /api/quote-request) which emails hunter@kennion.com. Staff
+  // accounts are provisioned internally. Kept as an explicit 410 so any
+  // stale link or client fails loudly instead of silently creating users.
+  app.post("/api/auth/register", async (_req: Request, res: Response) => {
+    res.status(410).json({ message: "Online registration is closed. Please request a proposal instead." });
+  });
+
+  // Public "Request a Proposal" lead form. No auth, no account, no DB write,
+  // no session — just validates and emails hunter@kennion.com. Mirrors the
+  // repo's "lead data isn't persisted" pattern; responds { ok: true } only.
+  app.post("/api/quote-request", async (req: Request, res: Response) => {
     try {
-      const data = registerSchema.parse(req.body);
+      const data = quoteRequestSchema.parse(req.body);
 
-      const fullName = `${data.firstName} ${data.lastName}`;
-
-      const existing = await storage.getUserByEmail(data.email);
-      if (existing) {
-        return res.status(400).json({ message: "An account with this email already exists. Please sign in instead." });
-      }
-
-      // Hash password
-      const hashedPassword = await bcrypt.hash(data.password, 10);
-
-      // Generate approval token (used in the one-click approve/reject email links).
-      // 14-day expiry matches the message in the email body.
-      const approvalToken = generateMagicToken();
-      const approvalTokenExpiry = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-
-      // Create user as PENDING approval. They cannot log in until
-      // Hunter clicks "Approve" in the email.
-      const user = await storage.createUser({
-        fullName,
-        email: data.email,
-        companyName: data.companyName,
-        phone: data.phone,
-        state: data.state,
-        zipCode: data.zipCode,
-        password: hashedPassword,
-        verified: true,
-        magicToken: null,
-        magicTokenExpiry: null,
-        approvalStatus: "pending",
-        approvalToken,
-        approvalTokenExpiry,
-      });
-
-      // Send Hunter the approve/reject email. Failure here is non-fatal —
-      // the account is on file, Hunter can approve manually if needed.
-      const baseUrl = getBaseUrl(req);
-      const approveUrl = `${baseUrl}/api/auth/approve/${approvalToken}`;
-      const rejectUrl = `${baseUrl}/api/auth/reject/${approvalToken}`;
+      // Email is non-fatal: if Resend is unconfigured or errors, we still
+      // return ok so the prospect sees a success state. (No key locally =>
+      // no-op send.) Never log the body.
       try {
-        await sendApprovalRequestEmail({
-          prospectName: fullName,
-          prospectEmail: data.email,
+        await sendQuoteRequestEmail({
+          name: data.name,
+          email: data.email,
           companyName: data.companyName,
           phone: data.phone,
-          state: data.state,
-          zipCode: data.zipCode,
-          approveUrl,
-          rejectUrl,
+          employerSize: data.employerSize,
+          fundingInterest: data.fundingInterest,
+          currentCoverage: data.currentCoverage,
+          message: data.message,
         });
       } catch (mailErr: any) {
-        log(`[REGISTER] Approval email failed for ${data.email}: ${mailErr.message}`);
+        log(`[QUOTE-REQUEST] Lead email failed: ${mailErr.message}`);
       }
 
-      // Do NOT log the user in. They're pending until approved.
-      res.json({
-        message: "Account created. Awaiting approval.",
-        email: data.email,
-        pending: true,
-      });
+      res.json({ ok: true });
     } catch (err: any) {
-      log(`Registration error: ${err.message}`);
-      res.status(400).json({ message: err.message || "Registration failed" });
+      res.status(400).json({ message: err.message || "Please check the form and try again." });
     }
   });
 

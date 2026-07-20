@@ -260,6 +260,68 @@ export async function sendApprovalRequestEmail(p: {
 }
 
 /**
+ * Public "Request a Proposal" lead email → hunter@kennion.com.
+ * No account, no DB write, no session — the marketing site's only lead path.
+ * replyTo is the prospect so Hunter can respond directly. Non-fatal: returns
+ * false on any failure rather than throwing.
+ */
+export async function sendQuoteRequestEmail(p: {
+  name: string;
+  email: string;
+  companyName: string;
+  phone: string;
+  employerSize: string;
+  fundingInterest: string;
+  currentCoverage: string;
+  message: string;
+}): Promise<boolean> {
+  try {
+    const client = getResendClient();
+    const messageRow = p.message
+      ? `<tr><td style="padding: 6px 0; color: #5b6679; vertical-align: top;">Message</td><td style="padding: 6px 0; white-space: pre-wrap;">${escapeHtml(p.message)}</td></tr>`
+      : "";
+    const result = await client.emails.send({
+      from: FROM_EMAIL,
+      to: "hunter@kennion.com",
+      replyTo: p.email,
+      subject: `New proposal request: ${p.companyName} (${p.name})`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #0f1828;">
+          <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px;">
+            <h2 style="color: #17427a; margin: 0; font-size: 18px; font-weight: 600;">Kennion &middot; New Proposal Request</h2>
+            <p style="color: #5b6679; font-size: 13px; margin: 4px 0 0;">A prospective employer submitted the website form.</p>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.55;">
+            <tr><td style="padding: 6px 0; color: #5b6679; width: 150px;">Name</td><td style="padding: 6px 0; font-weight: 500;">${escapeHtml(p.name)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #5b6679;">Company</td><td style="padding: 6px 0; font-weight: 500;">${escapeHtml(p.companyName)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #5b6679;">Email</td><td style="padding: 6px 0;"><a href="mailto:${encodeURIComponent(p.email)}" style="color: #17427a; text-decoration: none;">${escapeHtml(p.email)}</a></td></tr>
+            <tr><td style="padding: 6px 0; color: #5b6679;">Phone</td><td style="padding: 6px 0;"><a href="tel:${encodeURIComponent(p.phone)}" style="color: #17427a; text-decoration: none;">${escapeHtml(p.phone)}</a></td></tr>
+            <tr><td style="padding: 6px 0; color: #5b6679;">Employer size</td><td style="padding: 6px 0;">${escapeHtml(p.employerSize)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #5b6679;">Funding interest</td><td style="padding: 6px 0;">${escapeHtml(p.fundingInterest)}</td></tr>
+            <tr><td style="padding: 6px 0; color: #5b6679;">Current coverage / renewal</td><td style="padding: 6px 0;">${escapeHtml(p.currentCoverage)}</td></tr>
+            ${messageRow}
+          </table>
+
+          <p style="margin-top: 28px; padding-top: 18px; border-top: 1px solid #e5e7eb; font-size: 11.5px; color: #5b6679; line-height: 1.5;">
+            Reply directly to this email to reach the prospect.
+          </p>
+        </div>
+      `,
+    });
+    if (result.error) {
+      log(`[EMAIL ERROR] Quote-request email Resend error: ${JSON.stringify(result.error)}`);
+      return false;
+    }
+    log(`[EMAIL SUCCESS] Quote-request email sent to hunter@ for ${p.companyName} (id: ${result.data?.id})`);
+    return true;
+  } catch (err: any) {
+    log(`[EMAIL ERROR] Failed to send quote-request email: ${err.message}`);
+    return false;
+  }
+}
+
+/**
  * Sends the prospect a "you're in" email after Hunter approves them.
  */
 export async function sendApprovalGrantedEmail(p: {

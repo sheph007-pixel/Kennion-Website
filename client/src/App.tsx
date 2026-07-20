@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ThemeProvider } from "@/components/theme-provider";
 import LandingPage from "@/pages/landing";
-import RegisterPage from "@/pages/register";
+import RequestQuotePage from "@/pages/request-quote";
 import LoginPage from "@/pages/login";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
@@ -71,8 +71,10 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={LandingPage} />
+      <Route path="/quote" component={RequestQuotePage} />
+      {/* Public self-registration is closed — prospects use the quote form. */}
       <Route path="/register">
-        <PublicRoute component={RegisterPage} />
+        <Redirect to="/quote" />
       </Route>
       <Route path="/login">
         <PublicRoute component={LoginPage} />

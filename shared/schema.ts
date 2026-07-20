@@ -258,6 +258,23 @@ export const registerSchema = z.object({
     .refine((s) => /^\d{5}(-\d{4})?$/.test(s), { message: "Enter a 5-digit ZIP (or ZIP+4)" }),
 });
 
+// Public "Request a Proposal" form — the marketing site's only lead path.
+// Emails hunter@kennion.com; nothing is persisted. Intentionally lenient
+// (personal email domains allowed) so we don't turn away real prospects.
+export const quoteRequestSchema = z.object({
+  name: z.string().min(1, "Your name is required").max(120),
+  email: z.string().email("Enter a valid email address").max(160),
+  companyName: z.string().min(1, "Company name is required").max(160),
+  phone: z
+    .string()
+    .min(1, "Phone number is required")
+    .refine(isValidUSPhone, { message: "Enter a valid US phone number (10 digits)" }),
+  employerSize: z.string().min(1, "Please select your group size").max(60),
+  fundingInterest: z.string().max(60).optional().default("Not sure yet"),
+  currentCoverage: z.string().max(500).optional().default(""),
+  message: z.string().max(2000).optional().default(""),
+});
+
 // Required details when creating an additional group under an existing
 // login. Reused by the server's pending-group-details session stash
 // and by the confirm endpoint.

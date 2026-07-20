@@ -31,6 +31,10 @@ export default {
           foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
           border: "var(--primary-border)",
         },
+        "brand-accent": {
+          DEFAULT: "hsl(var(--brand-accent) / <alpha-value>)",
+          foreground: "hsl(var(--brand-accent-foreground) / <alpha-value>)",
+        },
         secondary: {
           DEFAULT: "hsl(var(--secondary) / <alpha-value>)",
           foreground: "hsl(var(--secondary-foreground) / <alpha-value>)",
