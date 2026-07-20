@@ -29,10 +29,10 @@ function isValidUSPhone(phone: string): boolean {
 }
 
 const EMPLOYER_SIZES = [
-  "1–50 employees",
-  "51–100 employees",
-  "101–500 employees",
-  "501–1,000 employees",
+  "1-50 employees",
+  "51-100 employees",
+  "101-500 employees",
+  "501-1,000 employees",
   "1,000+ employees",
 ];
 const FUNDING_OPTIONS = [
@@ -102,7 +102,7 @@ export default function RequestQuotePage() {
           data.currentCoverage ? `Current coverage / renewal: ${data.currentCoverage}` : "",
           data.message ? `Message: ${data.message}` : "",
         ].filter(Boolean).join("  |  "),
-        website: "", // honeypot — real users leave this empty
+        website: "", // honeypot, real users leave this empty
       };
       await apiRequest("POST", "/api/contact", payload);
       setSubmitted(true);
@@ -150,7 +150,7 @@ export default function RequestQuotePage() {
           </h1>
           <p className="mt-5 text-[16px] leading-[1.6] text-muted-foreground max-w-md">
             Tell us a little about your group and our team will reach out to start the
-            conversation. No obligation, no cost — just a clear look at what your benefits
+            conversation. No obligation, no cost, just a clear look at what your benefits
             program could be.
           </p>
 
@@ -186,7 +186,7 @@ export default function RequestQuotePage() {
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <CheckCircle2 size={24} className="text-primary" />
               </div>
-              <h2 className="mt-5 font-display font-[450] text-[28px] tracking-[-0.02em]">Thank you &mdash; we&rsquo;ve got it.</h2>
+              <h2 className="mt-5 font-display font-[450] text-[28px] tracking-[-0.02em]">Thank you, we&rsquo;ve got it.</h2>
               <p className="mt-3 text-[15px] leading-[1.6] text-muted-foreground">
                 Your request is on its way to our team. Someone from Kennion will be in touch
                 shortly at the email and phone number you provided. There&rsquo;s nothing else you

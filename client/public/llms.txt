@@ -1,44 +1,47 @@
 # Kennion Benefit Advisors
 
-> An employee benefits agency headquartered in Vestavia, Alabama. Kennion designs and administers private group health, dental, vision, supplemental, and level-funded insurance programs for employer groups across the United States. Our proprietary actuarial rating engine delivers premium coverage at significantly lower rates than groups can access through traditional broker channels.
+> A full-service employee benefits advisory firm headquartered in Vestavia, Alabama. Kennion helps employers of every size design, market, deliver, and manage group health, dental, vision, and supplemental benefits across fully insured, level-funded, and self-funded funding strategies. We bring the strategy, technology, analytics, and partner network of a national firm to employers across the United States.
 
-Kennion Benefit Advisors operates a private benefits program that is not available through outside brokers or consultants. The program combines an in-house actuarial rating engine with composite reference-based pricing to produce risk-adjusted premiums for small and mid-sized employer groups. Underwriting and approval are required, and not all groups are accepted.
+Kennion Benefit Advisors is an independent employee benefits advisor. We work for the employer, not the insurer, taking each group to market, negotiating on the client's behalf, and managing the program year over year. Our client retention has stayed above 95% for over a decade.
 
 ## Services
 
-- [Group Health Insurance](https://www.kennion.com/): 15+ medical plan designs including level-funded, self-funded, and fully-insured options. Composite reference-based pricing with in-house actuarial underwriting.
-- [Level-Funded Health Plans](https://www.kennion.com/): Level-funded medical plans for small and mid-sized employer groups. Combines the cash-flow predictability of fully-insured with the savings potential of self-funded.
-- [Group Dental Insurance](https://www.kennion.com/): 6+ dental plan designs bundled with the Kennion benefits program.
-- [Group Vision Insurance](https://www.kennion.com/): 3+ vision plan designs bundled with the Kennion benefits program.
-- [Supplemental Insurance](https://www.kennion.com/): 10+ supplemental coverages including accident, critical illness, and hospital indemnity.
+- [Benefits Strategy & Plan Design](https://www.kennion.com/): We start with your goals and budget, then architect a benefits program that fits, medical, dental, vision, life, disability, and supplemental.
+- [Marketing & Carrier Placement](https://www.kennion.com/): We take your group to market, negotiate on your behalf, and bring back options built around leverage.
+- [Data, Analytics & Benchmarking](https://www.kennion.com/): Claims insight, utilization trends, and peer benchmarking to ground every decision in evidence.
+- [Benefits Administration & Technology](https://www.kennion.com/): Modern enrollment and administration platforms that streamline open enrollment for HR teams.
+- [Compliance, ACA & ERISA](https://www.kennion.com/): Reporting, notices, and documentation handled so employers stay current.
+- [Pharmacy & Rx Strategy](https://www.kennion.com/): Strategies that manage one of the fastest-growing cost drivers without hurting members.
+- [Employee Communication & Engagement](https://www.kennion.com/): Year-round communication and decision support so employees actually use their benefits.
+- [Ongoing Service & Advocacy](https://www.kennion.com/): A dedicated team for claims questions, billing, mid-year changes, and renewals.
+
+## Who We Serve
+
+Employers of every size, small business, the middle market, and large, multi-location organizations, across every funding strategy: fully insured, level funded, and traditional self-funded.
 
 ## How It Works
 
-1. **Get in touch.** Employers reach out through the contact form at kennion.com to start a conversation with a Kennion advisor.
-2. **Risk screen.** The Kennion Risk Screen runs a deterministic underwriting model on the census (demographic, geographic, and family-composition factors plus an AI residual trained on Kennion's claims history) to classify the group as Preferred Risk, Standard Risk, or High Risk.
-3. **Receive a proposal.** Qualified groups receive a custom proposal with monthly rates across 15+ medical plan designs, plus dental, vision, and supplemental options.
-4. **Enroll.** Approved groups onboard and begin coverage on the chosen effective date.
+1. **Discover.** We learn your workforce, your goals, and where your current program falls short.
+2. **Strategize.** We model funding options and design a program built around your budget and your people.
+3. **Market & place.** We take your group to the right partners and negotiate on your behalf.
+4. **Implement.** Enrollment, technology, and employee communication, set up and handled.
+5. **Manage.** Renewals, compliance, claims advocacy, and strategy reviews, all year long.
 
 ## About
 
 - **Headquarters:** 2828 Old 280 Court, Vestavia, Alabama 35243
 - **Coverage area:** United States, with concentration in the Southeast (AL, GA, MS, TN, FL)
 - **Founder:** Hunter Shepherd
-- **Experience:** Decades building benefits programs nationwide
-- **Differentiator:** Private program with in-house actuarial rating - not available through traditional broker channels
-
-## Tools and Disclosures
-
-- **Live savings estimator:** Available on the homepage; provides an illustrative monthly and annual savings estimate based on group size, average age, and current monthly bill. Estimates are illustrative only; exact rates require a census submission and underwriting review.
-- **Kennion Risk Screen:** Proprietary group-level underwriting model; tier classification only - the screen does not produce a bindable rate. Plans are priced by the Kennion Actuarial Rater after the screen completes.
+- **Experience:** More than 50 years advising employers
+- **Differentiator:** Independent, client-first advisory model; a full spectrum of solutions, programs, and partners under one roof; client retention above 95%
 
 ## Contact
 
-- **Get in touch:** https://www.kennion.com/#contact
+- **Request a proposal:** https://www.kennion.com/quote
 - **Schedule a call:** https://calendly.com/kennion/call
-- **Existing client support:** https://go.kennion.com/support
-- **Sales (Hunter Shepherd):** hunter@kennion.com - 205-641-0469
+- **General support:** support@kennion.com
+- **Sales (Hunter Shepherd):** hunter@kennion.com
 
 ## What This Site Indexes
 
-Only the homepage (https://www.kennion.com/) is publicly indexable. Customer dashboards, the admin cockpit, individual quote pages, login flows, and the API are intentionally not indexed - they require authentication and are not relevant to public discovery.
+Only the homepage (https://www.kennion.com/) and the proposal request page (https://www.kennion.com/quote) are publicly indexable. Client and staff tools, individual quote pages, login flows, and the API are intentionally not indexed, they require authentication and are not relevant to public discovery.
