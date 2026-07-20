@@ -67,16 +67,6 @@ app.use((req, res, next) => {
 
   await registerRoutes(httpServer, app);
 
-  // Temporary: admin-only data export used by the one-time migration to
-  // the new system. Registered after registerRoutes so the session
-  // middleware it sets up applies here. Remove after the migration.
-  try {
-    const { registerMigrateExport } = await import("./migrate-sync");
-    registerMigrateExport(app);
-  } catch (err: any) {
-    console.error("Migrate export registration failed (non-fatal):", err?.message ?? err);
-  }
-
   const { seedDatabase } = await import("./seed");
   try {
     await seedDatabase();
