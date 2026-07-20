@@ -1,4 +1,4 @@
-// Kennion Benefit Advisors — public marketing homepage.
+// Kennion Benefit Advisors, public marketing homepage.
 // Full-service employee benefits advisory positioning (enterprise / OneDigital-style).
 // Single-file: nav, hero, sections, legal modal, footer + motion primitives.
 //
@@ -9,7 +9,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import {
   ArrowRight, ChevronRight, ChevronDown, X, Menu, CheckCircle2,
-  MapPin, Mail, Calendar, ArrowUpRight, Phone,
+  MapPin, Mail, Calendar, ArrowUpRight,
   Users, Building2, Landmark, ShieldCheck, LineChart, Layers,
   MessagesSquare, Pill, ScrollText, Compass, Handshake, Rocket,
   Award, TrendingUp, HeartPulse,
@@ -32,9 +32,6 @@ function openCalendly(e?: React.MouseEvent) {
 const KENNION_LOGO_URL = "https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/attachments/production/5004437337/logo/qGPs3ykt503dCIwP_qHVHmcxV3JVHXZucQ.png";
 const KENNION_BUILDING_URL = "https://images.squarespace-cdn.com/content/v1/650a374c4246d47a3dbe7afb/1695168363204-7SHD3HNS7AARCJU8LO2L/The%2BLindsey%2BBuilding-14.jpg";
 
-// ────────────────────────────────────────────────────────────
-// MOTION PRIMITIVES
-// ────────────────────────────────────────────────────────────
 function useInView(threshold = 0.15) {
   const ref = useRef(null);
   const [seen, setSeen] = useState(false);
@@ -67,7 +64,6 @@ function Reveal({ children, delay = 0, as: As = "div", className = "", y = 18 })
   );
 }
 
-// Small uppercase eyebrow with a gold accent rule.
 function Eyebrow({ children, center = false }) {
   return (
     <div className={`inline-flex items-center gap-2.5 text-[11.5px] uppercase tracking-[0.2em] font-semibold text-muted-foreground ${center ? "justify-center" : ""}`}>
@@ -78,9 +74,6 @@ function Eyebrow({ children, center = false }) {
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// NAV
-// ──────────────────────────────────────────────────────────────
 function Nav() {
   const [open, setOpen] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
@@ -185,9 +178,6 @@ function Nav() {
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// HERO
-// ─────────────────────────────────────────────────────────────
 function Hero() {
   return (
     <section className="relative overflow-hidden">
@@ -214,7 +204,7 @@ function Hero() {
             <p className="mt-7 text-[17.5px] leading-[1.55] max-w-[38rem] text-muted-foreground">
               Kennion is a full-service employee benefits advisory firm. We help employers of every
               size design, deliver, and manage benefits programs that attract talent, control cost,
-              and take work off HR&rsquo;s plate&nbsp;&mdash;&nbsp;across every funding strategy.
+              and take work off HR&rsquo;s plate, across every funding strategy.
             </p>
           </Reveal>
 
@@ -245,7 +235,6 @@ function Hero() {
               <img src={KENNION_BUILDING_URL} alt="Kennion Benefit Advisors headquarters" className="w-full aspect-[4/5] sm:aspect-[5/4] lg:aspect-[4/5] object-cover object-center" />
               <div className="absolute inset-0 bg-gradient-to-t from-[hsl(215_45%_12%/0.55)] via-transparent to-transparent" />
             </div>
-            {/* Floating credential card */}
             <div className="absolute -bottom-6 -left-4 sm:-left-6 w-[62%] max-w-[280px] rounded-xl bg-card hairline shadow-[0_24px_60px_-24px_rgba(15,30,60,.5)] p-5">
               <div className="text-[10.5px] uppercase tracking-[0.16em] font-semibold text-muted-foreground">Trusted by employers</div>
               <div className="mt-3 grid grid-cols-2 gap-4">
@@ -266,9 +255,6 @@ function Hero() {
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// STATS BAND
-// ─────────────────────────────────────────────────────────────
 function StatsBand() {
   const stats = [
     { v: "50+ Years", l: "Advising employers across the country" },
@@ -294,19 +280,16 @@ function StatsBand() {
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// SOLUTIONS
-// ─────────────────────────────────────────────────────────────
 function Solutions() {
   const services = [
-    { icon: Compass, t: "Benefits Strategy & Plan Design", d: "We start with your goals and budget, then architect a program that fits — medical, dental, vision, life, disability, and supplemental." },
+    { icon: Compass, t: "Benefits Strategy & Plan Design", d: "We start with your goals and budget, then architect a program that fits, medical, dental, vision, life, disability, and supplemental." },
     { icon: Handshake, t: "Marketing & Carrier Placement", d: "We take your group to the market, negotiate on your behalf, and bring back options built around leverage, not defaults." },
     { icon: LineChart, t: "Data, Analytics & Benchmarking", d: "Claims insight, utilization trends, and peer benchmarking so every decision is grounded in evidence, not guesswork." },
     { icon: Layers, t: "Benefits Administration & Technology", d: "Modern enrollment and administration platforms that streamline open enrollment and give HR one place to work." },
-    { icon: ScrollText, t: "Compliance, ACA & ERISA", d: "Reporting, notices, and documentation handled — so you stay current without deciphering federal regulations." },
+    { icon: ScrollText, t: "Compliance, ACA & ERISA", d: "Reporting, notices, and documentation handled, so you stay current without deciphering federal regulations." },
     { icon: Pill, t: "Pharmacy & Rx Strategy", d: "Pharmacy is one of the fastest-growing cost drivers. We build strategies that manage spend without hurting members." },
     { icon: MessagesSquare, t: "Employee Communication & Engagement", d: "Clear, year-round communication and decision support that helps employees actually use the benefits you provide." },
-    { icon: HeartPulse, t: "Ongoing Service & Advocacy", d: "A dedicated team for claims questions, billing issues, mid-year changes, and renewals — every day of the year." },
+    { icon: HeartPulse, t: "Ongoing Service & Advocacy", d: "A dedicated team for claims questions, billing issues, mid-year changes, and renewals, every day of the year." },
   ];
   return (
     <section id="solutions" className="py-24 lg:py-32">
@@ -318,7 +301,7 @@ function Solutions() {
           </h2>
           <p className="mt-5 text-[16.5px] leading-[1.6] text-muted-foreground">
             We don&rsquo;t just place coverage. We tell you what to do, show you how to do it, build the
-            best possible program, and manage it for you year after year — bringing the strategy,
+            best possible program, and manage it for you year after year, bringing the strategy,
             technology, and partners of a national firm to employers of every size.
           </p>
         </Reveal>
@@ -344,9 +327,6 @@ function Solutions() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// WHO WE SERVE + FUNDING STRATEGIES
-// ─────────────────────────────────────────────────────────────
 function WhoWeServe() {
   const segments = [
     { icon: Users, t: "Small Business", d: "Right-sized guidance, better rates, and technology that punches well above your headcount. You get a real advisor, not a call center." },
@@ -354,7 +334,7 @@ function WhoWeServe() {
     { icon: Landmark, t: "Large & Enterprise", d: "Consulting-grade analytics, financial modeling, and dedicated service teams for complex, multi-location employers." },
   ];
   const funding = [
-    { t: "Fully Insured", d: "Predictable, simple, and fully transferred risk — the right fit for many groups, priced competitively." },
+    { t: "Fully Insured", d: "Predictable, simple, and fully transferred risk, the right fit for many groups, priced competitively." },
     { t: "Level Funded", d: "The middle path: the cash-flow stability of fully insured with the savings potential of self-funding." },
     { t: "Traditional Self-Funded", d: "Maximum control, transparency, and long-term savings for groups ready to take on managed risk." },
   ];
@@ -368,7 +348,7 @@ function WhoWeServe() {
           </h2>
           <p className="mt-5 text-[16.5px] leading-[1.6] text-muted-foreground">
             From a growing small business to a complex, multi-state enterprise, our team scales the
-            strategy and service to fit — never the other way around.
+            strategy and service to fit, never the other way around.
           </p>
         </Reveal>
 
@@ -396,7 +376,7 @@ function WhoWeServe() {
           </h3>
           <p className="mt-4 text-[15.5px] leading-[1.6] text-muted-foreground">
             We model the options and recommend the funding approach that fits your risk tolerance
-            and goals — then manage it, and revisit it, every year.
+            and goals, then manage it, and revisit it, every year.
           </p>
         </Reveal>
 
@@ -416,15 +396,12 @@ function WhoWeServe() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// OUR APPROACH (consultative process)
-// ─────────────────────────────────────────────────────────────
 function Approach() {
   const steps = [
     { n: "01", t: "Discover", d: "We learn your workforce, your goals, and where your current program is falling short." },
     { n: "02", t: "Strategize", d: "We model funding options and design a program built around your budget and your people." },
     { n: "03", t: "Market & Place", d: "We take your group to the right partners and negotiate hard on your behalf." },
-    { n: "04", t: "Implement", d: "Enrollment, technology, and employee communication — set up and handled for you." },
+    { n: "04", t: "Implement", d: "Enrollment, technology, and employee communication, set up and handled for you." },
     { n: "05", t: "Manage", d: "Renewals, compliance, claims advocacy, and strategy reviews, all year long." },
   ];
   return (
@@ -457,17 +434,14 @@ function Approach() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// WHY KENNION
-// ─────────────────────────────────────────────────────────────
 function WhyKennion() {
   const differentiators = [
     { icon: Award, title: "Experienced Leadership", body: "A senior team that has seen every market cycle and knows how to win a renewal. Deep expertise, not a rotating cast of junior reps." },
-    { icon: ShieldCheck, title: "Client-First Advocacy", body: "Independent and conflict-free. Your renewal gets shopped every year and negotiated hard — never rubber-stamped." },
+    { icon: ShieldCheck, title: "Client-First Advocacy", body: "Independent and conflict-free. Your renewal gets shopped every year and negotiated hard, never rubber-stamped." },
     { icon: TrendingUp, title: "Proven Retention", body: "Our clients stay with us above 95% year over year. Retention like that is the clearest proof that the model works." },
-    { icon: Layers, title: "Full-Service Breadth", body: "A deep bench of solutions, programs, and partners under one roof — strategy, technology, compliance, and service together." },
+    { icon: Layers, title: "Full-Service Breadth", body: "A deep bench of solutions, programs, and partners under one roof, strategy, technology, compliance, and service together." },
     { icon: Rocket, title: "Growing Fast", body: "One of the fastest-growing benefits advisories in the region, adding clients and capabilities while keeping service personal." },
-    { icon: LineChart, title: "Technology-Driven", body: "Modern administration, analytics, and enrollment built for today's HR teams — the tools of a national firm, delivered locally." },
+    { icon: LineChart, title: "Technology-Driven", body: "Modern administration, analytics, and enrollment built for today's HR teams, the tools of a national firm, delivered locally." },
   ];
 
   return (
@@ -481,7 +455,7 @@ function WhyKennion() {
             </h2>
             <p className="mt-5 text-[16px] leading-[1.6] text-muted-foreground max-w-md">
               Decades of relationships, technology built for today&rsquo;s HR teams, and an advisory model
-              that puts your interests first — never the insurer&rsquo;s.
+              that puts your interests first, never the insurer&rsquo;s.
             </p>
             <div className="mt-8">
               <Link href="/quote" className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-3 rounded-md shadow-sm">
@@ -513,9 +487,6 @@ function WhyKennion() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// TESTIMONIAL
-// ─────────────────────────────────────────────────────────────
 function Testimonial() {
   return (
     <section className="py-24 lg:py-32 border-b border-border">
@@ -543,9 +514,6 @@ function Testimonial() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// CONTACT
-// ─────────────────────────────────────────────────────────────
 function Contact() {
   return (
     <section id="contact" className="py-24 lg:py-32">
@@ -566,8 +534,7 @@ function Contact() {
             <div className="text-[11px] uppercase tracking-[0.14em] font-semibold" style={{ color: "hsl(var(--brand-accent))" }}>For Employers</div>
             <h3 className="mt-2 text-[22px] font-semibold tracking-[-0.01em]">Ready for a benefits partner that works for you?</h3>
             <p className="mt-3 text-[14.5px] leading-[1.6] text-muted-foreground">
-              Tell us a little about your group and our team will reach out to start the conversation —
-              strategy, options, and a clear picture of what your program could be.
+              Tell us a little about your group and our team will reach out to start the conversation, strategy, options, and a clear picture of what your program could be.
             </p>
             <Link href="/quote" className="mt-6 inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-3 rounded-md shadow-sm">
               Request a Proposal
@@ -612,13 +579,6 @@ function Contact() {
                 </dd>
               </div>
               <div className="border-t border-border pt-4">
-                <dt className="text-muted-foreground text-[12px] uppercase tracking-[0.1em]">Phone</dt>
-                <dd className="mt-1 flex items-center gap-2">
-                  <Phone size={15} className="text-primary"/>
-                  <a href="tel:+12056410469" className="text-primary hover:underline underline-offset-4">205-641-0469</a>
-                </dd>
-              </div>
-              <div className="border-t border-border pt-4">
                 <dt className="text-muted-foreground text-[12px] uppercase tracking-[0.1em]">Schedule</dt>
                 <dd className="mt-1">
                   <a href="https://calendly.com/kennion/call" onClick={openCalendly}
@@ -636,9 +596,6 @@ function Contact() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// FINAL CTA
-// ─────────────────────────────────────────────────────────────
 function FinalCTA() {
   return (
     <section className="py-24 lg:py-32 bg-primary text-primary-foreground">
@@ -647,8 +604,7 @@ function FinalCTA() {
           Better benefits start with a better advisor.
         </h2>
         <p className="mt-5 text-[17px] leading-[1.55] text-white/85 max-w-xl mx-auto">
-          Tell us about your group and we&rsquo;ll show you what a real benefits partnership looks like —
-          no obligation, no cost, no pressure. Just a clear plan for your people.
+          Tell us about your group and we&rsquo;ll show you what a real benefits partnership looks like, no obligation, no cost, no pressure. Just a clear plan for your people.
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <Link href="/quote" className="inline-flex items-center gap-1.5 text-[14.5px] font-medium bg-white text-primary hover:bg-white/95 px-6 py-3 rounded-md shadow-sm">
@@ -666,9 +622,6 @@ function FinalCTA() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// LEGAL MODAL
-// ─────────────────────────────────────────────────────────────
 const LEGAL_CONTENT = {
   privacy: {
     title: "Privacy Policy",
@@ -752,9 +705,6 @@ function LegalModal({ kind, onClose }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// FOOTER
-// ─────────────────────────────────────────────────────────────
 function Footer() {
   const year = new Date().getFullYear();
   const [legalOpen, setLegalOpen] = useState(null);
@@ -768,7 +718,7 @@ function Footer() {
             <p className="mt-5 text-[13.5px] leading-[1.55] text-white/65 max-w-[26rem]">
               A full-service employee benefits advisory firm helping employers nationwide design,
               deliver, and manage benefits programs across every funding strategy. Strategy,
-              technology, compliance, and service — under one roof.
+              technology, compliance, and service, under one roof.
             </p>
             <a href="https://calendly.com/kennion/call" onClick={openCalendly}
                className="mt-6 inline-flex items-center gap-2 text-[13px] font-medium bg-white text-[hsl(215_38%_13%)] hover:bg-white/95 px-4 py-2.5 rounded-md cursor-pointer">
