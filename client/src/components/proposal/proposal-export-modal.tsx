@@ -12,14 +12,14 @@ import { inferRatingArea } from "@shared/rating-area";
 import type { Group } from "@shared/schema";
 import type { MedicalPlan, TieredRates } from "@/lib/kennion-rates";
 
-// Full-proposal export modal — styled like the site and designed to
+// Full-proposal export modal, styled like the site and designed to
 // be printed or saved as PDF via the browser's native Print dialog.
 // This replaces the server-rendered PDF download so the feature
 // works even when the Railway deploy pipeline is broken.
 //
 // Hook target: <div data-print-target> on the dialog content. The
 // `@media print` rules in index.css hide everything in the page
-// except that subtree, so Print → Save as PDF captures a clean
+// except that subtree, so Print then Save as PDF captures a clean
 // document with no nav / modal chrome / backdrop.
 
 type Props = {
@@ -33,7 +33,7 @@ type Props = {
 const money = (n: number) =>
   isFinite(n)
     ? "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : "—";
+    : "n/a";
 
 const fmtLong = (d: Date) =>
   d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
@@ -51,7 +51,7 @@ export function ProposalExportModal({
       : null;
 
   function handlePrint() {
-    // Native browser print — user picks "Save as PDF" to download, or
+    // Native browser print, user picks "Save as PDF" to download, or
     // prints directly. CSS in index.css hides the rest of the page.
     window.print();
   }
@@ -95,7 +95,7 @@ export function ProposalExportModal({
           {/* Group header */}
           <section>
             <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              Kennion — Captive Health Solutions
+              Kennion, Captive Health Solutions
             </div>
             <h1 className="mt-1 text-2xl font-bold tracking-tight">
               Group Benefits Proposal
@@ -126,20 +126,20 @@ export function ProposalExportModal({
           </section>
 
           {plans.length > 0 && (
-            <Section title="Medical Plans — Monthly Rates">
+            <Section title="Medical Plans, Monthly Rates">
               <RateTable
                 rows={plans.map((p) => ({ name: p.name, rates: p.base }))}
               />
             </Section>
           )}
 
-          <Section title="Dental Plans — Monthly Rates">
+          <Section title="Dental Plans, Monthly Rates">
             <RateTable
               rows={DENTAL_PLANS.map((p) => ({ name: p.name, rates: p.rates }))}
             />
           </Section>
 
-          <Section title="Vision Plans — Monthly Rates">
+          <Section title="Vision Plans, Monthly Rates">
             <RateTable
               rows={VISION_PLANS.map((p) => ({ name: p.name, rates: p.rates }))}
             />
@@ -148,7 +148,7 @@ export function ProposalExportModal({
           {Object.entries(SUPPLEMENTAL).map(([key, section]) => (
             <Section
               key={key}
-              title={`${section.label} — Monthly Rates`}
+              title={`${section.label}, Monthly Rates`}
               subtitle={section.note}
             >
               <RateTable rows={sectionRows(section)} />
@@ -157,8 +157,8 @@ export function ProposalExportModal({
 
           <p className="text-xs italic text-muted-foreground">
             Rates are illustrative and subject to final underwriting approval.
-            Questions? Contact your Kennion Advisor — Hunter Shepherd
-            (205-641-0469 · hunter@kennion.com).
+            Questions? Contact your Kennion Advisor, Hunter Shepherd
+            (hunter@kennion.com).
           </p>
         </div>
       </DialogContent>
@@ -194,7 +194,7 @@ function Section({
 // Normalizes the three SUPPLEMENTAL shapes into the RateTable row
 // format. Band products (Life, Critical, STD) use the age-band label
 // as the left column and fill missing tiers with NaN so money()
-// renders them as "—" rather than "$NaN".
+// renders them as "n/a" rather than "$NaN".
 function sectionRows(
   section: SupplementalSection,
 ): Array<{ name: string; rates: TieredRates }> {
