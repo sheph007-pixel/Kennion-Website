@@ -175,7 +175,7 @@ export default function RequestQuotePage() {
 
           <div className="mt-10 max-w-[28rem]">
             {[
-              "Ideas your last broker never showed you",
+              "New ideas, priced with real rates",
               "Online enrollment, no paper anywhere",
               "A team that runs it all year",
             ].map((t) => (
