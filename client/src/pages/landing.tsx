@@ -179,7 +179,7 @@ function Nav() {
           </div>
 
           <Link href="/quote" className="inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-5 py-2.5 text-[11.5px] font-semibold uppercase tracking-[0.14em] transition-colors hover:bg-[hsl(var(--ink))]">
-            Request a Proposal
+            Request a Quote
           </Link>
         </div>
 
@@ -196,7 +196,7 @@ function Nav() {
             </a>
           ))}
           <Link href="/quote" className="mt-6 flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-3.5 text-[12px] font-semibold uppercase tracking-[0.14em]">
-            Request a Proposal
+            Request a Quote
           </Link>
           <div className="mt-6 flex items-center gap-6 text-[11.5px] uppercase tracking-[0.14em] font-semibold text-muted-foreground">
             <a href="https://go.kennion.com/support" className="kn-link">Support</a>
@@ -291,7 +291,7 @@ function Hero() {
         <div className="lg:col-span-7">
           <Reveal delay={90}>
             <h1 className="font-display font-bold tracking-[-0.04em] leading-[0.98] text-[clamp(2.5rem,8vw,4.6rem)]">
-              The modern
+              A new kind of
               <br />
               benefits agency<span style={{ color: "hsl(var(--brand-accent))" }}>.</span>
             </h1>
@@ -303,7 +303,7 @@ function Hero() {
               employer needs.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
-              <SolidButton href="/quote">Request a Proposal</SolidButton>
+              <SolidButton href="/quote">Request a Quote</SolidButton>
               <a href="#how" className="kn-link text-[13px] font-semibold uppercase tracking-[0.1em] text-foreground">
                 See how it works
               </a>
@@ -347,16 +347,20 @@ function ProofBand() {
 function WhoWeHelp() {
   const cases = [
     {
+      img: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=70&auto=format&fit=crop",
+      alt: "A growing team collaborating in an office",
       label: "Growing Company",
       h: "Setting up benefits for the first time?",
       p: "You are hiring and it is time for a real program. Our advisors design it around your budget, set up online enrollment, and make benefits a reason people join.",
-      cta: "Start a program",
+      cta: "Request a Quote",
     },
     {
+      img: "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&q=70&auto=format&fit=crop",
+      alt: "An advisor meeting with a client",
       label: "Time for Something Better",
       h: "High rates, rough renewals, no new ideas?",
       p: "If every renewal is a higher number and nothing else changes, get a second opinion. Send us your census and see what you have been missing.",
-      cta: "Get a second opinion",
+      cta: "Request a Quote",
     },
   ];
   return (
@@ -367,6 +371,9 @@ function WhoWeHelp() {
             {cases.map((c, i) => (
               <Reveal key={c.label} delay={i * 80}>
                 <div className={`h-full flex flex-col items-start md:pr-12 ${i > 0 ? "md:border-l md:border-border md:pl-12 md:pr-0" : ""}`}>
+                  <div className="kn-photo w-full mb-7">
+                    <img src={c.img} alt={c.alt} className="w-full aspect-[16/9] object-cover" loading="lazy" />
+                  </div>
                   <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>{c.label}</div>
                   <h3 className={`${H3} mt-4 text-[24px] lg:text-[30px] leading-[1.12] max-w-[16em]`}>{c.h}</h3>
                   <p className="mt-4 text-[14.5px] leading-[1.7] text-muted-foreground max-w-[26rem]">{c.p}</p>
@@ -555,7 +562,8 @@ function HowItWorks() {
 function FinalCTA() {
   return (
     <section id="contact" className="bg-primary text-primary-foreground py-20 lg:py-28">
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 grid lg:grid-cols-12 gap-y-12 lg:gap-x-16 items-center">
+        <div className="lg:col-span-7">
         <div className="kn-caps text-white/50">Get Started</div>
         <h2 className="mt-6 font-display font-bold tracking-[-0.035em] leading-[0.98] text-[clamp(2.4rem,6.5vw,4.75rem)] max-w-[15em]">
           See what your group is missing.
@@ -564,15 +572,17 @@ function FinalCTA() {
           Send us your census and we will come back with something new. It costs
           nothing to look.
         </p>
-        <div className="mt-10 flex flex-wrap items-center gap-x-9 gap-y-5">
-          <SolidButton href="/quote" tone="paper">Request a Proposal</SolidButton>
-          <a href="https://calendly.com/kennion/call" onClick={openCalendly}
-             className="kn-link text-[13px] font-semibold uppercase tracking-[0.1em] text-white cursor-pointer">
-            Schedule a call
-          </a>
+        <div className="mt-10">
+          <SolidButton href="/quote" tone="paper">Request a Quote</SolidButton>
         </div>
 
-        <div className="mt-14 lg:mt-16 border-t border-white/15 pt-7 flex flex-wrap gap-x-12 gap-y-4 text-[13px] text-white/70">
+        </div>
+        <div className="hidden lg:block lg:col-span-5">
+          <div className="kn-photo">
+            <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&q=70&auto=format&fit=crop" alt="Advisors working with a client" className="w-full aspect-[4/3] object-cover" loading="lazy" />
+          </div>
+        </div>
+        <div className="lg:col-span-12 mt-2 lg:mt-4 border-t border-white/15 pt-7 flex flex-wrap gap-x-12 gap-y-4 text-[13px] text-white/70">
           <span className="inline-flex items-center gap-2.5">
             <MapPin size={14} strokeWidth={1.7} style={{ color: "hsl(var(--brand-accent))" }} />
             2828 Old 280 Court, Vestavia, Alabama 35243
@@ -687,11 +697,11 @@ function Footer() {
           <div className="sm:col-span-2 md:col-span-1">
             <div className="font-display font-bold text-[26px] tracking-[-0.02em] leading-none">Kennion</div>
             <div className="kn-caps text-white/40 mt-3">The Modern Benefits Agency</div>
-            <a href="https://calendly.com/kennion/call" onClick={openCalendly}
-               className="mt-8 inline-flex items-center gap-2.5 text-[11.5px] font-semibold uppercase tracking-[0.14em] bg-[hsl(var(--background))] text-[hsl(var(--ink))] px-5 py-3 hover:opacity-90 transition-opacity cursor-pointer">
-              <Calendar size={13} strokeWidth={2} />
-              Schedule a Call
-            </a>
+            <Link href="/quote"
+               className="mt-8 inline-flex items-center gap-2.5 text-[11.5px] font-semibold uppercase tracking-[0.14em] bg-[hsl(var(--background))] text-[hsl(var(--ink))] px-5 py-3 hover:opacity-90 transition-opacity">
+              Request a Quote
+              <ArrowRight size={13} strokeWidth={2} />
+            </Link>
           </div>
 
           <div>
@@ -709,7 +719,7 @@ function Footer() {
             <ul className="space-y-3 text-[13.5px] text-white/70">
               <li><a href="https://go.kennion.com/support" target="_blank" rel="noopener noreferrer" className="kn-link-rev hover:text-white transition-colors">Support</a></li>
               <li><a href="http://go.kennion.com/enroll" target="_blank" rel="noopener noreferrer" className="kn-link-rev hover:text-white transition-colors">Enrollment</a></li>
-              <li><Link href="/quote" className="kn-link-rev hover:text-white transition-colors">Request a Proposal</Link></li>
+              <li><Link href="/quote" className="kn-link-rev hover:text-white transition-colors">Request a Quote</Link></li>
               <li><a href="mailto:support@kennion.com" className="kn-link-rev hover:text-white transition-colors">support@kennion.com</a></li>
             </ul>
           </div>
