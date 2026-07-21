@@ -299,7 +299,8 @@ function Hero() {
           <Reveal delay={180}>
             <p className="mt-8 text-[16px] lg:text-[17px] leading-[1.65] text-muted-foreground max-w-[30rem]">
               A team of advisors ready to help, and technology that handles the busywork.
-              Come see the ideas your last broker never brought you.
+              Group health, dental, vision, supplemental, and everything else the modern
+              employer needs.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
               <SolidButton href="/quote">Request a Proposal</SolidButton>
@@ -352,9 +353,9 @@ function WhoWeHelp() {
       cta: "Start a program",
     },
     {
-      label: "Tired of Your Broker",
+      label: "Time for Something Better",
       h: "High rates, rough renewals, no new ideas?",
-      p: "If every renewal is a higher number and a shrug, you are due for a second opinion. Send us your census and see what you have been missing.",
+      p: "If every renewal is a higher number and nothing else changes, get a second opinion. Send us your census and see what you have been missing.",
       cta: "Get a second opinion",
     },
   ];
@@ -501,9 +502,9 @@ function Options() {
               <span style={{ color: "hsl(var(--primary))" }}>you knew existed.</span>
             </h2>
             <p className="lg:col-span-5 text-[15px] leading-[1.65] text-muted-foreground lg:pb-2 max-w-[26rem]">
-              If every renewal looks like last year with a higher number, you are not seeing
-              the market. We bring the structures most brokers skip, and we tell you which
-              one we would pick.
+              Group health, dental, vision, life, disability, and supplemental, plus funding
+              structures many employers have never been offered. We put it all side by side
+              in plain English and tell you which one we would pick.
             </p>
           </div>
         </SectionHead>

@@ -166,7 +166,7 @@ export default function RequestQuotePage() {
             Request a Proposal
           </div>
           <h1 className="font-display font-bold mt-7 text-[clamp(2.4rem,6vw,3.5rem)] leading-[1.0] tracking-[-0.035em]">
-            See what your last broker <span style={{ color: "hsl(var(--primary))" }}>never showed you.</span>
+            Better benefits <span style={{ color: "hsl(var(--primary))" }}>start here.</span>
           </h1>
           <p className="mt-6 text-[15.5px] leading-[1.65] text-muted-foreground max-w-[28rem]">
             Tell us a little about your group and our team will take it from there. It costs
