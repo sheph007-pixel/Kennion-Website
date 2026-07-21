@@ -18,16 +18,18 @@
   --sidebar: 210 18% 95%;
   --sidebar-foreground: 215 25% 12%;
   --sidebar-border: 210 12% 90%;
-  --sidebar-primary: 210 85% 35%;
+  --sidebar-primary: 213 62% 24%;
   --sidebar-primary-foreground: 210 85% 98%;
   --sidebar-accent: 210 12% 88%;
   --sidebar-accent-foreground: 210 12% 15%;
-  --sidebar-ring: 210 85% 35%;
+  --sidebar-ring: 213 62% 24%;
   --popover: 210 15% 95%;
   --popover-foreground: 215 25% 12%;
   --popover-border: 210 12% 88%;
-  --primary: 210 85% 35%;
+  --primary: 213 62% 24%;
   --primary-foreground: 0 0% 100%;
+  --brand-accent: 36 64% 47%;
+  --brand-accent-foreground: 0 0% 100%;
   --secondary: 210 12% 91%;
   --secondary-foreground: 210 12% 15%;
   --muted: 210 12% 92%;
@@ -37,8 +39,8 @@
   --destructive: 0 72% 42%;
   --destructive-foreground: 0 72% 98%;
   --input: 210 12% 78%;
-  --ring: 210 85% 35%;
-  --chart-1: 210 85% 35%;
+  --ring: 213 62% 24%;
+  --chart-1: 213 62% 30%;
   --chart-2: 195 75% 38%;
   --chart-3: 225 70% 42%;
   --chart-4: 240 60% 45%;
@@ -102,16 +104,18 @@
   --sidebar: 215 20% 11%;
   --sidebar-foreground: 210 15% 95%;
   --sidebar-border: 215 12% 15%;
-  --sidebar-primary: 210 85% 45%;
+  --sidebar-primary: 212 66% 60%;
   --sidebar-primary-foreground: 210 85% 98%;
   --sidebar-accent: 210 12% 16%;
   --sidebar-accent-foreground: 210 12% 90%;
-  --sidebar-ring: 210 85% 45%;
+  --sidebar-ring: 212 66% 60%;
   --popover: 215 18% 13%;
   --popover-foreground: 210 15% 95%;
   --popover-border: 215 12% 17%;
-  --primary: 210 85% 45%;
+  --primary: 212 66% 60%;
   --primary-foreground: 0 0% 100%;
+  --brand-accent: 38 70% 58%;
+  --brand-accent-foreground: 215 30% 12%;
   --secondary: 210 10% 18%;
   --secondary-foreground: 210 10% 92%;
   --muted: 210 10% 19%;
@@ -121,8 +125,8 @@
   --destructive: 0 72% 38%;
   --destructive-foreground: 0 72% 98%;
   --input: 215 12% 30%;
-  --ring: 210 85% 45%;
-  --chart-1: 210 85% 65%;
+  --ring: 212 66% 60%;
+  --chart-1: 212 66% 65%;
   --chart-2: 195 75% 68%;
   --chart-3: 225 70% 72%;
   --chart-4: 240 60% 75%;
@@ -287,7 +291,7 @@
   }
 }
 
-/* ── Print styles for the "Full Proposal" export modal ──────────────
+/* ── Print styles for the "Full Proposal" export modal ────────────────
    Triggered by ProposalExportModal's "Print / Save PDF" button, which
    calls window.print(). Strategy: hide everything not inside the
    [data-print-target] subtree, unwrap the dialog chrome, and size the
@@ -361,35 +365,104 @@
 
 /* === Kennion homepage redesign utilities === */
 
-/* Modern, bold, tech-driven display face (OneDigital-style). Headlines use a
-   heavy geometric sans; the old serif italic accent is now a cyan brand
-   accent so two-tone headlines read clean and contemporary. */
+/* Scoped palette for the public marketing site (.kn-landing wrapper).
+   Editorial "paper & ink" scheme: warm paper ground, ink type, navy
+   primary, bronze accent. Deliberately overrides app tokens (and the
+   dark theme) inside the landing subtree only. */
+.kn-landing {
+  --background: 40 30% 97%;
+  --foreground: 218 30% 11%;
+  --border: 40 12% 85%;
+  --card: 40 30% 97%;
+  --card-foreground: 218 30% 11%;
+  --muted: 40 18% 93%;
+  --muted-foreground: 220 9% 39%;
+  --primary: 213 62% 22%;
+  --primary-foreground: 40 30% 97%;
+  --brand-accent: 30 52% 40%;
+  --brand-accent-foreground: 40 30% 97%;
+  --ink: 218 35% 9%;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+.kn-landing ::selection {
+  background: hsl(213 62% 22%);
+  color: hsl(40 30% 97%);
+}
+
+/* Letterspaced small-caps label — the landing page's only "eyebrow". */
+.kn-caps {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* Animated editorial underline for text links. */
+.kn-link {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 100% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+  padding-bottom: 2px;
+}
+.kn-link:hover {
+  background-size: 0% 1px;
+  background-position: 100% 100%;
+}
+.kn-link-rev {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 100% 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+  padding-bottom: 2px;
+}
+.kn-link-rev:hover {
+  background-size: 100% 1px;
+  background-position: 0 100%;
+}
+
+/* Slow specialty ticker between hero and services. */
+@keyframes kn-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.kn-marquee {
+  animation: kn-marquee 48s linear infinite;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kn-marquee { animation: none; }
+  .kn-landing * { transition-duration: 0.01ms !important; }
+}
+
+/* Ink-duotone photo treatment — grayscale base + navy multiply wash. */
+.kn-photo { position: relative; overflow: hidden; }
+.kn-photo img {
+  filter: grayscale(100%) contrast(1.06) brightness(1.02);
+  display: block;
+}
+.kn-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: hsl(213 62% 22%);
+  mix-blend-mode: multiply;
+  opacity: 0.28;
+  pointer-events: none;
+}
+
 .font-display {
-  font-family: 'Space Grotesk', 'Plus Jakarta Sans', system-ui, sans-serif;
-  letter-spacing: -0.02em;
+  font-family: 'Fraunces', Georgia, serif;
+  font-optical-sizing: auto;
+  font-variation-settings: 'opsz' 144, 'SOFT' 30;
 }
 .font-display em, .font-display .italic {
-  font-style: normal;
-  color: hsl(var(--kn-accent));
+  font-style: italic;
+  font-variation-settings: 'opsz' 144, 'SOFT' 70;
 }
-
-/* Cyan/teal brand accent pulled from the Kennion logo gradient. Kept in its
-   own namespaced vars so it never collides with shadcn's --accent token that
-   the rest of the app depends on. */
-:root {
-  --kn-accent: 191 91% 37%;
-  --kn-accent-deep: 198 90% 27%;
-}
-.dark {
-  --kn-accent: 188 86% 52%;
-  --kn-accent-deep: 191 80% 60%;
-}
-.text-kn-accent { color: hsl(var(--kn-accent)); }
-.bg-kn-accent { background-color: hsl(var(--kn-accent)); }
-.bg-kn-accent-soft { background-color: hsl(var(--kn-accent) / 0.1); }
-.border-kn-accent { border-color: hsl(var(--kn-accent)); }
-.ring-kn-accent { --tw-ring-color: hsl(var(--kn-accent)); }
-
 .font-mono {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
