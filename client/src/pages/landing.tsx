@@ -1,15 +1,12 @@
 // Kennion Benefit Advisors public marketing homepage.
-// Corporate-modern design system: Inter Tight display type, hard grid,
-// ruled index lists, small-caps labels, duotone photography, restrained
-// navy/bronze palette. Mobile-first sizing via clamp().
-//
-// Requires (set up in client/index.html <head> + client/src/index.css):
-// Inter Tight / Inter fonts, Calendly widget, and the .kn-landing /
-// .kn-caps / .kn-link / .kn-marquee / .kn-photo utilities.
+// Positioning: a large, established, tech-forward benefits agency.
+// Lean page: hero with product visual, proof band, platform story,
+// options, how it works, CTA + contact, footer. Inter Tight type,
+// paper & ink palette scoped via .kn-landing (see index.css).
 
 import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
-import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Calendar } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Calendar, Check } from "lucide-react";
 
 declare global {
   interface Window { Calendly?: any; }
@@ -26,13 +23,11 @@ function openCalendly(e?: React.MouseEvent) {
 }
 
 const KENNION_LOGO_URL = "https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/attachments/production/5004437337/logo/qGPs3ykt503dCIwP_qHVHmcxV3JVHXZucQ.png";
-const KENNION_BUILDING_URL = "https://images.squarespace-cdn.com/content/v1/650a374c4246d47a3dbe7afb/1695168363204-7SHD3HNS7AARCJU8LO2L/The%2BLindsey%2BBuilding-14.jpg";
 
-/* ── type scale (single source of truth for the design system) ─────── */
+/* ── type scale ────────────────────────────────────────────────────── */
 
 const H1 = "font-display font-bold tracking-[-0.04em] leading-[0.96] text-[clamp(2.75rem,10vw,6.9rem)]";
 const H2 = "font-display font-bold tracking-[-0.03em] leading-[1.0] text-[clamp(2rem,4.8vw,3.8rem)]";
-const H2_SM = "font-display font-bold tracking-[-0.025em] leading-[1.04] text-[clamp(1.7rem,3.4vw,2.5rem)]";
 const H3 = "font-display font-semibold tracking-[-0.02em]";
 
 /* ── motion ────────────────────────────────────────────────────────── */
@@ -106,7 +101,7 @@ function SolidButton({ href, onClick, children, external = false, tone = "ink" }
   return <Link href={href} className={cls}>{inner}</Link>;
 }
 
-/* ── top strip + nav ───────────────────────────────────────────────── */
+/* ── nav ───────────────────────────────────────────────────────────── */
 
 function Nav() {
   const [open, setOpen] = useState(false);
@@ -128,10 +123,9 @@ function Nav() {
   }, [portalOpen]);
 
   const links = [
-    ["#solutions", "Solutions"],
-    ["#who-we-serve", "Who We Serve"],
-    ["#approach", "Approach"],
-    ["#why-us", "Why Kennion"],
+    ["#platform", "Platform"],
+    ["#options", "Options"],
+    ["#how", "How It Works"],
     ["#contact", "Contact"],
   ];
 
@@ -214,412 +208,304 @@ function Nav() {
   );
 }
 
-/* ── hero ──────────────────────────────────────────────────────────── */
+/* ── hero product visual (pure CSS, depicts the real quoting flow) ─── */
 
-function Hero() {
+function ProductVisual() {
+  const plans = [
+    { name: "Healthy 500", rate: "412", bar: "82%" },
+    { name: "Healthy 1000", rate: "376", bar: "70%" },
+    { name: "Healthy 2500 HSA", rate: "341", bar: "58%" },
+  ];
   return (
-    <section className="relative">
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 pt-12 lg:pt-24 pb-0">
-        <Reveal>
-          <div className="flex items-baseline gap-4 kn-caps text-muted-foreground">
-            <span className="inline-block w-10 h-px translate-y-[-3px]" style={{ background: "hsl(var(--brand-accent))" }} />
-            Employee Benefits · Advisory &amp; Administration
+    <div className="relative select-none pt-6 pb-12 pr-2 lg:pr-0" aria-hidden="true">
+      {/* proposal card */}
+      <div className="relative bg-white border border-border shadow-[0_44px_90px_-42px_rgba(15,30,60,0.5)] rotate-[0.6deg]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div>
+            <div className="kn-caps text-muted-foreground">Proposal</div>
+            <div className={`${H3} text-[17px] mt-1`}>Group of 42</div>
           </div>
-        </Reveal>
-
-        <Reveal delay={90}>
-          <h1 className={`${H1} mt-7 text-foreground`}>
-            Benefits built around
-            <br />
-            <span style={{ color: "hsl(var(--primary))" }}>your people</span>
-            <span style={{ color: "hsl(var(--brand-accent))" }}>.</span>
-          </h1>
-        </Reveal>
-
-        <Reveal delay={180}>
-          <div className="mt-10 lg:mt-16 grid lg:grid-cols-12 gap-y-10 lg:gap-x-10 border-t border-foreground/20 pt-8 lg:pt-12 items-start">
-            <div className="lg:col-span-5">
-              <p className="text-[16px] lg:text-[17px] leading-[1.65] text-muted-foreground max-w-[34rem]">
-                Kennion is an independent employee benefits advisory firm. We design and manage
-                programs that help employers win talent and keep costs in check, and we take the
-                day-to-day benefits work off HR&rsquo;s plate.
-              </p>
-              <div className="mt-8 lg:mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
-                <SolidButton href="/quote">Request a Proposal</SolidButton>
-                <a href="#solutions" className="kn-link text-[13px] font-semibold uppercase tracking-[0.1em] text-foreground">
-                  Explore our work
-                </a>
+          <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em] border border-border px-2.5 py-1.5 text-muted-foreground">
+            23 plans quoted
+          </span>
+        </div>
+        <div className="px-5 py-2">
+          {plans.map((p) => (
+            <div key={p.name} className="grid grid-cols-[1fr_auto] gap-x-4 items-center border-b border-border/70 last:border-b-0 py-3.5">
+              <div>
+                <div className="text-[13px] font-semibold tracking-[-0.01em]">{p.name}</div>
+                <div className="mt-2 h-[3px] w-full bg-muted">
+                  <div className="h-full bg-primary/70" style={{ width: p.bar }} />
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="font-display font-bold text-[17px] tracking-[-0.02em] tabular-nums">${p.rate}</div>
+                <div className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">per employee</div>
               </div>
             </div>
-
-            <div className="lg:col-span-3 lg:border-l lg:border-border lg:pl-10 self-stretch flex flex-col justify-between gap-8">
-              {[
-                ["Independent", "We answer to you, not an insurance carrier. Nobody here has a quota to protect."],
-                ["95%+ retention", "Most of our clients have been with us for years. They stay because the model works."],
-              ].map(([t, d]) => (
-                <div key={t as string} className="border-t border-border pt-4 lg:border-t-0 lg:pt-0">
-                  <div className={`${H3} text-[20px] leading-none`}>{t}</div>
-                  <p className="mt-2.5 text-[12.5px] leading-[1.6] text-muted-foreground">{d}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="lg:col-span-4">
-              <figure>
-                <div className="kn-photo">
-                  <img src={KENNION_BUILDING_URL} alt="The Lindsey Building, home of Kennion Benefit Advisors" className="w-full aspect-[4/3] lg:aspect-[5/4] object-cover" />
-                </div>
-                <figcaption className="mt-3 flex items-baseline justify-between text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                  <span>The Lindsey Building</span>
-                  <span>Vestavia, AL</span>
-                </figcaption>
-              </figure>
-            </div>
-          </div>
-        </Reveal>
+          ))}
+        </div>
+        <div className="flex items-center gap-2.5 px-5 py-3.5 border-t border-border bg-muted/50">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: "hsl(var(--brand-accent))" }} />
+            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "hsl(var(--brand-accent))" }} />
+          </span>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">AI review complete</span>
+        </div>
       </div>
 
-      <Ticker />
-    </section>
-  );
-}
+      {/* enrollment card */}
+      <div className="absolute -bottom-2 -left-3 sm:-left-6 w-[62%] max-w-[260px] bg-[hsl(var(--ink))] text-white p-4 shadow-[0_30px_60px_-24px_rgba(10,20,40,0.6)] -rotate-[1.4deg]">
+        <div className="kn-caps text-white/50">Open Enrollment</div>
+        <div className="mt-3 flex items-baseline justify-between">
+          <span className="font-display font-bold text-[26px] leading-none tracking-[-0.03em] tabular-nums">38<span className="text-white/40">/42</span></span>
+          <span className="text-[10px] uppercase tracking-[0.1em] text-white/50">enrolled online</span>
+        </div>
+        <div className="mt-3 h-[3px] w-full bg-white/15">
+          <div className="h-full" style={{ width: "90%", background: "hsl(var(--brand-accent))" }} />
+        </div>
+        <div className="mt-3.5 space-y-2">
+          {["Elections sent to carrier", "Digital forms signed"].map((t) => (
+            <div key={t} className="flex items-center gap-2 text-[11px] text-white/70">
+              <Check size={11} strokeWidth={2.5} style={{ color: "hsl(var(--brand-accent))" }} />
+              {t}
+            </div>
+          ))}
+        </div>
+      </div>
 
-function Ticker() {
-  const items = [
-    "Group Health", "Dental & Vision", "Life & Disability", "Pharmacy Strategy",
-    "Fully Insured", "Level Funded", "Self-Funded", "ACA & ERISA Compliance",
-    "Benefits Technology", "Claims Advocacy", "Benchmarking & Analytics",
-  ];
-  const row = items.map((t, i) => (
-    <span key={i} className="inline-flex items-center gap-6 lg:gap-10 mr-6 lg:mr-10">
-      <span className="kn-caps text-muted-foreground whitespace-nowrap">{t}</span>
-      <span className="inline-block w-1 h-1 rounded-full" style={{ background: "hsl(var(--brand-accent))" }} />
-    </span>
-  ));
-  return (
-    <div className="mt-12 lg:mt-24 border-y border-border overflow-hidden py-4" aria-hidden="true">
-      <div className="kn-marquee flex w-max">
-        <div className="flex items-center">{row}</div>
-        <div className="flex items-center">{row}</div>
+      {/* census chip */}
+      <div className="absolute top-0 right-2 sm:right-6 bg-white border border-border px-3 py-2 shadow-[0_16px_36px_-16px_rgba(15,30,60,0.4)] rotate-[1.2deg]">
+        <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Census received · 42 lives</span>
       </div>
     </div>
   );
 }
 
-/* ── solutions: ruled index list ───────────────────────────────────── */
+/* ── hero ──────────────────────────────────────────────────────────── */
 
-function Solutions() {
-  const services = [
-    { t: "Benefits Strategy & Plan Design", d: "Most benefits programs were inherited, not designed. We start over from your budget and your workforce and build a lineup that actually fits." },
-    { t: "Marketing & Carrier Placement", d: "When your group goes to market, leverage matters. We run the process and push the carriers until the options are worth choosing between." },
-    { t: "Data, Analytics & Benchmarking", d: "You can't manage what you can't see. We put claims experience and peer benchmarks in front of you before decisions get made." },
-    { t: "Benefits Administration & Technology", d: "Enrollment platforms your HR team will actually like using, with one place for elections, changes, and reporting all year." },
-    { t: "Compliance, ACA & ERISA", d: "The notices, filings, and plan documents are our job to track. You stay current without reading federal regulations." },
-    { t: "Pharmacy & Rx Strategy", d: "Drug spend is climbing faster than anything else on your renewal. We work to contain it without your members feeling squeezed." },
-    { t: "Employee Communication & Engagement", d: "A benefit nobody understands might as well not exist. We make sure your people know what they have and how to use it." },
-    { t: "Ongoing Service & Advocacy", d: "A claim gets denied, a bill looks wrong, someone lost a card. Your team calls us and we handle it." },
+function Hero() {
+  return (
+    <section className="relative overflow-hidden">
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 pt-12 lg:pt-24 pb-16 lg:pb-24 grid lg:grid-cols-12 gap-y-12 lg:gap-x-16 items-center">
+        <div className="lg:col-span-7">
+          <Reveal>
+            <div className="flex items-baseline gap-4 kn-caps text-muted-foreground">
+              <span className="inline-block w-10 h-px translate-y-[-3px]" style={{ background: "hsl(var(--brand-accent))" }} />
+              Employee Benefits
+            </div>
+          </Reveal>
+          <Reveal delay={90}>
+            <h1 className="font-display font-bold tracking-[-0.04em] leading-[0.98] text-[clamp(2.5rem,8vw,4.6rem)] mt-7">
+              The modern
+              <br />
+              benefits agency<span style={{ color: "hsl(var(--brand-accent))" }}>.</span>
+            </h1>
+          </Reveal>
+          <Reveal delay={180}>
+            <p className="mt-8 text-[16px] lg:text-[17px] leading-[1.65] text-muted-foreground max-w-[30rem]">
+              Kennion pairs deep market reach with serious technology. Employers across the
+              country use us to see more options and spend less time managing benefits.
+            </p>
+            <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
+              <SolidButton href="/quote">Request a Proposal</SolidButton>
+              <a href="#how" className="kn-link text-[13px] font-semibold uppercase tracking-[0.1em] text-foreground">
+                See how it works
+              </a>
+            </div>
+          </Reveal>
+        </div>
+
+        <Reveal delay={220} className="lg:col-span-5">
+          <ProductVisual />
+        </Reveal>
+      </div>
+
+      <ProofBand />
+    </section>
+  );
+}
+
+function ProofBand() {
+  const items = [
+    ["Decades", "in the market"],
+    ["Hundreds", "of employer groups"],
+    ["Every major", "carrier at the table"],
+    ["Coast", "to coast"],
   ];
   return (
-    <section id="solutions" className="py-20 lg:py-32">
+    <div className="border-y border-border">
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 grid grid-cols-2 lg:grid-cols-4">
+        {items.map(([big, small], i) => (
+          <div key={big} className={`py-7 lg:py-9 pr-6 ${i > 0 ? "lg:border-l lg:border-border lg:pl-8" : ""} ${i % 2 === 1 ? "border-l border-border pl-6 lg:pl-8" : ""} ${i > 1 ? "border-t border-border lg:border-t-0" : ""}`}>
+            <div className="font-display font-bold text-[24px] lg:text-[30px] leading-none tracking-[-0.03em]">{big}</div>
+            <div className="mt-2 text-[12px] uppercase tracking-[0.1em] text-muted-foreground">{small}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── platform (dark) ───────────────────────────────────────────────── */
+
+function Platform() {
+  return (
+    <section id="platform" className="bg-[hsl(var(--ink))] text-white py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead label="What We Do">
-          <div className="grid lg:grid-cols-12 gap-y-8 lg:gap-x-10 items-end mb-12 lg:mb-20">
-            <h2 className={`${H2} lg:col-span-8`}>
-              A full spectrum of solutions,
+        <SectionHead label="The Platform" dark>
+          <div className="grid lg:grid-cols-12 gap-y-6 lg:gap-x-10 items-end mb-12 lg:mb-16">
+            <h2 className={`${H2} lg:col-span-7`}>
+              Benefits, run
               <br />
-              <span style={{ color: "hsl(var(--primary))" }}>under one roof.</span>
+              like software.
             </h2>
-            <p className="lg:col-span-4 text-[15px] leading-[1.65] text-muted-foreground lg:pb-2">
-              We don&rsquo;t place coverage and then disappear until renewal. We build the program,
-              run it all year, and bring the resources of a national firm to groups of any size.
+            <p className="lg:col-span-5 text-[15px] leading-[1.65] text-white/60 lg:pb-2 max-w-[26rem]">
+              The tools you would expect from a technology company, backed by a team that has
+              seen everything the market can do.
             </p>
           </div>
         </SectionHead>
 
-        <div>
-          {services.map((s, i) => (
-            <Reveal key={s.t} delay={Math.min(i * 40, 160)}>
-              <div className="group grid grid-cols-1 lg:grid-cols-[1fr_1fr_4rem] gap-x-10 items-baseline border-t border-border py-5 lg:py-7 transition-colors hover:bg-foreground/[0.025]">
-                <h3 className={`${H3} text-[19px] lg:text-[24px] leading-[1.15]`}>
-                  {s.t}
-                </h3>
-                <p className="mt-2 lg:mt-0 text-[13.5px] leading-[1.65] text-muted-foreground max-w-[34rem]">
-                  {s.d}
-                </p>
-                <ArrowRight size={18} strokeWidth={1.6} className="hidden lg:block justify-self-end self-center opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0 text-foreground" />
-              </div>
-            </Reveal>
-          ))}
-          <div className="border-t border-border" />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── who we serve: ink section, ruled columns ──────────────────────── */
-
-function WhoWeServe() {
-  const segments = [
-    { t: "Small Business", d: "You get a named advisor who knows your group, better rates than you could find on your own, and technology usually reserved for much larger employers." },
-    { t: "Middle Market", d: "Growing organizations tend to outgrow their broker before they notice. We bring the analytics and the advocacy your size now warrants." },
-    { t: "Large & Enterprise", d: "Complex census, multiple locations, real financial exposure. Our consulting bench models it and a dedicated team runs it." },
-  ];
-  const funding = [
-    { t: "Fully Insured", d: "The carrier takes the risk and your monthly cost stays fixed. Still the best answer for plenty of groups, and we price it hard." },
-    { t: "Level Funded", d: "Fixed payments like fully insured, with money back in years when claims run well. Often the smartest middle ground." },
-    { t: "Self-Funded", d: "You keep the margin a carrier would have kept. More control and more transparency, for groups ready to manage the risk." },
-  ];
-  return (
-    <section id="who-we-serve" className="bg-[hsl(var(--ink))] text-white py-20 lg:py-32">
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead label="Who We Serve" dark>
-          <h2 className={`${H2} mb-6`}>
-            Built for employers
-            <br />
-            of every size.
-          </h2>
-          <p className="text-[15.5px] leading-[1.65] text-white/60 max-w-[38rem] mb-12 lg:mb-20">
-            Whether you have twelve employees or twelve locations, the strategy and the service
-            scale to fit you. Never the other way around.
-          </p>
-        </SectionHead>
-
-        <Reveal>
-          <div className="grid md:grid-cols-3 border-t border-white/15">
-            {segments.map((s, i) => (
-              <div key={s.t} className={`pt-7 pb-9 md:pr-10 ${i > 0 ? "md:pl-10 md:border-l md:border-white/15 border-t border-white/15 md:border-t-0" : ""}`}>
-                <h3 className={`${H3} text-[23px] lg:text-[26px] leading-[1.1]`}>{s.t}</h3>
-                <p className="mt-4 text-[13.5px] leading-[1.7] text-white/60 max-w-[24rem]">{s.d}</p>
-              </div>
-            ))}
-          </div>
-        </Reveal>
-
-        <Reveal delay={80}>
-          <div className="mt-16 lg:mt-28 grid lg:grid-cols-12 gap-y-10 lg:gap-x-10">
-            <div className="lg:col-span-4">
-              <div className="kn-caps text-white/50">Funding Strategies</div>
-              <h3 className={`${H2_SM} mt-5`}>
-                One strategy doesn&rsquo;t fit every employer.
-              </h3>
-              <p className="mt-5 text-[14px] leading-[1.7] text-white/55 max-w-[24rem]">
-                We model the options against your claims history and risk tolerance, make a
-                recommendation, and revisit it at every renewal.
-              </p>
-            </div>
-            <div className="lg:col-span-8">
-              {funding.map((f) => (
-                <div key={f.t} className="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-x-8 items-baseline border-t border-white/15 py-5 lg:py-6">
-                  <h4 className={`${H3} text-[19px] lg:text-[21px]`}>{f.t}</h4>
-                  <p className="mt-2 lg:mt-0 text-[13.5px] leading-[1.7] text-white/60">{f.d}</p>
-                </div>
-              ))}
-              <div className="border-t border-white/15" />
-            </div>
-          </div>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-/* ── approach: sticky header + numbered steps ──────────────────────── */
-
-function Approach() {
-  const steps = [
-    { t: "Discover", d: "We start by understanding your workforce and where the current program falls short." },
-    { t: "Strategize", d: "Then we model the funding options and design around your budget." },
-    { t: "Market & Place", d: "We take the group to market and negotiate on your behalf." },
-    { t: "Implement", d: "Enrollment, technology, and employee communication get set up and handled for you." },
-    { t: "Manage", d: "And we stay on it through the year: renewals, compliance, claims advocacy, strategy reviews." },
-  ];
-  return (
-    <section id="approach" className="py-20 lg:py-32">
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead label="Our Approach">
-          <div className="grid lg:grid-cols-12 gap-y-12 lg:gap-x-10">
-            <div className="lg:col-span-5">
-              <div className="lg:sticky lg:top-32">
-                <h2 className={H2}>
-                  A partnership,
-                  <br />
-                  <span style={{ color: "hsl(var(--primary))" }}>not a transaction.</span>
-                </h2>
-                <p className="mt-6 text-[15px] leading-[1.65] text-muted-foreground max-w-[26rem]">
-                  Benefits shouldn&rsquo;t be a once-a-year scramble. We work as an extension of your
-                  team from first conversation through every renewal.
-                </p>
-                <div className="mt-9">
-                  <SolidButton href="/quote">Start the Conversation</SolidButton>
-                </div>
-              </div>
-            </div>
-            <div className="lg:col-span-7">
-              {steps.map((s, i) => (
-                <Reveal key={s.t} delay={Math.min(i * 50, 200)}>
-                  <div className="grid grid-cols-[3.5rem_1fr] lg:grid-cols-[4.5rem_1fr] gap-x-5 border-t border-border py-6 lg:py-9 items-baseline">
-                    <span className="font-display font-bold text-[26px] lg:text-[32px] leading-none tracking-[-0.03em] tabular-nums" style={{ color: "hsl(var(--brand-accent))" }}>
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <div>
-                      <h3 className={`${H3} text-[21px] lg:text-[25px] leading-[1.1]`}>{s.t}</h3>
-                      <p className="mt-3 text-[14px] leading-[1.7] text-muted-foreground max-w-[30rem]">{s.d}</p>
+        <div className="grid md:grid-cols-3 gap-px bg-white/10 border border-white/10">
+          {/* Quote online */}
+          <Reveal>
+            <div className="bg-[hsl(var(--ink))] p-6 lg:p-8 h-full flex flex-col">
+              <div className="border border-white/10 bg-white/[0.04] p-4 mb-7">
+                {[["Healthy 500", "82%"], ["Healthy 1000", "70%"], ["HSA 2500", "58%"]].map(([n, w]) => (
+                  <div key={n} className="flex items-center gap-3 py-2 border-b border-white/10 last:border-b-0">
+                    <span className="text-[10.5px] uppercase tracking-[0.08em] text-white/50 w-24 shrink-0">{n}</span>
+                    <div className="h-[3px] flex-1 bg-white/10">
+                      <div className="h-full" style={{ width: w, background: "hsl(var(--brand-accent))" }} />
                     </div>
                   </div>
-                </Reveal>
-              ))}
-              <div className="border-t border-border" />
+                ))}
+              </div>
+              <h3 className={`${H3} text-[21px]`}>Quote online</h3>
+              <p className="mt-3 text-[13.5px] leading-[1.7] text-white/60">
+                Send a census, get real options back fast. No week of phone tag to find out
+                what your group is worth.
+              </p>
             </div>
-          </div>
-        </SectionHead>
-      </div>
-    </section>
-  );
-}
+          </Reveal>
 
-/* ── why kennion: pull stats + ruled list ──────────────────────────── */
-
-function WhyKennion() {
-  const stats = [
-    { v: "100%", l: "Independent. We work for you, not a carrier" },
-    { v: "95%", l: "Client retention, year over year" },
-    { v: "0", l: "Quotas. Independent and conflict-free" },
-  ];
-  const differentiators = [
-    { t: "Experienced Leadership", d: "The people on your account have seen every market cycle and know how a renewal gets won. No rotating cast of junior reps." },
-    { t: "Client-First Advocacy", d: "Your renewal gets shopped and negotiated every year, because nobody here has a carrier quota to protect." },
-    { t: "Proven Retention", d: "More than 95% of our clients stay with us year over year. We think that says more than any pitch could." },
-    { t: "Full-Service Breadth", d: "Strategy, technology, compliance, and day-to-day service all live under one roof, so nothing falls between vendors." },
-    { t: "Growing Fast", d: "One of the fastest-growing benefits advisories in the region, and service has stayed personal while we grow." },
-    { t: "Technology-Driven", d: "Modern enrollment, administration, and analytics, delivered with local service instead of a national call queue." },
-  ];
-  return (
-    <section id="why-us" className="pb-20 lg:pb-32">
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead label="Why Kennion">
-          <h2 className={H2}>
-            The difference an
-            <br />
-            <span style={{ color: "hsl(var(--primary))" }}>experienced team</span> makes.
-          </h2>
-        </SectionHead>
-
-        <Reveal delay={60}>
-          <div className="mt-12 lg:mt-20 grid sm:grid-cols-3 border-y border-foreground/20">
-            {stats.map((s, i) => (
-              <div key={s.v} className={`py-7 lg:py-10 sm:pr-8 ${i > 0 ? "sm:pl-8 sm:border-l sm:border-border border-t border-border sm:border-t-0" : ""}`}>
-                <div className="font-display font-bold text-[54px] lg:text-[84px] leading-[0.9] tracking-[-0.045em] tabular-nums">
-                  {s.v}
+          {/* Enroll online */}
+          <Reveal delay={70}>
+            <div className="bg-[hsl(var(--ink))] p-6 lg:p-8 h-full flex flex-col">
+              <div className="border border-white/10 bg-white/[0.04] p-4 mb-7">
+                <div className="flex items-baseline justify-between">
+                  <span className="font-display font-bold text-[22px] tracking-[-0.03em] tabular-nums">90%</span>
+                  <span className="text-[10px] uppercase tracking-[0.1em] text-white/50">enrolled</span>
                 </div>
-                <div className="mt-4 text-[12px] leading-[1.5] text-muted-foreground uppercase tracking-[0.1em]">{s.l}</div>
+                <div className="mt-2.5 h-[3px] w-full bg-white/10">
+                  <div className="h-full w-[90%]" style={{ background: "hsl(var(--brand-accent))" }} />
+                </div>
+                <div className="mt-3 flex items-center gap-2 text-[10.5px] uppercase tracking-[0.08em] text-white/50">
+                  <Check size={11} strokeWidth={2.5} style={{ color: "hsl(var(--brand-accent))" }} />
+                  No paper anywhere
+                </div>
               </div>
-            ))}
-          </div>
-        </Reveal>
+              <h3 className={`${H3} text-[21px]`}>Enroll online</h3>
+              <p className="mt-3 text-[13.5px] leading-[1.7] text-white/60">
+                Employees enroll from a link on any device. Elections flow straight through,
+                and HR watches it happen in real time.
+              </p>
+            </div>
+          </Reveal>
 
-        <div className="mt-12 lg:mt-20 grid md:grid-cols-2 gap-x-14 lg:gap-x-24">
-          {differentiators.map((d, i) => (
-            <Reveal key={d.t} delay={Math.min((i % 2) * 60, 120)}>
-              <div className="border-t border-border py-6 lg:py-7">
-                <h3 className={`${H3} flex items-baseline gap-4 text-[18px] lg:text-[20px]`}>
-                  <span className="inline-block w-6 h-px translate-y-[-4px] shrink-0" style={{ background: "hsl(var(--brand-accent))" }} />
-                  {d.t}
-                </h3>
-                <p className="mt-3 pl-10 text-[13.5px] leading-[1.7] text-muted-foreground">{d.d}</p>
+          {/* AI analysis */}
+          <Reveal delay={140}>
+            <div className="bg-[hsl(var(--ink))] p-6 lg:p-8 h-full flex flex-col">
+              <div className="border border-white/10 bg-white/[0.04] p-4 mb-7 overflow-hidden">
+                <div className="kn-caps text-white/50">Analyzing group</div>
+                <div className="relative mt-3 h-[3px] w-full bg-white/10 overflow-hidden">
+                  <div className="kn-scan absolute inset-y-0 w-1/4" style={{ background: "hsl(var(--brand-accent))" }} />
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: "hsl(var(--brand-accent))" }} />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: "hsl(var(--brand-accent))" }} />
+                  </span>
+                  <span className="text-[10.5px] uppercase tracking-[0.08em] text-white/50">Review in progress</span>
+                </div>
               </div>
-            </Reveal>
-          ))}
+              <h3 className={`${H3} text-[21px]`}>AI-assisted analysis</h3>
+              <p className="mt-3 text-[13.5px] leading-[1.7] text-white/60">
+                Every group gets a layer of AI review on top of experienced underwriting eyes,
+                so nothing about your risk gets missed.
+              </p>
+            </div>
+          </Reveal>
         </div>
       </div>
     </section>
   );
 }
 
-/* ── contact ───────────────────────────────────────────────────────── */
+/* ── options ───────────────────────────────────────────────────────── */
 
-function Contact() {
+function Options() {
+  const chips = [
+    "Medical", "Dental", "Vision", "Life", "Disability", "Supplemental",
+    "Level Funded", "Self-Funded", "Reference-Based Pricing", "Rx Programs",
+    "HSA Plans", "Online Enrollment",
+  ];
+  const row = chips.map((c, i) => (
+    <span key={i} className="inline-block border border-border px-4 py-2.5 mr-3 text-[12px] font-semibold uppercase tracking-[0.1em] text-muted-foreground whitespace-nowrap bg-white/60">
+      {c}
+    </span>
+  ));
   return (
-    <section id="contact" className="py-20 lg:py-32">
+    <section id="options" className="py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead label="Contact">
-          <div className="grid lg:grid-cols-12 gap-y-14 lg:gap-x-10">
-            <div className="lg:col-span-6">
-              <h2 className={H2}>
-                Let&rsquo;s <span style={{ color: "hsl(var(--primary))" }}>talk benefits.</span>
-              </h2>
-              <p className="mt-6 text-[15.5px] leading-[1.65] text-muted-foreground max-w-[30rem]">
-                Whether you&rsquo;re shopping for the first time or unhappy with your renewal, we can
-                help. There&rsquo;s no obligation and no cost to see what we can do for your group.
-              </p>
+        <SectionHead label="Options">
+          <div className="grid lg:grid-cols-12 gap-y-6 lg:gap-x-10 items-end">
+            <h2 className={`${H2} lg:col-span-7`}>
+              More options than
+              <br />
+              <span style={{ color: "hsl(var(--primary))" }}>you knew existed.</span>
+            </h2>
+            <p className="lg:col-span-5 text-[15px] leading-[1.65] text-muted-foreground lg:pb-2 max-w-[26rem]">
+              Every major carrier, plus structures most brokers never bring up. We put them
+              side by side in plain English and tell you which one we would pick.
+            </p>
+          </div>
+        </SectionHead>
+      </div>
+      <div className="mt-12 lg:mt-16 overflow-hidden py-1" aria-hidden="true">
+        <div className="kn-marquee flex w-max">
+          <div className="flex items-center">{row}</div>
+          <div className="flex items-center">{row}</div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
-              <dl className="mt-10 lg:mt-12 max-w-[30rem]">
-                <div className="grid grid-cols-[5rem_1fr] sm:grid-cols-[7rem_1fr] gap-x-6 border-t border-border py-5 items-baseline">
-                  <dt className="kn-caps text-muted-foreground">Visit</dt>
-                  <dd className="text-[14.5px] leading-[1.6] flex items-start gap-2.5">
-                    <MapPin size={15} strokeWidth={1.7} className="mt-[3px] shrink-0" style={{ color: "hsl(var(--brand-accent))" }} />
-                    <span>2828 Old 280 Court, Vestavia, Alabama 35243</span>
-                  </dd>
-                </div>
-                <div className="grid grid-cols-[5rem_1fr] sm:grid-cols-[7rem_1fr] gap-x-6 border-t border-border py-5 items-baseline">
-                  <dt className="kn-caps text-muted-foreground">Write</dt>
-                  <dd className="text-[14.5px] flex items-center gap-2.5">
-                    <Mail size={15} strokeWidth={1.7} className="shrink-0" style={{ color: "hsl(var(--brand-accent))" }} />
-                    <a href="mailto:support@kennion.com" className="kn-link">support@kennion.com</a>
-                  </dd>
-                </div>
-                <div className="grid grid-cols-[5rem_1fr] sm:grid-cols-[7rem_1fr] gap-x-6 border-y border-border py-5 items-baseline">
-                  <dt className="kn-caps text-muted-foreground">Meet</dt>
-                  <dd className="text-[14.5px] flex items-center gap-2.5">
-                    <Calendar size={15} strokeWidth={1.7} className="shrink-0" style={{ color: "hsl(var(--brand-accent))" }} />
-                    <a href="https://calendly.com/kennion/call" onClick={openCalendly} className="kn-link cursor-pointer">
-                      Book a call online
-                    </a>
-                  </dd>
-                </div>
-              </dl>
-            </div>
+/* ── how it works ──────────────────────────────────────────────────── */
 
-            <div className="lg:col-span-6 lg:border-l lg:border-border lg:pl-14">
-              <div className="border-t border-foreground/20 lg:border-t-0 pt-8 lg:pt-0">
-                <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>For Employers</div>
-                <h3 className={`${H3} mt-3 text-[23px] lg:text-[26px] leading-[1.15]`}>
-                  Ready for a benefits partner that works for you?
-                </h3>
-                <p className="mt-4 text-[14px] leading-[1.7] text-muted-foreground max-w-[30rem]">
-                  Tell us a little about your group and our team will reach out. We&rsquo;ll come
-                  back with options and a clear picture of what your program could be.
-                </p>
-                <div className="mt-7">
-                  <SolidButton href="/quote">Request a Proposal</SolidButton>
+function HowItWorks() {
+  const steps = [
+    { t: "Send your census", d: "A spreadsheet is all we need to get started." },
+    { t: "See every option", d: "Real plans and real rates, side by side, fast." },
+    { t: "We run the rest", d: "Enrollment, renewals, and the day-to-day. Handled." },
+  ];
+  return (
+    <section id="how" className="border-t border-border py-20 lg:py-32">
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+        <SectionHead label="How It Works">
+          <div className="grid md:grid-cols-3 gap-y-10 md:gap-x-10">
+            {steps.map((s, i) => (
+              <Reveal key={s.t} delay={i * 80}>
+                <div className={`md:pr-6 ${i > 0 ? "md:border-l md:border-border md:pl-10" : ""}`}>
+                  <div className="font-display font-bold text-[44px] lg:text-[56px] leading-none tracking-[-0.04em] tabular-nums" style={{ color: "hsl(var(--brand-accent))" }}>
+                    {i + 1}
+                  </div>
+                  <h3 className={`${H3} mt-5 text-[22px] lg:text-[25px]`}>{s.t}</h3>
+                  <p className="mt-3 text-[14px] leading-[1.7] text-muted-foreground max-w-[20rem]">{s.d}</p>
                 </div>
-              </div>
-
-              <div className="mt-12 lg:mt-14 border-t border-border pt-9">
-                <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>Existing Clients</div>
-                <h3 className={`${H3} mt-3 text-[23px] lg:text-[26px] leading-[1.15]`}>
-                  Current client or member?
-                </h3>
-                <p className="mt-4 text-[14px] leading-[1.7] text-muted-foreground max-w-[30rem]">
-                  Your account team is standing by. Open a support ticket and someone will be in
-                  touch the same business day.
-                </p>
-                <div className="mt-6">
-                  <a href="https://go.kennion.com/support" target="_blank" rel="noopener noreferrer" className="kn-link text-[13px] font-semibold uppercase tracking-[0.1em]">
-                    Submit a ticket
-                  </a>
-                </div>
-              </div>
-
-              <figure className="mt-12 lg:mt-14">
-                <div className="kn-photo">
-                  <img src={KENNION_BUILDING_URL} alt="Kennion Benefit Advisors headquarters" className="w-full aspect-[16/9] object-cover" />
-                </div>
-                <figcaption className="mt-3 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                  Headquarters · Vestavia, Alabama
-                </figcaption>
-              </figure>
-            </div>
+              </Reveal>
+            ))}
           </div>
         </SectionHead>
       </div>
@@ -627,25 +513,40 @@ function Contact() {
   );
 }
 
-/* ── final CTA ─────────────────────────────────────────────────────── */
+/* ── CTA + contact ─────────────────────────────────────────────────── */
 
 function FinalCTA() {
   return (
-    <section className="bg-primary text-primary-foreground py-20 lg:py-32 border-b border-white/10">
+    <section id="contact" className="bg-primary text-primary-foreground py-20 lg:py-28">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
         <div className="kn-caps text-white/50">Get Started</div>
         <h2 className="mt-6 font-display font-bold tracking-[-0.035em] leading-[0.98] text-[clamp(2.4rem,6.5vw,4.75rem)] max-w-[15em]">
-          Better benefits start with a better advisor.
+          See what your group is missing.
         </h2>
-        <p className="mt-7 text-[16px] leading-[1.65] text-white/70 max-w-[36rem]">
-          Tell us about your group and we&rsquo;ll show you what a real benefits partnership
-          looks like. There&rsquo;s no cost to find out, and no pressure to move.
+        <p className="mt-7 text-[16px] leading-[1.65] text-white/70 max-w-[34rem]">
+          Send us your census and we will show you every option on the table. It costs
+          nothing to look.
         </p>
         <div className="mt-10 flex flex-wrap items-center gap-x-9 gap-y-5">
           <SolidButton href="/quote" tone="paper">Request a Proposal</SolidButton>
           <a href="https://calendly.com/kennion/call" onClick={openCalendly}
              className="kn-link text-[13px] font-semibold uppercase tracking-[0.1em] text-white cursor-pointer">
             Schedule a call
+          </a>
+        </div>
+
+        <div className="mt-14 lg:mt-16 border-t border-white/15 pt-7 flex flex-wrap gap-x-12 gap-y-4 text-[13px] text-white/70">
+          <span className="inline-flex items-center gap-2.5">
+            <MapPin size={14} strokeWidth={1.7} style={{ color: "hsl(var(--brand-accent))" }} />
+            2828 Old 280 Court, Vestavia, Alabama 35243
+          </span>
+          <a href="mailto:support@kennion.com" className="kn-link-rev inline-flex items-center gap-2.5 hover:text-white">
+            <Mail size={14} strokeWidth={1.7} style={{ color: "hsl(var(--brand-accent))" }} />
+            support@kennion.com
+          </a>
+          <a href="https://calendly.com/kennion/call" onClick={openCalendly} className="kn-link-rev inline-flex items-center gap-2.5 hover:text-white cursor-pointer">
+            <Calendar size={14} strokeWidth={1.7} style={{ color: "hsl(var(--brand-accent))" }} />
+            Book a call online
           </a>
         </div>
       </div>
@@ -745,15 +646,10 @@ function Footer() {
   return (
     <footer className="bg-[hsl(var(--ink))] text-white pt-16 lg:pt-20 overflow-hidden">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <div className="grid sm:grid-cols-2 md:grid-cols-[1.6fr_1fr_1fr_1fr] gap-x-10 gap-y-12 pb-14 lg:pb-16">
+        <div className="grid sm:grid-cols-2 md:grid-cols-[1.6fr_1fr_1fr] gap-x-10 gap-y-12 pb-14 lg:pb-16">
           <div className="sm:col-span-2 md:col-span-1">
             <div className="font-display font-bold text-[26px] tracking-[-0.02em] leading-none">Kennion</div>
-            <div className="kn-caps text-white/40 mt-3">Independent Benefit Advisors</div>
-            <p className="mt-6 text-[13.5px] leading-[1.7] text-white/55 max-w-[24rem]">
-              A full-service, independent employee benefits advisory firm helping employers
-              nationwide design, deliver, and manage benefits programs across every funding
-              strategy.
-            </p>
+            <div className="kn-caps text-white/40 mt-3">The Modern Benefits Agency</div>
             <a href="https://calendly.com/kennion/call" onClick={openCalendly}
                className="mt-8 inline-flex items-center gap-2.5 text-[11.5px] font-semibold uppercase tracking-[0.14em] bg-[hsl(var(--background))] text-[hsl(var(--ink))] px-5 py-3 hover:opacity-90 transition-opacity cursor-pointer">
               <Calendar size={13} strokeWidth={2} />
@@ -761,35 +657,15 @@ function Footer() {
             </a>
           </div>
 
-          {[
-            {
-              h: "Solutions",
-              links: [
-                ["#solutions", "Strategy & Plan Design"],
-                ["#solutions", "Marketing & Placement"],
-                ["#solutions", "Administration & Technology"],
-                ["#solutions", "Compliance & Service"],
-              ],
-            },
-            {
-              h: "Company",
-              links: [
-                ["#who-we-serve", "Who We Serve"],
-                ["#approach", "Our Approach"],
-                ["#why-us", "Why Kennion"],
-                ["#contact", "Contact"],
-              ],
-            },
-          ].map((col) => (
-            <div key={col.h}>
-              <div className="kn-caps text-white/40 mb-5">{col.h}</div>
-              <ul className="space-y-3 text-[13.5px] text-white/70">
-                {col.links.map(([href, label]) => (
-                  <li key={label}><a href={href} className="kn-link-rev hover:text-white transition-colors">{label}</a></li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <div>
+            <div className="kn-caps text-white/40 mb-5">Company</div>
+            <ul className="space-y-3 text-[13.5px] text-white/70">
+              <li><a href="#platform" className="kn-link-rev hover:text-white transition-colors">Platform</a></li>
+              <li><a href="#options" className="kn-link-rev hover:text-white transition-colors">Options</a></li>
+              <li><a href="#how" className="kn-link-rev hover:text-white transition-colors">How It Works</a></li>
+              <li><a href="#contact" className="kn-link-rev hover:text-white transition-colors">Contact</a></li>
+            </ul>
+          </div>
 
           <div>
             <div className="kn-caps text-white/40 mb-5">Clients</div>
@@ -832,11 +708,9 @@ export default function LandingPage() {
       <Nav />
       <main>
         <Hero />
-        <Solutions />
-        <WhoWeServe />
-        <Approach />
-        <WhyKennion />
-        <Contact />
+        <Platform />
+        <Options />
+        <HowItWorks />
         <FinalCTA />
       </main>
       <Footer />
