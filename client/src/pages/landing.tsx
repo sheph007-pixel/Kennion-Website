@@ -1,4 +1,4 @@
-// Kennion Benefit Advisors — public marketing homepage.
+// Kennion Benefit Advisors public marketing homepage.
 // Corporate-modern design system: Inter Tight display type, hard grid,
 // ruled index lists, small-caps labels, duotone photography, restrained
 // navy/bronze palette. Mobile-first sizing via clamp().
@@ -254,7 +254,7 @@ function Hero() {
               <p className="text-[16px] lg:text-[17px] leading-[1.65] text-muted-foreground max-w-[34rem]">
                 Kennion is a full-service, independent employee benefits advisory firm. We help
                 employers of every size design, deliver, and manage benefits programs that attract
-                talent, control cost, and take work off HR&rsquo;s plate — across every funding strategy.
+                talent, control cost, and take work off HR&rsquo;s plate, across every funding strategy.
               </p>
               <div className="mt-8 lg:mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
                 <SolidButton href="/quote">Request a Proposal</SolidButton>
@@ -266,7 +266,7 @@ function Hero() {
 
             <div className="lg:col-span-3 lg:border-l lg:border-border lg:pl-10 self-stretch flex flex-col justify-between gap-8">
               {[
-                ["Fifty years", "Advising employers since 1975 — through every market cycle, every renewal season."],
+                ["Fifty years", "Advising employers since 1975, through every market cycle and every renewal season."],
                 ["95%+ retention", "Clients stay, year after year. Retention is the clearest proof the model works."],
               ].map(([t, d]) => (
                 <div key={t as string} className="border-t border-border pt-4 lg:border-t-0 lg:pt-0">
@@ -322,14 +322,14 @@ function Ticker() {
 
 function Solutions() {
   const services = [
-    { t: "Benefits Strategy & Plan Design", d: "We start with your goals and budget, then architect a program that fits — medical, dental, vision, life, disability, and supplemental." },
+    { t: "Benefits Strategy & Plan Design", d: "We start with your goals and budget, then architect a program that fits: medical, dental, vision, life, disability, and supplemental." },
     { t: "Marketing & Carrier Placement", d: "We take your group to the market, negotiate on your behalf, and bring back options built around leverage, not defaults." },
     { t: "Data, Analytics & Benchmarking", d: "Claims insight, utilization trends, and peer benchmarking, so every decision is grounded in evidence, not guesswork." },
     { t: "Benefits Administration & Technology", d: "Modern enrollment and administration platforms that streamline open enrollment and give HR one place to work." },
     { t: "Compliance, ACA & ERISA", d: "Reporting, notices, and documentation handled, so you stay current without deciphering federal regulations." },
     { t: "Pharmacy & Rx Strategy", d: "Pharmacy is one of the fastest-growing cost drivers. We build strategies that manage spend without hurting members." },
     { t: "Employee Communication & Engagement", d: "Clear, year-round communication and decision support that helps employees actually use the benefits you provide." },
-    { t: "Ongoing Service & Advocacy", d: "A dedicated team for claims questions, billing issues, mid-year changes, and renewals — every day of the year." },
+    { t: "Ongoing Service & Advocacy", d: "A dedicated team for claims questions, billing issues, mid-year changes, and renewals, every day of the year." },
   ];
   return (
     <section id="solutions" className="py-20 lg:py-32">
@@ -343,7 +343,7 @@ function Solutions() {
             </h2>
             <p className="lg:col-span-4 text-[15px] leading-[1.65] text-muted-foreground lg:pb-2">
               We don&rsquo;t just place coverage. We build the best possible program, then manage it for
-              you year after year — the strategy, technology, and partners of a national firm,
+              you year after year, with the strategy, technology, and partners of a national firm,
               for employers of every size.
             </p>
           </div>
@@ -382,7 +382,7 @@ function WhoWeServe() {
     { t: "Large & Enterprise", d: "Consulting-grade analytics, financial modeling, and dedicated service teams for complex, multi-location employers." },
   ];
   const funding = [
-    { n: "01", t: "Fully Insured", d: "Predictable, simple, and fully transferred risk — the right fit for many groups, priced competitively." },
+    { n: "01", t: "Fully Insured", d: "Predictable, simple, and fully transferred risk. The right fit for many groups, priced competitively." },
     { n: "02", t: "Level Funded", d: "The middle path: the cash-flow stability of fully insured with the savings potential of self-funding." },
     { n: "03", t: "Self-Funded", d: "Maximum control, transparency, and long-term savings for groups ready to take on managed risk." },
   ];
@@ -397,7 +397,7 @@ function WhoWeServe() {
           </h2>
           <p className="text-[15.5px] leading-[1.65] text-white/60 max-w-[38rem] mb-12 lg:mb-20">
             From a growing small business to a complex, multi-state enterprise, our team scales the
-            strategy and service to fit — never the other way around.
+            strategy and service to fit, never the other way around.
           </p>
         </SectionHead>
 
@@ -422,7 +422,7 @@ function WhoWeServe() {
               </h3>
               <p className="mt-5 text-[14px] leading-[1.7] text-white/55 max-w-[24rem]">
                 We model the options and recommend the funding approach that fits your risk
-                tolerance and goals — then manage it, and revisit it, every year.
+                tolerance and goals, then manage it, and revisit it, every year.
               </p>
             </div>
             <div className="lg:col-span-8">
@@ -449,7 +449,7 @@ function Approach() {
     { t: "Discover", d: "We learn your workforce, your goals, and where your current program is falling short." },
     { t: "Strategize", d: "We model funding options and design a program built around your budget and your people." },
     { t: "Market & Place", d: "We take your group to the right partners and negotiate hard on your behalf." },
-    { t: "Implement", d: "Enrollment, technology, and employee communication — set up and handled for you." },
+    { t: "Implement", d: "Enrollment, technology, and employee communication, set up and handled for you." },
     { t: "Manage", d: "Renewals, compliance, claims advocacy, and strategy reviews, all year long." },
   ];
   return (
@@ -506,11 +506,11 @@ function WhyKennion() {
   ];
   const differentiators = [
     { t: "Experienced Leadership", d: "A senior team that has seen every market cycle and knows how to win a renewal. Deep expertise, not a rotating cast of junior reps." },
-    { t: "Client-First Advocacy", d: "Independent and conflict-free. Your renewal gets shopped every year and negotiated hard — never rubber-stamped." },
+    { t: "Client-First Advocacy", d: "Independent and conflict-free. Your renewal gets shopped every year and negotiated hard, never rubber-stamped." },
     { t: "Proven Retention", d: "Our clients stay with us above 95% year over year. Retention like that is the clearest proof that the model works." },
-    { t: "Full-Service Breadth", d: "Strategy, technology, compliance, and service under one roof — a deep bench of solutions, programs, and partners." },
+    { t: "Full-Service Breadth", d: "Strategy, technology, compliance, and service under one roof, with a deep bench of solutions, programs, and partners." },
     { t: "Growing Fast", d: "One of the fastest-growing benefits advisories in the region, adding clients and capabilities while keeping service personal." },
-    { t: "Technology-Driven", d: "Modern administration, analytics, and enrollment built for today's HR teams — the tools of a national firm, delivered locally." },
+    { t: "Technology-Driven", d: "Modern administration, analytics, and enrollment built for today's HR teams. The tools of a national firm, delivered locally." },
   ];
   return (
     <section id="why-us" className="pb-20 lg:pb-32">
@@ -571,7 +571,7 @@ function Testimonial() {
           </figcaption>
           <div className="mt-12 pt-8 border-t border-border max-w-[36rem] mx-auto text-[14px] leading-[1.7] text-muted-foreground">
             When your advisor is independent, with deep market relationships and no quota to fill,
-            <span className="text-foreground font-medium"> your renewal gets shopped every year</span> —
+            <span className="text-foreground font-medium"> your renewal gets shopped every year</span>,
             not rubber-stamped. That&rsquo;s why our retention has stayed above 95% for over a decade.
           </div>
         </Reveal>
@@ -632,7 +632,7 @@ function Contact() {
                 </h3>
                 <p className="mt-4 text-[14px] leading-[1.7] text-muted-foreground max-w-[30rem]">
                   Tell us a little about your group and our team will reach out to start the
-                  conversation — strategy, options, and a clear picture of what your program could be.
+                  conversation: strategy, options, and a clear picture of what your program could be.
                 </p>
                 <div className="mt-7">
                   <SolidButton href="/quote">Request a Proposal</SolidButton>
@@ -683,7 +683,7 @@ function FinalCTA() {
         </h2>
         <p className="mt-7 text-[16px] leading-[1.65] text-white/70 max-w-[36rem]">
           Tell us about your group and we&rsquo;ll show you what a real benefits partnership looks
-          like. No obligation, no cost, no pressure — just a clear plan for your people.
+          like. No obligation, no cost, no pressure. Just a clear plan for your people.
         </p>
         <div className="mt-10 flex flex-wrap items-center gap-x-9 gap-y-5">
           <SolidButton href="/quote" tone="paper">Request a Proposal</SolidButton>

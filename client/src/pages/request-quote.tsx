@@ -1,6 +1,6 @@
 // Request-a-proposal page, styled to match the editorial landing design
 // (paper & ink palette, Fraunces display type, ruled fields, small-caps
-// labels — see client/src/pages/landing.tsx and the .kn-* utilities).
+// labels; see client/src/pages/landing.tsx and the .kn-* utilities).
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -170,7 +170,7 @@ export default function RequestQuotePage() {
           </h1>
           <p className="mt-6 text-[15.5px] leading-[1.65] text-muted-foreground max-w-[28rem]">
             Tell us a little about your group and our team will reach out to start the
-            conversation. No obligation, no cost — just a clear look at what your benefits
+            conversation. No obligation, no cost, just a clear look at what your benefits
             program could be.
           </p>
 
@@ -208,7 +208,7 @@ export default function RequestQuotePage() {
             <div className="max-w-[36rem]" data-testid="card-quote-success">
               <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>Request received</div>
               <h2 className="mt-4 font-display font-bold text-[clamp(2rem,5vw,2.75rem)] leading-[1.04] tracking-[-0.03em]">
-                Thank you — we&rsquo;ve got it.
+                Thank you, we&rsquo;ve got it.
               </h2>
               <p className="mt-5 text-[15px] leading-[1.7] text-muted-foreground border-t border-border pt-5">
                 Your request is on its way to our team. Someone from Kennion will be in touch
