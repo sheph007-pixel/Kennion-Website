@@ -103,7 +103,7 @@ function SolidButton({ href, onClick, children, external = false, tone = "ink" }
 
 /* ── nav ───────────────────────────────────────────────────────────── */
 
-function Nav() {
+function Nav({ onContact }: { onContact: () => void }) {
   const [open, setOpen] = useState(false);
 
   const links = [
@@ -129,9 +129,9 @@ function Nav() {
 
         <div className="hidden lg:flex items-center gap-6">
           <span className="w-px h-4 bg-border" aria-hidden="true" />
-          <a href="#contact" className="kn-link-rev text-[11.5px] uppercase tracking-[0.16em] font-semibold text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={onContact} className="kn-link-rev text-[11.5px] uppercase tracking-[0.16em] font-semibold text-muted-foreground hover:text-foreground transition-colors">
             Contact
-          </a>
+          </button>
           <Link href="/quote" className="inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-5 py-2.5 text-[11.5px] font-semibold uppercase tracking-[0.14em] transition-colors hover:bg-[hsl(var(--ink))]">
             Request a Quote
           </Link>
@@ -152,9 +152,9 @@ function Nav() {
           <Link href="/quote" className="mt-6 flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-3.5 text-[12px] font-semibold uppercase tracking-[0.14em]">
             Request a Quote
           </Link>
-          <a href="#contact" onClick={() => setOpen(false)} className="mt-6 block text-[11.5px] uppercase tracking-[0.14em] font-semibold text-muted-foreground kn-link w-max">
+          <button onClick={() => { setOpen(false); onContact(); }} className="mt-6 block text-[11.5px] uppercase tracking-[0.14em] font-semibold text-muted-foreground kn-link w-max">
             Contact
-          </a>
+          </button>
         </div>
       )}
     </header>
@@ -514,12 +514,23 @@ function HowItWorks() {
 
 const CONTACT_ROLES = ["Employer", "Member", "Client"];
 
-function ContactForm() {
+function ContactModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [role, setRole] = useState("Employer");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  useEffect(() => {
+    if (!open) return;
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", esc);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", esc);
+      document.body.style.overflow = "";
+    };
+  }, [open, onClose]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -547,22 +558,22 @@ function ContactForm() {
 
   const fieldCls = "w-full h-11 border-0 border-b border-border bg-transparent px-0 text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary transition-colors";
 
-  if (state === "sent") {
-    return (
-      <div className="bg-[hsl(var(--background))] text-foreground p-8 lg:p-10">
-        <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>Message sent</div>
-        <h3 className={`${H3} mt-3 text-[24px]`}>Thank you.</h3>
-        <p className="mt-3 text-[14px] leading-[1.7] text-muted-foreground">
-          The right person on our team will get back to you shortly.
-        </p>
-      </div>
-    );
-  }
+  if (!open) return null;
 
-  return (
-    <form onSubmit={submit} className="bg-[hsl(var(--background))] text-foreground p-8 lg:p-10">
-      <div className="kn-caps text-muted-foreground">Contact Us</div>
-      <div className="mt-6 space-y-6">
+  const body = state === "sent" ? (
+    <div className="p-7 sm:p-9">
+      <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>Message sent</div>
+      <h3 className={`${H3} mt-3 text-[24px]`}>Thank you.</h3>
+      <p className="mt-3 text-[14px] leading-[1.7] text-muted-foreground">
+        The right person on our team will get back to you shortly.
+      </p>
+      <button onClick={onClose} className="mt-7 inline-flex items-center justify-center bg-primary text-primary-foreground px-6 py-3 text-[12px] font-semibold tracking-[0.1em] uppercase hover:bg-[hsl(var(--ink))] transition-colors">
+        Done
+      </button>
+    </div>
+  ) : (
+    <form onSubmit={submit} className="p-7 sm:p-9">
+      <div className="space-y-6">
         <div>
           <label htmlFor="kn-role" className="kn-caps text-muted-foreground block">I am a...</label>
           <div className="mt-1 flex gap-2">
@@ -605,9 +616,29 @@ function ContactForm() {
       )}
     </form>
   );
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4" onClick={onClose}>
+      <div
+        className="kn-landing relative w-full sm:max-w-md max-h-[92vh] overflow-y-auto border-t sm:border border-border bg-[hsl(var(--background))] text-foreground shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Contact Kennion"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-7 sm:px-9 pt-6 pb-4 border-b border-border">
+          <span className="kn-caps text-muted-foreground">Contact Us</span>
+          <button onClick={onClose} aria-label="Close" className="w-9 h-9 -mr-2 grid place-items-center text-muted-foreground hover:text-foreground">
+            <X size={18} />
+          </button>
+        </div>
+        {body}
+      </div>
+    </div>
+  );
 }
 
-function FinalCTA() {
+function FinalCTA({ onContact }: { onContact: () => void }) {
   return (
     <section id="contact" className="bg-primary text-primary-foreground py-20 lg:py-28">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10 grid lg:grid-cols-12 gap-y-12 lg:gap-x-16 items-center">
@@ -618,16 +649,19 @@ function FinalCTA() {
         </h2>
         <p className="mt-7 text-[16px] leading-[1.65] text-white/70 max-w-[34rem]">
           Send us your census and we will come back with something new. It costs
-          nothing to look. Just have a question? Use the form and the right person
-          will get back to you.
+          nothing to look. Just have a question?{" "}
+          <button onClick={onContact} className="kn-link text-white font-medium">Contact us</button> and
+          the right person will get back to you.
         </p>
         <div className="mt-10">
           <SolidButton href="/quote" tone="paper">Request a Quote</SolidButton>
         </div>
 
         </div>
-        <div className="lg:col-span-5">
-          <ContactForm />
+        <div className="hidden lg:block lg:col-span-5">
+          <div className="kn-photo">
+            <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&q=70&auto=format&fit=crop" alt="Advisors working with a client" className="w-full aspect-[4/3] object-cover" loading="lazy" />
+          </div>
         </div>
         <div className="lg:col-span-12 mt-2 lg:mt-4 border-t border-white/15 pt-7 flex flex-wrap gap-x-12 gap-y-4 text-[13px] text-white/70">
           <span className="inline-flex items-center gap-2.5">
@@ -734,7 +768,7 @@ function LegalModal({ kind, onClose }: { kind: string | null; onClose: () => voi
 
 /* ── footer ────────────────────────────────────────────────────────── */
 
-function Footer() {
+function Footer({ onContact }: { onContact: () => void }) {
   const year = new Date().getFullYear();
   const [legalOpen, setLegalOpen] = useState<string | null>(null);
   return (
@@ -765,7 +799,7 @@ function Footer() {
             <div className="kn-caps text-white/40 mb-5">Contact</div>
             <ul className="space-y-3 text-[13.5px] text-white/70">
               <li><Link href="/quote" className="kn-link-rev hover:text-white transition-colors">Request a Quote</Link></li>
-              <li><a href="#contact" className="kn-link-rev hover:text-white transition-colors">Contact Us</a></li>
+              <li><button onClick={onContact} className="kn-link-rev hover:text-white transition-colors">Contact Us</button></li>
               <li><a href="mailto:support@kennion.com" className="kn-link-rev hover:text-white transition-colors">support@kennion.com</a></li>
             </ul>
           </div>
@@ -796,18 +830,21 @@ function Footer() {
 /* ── root ──────────────────────────────────────────────────────────── */
 
 export default function LandingPage() {
+  const [contactOpen, setContactOpen] = useState(false);
+  const openContact = () => setContactOpen(true);
   return (
     <div className="kn-landing min-h-screen antialiased">
-      <Nav />
+      <Nav onContact={openContact} />
       <main>
         <Hero />
         <WhoWeHelp />
         <Technology />
         <Options />
         <HowItWorks />
-        <FinalCTA />
+        <FinalCTA onContact={openContact} />
       </main>
-      <Footer />
+      <Footer onContact={openContact} />
+      <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} />
     </div>
   );
 }
