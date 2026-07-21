@@ -369,6 +369,12 @@
    Editorial "paper & ink" scheme: warm paper ground, ink type, navy
    primary, bronze accent. Deliberately overrides app tokens (and the
    dark theme) inside the landing subtree only. */
+/* Anchor navigation glides instead of jumping, so scroll reveals read as
+   intentional motion rather than content popping in half-faded. */
+html {
+  scroll-behavior: smooth;
+}
+
 .kn-landing {
   --background: 40 30% 97%;
   --foreground: 218 30% 11%;

@@ -4,7 +4,7 @@
 // options, how it works, CTA + contact, footer. Inter Tight type,
 // paper & ink palette scoped via .kn-landing (see index.css).
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link } from "wouter";
 import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Calendar, Check } from "lucide-react";
 
@@ -35,6 +35,17 @@ const H3 = "font-display font-semibold tracking-[-0.02em]";
 function useInView(threshold = 0.12) {
   const ref = useRef<any>(null);
   const [seen, setSeen] = useState(false);
+  // Anything already in the viewport at mount paints instantly, before the
+  // first frame, so above-the-fold content never flashes in washed out.
+  const [instant, setInstant] = useState(false);
+  useLayoutEffect(() => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    if (r.top < window.innerHeight && r.bottom > 0) {
+      setInstant(true);
+      setSeen(true);
+    }
+  }, []);
   useEffect(() => {
     if (!ref.current || seen) return;
     const io = new IntersectionObserver(([e]) => {
@@ -43,13 +54,13 @@ function useInView(threshold = 0.12) {
     io.observe(ref.current);
     return () => io.disconnect();
   }, [seen, threshold]);
-  return [ref, seen] as const;
+  return [ref, seen, instant] as const;
 }
 
 function Reveal({ children, delay = 0, className = "", y = 14 }: {
   children: React.ReactNode; delay?: number; className?: string; y?: number;
 }) {
-  const [ref, seen] = useInView();
+  const [ref, seen, instant] = useInView();
   return (
     <div
       ref={ref}
@@ -57,7 +68,9 @@ function Reveal({ children, delay = 0, className = "", y = 14 }: {
       style={{
         opacity: seen ? 1 : 0,
         transform: seen ? "translate3d(0,0,0)" : `translate3d(0,${y}px,0)`,
-        transition: `opacity 800ms cubic-bezier(.2,.7,.2,1) ${delay}ms, transform 800ms cubic-bezier(.2,.7,.2,1) ${delay}ms`,
+        transition: instant
+          ? "none"
+          : `opacity 600ms cubic-bezier(.2,.7,.2,1) ${delay}ms, transform 600ms cubic-bezier(.2,.7,.2,1) ${delay}ms`,
         willChange: "opacity, transform",
       }}
     >
