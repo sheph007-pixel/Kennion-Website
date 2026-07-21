@@ -663,20 +663,6 @@ function FinalCTA({ onContact }: { onContact: () => void }) {
             <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&q=70&auto=format&fit=crop" alt="Advisors working with a client" className="w-full aspect-[4/3] object-cover" loading="lazy" />
           </div>
         </div>
-        <div className="lg:col-span-12 mt-2 lg:mt-4 border-t border-white/15 pt-7 flex flex-wrap gap-x-12 gap-y-4 text-[13px] text-white/70">
-          <span className="inline-flex items-center gap-2.5">
-            <MapPin size={14} strokeWidth={1.7} style={{ color: "hsl(var(--brand-accent))" }} />
-            2828 Old 280 Court, Vestavia, Alabama 35243
-          </span>
-          <button onClick={onContact} className="kn-link-rev inline-flex items-center gap-2.5 hover:text-white">
-            <Mail size={14} strokeWidth={1.7} style={{ color: "hsl(var(--brand-accent))" }} />
-            Send us a message
-          </button>
-          <a href="https://calendly.com/kennion/call" onClick={openCalendly} className="kn-link-rev inline-flex items-center gap-2.5 hover:text-white cursor-pointer">
-            <Calendar size={14} strokeWidth={1.7} style={{ color: "hsl(var(--brand-accent))" }} />
-            Book a call online
-          </a>
-        </div>
       </div>
     </section>
   );
