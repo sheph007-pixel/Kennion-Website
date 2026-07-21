@@ -1,10 +1,11 @@
 // Kennion Benefit Advisors — public marketing homepage.
-// Editorial "paper & ink" design: typographic hero, ruled index lists,
-// small-caps labels, duotone photography. No icon-tile grids, no cards.
+// Corporate-modern design system: Inter Tight display type, hard grid,
+// ruled index lists, small-caps labels, duotone photography, restrained
+// navy/bronze palette. Mobile-first sizing via clamp().
 //
 // Requires (set up in client/index.html <head> + client/src/index.css):
-// Fraunces variable font (with italics), Calendly widget, and the
-// .kn-landing / .kn-caps / .kn-link / .kn-marquee / .kn-photo utilities.
+// Inter Tight / Inter fonts, Calendly widget, and the .kn-landing /
+// .kn-caps / .kn-link / .kn-marquee / .kn-photo utilities.
 
 import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
@@ -26,6 +27,14 @@ function openCalendly(e?: React.MouseEvent) {
 
 const KENNION_LOGO_URL = "https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/attachments/production/5004437337/logo/qGPs3ykt503dCIwP_qHVHmcxV3JVHXZucQ.png";
 const KENNION_BUILDING_URL = "https://images.squarespace-cdn.com/content/v1/650a374c4246d47a3dbe7afb/1695168363204-7SHD3HNS7AARCJU8LO2L/The%2BLindsey%2BBuilding-14.jpg";
+
+/* ── type scale (single source of truth for the design system) ─────── */
+
+const H1 = "font-display font-bold tracking-[-0.04em] leading-[0.96] text-[clamp(2.75rem,10vw,6.9rem)]";
+const H2 = "font-display font-bold tracking-[-0.03em] leading-[1.0] text-[clamp(2rem,4.8vw,3.8rem)]";
+const H2_SM = "font-display font-bold tracking-[-0.025em] leading-[1.04] text-[clamp(1.7rem,3.4vw,2.5rem)]";
+const H3 = "font-display font-semibold tracking-[-0.02em]";
+const NUM = "text-[11px] font-bold tracking-[0.12em] tabular-nums";
 
 /* ── motion ────────────────────────────────────────────────────────── */
 
@@ -70,13 +79,11 @@ function SectionHead({ no, label, children, dark = false }: {
 }) {
   return (
     <Reveal>
-      <div className={`flex items-baseline justify-between gap-6 border-b pb-4 ${dark ? "border-white/15" : "border-foreground/20"}`}>
-        <span className={`kn-caps ${dark ? "text-white/60" : "text-muted-foreground"}`}>
-          <span className="font-display italic mr-2 text-[13px] tracking-normal normal-case" style={{ color: "hsl(var(--brand-accent))" }}>{no}</span>
-          {label}
-        </span>
+      <div className={`flex items-baseline gap-4 border-b pb-4 ${dark ? "border-white/15" : "border-foreground/20"}`}>
+        <span className={NUM} style={{ color: "hsl(var(--brand-accent))" }}>{no}</span>
+        <span className={`kn-caps ${dark ? "text-white/60" : "text-muted-foreground"}`}>{label}</span>
       </div>
-      <div className="pt-10 lg:pt-14">{children}</div>
+      <div className="pt-8 lg:pt-14">{children}</div>
     </Reveal>
   );
 }
@@ -86,8 +93,8 @@ function SolidButton({ href, onClick, children, external = false, tone = "ink" }
   tone?: "ink" | "paper";
 }) {
   const cls = tone === "ink"
-    ? "group inline-flex items-center gap-3 bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold tracking-[0.08em] uppercase transition-colors hover:bg-[hsl(var(--ink))]"
-    : "group inline-flex items-center gap-3 bg-[hsl(var(--background))] text-primary px-6 py-3.5 text-[13px] font-semibold tracking-[0.08em] uppercase transition-opacity hover:opacity-90";
+    ? "group inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold tracking-[0.08em] uppercase transition-colors hover:bg-[hsl(var(--ink))]"
+    : "group inline-flex items-center justify-center gap-3 bg-[hsl(var(--background))] text-primary px-6 py-3.5 text-[13px] font-semibold tracking-[0.08em] uppercase transition-opacity hover:opacity-90";
   const inner = (
     <>
       {children}
@@ -142,9 +149,9 @@ function Nav() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-[hsl(var(--background))]/92 backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--background))]/85">
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 flex items-center justify-between h-[68px]">
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 flex items-center justify-between h-[64px] lg:h-[68px]">
         <Link href="/" className="flex items-center">
-          <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-8 w-auto" style={{ mixBlendMode: "multiply" }} />
+          <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-7 lg:h-8 w-auto" style={{ mixBlendMode: "multiply" }} />
         </Link>
 
         <nav className="hidden lg:flex items-center gap-8">
@@ -202,7 +209,7 @@ function Nav() {
       {open && (
         <div className="lg:hidden border-t border-border bg-[hsl(var(--background))] px-6 py-6">
           {links.map(([href, label]) => (
-            <a key={href} href={href} onClick={() => setOpen(false)} className="block py-3 font-display text-[22px] tracking-[-0.01em] border-b border-border">
+            <a key={href} href={href} onClick={() => setOpen(false)} className={`block py-3.5 ${H3} text-[20px] border-b border-border`}>
               {label}
             </a>
           ))}
@@ -224,7 +231,7 @@ function Nav() {
 function Hero() {
   return (
     <section className="relative">
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 pt-16 lg:pt-24 pb-0">
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 pt-12 lg:pt-24 pb-0">
         <Reveal>
           <div className="flex items-baseline gap-4 kn-caps text-muted-foreground">
             <span className="inline-block w-10 h-px translate-y-[-3px]" style={{ background: "hsl(var(--brand-accent))" }} />
@@ -233,22 +240,23 @@ function Hero() {
         </Reveal>
 
         <Reveal delay={90}>
-          <h1 className="font-display font-[380] mt-8 text-[13.2vw] sm:text-[11vw] lg:text-[104px] xl:text-[120px] leading-[0.94] tracking-[-0.035em] text-foreground">
-            Benefits built
+          <h1 className={`${H1} mt-7 text-foreground`}>
+            Benefits built around
             <br />
-            around <em className="font-[420]" style={{ color: "hsl(var(--primary))" }}>your people.</em>
+            <span style={{ color: "hsl(var(--primary))" }}>your people</span>
+            <span style={{ color: "hsl(var(--brand-accent))" }}>.</span>
           </h1>
         </Reveal>
 
         <Reveal delay={180}>
-          <div className="mt-12 lg:mt-16 grid lg:grid-cols-12 gap-y-10 lg:gap-x-10 border-t border-foreground/20 pt-10 lg:pt-12 items-start">
+          <div className="mt-10 lg:mt-16 grid lg:grid-cols-12 gap-y-10 lg:gap-x-10 border-t border-foreground/20 pt-8 lg:pt-12 items-start">
             <div className="lg:col-span-5">
-              <p className="text-[17px] leading-[1.65] text-muted-foreground max-w-[34rem]">
+              <p className="text-[16px] lg:text-[17px] leading-[1.65] text-muted-foreground max-w-[34rem]">
                 Kennion is a full-service, independent employee benefits advisory firm. We help
                 employers of every size design, deliver, and manage benefits programs that attract
                 talent, control cost, and take work off HR&rsquo;s plate — across every funding strategy.
               </p>
-              <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
+              <div className="mt-8 lg:mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
                 <SolidButton href="/quote">Request a Proposal</SolidButton>
                 <a href="#solutions" className="kn-link text-[13px] font-semibold uppercase tracking-[0.1em] text-foreground">
                   Explore our work
@@ -262,7 +270,7 @@ function Hero() {
                 ["95%+ retention", "Clients stay, year after year. Retention is the clearest proof the model works."],
               ].map(([t, d]) => (
                 <div key={t as string} className="border-t border-border pt-4 lg:border-t-0 lg:pt-0">
-                  <div className="font-display text-[24px] leading-none tracking-[-0.02em]">{t}</div>
+                  <div className={`${H3} text-[20px] leading-none`}>{t}</div>
                   <p className="mt-2.5 text-[12.5px] leading-[1.6] text-muted-foreground">{d}</p>
                 </div>
               ))}
@@ -301,7 +309,7 @@ function Ticker() {
     </span>
   ));
   return (
-    <div className="mt-16 lg:mt-24 border-y border-border overflow-hidden py-4" aria-hidden="true">
+    <div className="mt-12 lg:mt-24 border-y border-border overflow-hidden py-4" aria-hidden="true">
       <div className="kn-marquee flex w-max">
         <div className="flex items-center">{row}</div>
         <div className="flex items-center">{row}</div>
@@ -324,14 +332,14 @@ function Solutions() {
     { t: "Ongoing Service & Advocacy", d: "A dedicated team for claims questions, billing issues, mid-year changes, and renewals — every day of the year." },
   ];
   return (
-    <section id="solutions" className="py-24 lg:py-36">
+    <section id="solutions" className="py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
         <SectionHead no="01" label="What We Do">
-          <div className="grid lg:grid-cols-12 gap-y-8 lg:gap-x-10 items-end mb-14 lg:mb-20">
-            <h2 className="lg:col-span-8 font-display font-[380] text-[40px] lg:text-[62px] leading-[1.0] tracking-[-0.03em]">
+          <div className="grid lg:grid-cols-12 gap-y-8 lg:gap-x-10 items-end mb-12 lg:mb-20">
+            <h2 className={`${H2} lg:col-span-8`}>
               A full spectrum of solutions,
               <br />
-              <em className="font-[420]" style={{ color: "hsl(var(--primary))" }}>under one roof.</em>
+              <span style={{ color: "hsl(var(--primary))" }}>under one roof.</span>
             </h2>
             <p className="lg:col-span-4 text-[15px] leading-[1.65] text-muted-foreground lg:pb-2">
               We don&rsquo;t just place coverage. We build the best possible program, then manage it for
@@ -344,14 +352,14 @@ function Solutions() {
         <div>
           {services.map((s, i) => (
             <Reveal key={s.t} delay={Math.min(i * 40, 160)}>
-              <div className="group grid grid-cols-[3rem_1fr_auto] lg:grid-cols-[6rem_1fr_1fr_4rem] gap-x-4 lg:gap-x-10 items-baseline border-t border-border py-6 lg:py-7 transition-colors hover:bg-foreground/[0.025]">
-                <span className="font-display italic text-[17px] lg:text-[19px] text-muted-foreground/70 group-hover:text-[hsl(var(--brand-accent))] transition-colors">
+              <div className="group grid grid-cols-[2.5rem_1fr] lg:grid-cols-[6rem_1fr_1fr_4rem] gap-x-4 lg:gap-x-10 items-baseline border-t border-border py-5 lg:py-7 transition-colors hover:bg-foreground/[0.025]">
+                <span className={`${NUM} text-muted-foreground/70 group-hover:text-[hsl(var(--brand-accent))] transition-colors`}>
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <h3 className="font-display font-[440] text-[21px] lg:text-[27px] leading-[1.12] tracking-[-0.015em]">
+                <h3 className={`${H3} text-[19px] lg:text-[24px] leading-[1.15]`}>
                   {s.t}
                 </h3>
-                <p className="col-span-3 col-start-2 mt-2 lg:col-span-1 lg:col-start-auto lg:mt-0 text-[13.5px] leading-[1.65] text-muted-foreground max-w-[34rem]">
+                <p className="col-span-2 col-start-2 mt-2 lg:col-span-1 lg:col-start-auto lg:mt-0 text-[13.5px] leading-[1.65] text-muted-foreground max-w-[34rem]">
                   {s.d}
                 </p>
                 <ArrowRight size={18} strokeWidth={1.6} className="hidden lg:block justify-self-end self-center opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0 text-foreground" />
@@ -374,18 +382,20 @@ function WhoWeServe() {
     { t: "Large & Enterprise", d: "Consulting-grade analytics, financial modeling, and dedicated service teams for complex, multi-location employers." },
   ];
   const funding = [
-    { n: "I", t: "Fully Insured", d: "Predictable, simple, and fully transferred risk — the right fit for many groups, priced competitively." },
-    { n: "II", t: "Level Funded", d: "The middle path: the cash-flow stability of fully insured with the savings potential of self-funding." },
-    { n: "III", t: "Self-Funded", d: "Maximum control, transparency, and long-term savings for groups ready to take on managed risk." },
+    { n: "01", t: "Fully Insured", d: "Predictable, simple, and fully transferred risk — the right fit for many groups, priced competitively." },
+    { n: "02", t: "Level Funded", d: "The middle path: the cash-flow stability of fully insured with the savings potential of self-funding." },
+    { n: "03", t: "Self-Funded", d: "Maximum control, transparency, and long-term savings for groups ready to take on managed risk." },
   ];
   return (
-    <section id="who-we-serve" className="bg-[hsl(var(--ink))] text-white py-24 lg:py-36">
+    <section id="who-we-serve" className="bg-[hsl(var(--ink))] text-white py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
         <SectionHead no="02" label="Who We Serve" dark>
-          <h2 className="font-display font-[380] text-[40px] lg:text-[62px] leading-[1.0] tracking-[-0.03em] mb-6">
-            Built for employers of <em className="font-[420] text-white/90">every size.</em>
+          <h2 className={`${H2} mb-6`}>
+            Built for employers
+            <br />
+            of every size.
           </h2>
-          <p className="text-[15.5px] leading-[1.65] text-white/60 max-w-[38rem] mb-16 lg:mb-20">
+          <p className="text-[15.5px] leading-[1.65] text-white/60 max-w-[38rem] mb-12 lg:mb-20">
             From a growing small business to a complex, multi-state enterprise, our team scales the
             strategy and service to fit — never the other way around.
           </p>
@@ -394,9 +404,9 @@ function WhoWeServe() {
         <Reveal>
           <div className="grid md:grid-cols-3 border-t border-white/15">
             {segments.map((s, i) => (
-              <div key={s.t} className={`pt-8 pb-10 md:pr-10 ${i > 0 ? "md:pl-10 md:border-l md:border-white/15 border-t border-white/15 md:border-t-0" : ""}`}>
-                <div className="font-display italic text-[17px] text-white/40">0{i + 1}</div>
-                <h3 className="mt-4 font-display font-[440] text-[26px] lg:text-[30px] tracking-[-0.015em] leading-[1.1]">{s.t}</h3>
+              <div key={s.t} className={`pt-7 pb-9 md:pr-10 ${i > 0 ? "md:pl-10 md:border-l md:border-white/15 border-t border-white/15 md:border-t-0" : ""}`}>
+                <div className={`${NUM} text-white/40`}>0{i + 1}</div>
+                <h3 className={`${H3} mt-4 text-[23px] lg:text-[26px] leading-[1.1]`}>{s.t}</h3>
                 <p className="mt-4 text-[13.5px] leading-[1.7] text-white/60 max-w-[24rem]">{s.d}</p>
               </div>
             ))}
@@ -404,10 +414,10 @@ function WhoWeServe() {
         </Reveal>
 
         <Reveal delay={80}>
-          <div className="mt-20 lg:mt-28 grid lg:grid-cols-12 gap-y-10 lg:gap-x-10">
+          <div className="mt-16 lg:mt-28 grid lg:grid-cols-12 gap-y-10 lg:gap-x-10">
             <div className="lg:col-span-4">
               <div className="kn-caps text-white/50">Funding Strategies</div>
-              <h3 className="mt-5 font-display font-[400] text-[30px] lg:text-[40px] leading-[1.05] tracking-[-0.02em]">
+              <h3 className={`${H2_SM} mt-5`}>
                 One strategy doesn&rsquo;t fit every employer.
               </h3>
               <p className="mt-5 text-[14px] leading-[1.7] text-white/55 max-w-[24rem]">
@@ -417,9 +427,9 @@ function WhoWeServe() {
             </div>
             <div className="lg:col-span-8">
               {funding.map((f) => (
-                <div key={f.t} className="grid grid-cols-[3.5rem_1fr] lg:grid-cols-[4.5rem_16rem_1fr] gap-x-4 lg:gap-x-8 items-baseline border-t border-white/15 py-6">
-                  <span className="font-display italic text-[19px] text-white/40">{f.n}</span>
-                  <h4 className="font-display font-[440] text-[21px] lg:text-[24px] tracking-[-0.015em]">{f.t}</h4>
+                <div key={f.t} className="grid grid-cols-[2.5rem_1fr] lg:grid-cols-[4.5rem_16rem_1fr] gap-x-4 lg:gap-x-8 items-baseline border-t border-white/15 py-5 lg:py-6">
+                  <span className={`${NUM} text-white/40`}>{f.n}</span>
+                  <h4 className={`${H3} text-[19px] lg:text-[21px]`}>{f.t}</h4>
                   <p className="col-span-2 col-start-2 mt-2 lg:col-span-1 lg:col-start-auto lg:mt-0 text-[13.5px] leading-[1.7] text-white/60">{f.d}</p>
                 </div>
               ))}
@@ -443,16 +453,16 @@ function Approach() {
     { t: "Manage", d: "Renewals, compliance, claims advocacy, and strategy reviews, all year long." },
   ];
   return (
-    <section id="approach" className="py-24 lg:py-36">
+    <section id="approach" className="py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
         <SectionHead no="03" label="Our Approach">
           <div className="grid lg:grid-cols-12 gap-y-12 lg:gap-x-10">
             <div className="lg:col-span-5">
               <div className="lg:sticky lg:top-32">
-                <h2 className="font-display font-[380] text-[40px] lg:text-[58px] leading-[1.0] tracking-[-0.03em]">
+                <h2 className={H2}>
                   A partnership,
                   <br />
-                  <em className="font-[420]" style={{ color: "hsl(var(--primary))" }}>not a transaction.</em>
+                  <span style={{ color: "hsl(var(--primary))" }}>not a transaction.</span>
                 </h2>
                 <p className="mt-6 text-[15px] leading-[1.65] text-muted-foreground max-w-[26rem]">
                   Benefits shouldn&rsquo;t be a once-a-year scramble. We work as an extension of your
@@ -466,12 +476,12 @@ function Approach() {
             <div className="lg:col-span-7">
               {steps.map((s, i) => (
                 <Reveal key={s.t} delay={Math.min(i * 50, 200)}>
-                  <div className="grid grid-cols-[4.5rem_1fr] gap-x-6 border-t border-border py-8 lg:py-9 items-baseline">
-                    <span className="font-display font-[340] text-[38px] lg:text-[46px] leading-none tracking-[-0.03em]" style={{ color: "hsl(var(--brand-accent))" }}>
+                  <div className="grid grid-cols-[3.5rem_1fr] lg:grid-cols-[4.5rem_1fr] gap-x-5 border-t border-border py-6 lg:py-9 items-baseline">
+                    <span className="font-display font-bold text-[26px] lg:text-[32px] leading-none tracking-[-0.03em] tabular-nums" style={{ color: "hsl(var(--brand-accent))" }}>
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <div>
-                      <h3 className="font-display font-[440] text-[24px] lg:text-[28px] tracking-[-0.015em] leading-[1.1]">{s.t}</h3>
+                      <h3 className={`${H3} text-[21px] lg:text-[25px] leading-[1.1]`}>{s.t}</h3>
                       <p className="mt-3 text-[14px] leading-[1.7] text-muted-foreground max-w-[30rem]">{s.d}</p>
                     </div>
                   </div>
@@ -486,7 +496,7 @@ function Approach() {
   );
 }
 
-/* ── why kennion: pull stats + dashed list ─────────────────────────── */
+/* ── why kennion: pull stats + ruled list ──────────────────────────── */
 
 function WhyKennion() {
   const stats = [
@@ -503,32 +513,34 @@ function WhyKennion() {
     { t: "Technology-Driven", d: "Modern administration, analytics, and enrollment built for today's HR teams — the tools of a national firm, delivered locally." },
   ];
   return (
-    <section id="why-us" className="pb-24 lg:pb-36">
+    <section id="why-us" className="pb-20 lg:pb-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
         <SectionHead no="04" label="Why Kennion">
-          <h2 className="font-display font-[380] text-[40px] lg:text-[62px] leading-[1.0] tracking-[-0.03em] max-w-[16em]">
-            The difference an <em className="font-[420]" style={{ color: "hsl(var(--primary))" }}>experienced team</em> makes.
+          <h2 className={H2}>
+            The difference an
+            <br />
+            <span style={{ color: "hsl(var(--primary))" }}>experienced team</span> makes.
           </h2>
         </SectionHead>
 
         <Reveal delay={60}>
-          <div className="mt-14 lg:mt-20 grid sm:grid-cols-3 border-y border-foreground/20">
+          <div className="mt-12 lg:mt-20 grid sm:grid-cols-3 border-y border-foreground/20">
             {stats.map((s, i) => (
-              <div key={s.v} className={`py-8 lg:py-10 sm:pr-8 ${i > 0 ? "sm:pl-8 sm:border-l sm:border-border border-t border-border sm:border-t-0" : ""}`}>
-                <div className="font-display font-[340] text-[64px] lg:text-[88px] leading-[0.9] tracking-[-0.04em]">
+              <div key={s.v} className={`py-7 lg:py-10 sm:pr-8 ${i > 0 ? "sm:pl-8 sm:border-l sm:border-border border-t border-border sm:border-t-0" : ""}`}>
+                <div className="font-display font-bold text-[54px] lg:text-[84px] leading-[0.9] tracking-[-0.045em] tabular-nums">
                   {s.v}
                 </div>
-                <div className="mt-4 text-[12.5px] leading-[1.5] text-muted-foreground uppercase tracking-[0.1em]">{s.l}</div>
+                <div className="mt-4 text-[12px] leading-[1.5] text-muted-foreground uppercase tracking-[0.1em]">{s.l}</div>
               </div>
             ))}
           </div>
         </Reveal>
 
-        <div className="mt-14 lg:mt-20 grid md:grid-cols-2 gap-x-14 lg:gap-x-24">
+        <div className="mt-12 lg:mt-20 grid md:grid-cols-2 gap-x-14 lg:gap-x-24">
           {differentiators.map((d, i) => (
             <Reveal key={d.t} delay={Math.min((i % 2) * 60, 120)}>
-              <div className="border-t border-border py-7">
-                <h3 className="flex items-baseline gap-4 font-display font-[440] text-[20px] lg:text-[22px] tracking-[-0.01em]">
+              <div className="border-t border-border py-6 lg:py-7">
+                <h3 className={`${H3} flex items-baseline gap-4 text-[18px] lg:text-[20px]`}>
                   <span className="inline-block w-6 h-px translate-y-[-4px] shrink-0" style={{ background: "hsl(var(--brand-accent))" }} />
                   {d.t}
                 </h3>
@@ -546,17 +558,15 @@ function WhyKennion() {
 
 function Testimonial() {
   return (
-    <section className="border-y border-border bg-muted/60 py-24 lg:py-32">
+    <section className="border-y border-border bg-muted/60 py-20 lg:py-32">
       <div className="mx-auto max-w-[900px] px-6 text-center">
         <Reveal>
-          <div className="font-display italic font-[340] text-[110px] leading-[0.4] select-none" style={{ color: "hsl(var(--brand-accent))" }} aria-hidden="true">
-            &ldquo;
-          </div>
-          <blockquote className="font-display font-[380] text-[28px] sm:text-[38px] lg:text-[48px] leading-[1.15] tracking-[-0.02em] mt-10 text-balance">
-            Y&rsquo;all are <em className="font-[420]">unbeatable in the market</em> with the prospects
-            we have met with that are current Kennion clients.
+          <div className="kn-caps text-muted-foreground">From a Competitor</div>
+          <blockquote className="font-display font-semibold text-[26px] sm:text-[34px] lg:text-[42px] leading-[1.15] tracking-[-0.025em] mt-8 text-balance">
+            &ldquo;Y&rsquo;all are <span style={{ color: "hsl(var(--primary))" }}>unbeatable in the market</span> with
+            the prospects we have met with that are current Kennion clients.&rdquo;
           </blockquote>
-          <figcaption className="mt-10 kn-caps text-muted-foreground">
+          <figcaption className="mt-9 kn-caps text-muted-foreground">
             Senior Executive · Top-25 U.S. Broker
           </figcaption>
           <div className="mt-12 pt-8 border-t border-border max-w-[36rem] mx-auto text-[14px] leading-[1.7] text-muted-foreground">
@@ -574,35 +584,35 @@ function Testimonial() {
 
 function Contact() {
   return (
-    <section id="contact" className="py-24 lg:py-36">
+    <section id="contact" className="py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
         <SectionHead no="05" label="Contact">
           <div className="grid lg:grid-cols-12 gap-y-14 lg:gap-x-10">
             <div className="lg:col-span-6">
-              <h2 className="font-display font-[380] text-[40px] lg:text-[62px] leading-[1.0] tracking-[-0.03em]">
-                Let&rsquo;s <em className="font-[420]" style={{ color: "hsl(var(--primary))" }}>talk benefits.</em>
+              <h2 className={H2}>
+                Let&rsquo;s <span style={{ color: "hsl(var(--primary))" }}>talk benefits.</span>
               </h2>
               <p className="mt-6 text-[15.5px] leading-[1.65] text-muted-foreground max-w-[30rem]">
                 Whether you&rsquo;re shopping for the first time or unhappy with your renewal, we can
                 help. There&rsquo;s no obligation and no cost to see what we can do for your group.
               </p>
 
-              <dl className="mt-12 max-w-[30rem]">
-                <div className="grid grid-cols-[7rem_1fr] gap-x-6 border-t border-border py-5 items-baseline">
+              <dl className="mt-10 lg:mt-12 max-w-[30rem]">
+                <div className="grid grid-cols-[5rem_1fr] sm:grid-cols-[7rem_1fr] gap-x-6 border-t border-border py-5 items-baseline">
                   <dt className="kn-caps text-muted-foreground">Visit</dt>
                   <dd className="text-[14.5px] leading-[1.6] flex items-start gap-2.5">
                     <MapPin size={15} strokeWidth={1.7} className="mt-[3px] shrink-0" style={{ color: "hsl(var(--brand-accent))" }} />
                     <span>2828 Old 280 Court, Vestavia, Alabama 35243</span>
                   </dd>
                 </div>
-                <div className="grid grid-cols-[7rem_1fr] gap-x-6 border-t border-border py-5 items-baseline">
+                <div className="grid grid-cols-[5rem_1fr] sm:grid-cols-[7rem_1fr] gap-x-6 border-t border-border py-5 items-baseline">
                   <dt className="kn-caps text-muted-foreground">Write</dt>
                   <dd className="text-[14.5px] flex items-center gap-2.5">
                     <Mail size={15} strokeWidth={1.7} className="shrink-0" style={{ color: "hsl(var(--brand-accent))" }} />
                     <a href="mailto:support@kennion.com" className="kn-link">support@kennion.com</a>
                   </dd>
                 </div>
-                <div className="grid grid-cols-[7rem_1fr] gap-x-6 border-y border-border py-5 items-baseline">
+                <div className="grid grid-cols-[5rem_1fr] sm:grid-cols-[7rem_1fr] gap-x-6 border-y border-border py-5 items-baseline">
                   <dt className="kn-caps text-muted-foreground">Meet</dt>
                   <dd className="text-[14.5px] flex items-center gap-2.5">
                     <Calendar size={15} strokeWidth={1.7} className="shrink-0" style={{ color: "hsl(var(--brand-accent))" }} />
@@ -617,7 +627,7 @@ function Contact() {
             <div className="lg:col-span-6 lg:border-l lg:border-border lg:pl-14">
               <div className="border-t border-foreground/20 lg:border-t-0 pt-8 lg:pt-0">
                 <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>For Employers</div>
-                <h3 className="mt-3 font-display font-[440] text-[26px] lg:text-[30px] tracking-[-0.015em] leading-[1.12]">
+                <h3 className={`${H3} mt-3 text-[23px] lg:text-[26px] leading-[1.15]`}>
                   Ready for a benefits partner that works for you?
                 </h3>
                 <p className="mt-4 text-[14px] leading-[1.7] text-muted-foreground max-w-[30rem]">
@@ -629,9 +639,9 @@ function Contact() {
                 </div>
               </div>
 
-              <div className="mt-14 border-t border-border pt-10">
+              <div className="mt-12 lg:mt-14 border-t border-border pt-9">
                 <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>Existing Clients</div>
-                <h3 className="mt-3 font-display font-[440] text-[26px] lg:text-[30px] tracking-[-0.015em] leading-[1.12]">
+                <h3 className={`${H3} mt-3 text-[23px] lg:text-[26px] leading-[1.15]`}>
                   Current client or member?
                 </h3>
                 <p className="mt-4 text-[14px] leading-[1.7] text-muted-foreground max-w-[30rem]">
@@ -645,7 +655,7 @@ function Contact() {
                 </div>
               </div>
 
-              <figure className="mt-14">
+              <figure className="mt-12 lg:mt-14">
                 <div className="kn-photo">
                   <img src={KENNION_BUILDING_URL} alt="Kennion Benefit Advisors headquarters" className="w-full aspect-[16/9] object-cover" />
                 </div>
@@ -665,11 +675,11 @@ function Contact() {
 
 function FinalCTA() {
   return (
-    <section className="bg-primary text-primary-foreground py-24 lg:py-36 border-b border-white/10">
+    <section className="bg-primary text-primary-foreground py-20 lg:py-32 border-b border-white/10">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
         <div className="kn-caps text-white/50">Get Started</div>
-        <h2 className="mt-6 font-display font-[380] text-[42px] sm:text-[58px] lg:text-[76px] leading-[1.0] tracking-[-0.03em] max-w-[14em]">
-          Better benefits start with a <em className="font-[420]">better advisor.</em>
+        <h2 className="mt-6 font-display font-bold tracking-[-0.035em] leading-[0.98] text-[clamp(2.4rem,6.5vw,4.75rem)] max-w-[15em]">
+          Better benefits start with a better advisor.
         </h2>
         <p className="mt-7 text-[16px] leading-[1.65] text-white/70 max-w-[36rem]">
           Tell us about your group and we&rsquo;ll show you what a real benefits partnership looks
@@ -740,28 +750,28 @@ function LegalModal({ kind, onClose }: { kind: string | null; onClose: () => voi
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
       <div className="kn-landing relative w-full max-w-2xl max-h-[88vh] flex flex-col border border-border shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between gap-4 px-8 py-6 border-b border-border">
+        <div className="flex items-start justify-between gap-4 px-6 lg:px-8 py-6 border-b border-border">
           <div>
             <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>Legal · {c.updated}</div>
-            <h2 className="font-display font-[400] text-[30px] leading-tight tracking-[-0.02em] mt-2">{c.title}</h2>
+            <h2 className={`${H3} text-[26px] leading-tight mt-2`}>{c.title}</h2>
           </div>
           <button onClick={onClose} aria-label="Close" className="w-9 h-9 grid place-items-center text-muted-foreground hover:text-foreground">
             <X size={18} />
           </button>
         </div>
 
-        <div className="overflow-y-auto px-8 py-7">
+        <div className="overflow-y-auto px-6 lg:px-8 py-7">
           <div className="space-y-7">
             {c.sections.map((s, i) => (
               <section key={i} className="grid sm:grid-cols-[12rem_1fr] gap-x-6 gap-y-1.5 border-t border-border pt-5 first:border-t-0 first:pt-0">
-                <h3 className="font-display font-[460] text-[16px] tracking-[-0.01em] leading-[1.3]">{s.h}</h3>
+                <h3 className="font-semibold text-[14.5px] tracking-[-0.01em] leading-[1.3]">{s.h}</h3>
                 <p className="text-[13px] leading-[1.7] text-muted-foreground">{s.b}</p>
               </section>
             ))}
           </div>
         </div>
 
-        <div className="px-8 py-4 border-t border-border flex justify-end">
+        <div className="px-6 lg:px-8 py-4 border-t border-border flex justify-end">
           <button onClick={onClose} className="text-[11.5px] font-semibold uppercase tracking-[0.14em] bg-primary text-primary-foreground px-5 py-2.5 hover:bg-[hsl(var(--ink))] transition-colors">
             Close
           </button>
@@ -777,11 +787,11 @@ function Footer() {
   const year = new Date().getFullYear();
   const [legalOpen, setLegalOpen] = useState<string | null>(null);
   return (
-    <footer className="bg-[hsl(var(--ink))] text-white pt-20 overflow-hidden">
+    <footer className="bg-[hsl(var(--ink))] text-white pt-16 lg:pt-20 overflow-hidden">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <div className="grid md:grid-cols-[1.6fr_1fr_1fr_1fr] gap-x-10 gap-y-12 pb-16">
-          <div>
-            <div className="font-display font-[400] text-[30px] tracking-[-0.02em] leading-none">Kennion</div>
+        <div className="grid sm:grid-cols-2 md:grid-cols-[1.6fr_1fr_1fr_1fr] gap-x-10 gap-y-12 pb-14 lg:pb-16">
+          <div className="sm:col-span-2 md:col-span-1">
+            <div className="font-display font-bold text-[26px] tracking-[-0.02em] leading-none">Kennion</div>
             <div className="kn-caps text-white/40 mt-3">Benefit Advisors · Est. 1975</div>
             <p className="mt-6 text-[13.5px] leading-[1.7] text-white/55 max-w-[24rem]">
               A full-service, independent employee benefits advisory firm helping employers
@@ -848,7 +858,7 @@ function Footer() {
 
       {/* Oversized wordmark colophon, clipped at the page's bottom edge. */}
       <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10 select-none pointer-events-none" aria-hidden="true">
-        <div className="font-display font-[420] text-[21vw] lg:text-[260px] leading-[0.72] tracking-[-0.04em] text-white/[0.05] whitespace-nowrap -mb-[0.16em]">
+        <div className="font-display font-extrabold uppercase text-[19vw] lg:text-[240px] leading-[0.78] tracking-[-0.045em] text-white/[0.05] whitespace-nowrap -mb-[0.14em]">
           Kennion
         </div>
       </div>
