@@ -165,8 +165,8 @@ export default function RequestQuotePage() {
             <span className="inline-block w-10 h-px translate-y-[-3px]" style={{ background: "hsl(var(--brand-accent))" }} />
             Request a Proposal
           </div>
-          <h1 className="font-display font-[380] mt-7 text-[40px] lg:text-[56px] leading-[1.0] tracking-[-0.03em]">
-            Let&rsquo;s build a benefits program <em className="font-[420]" style={{ color: "hsl(var(--primary))" }}>around your people.</em>
+          <h1 className="font-display font-bold mt-7 text-[clamp(2.4rem,6vw,3.5rem)] leading-[1.0] tracking-[-0.035em]">
+            Let&rsquo;s build a benefits program <span style={{ color: "hsl(var(--primary))" }}>around your people.</span>
           </h1>
           <p className="mt-6 text-[15.5px] leading-[1.65] text-muted-foreground max-w-[28rem]">
             Tell us a little about your group and our team will reach out to start the
@@ -181,7 +181,7 @@ export default function RequestQuotePage() {
               "Guidance for employers of every size",
             ].map((t, i) => (
               <div key={t} className="flex items-baseline gap-4 border-t border-border py-4 last:border-b">
-                <span className="font-display italic text-[15px] shrink-0" style={{ color: "hsl(var(--brand-accent))" }}>
+                <span className="text-[11px] font-bold tracking-[0.12em] tabular-nums shrink-0" style={{ color: "hsl(var(--brand-accent))" }}>
                   0{i + 1}
                 </span>
                 <span className="text-[14px] leading-[1.6]">{t}</span>
@@ -207,7 +207,7 @@ export default function RequestQuotePage() {
           {submitted ? (
             <div className="max-w-[36rem]" data-testid="card-quote-success">
               <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>Request received</div>
-              <h2 className="mt-4 font-display font-[400] text-[36px] lg:text-[44px] leading-[1.05] tracking-[-0.025em]">
+              <h2 className="mt-4 font-display font-bold text-[clamp(2rem,5vw,2.75rem)] leading-[1.04] tracking-[-0.03em]">
                 Thank you — we&rsquo;ve got it.
               </h2>
               <p className="mt-5 text-[15px] leading-[1.7] text-muted-foreground border-t border-border pt-5">

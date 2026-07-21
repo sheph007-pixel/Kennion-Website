@@ -455,13 +455,8 @@
 }
 
 .font-display {
-  font-family: 'Fraunces', Georgia, serif;
-  font-optical-sizing: auto;
-  font-variation-settings: 'opsz' 144, 'SOFT' 30;
-}
-.font-display em, .font-display .italic {
-  font-style: italic;
-  font-variation-settings: 'opsz' 144, 'SOFT' 70;
+  font-family: 'Inter Tight', 'Inter', system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'ss01' on, 'cv11' on;
 }
 .font-mono {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
