@@ -384,9 +384,8 @@ function HowWeDoIt() {
         </SectionHead>
 
         <Reveal>
-          <div className="mt-16 lg:mt-24 mb-8 flex items-baseline justify-between gap-6 flex-wrap">
+          <div className="mt-16 lg:mt-24 mb-8">
             <h3 className={`${H3} text-[24px] lg:text-[30px]`}>Benefits, run like software.</h3>
-            <span className="kn-caps text-white/50">The Tools Behind It</span>
           </div>
         </Reveal>
 
