@@ -289,14 +289,8 @@ function Hero() {
     <section className="relative overflow-hidden">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10 pt-12 lg:pt-24 pb-16 lg:pb-24 grid lg:grid-cols-12 gap-y-12 lg:gap-x-16 items-center">
         <div className="lg:col-span-7">
-          <Reveal>
-            <div className="flex items-baseline gap-4 kn-caps text-muted-foreground">
-              <span className="inline-block w-10 h-px translate-y-[-3px]" style={{ background: "hsl(var(--brand-accent))" }} />
-              Employee Benefits
-            </div>
-          </Reveal>
           <Reveal delay={90}>
-            <h1 className="font-display font-bold tracking-[-0.04em] leading-[0.98] text-[clamp(2.5rem,8vw,4.6rem)] mt-7">
+            <h1 className="font-display font-bold tracking-[-0.04em] leading-[0.98] text-[clamp(2.5rem,8vw,4.6rem)]">
               The modern
               <br />
               benefits agency<span style={{ color: "hsl(var(--brand-accent))" }}>.</span>
