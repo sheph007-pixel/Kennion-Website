@@ -304,8 +304,8 @@ function Hero() {
           </Reveal>
           <Reveal delay={180}>
             <p className="mt-8 text-[16px] lg:text-[17px] leading-[1.65] text-muted-foreground max-w-[30rem]">
-              Kennion pairs deep market reach with serious technology. Employers across the
-              country use us to see more options and spend less time managing benefits.
+              Kennion pairs deep market experience with serious technology. Employers use us
+              to find the ideas their last broker never brought up.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
               <SolidButton href="/quote">Request a Proposal</SolidButton>
@@ -328,10 +328,10 @@ function Hero() {
 
 function ProofBand() {
   const items = [
-    ["Decades", "in the market"],
-    ["Hundreds", "of employer groups"],
-    ["Every major", "carrier at the table"],
-    ["Coast", "to coast"],
+    ["Decades deep", "in this market"],
+    ["Zero patience", "for the status quo"],
+    ["New ideas", "at every renewal"],
+    ["Honest pushback", "when it saves you money"],
   ];
   return (
     <div className="border-y border-border">
@@ -361,8 +361,8 @@ function Platform() {
               like software.
             </h2>
             <p className="lg:col-span-5 text-[15px] leading-[1.65] text-white/60 lg:pb-2 max-w-[26rem]">
-              The tools you would expect from a technology company, backed by a team that has
-              seen everything the market can do.
+              The tools you would expect from a technology company, built by a team that got
+              tired of watching benefits stand still.
             </p>
           </div>
         </SectionHead>
@@ -466,8 +466,9 @@ function Options() {
               <span style={{ color: "hsl(var(--primary))" }}>you knew existed.</span>
             </h2>
             <p className="lg:col-span-5 text-[15px] leading-[1.65] text-muted-foreground lg:pb-2 max-w-[26rem]">
-              Every major carrier, plus structures most brokers never bring up. We put them
-              side by side in plain English and tell you which one we would pick.
+              If every renewal looks like last year with a higher number, you are looking at
+              the status quo, not the market. We bring the structures most brokers never show,
+              and we tell you which one we would pick.
             </p>
           </div>
         </SectionHead>
