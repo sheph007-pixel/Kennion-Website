@@ -109,17 +109,6 @@ function SolidButton({ href, onClick, children, external = false, tone = "ink" }
 
 /* ── top strip + nav ───────────────────────────────────────────────── */
 
-function TopStrip() {
-  return (
-    <div className="hidden sm:block bg-[hsl(var(--ink))] text-white/70">
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 h-9 flex items-center justify-between text-[10.5px] uppercase tracking-[0.18em] font-medium">
-        <span>Independent Employee Benefits Advisory · Est. 1975</span>
-        <span className="hidden md:inline">Vestavia, Alabama · Serving Employers Nationwide</span>
-      </div>
-    </div>
-  );
-}
-
 function Nav() {
   const [open, setOpen] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
@@ -266,7 +255,7 @@ function Hero() {
 
             <div className="lg:col-span-3 lg:border-l lg:border-border lg:pl-10 self-stretch flex flex-col justify-between gap-8">
               {[
-                ["Fifty years", "Advising employers since 1975, through every market cycle and every renewal season."],
+                ["Independent", "We work for you, not an insurer. Advice with no quotas and no conflicts."],
                 ["95%+ retention", "Clients stay, year after year. Retention is the clearest proof the model works."],
               ].map(([t, d]) => (
                 <div key={t as string} className="border-t border-border pt-4 lg:border-t-0 lg:pt-0">
@@ -500,7 +489,7 @@ function Approach() {
 
 function WhyKennion() {
   const stats = [
-    { v: "50+", l: "Years advising employers, since 1975" },
+    { v: "100%", l: "Independent. We work for you, not a carrier" },
     { v: "95%", l: "Client retention, year over year" },
     { v: "0", l: "Quotas. Independent and conflict-free" },
   ];
@@ -792,7 +781,7 @@ function Footer() {
         <div className="grid sm:grid-cols-2 md:grid-cols-[1.6fr_1fr_1fr_1fr] gap-x-10 gap-y-12 pb-14 lg:pb-16">
           <div className="sm:col-span-2 md:col-span-1">
             <div className="font-display font-bold text-[26px] tracking-[-0.02em] leading-none">Kennion</div>
-            <div className="kn-caps text-white/40 mt-3">Benefit Advisors · Est. 1975</div>
+            <div className="kn-caps text-white/40 mt-3">Independent Benefit Advisors</div>
             <p className="mt-6 text-[13.5px] leading-[1.7] text-white/55 max-w-[24rem]">
               A full-service, independent employee benefits advisory firm helping employers
               nationwide design, deliver, and manage benefits programs across every funding
@@ -873,7 +862,6 @@ function Footer() {
 export default function LandingPage() {
   return (
     <div className="kn-landing min-h-screen antialiased">
-      <TopStrip />
       <Nav />
       <main>
         <Hero />
