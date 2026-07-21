@@ -543,32 +543,6 @@ function WhyKennion() {
   );
 }
 
-/* ── testimonial ───────────────────────────────────────────────────── */
-
-function Testimonial() {
-  return (
-    <section className="border-y border-border bg-muted/60 py-20 lg:py-32">
-      <div className="mx-auto max-w-[900px] px-6 text-center">
-        <Reveal>
-          <div className="kn-caps text-muted-foreground">From a Competitor</div>
-          <blockquote className="font-display font-semibold text-[26px] sm:text-[34px] lg:text-[42px] leading-[1.15] tracking-[-0.025em] mt-8 text-balance">
-            &ldquo;Y&rsquo;all are <span style={{ color: "hsl(var(--primary))" }}>unbeatable in the market</span> with
-            the prospects we have met with that are current Kennion clients.&rdquo;
-          </blockquote>
-          <figcaption className="mt-9 kn-caps text-muted-foreground">
-            Senior Executive · Top-25 U.S. Broker
-          </figcaption>
-          <div className="mt-12 pt-8 border-t border-border max-w-[36rem] mx-auto text-[14px] leading-[1.7] text-muted-foreground">
-            When your advisor is independent, with deep market relationships and no quota to fill,
-            <span className="text-foreground font-medium"> your renewal gets shopped every year</span>,
-            not rubber-stamped. That&rsquo;s why our retention has stayed above 95% for over a decade.
-          </div>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
 /* ── contact ───────────────────────────────────────────────────────── */
 
 function Contact() {
@@ -869,7 +843,6 @@ export default function LandingPage() {
         <WhoWeServe />
         <Approach />
         <WhyKennion />
-        <Testimonial />
         <Contact />
         <FinalCTA />
       </main>
