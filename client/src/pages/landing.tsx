@@ -611,7 +611,7 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
       </button>
       {state === "error" && (
         <p className="mt-3 text-[12.5px] text-destructive">
-          Something went wrong. Please email support@kennion.com.
+          Something went wrong. Please try again in a moment.
         </p>
       )}
     </form>
@@ -668,10 +668,10 @@ function FinalCTA({ onContact }: { onContact: () => void }) {
             <MapPin size={14} strokeWidth={1.7} style={{ color: "hsl(var(--brand-accent))" }} />
             2828 Old 280 Court, Vestavia, Alabama 35243
           </span>
-          <a href="mailto:support@kennion.com" className="kn-link-rev inline-flex items-center gap-2.5 hover:text-white">
+          <button onClick={onContact} className="kn-link-rev inline-flex items-center gap-2.5 hover:text-white">
             <Mail size={14} strokeWidth={1.7} style={{ color: "hsl(var(--brand-accent))" }} />
-            support@kennion.com
-          </a>
+            Send us a message
+          </button>
           <a href="https://calendly.com/kennion/call" onClick={openCalendly} className="kn-link-rev inline-flex items-center gap-2.5 hover:text-white cursor-pointer">
             <Calendar size={14} strokeWidth={1.7} style={{ color: "hsl(var(--brand-accent))" }} />
             Book a call online
@@ -800,7 +800,6 @@ function Footer({ onContact }: { onContact: () => void }) {
             <ul className="space-y-3 text-[13.5px] text-white/70">
               <li><Link href="/quote" className="kn-link-rev hover:text-white transition-colors">Request a Quote</Link></li>
               <li><button onClick={onContact} className="kn-link-rev hover:text-white transition-colors">Contact Us</button></li>
-              <li><a href="mailto:support@kennion.com" className="kn-link-rev hover:text-white transition-colors">support@kennion.com</a></li>
             </ul>
           </div>
         </div>
