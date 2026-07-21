@@ -1,6 +1,6 @@
 // Kennion Benefit Advisors public marketing homepage.
 // Positioning: a large, established, tech-forward benefits agency.
-// Lean page: hero with product visual, proof band, platform story,
+// Lean page: hero with product visual, proof band, technology story,
 // options, how it works, CTA + contact, footer. Inter Tight type,
 // paper & ink palette scoped via .kn-landing (see index.css).
 
@@ -105,28 +105,11 @@ function SolidButton({ href, onClick, children, external = false, tone = "ink" }
 
 function Nav() {
   const [open, setOpen] = useState(false);
-  const [portalOpen, setPortalOpen] = useState(false);
-  const portalRef = useRef<any>(null);
-
-  useEffect(() => {
-    if (!portalOpen) return;
-    const close = (e: MouseEvent) => {
-      if (portalRef.current && !portalRef.current.contains(e.target)) setPortalOpen(false);
-    };
-    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setPortalOpen(false); };
-    document.addEventListener("mousedown", close);
-    document.addEventListener("keydown", esc);
-    return () => {
-      document.removeEventListener("mousedown", close);
-      document.removeEventListener("keydown", esc);
-    };
-  }, [portalOpen]);
 
   const links = [
-    ["#platform", "Platform"],
+    ["#technology", "Technology"],
     ["#options", "Options"],
     ["#how", "How It Works"],
-    ["#contact", "Contact"],
   ];
 
   return (
@@ -146,38 +129,9 @@ function Nav() {
 
         <div className="hidden lg:flex items-center gap-6">
           <span className="w-px h-4 bg-border" aria-hidden="true" />
-          <div className="relative" ref={portalRef}>
-            <button
-              onClick={() => setPortalOpen(!portalOpen)}
-              className={`flex items-center gap-1.5 text-[11.5px] uppercase tracking-[0.16em] font-semibold transition-colors ${portalOpen ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              aria-expanded={portalOpen}
-            >
-              Client Access
-              <ChevronDown size={12} strokeWidth={2.2} className={`transition-transform ${portalOpen ? "rotate-180" : ""}`} />
-            </button>
-            {portalOpen && (
-              <div className="absolute right-0 top-full mt-4 w-64 border border-border bg-[hsl(var(--background))] shadow-[0_24px_50px_-18px_rgba(15,30,60,0.28)]">
-                <div className="px-4 pt-3.5 pb-3 border-b border-border">
-                  <div className="kn-caps text-muted-foreground">Clients &amp; Members</div>
-                </div>
-                <a href="https://go.kennion.com/support" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between px-4 py-3.5 text-[13.5px] hover:bg-muted transition-colors">
-                  <div>
-                    <div className="font-medium">Support</div>
-                    <div className="text-[11.5px] text-muted-foreground mt-0.5">Open a ticket</div>
-                  </div>
-                  <ArrowUpRight size={13} className="text-muted-foreground" />
-                </a>
-                <a href="http://go.kennion.com/enroll" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between px-4 py-3.5 text-[13.5px] hover:bg-muted transition-colors border-t border-border">
-                  <div>
-                    <div className="font-medium">Enrollment</div>
-                    <div className="text-[11.5px] text-muted-foreground mt-0.5">Member login</div>
-                  </div>
-                  <ArrowUpRight size={13} className="text-muted-foreground" />
-                </a>
-              </div>
-            )}
-          </div>
-
+          <a href="#contact" className="kn-link-rev text-[11.5px] uppercase tracking-[0.16em] font-semibold text-muted-foreground hover:text-foreground transition-colors">
+            Contact
+          </a>
           <Link href="/quote" className="inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-5 py-2.5 text-[11.5px] font-semibold uppercase tracking-[0.14em] transition-colors hover:bg-[hsl(var(--ink))]">
             Request a Quote
           </Link>
@@ -198,10 +152,9 @@ function Nav() {
           <Link href="/quote" className="mt-6 flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-3.5 text-[12px] font-semibold uppercase tracking-[0.14em]">
             Request a Quote
           </Link>
-          <div className="mt-6 flex items-center gap-6 text-[11.5px] uppercase tracking-[0.14em] font-semibold text-muted-foreground">
-            <a href="https://go.kennion.com/support" className="kn-link">Support</a>
-            <a href="http://go.kennion.com/enroll" className="kn-link">Enrollment</a>
-          </div>
+          <a href="#contact" onClick={() => setOpen(false)} className="mt-6 block text-[11.5px] uppercase tracking-[0.14em] font-semibold text-muted-foreground kn-link w-max">
+            Contact
+          </a>
         </div>
       )}
     </header>
@@ -392,11 +345,11 @@ function WhoWeHelp() {
 
 /* ── platform (dark) ───────────────────────────────────────────────── */
 
-function Platform() {
+function Technology() {
   return (
-    <section id="platform" className="bg-[hsl(var(--ink))] text-white py-20 lg:py-32">
+    <section id="technology" className="bg-[hsl(var(--ink))] text-white py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead label="The Platform" dark>
+        <SectionHead label="Technology" dark>
           <div className="grid lg:grid-cols-12 gap-y-6 lg:gap-x-10 items-end mb-12 lg:mb-16">
             <h2 className={`${H2} lg:col-span-7`}>
               Benefits, run
@@ -559,6 +512,101 @@ function HowItWorks() {
 
 /* ── CTA + contact ─────────────────────────────────────────────────── */
 
+const CONTACT_ROLES = ["Employer", "Member", "Client"];
+
+function ContactForm() {
+  const [role, setRole] = useState("Employer");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !email.trim() || !message.trim()) return;
+    setState("sending");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          company: role,
+          email,
+          employees: "",
+          message: `[${role} inquiry] ${message}`,
+          website: "",
+        }),
+      });
+      if (!res.ok) throw new Error();
+      setState("sent");
+    } catch {
+      setState("error");
+    }
+  }
+
+  const fieldCls = "w-full h-11 border-0 border-b border-border bg-transparent px-0 text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary transition-colors";
+
+  if (state === "sent") {
+    return (
+      <div className="bg-[hsl(var(--background))] text-foreground p-8 lg:p-10">
+        <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>Message sent</div>
+        <h3 className={`${H3} mt-3 text-[24px]`}>Thank you.</h3>
+        <p className="mt-3 text-[14px] leading-[1.7] text-muted-foreground">
+          The right person on our team will get back to you shortly.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="bg-[hsl(var(--background))] text-foreground p-8 lg:p-10">
+      <div className="kn-caps text-muted-foreground">Contact Us</div>
+      <div className="mt-6 space-y-6">
+        <div>
+          <label htmlFor="kn-role" className="kn-caps text-muted-foreground block">I am a...</label>
+          <div className="mt-1 flex gap-2">
+            {CONTACT_ROLES.map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRole(r)}
+                className={`px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.1em] border transition-colors ${role === r ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label htmlFor="kn-name" className="kn-caps text-muted-foreground block">Name</label>
+          <input id="kn-name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Jordan Smith" className={fieldCls} />
+        </div>
+        <div>
+          <label htmlFor="kn-email" className="kn-caps text-muted-foreground block">Email</label>
+          <input id="kn-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@company.com" className={fieldCls} />
+        </div>
+        <div>
+          <label htmlFor="kn-msg" className="kn-caps text-muted-foreground block">How can we help?</label>
+          <textarea id="kn-msg" rows={3} value={message} onChange={(e) => setMessage(e.target.value)} required placeholder="Tell us what you need." className={`${fieldCls} h-auto py-2 resize-none`} />
+        </div>
+      </div>
+      <button
+        type="submit"
+        disabled={state === "sending"}
+        className="mt-7 w-full inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold tracking-[0.08em] uppercase transition-colors hover:bg-[hsl(var(--ink))] disabled:opacity-60"
+      >
+        {state === "sending" ? "Sending..." : "Send Message"}
+      </button>
+      {state === "error" && (
+        <p className="mt-3 text-[12.5px] text-destructive">
+          Something went wrong. Please email support@kennion.com.
+        </p>
+      )}
+    </form>
+  );
+}
+
 function FinalCTA() {
   return (
     <section id="contact" className="bg-primary text-primary-foreground py-20 lg:py-28">
@@ -570,17 +618,16 @@ function FinalCTA() {
         </h2>
         <p className="mt-7 text-[16px] leading-[1.65] text-white/70 max-w-[34rem]">
           Send us your census and we will come back with something new. It costs
-          nothing to look.
+          nothing to look. Just have a question? Use the form and the right person
+          will get back to you.
         </p>
         <div className="mt-10">
           <SolidButton href="/quote" tone="paper">Request a Quote</SolidButton>
         </div>
 
         </div>
-        <div className="hidden lg:block lg:col-span-5">
-          <div className="kn-photo">
-            <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&q=70&auto=format&fit=crop" alt="Advisors working with a client" className="w-full aspect-[4/3] object-cover" loading="lazy" />
-          </div>
+        <div className="lg:col-span-5">
+          <ContactForm />
         </div>
         <div className="lg:col-span-12 mt-2 lg:mt-4 border-t border-white/15 pt-7 flex flex-wrap gap-x-12 gap-y-4 text-[13px] text-white/70">
           <span className="inline-flex items-center gap-2.5">
@@ -707,7 +754,7 @@ function Footer() {
           <div>
             <div className="kn-caps text-white/40 mb-5">Company</div>
             <ul className="space-y-3 text-[13.5px] text-white/70">
-              <li><a href="#platform" className="kn-link-rev hover:text-white transition-colors">Platform</a></li>
+              <li><a href="#technology" className="kn-link-rev hover:text-white transition-colors">Technology</a></li>
               <li><a href="#options" className="kn-link-rev hover:text-white transition-colors">Options</a></li>
               <li><a href="#how" className="kn-link-rev hover:text-white transition-colors">How It Works</a></li>
               <li><a href="#contact" className="kn-link-rev hover:text-white transition-colors">Contact</a></li>
@@ -715,11 +762,10 @@ function Footer() {
           </div>
 
           <div>
-            <div className="kn-caps text-white/40 mb-5">Clients</div>
+            <div className="kn-caps text-white/40 mb-5">Contact</div>
             <ul className="space-y-3 text-[13.5px] text-white/70">
-              <li><a href="https://go.kennion.com/support" target="_blank" rel="noopener noreferrer" className="kn-link-rev hover:text-white transition-colors">Support</a></li>
-              <li><a href="http://go.kennion.com/enroll" target="_blank" rel="noopener noreferrer" className="kn-link-rev hover:text-white transition-colors">Enrollment</a></li>
               <li><Link href="/quote" className="kn-link-rev hover:text-white transition-colors">Request a Quote</Link></li>
+              <li><a href="#contact" className="kn-link-rev hover:text-white transition-colors">Contact Us</a></li>
               <li><a href="mailto:support@kennion.com" className="kn-link-rev hover:text-white transition-colors">support@kennion.com</a></li>
             </ul>
           </div>
@@ -756,7 +802,7 @@ export default function LandingPage() {
       <main>
         <Hero />
         <WhoWeHelp />
-        <Platform />
+        <Technology />
         <Options />
         <HowItWorks />
         <FinalCTA />
