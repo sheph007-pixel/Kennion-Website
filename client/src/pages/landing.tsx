@@ -394,7 +394,7 @@ function HowWeDoIt() {
           {/* Quote online */}
           <Reveal>
             <div className="bg-[hsl(var(--ink))] p-6 lg:p-8 h-full flex flex-col">
-              <div className="border border-white/10 bg-white/[0.04] p-4 mb-7">
+              <div className="border border-white/10 bg-white/[0.04] p-4 mb-7 min-h-[132px]">
                 {[["Healthy 500", "82%"], ["Healthy 1000", "70%"], ["HSA 2500", "58%"]].map(([n, w]) => (
                   <div key={n} className="flex items-center gap-3 py-2 border-b border-white/10 last:border-b-0">
                     <span className="text-[10.5px] uppercase tracking-[0.08em] text-white/50 w-24 shrink-0">{n}</span>
@@ -415,7 +415,7 @@ function HowWeDoIt() {
           {/* Enroll online */}
           <Reveal delay={70}>
             <div className="bg-[hsl(var(--ink))] p-6 lg:p-8 h-full flex flex-col">
-              <div className="border border-white/10 bg-white/[0.04] p-4 mb-7">
+              <div className="border border-white/10 bg-white/[0.04] p-4 mb-7 min-h-[132px]">
                 <div className="flex items-baseline justify-between">
                   <span className="font-display font-bold text-[22px] tracking-[-0.03em] tabular-nums">90%</span>
                   <span className="text-[10px] uppercase tracking-[0.1em] text-white/50">enrolled</span>
@@ -439,7 +439,7 @@ function HowWeDoIt() {
           {/* Analysis */}
           <Reveal delay={140}>
             <div className="bg-[hsl(var(--ink))] p-6 lg:p-8 h-full flex flex-col">
-              <div className="border border-white/10 bg-white/[0.04] p-4 mb-7 overflow-hidden">
+              <div className="border border-white/10 bg-white/[0.04] p-4 mb-7 min-h-[132px] overflow-hidden">
                 <div className="kn-caps text-white/50">Analyzing group</div>
                 <div className="relative mt-3 h-[3px] w-full bg-white/10 overflow-hidden">
                   <div className="kn-scan absolute inset-y-0 w-1/4" style={{ background: "hsl(var(--brand-accent))" }} />
