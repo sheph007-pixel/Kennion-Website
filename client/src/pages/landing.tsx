@@ -488,7 +488,7 @@ function Options() {
 function HowItWorks() {
   const steps = [
     { t: "Send your census", d: "A spreadsheet is all we need to get started." },
-    { t: "See every option", d: "Real plans and real rates, side by side, fast." },
+    { t: "See something new", d: "Options you have not seen before, with real rates, side by side." },
     { t: "We run the rest", d: "Enrollment, renewals, and the day-to-day. Handled." },
   ];
   return (
@@ -525,8 +525,8 @@ function FinalCTA() {
           See what your group is missing.
         </h2>
         <p className="mt-7 text-[16px] leading-[1.65] text-white/70 max-w-[34rem]">
-          Send us your census and we will show you every option on the table. It costs
-          nothing to look.
+          Send us your census and we will come back with options you have never been shown
+          and ideas that change how you think about benefits. It costs nothing to look.
         </p>
         <div className="mt-10 flex flex-wrap items-center gap-x-9 gap-y-5">
           <SolidButton href="/quote" tone="paper">Request a Proposal</SolidButton>
