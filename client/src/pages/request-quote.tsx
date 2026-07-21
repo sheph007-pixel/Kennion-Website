@@ -132,7 +132,7 @@ export default function RequestQuotePage() {
         .trim();
       toast({
         title: "Something went wrong",
-        description: clean || "Please try again, or email hunter@kennion.com directly.",
+        description: clean || "Please try again in a moment.",
         variant: "destructive",
       });
     } finally {
