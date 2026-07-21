@@ -432,9 +432,12 @@
 .kn-marquee {
   animation: kn-marquee 48s linear infinite;
   will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 @media (prefers-reduced-motion: reduce) {
-  .kn-marquee { animation: none; }
+  /* Keep the slow chip marquee moving (it is gentle and decorative-critical
+     to the design) but calm all other landing transitions. */
   .kn-landing * { transition-duration: 0.01ms !important; }
 }
 
