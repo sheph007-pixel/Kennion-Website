@@ -454,12 +454,20 @@ function HowWeDoIt() {
               </div>
               <h3 className={`${H3} text-[21px]`}>AI-assisted analysis</h3>
               <p className="mt-3 text-[13.5px] leading-[1.7] text-white/60">
-                Every group gets a layer of AI review on top of experienced underwriting eyes,
-                so nothing about your risk gets missed.
+                AI tidies the data you send and writes a plain-English read on your group's
+                risk, on top of experienced underwriting eyes. Nothing gets missed, and
+                nothing is decided by a robot.
               </p>
             </div>
           </Reveal>
         </div>
+
+        <Reveal>
+          <p className="mt-8 text-[13px] text-white/50">
+            This is the software we actually run, not an illustration.{" "}
+            <Link href="/quote" className="kn-link text-white/80">Request a quote and you will be inside it this week.</Link>
+          </p>
+        </Reveal>
       </div>
     </section>
   );
