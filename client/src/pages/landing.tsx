@@ -482,14 +482,14 @@ function Options() {
         <SectionHead label="What We Do">
           <div className="grid lg:grid-cols-12 gap-y-6 lg:gap-x-10 items-end">
             <h2 className={`${H2} lg:col-span-7`}>
-              More options than
+              Your benefits program,
               <br />
-              <span style={{ color: "hsl(var(--primary))" }}>you knew existed.</span>
+              <span style={{ color: "hsl(var(--primary))" }}>built and run for you.</span>
             </h2>
             <p className="lg:col-span-5 text-[15px] leading-[1.65] text-muted-foreground lg:pb-2 max-w-[26rem]">
-              Group health, dental, vision, life, disability, and supplemental, plus funding
-              structures many employers have never been offered. We put it all side by side
-              in plain English and tell you which one we would pick.
+              Group health, dental, vision, life, disability, and supplemental. We shop the
+              whole market, including structures many employers have never been offered, then
+              manage the program all year.
             </p>
           </div>
         </SectionHead>
