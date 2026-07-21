@@ -1,22 +1,20 @@
+// Request-a-proposal page, styled to match the editorial landing design
+// (paper & ink palette, Fraunces display type, ruled fields, small-caps
+// labels — see client/src/pages/landing.tsx and the .kn-* utilities).
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "wouter";
 import { z } from "zod";
-import {
-  ArrowRight, ArrowLeft, Loader2, Mail, Building2, Phone, User,
-  CheckCircle2, ShieldCheck, Calendar,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { ArrowRight, ArrowLeft, Loader2, Calendar, ShieldCheck } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 const KENNION_LOGO_URL =
   "https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/attachments/production/5004437337/logo/qGPs3ykt503dCIwP_qHVHmcxV3JVHXZucQ.png";
@@ -67,6 +65,27 @@ function openCalendly(e?: React.MouseEvent) {
   } else {
     window.open(url, "_blank", "noopener,noreferrer");
   }
+}
+
+/* Editorial field chrome: small-caps label above a ruled, squared input. */
+const FIELD_INPUT_CLS =
+  "h-11 rounded-none border-0 border-b border-border bg-transparent px-0 text-[15px] " +
+  "placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0 " +
+  "focus-visible:border-primary transition-colors";
+
+function Field({ label, error, optional = false, children, htmlFor }: {
+  label: string; error?: string; optional?: boolean; children: React.ReactNode; htmlFor?: string;
+}) {
+  return (
+    <div>
+      <label htmlFor={htmlFor} className="kn-caps text-muted-foreground block">
+        {label}
+        {optional && <span className="ml-2 normal-case tracking-normal font-normal text-[11px]">(optional)</span>}
+      </label>
+      <div className="mt-1">{children}</div>
+      {error && <p className="mt-1.5 text-xs text-destructive">{error}</p>}
+    </div>
+  );
 }
 
 export default function RequestQuotePage() {
@@ -121,167 +140,157 @@ export default function RequestQuotePage() {
     }
   }
 
+  const selectCls =
+    "h-11 rounded-none border-0 border-b border-border bg-transparent px-0 text-[15px] " +
+    "focus:ring-0 focus:ring-offset-0 data-[placeholder]:text-muted-foreground/50";
+
   return (
-    <div className="min-h-screen bg-background text-foreground antialiased">
+    <div className="kn-landing min-h-screen antialiased">
       {/* Header */}
       <header className="border-b border-border">
-        <div className="mx-auto max-w-6xl px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
+        <div className="mx-auto max-w-[1320px] px-6 lg:px-10 h-[68px] flex items-center justify-between">
+          <Link href="/" className="flex items-center">
             <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-8 w-auto" style={{ mixBlendMode: "multiply" }} />
           </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/" className="hidden sm:inline-flex items-center gap-1.5 text-[13.5px] text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft size={14} /> Back to home
-            </Link>
-            <ThemeToggle />
-          </div>
+          <Link href="/" className="inline-flex items-center gap-2 text-[11.5px] uppercase tracking-[0.16em] font-semibold text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft size={13} strokeWidth={2} /> Back to home
+          </Link>
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-6 py-14 lg:py-20 grid lg:grid-cols-[0.9fr_1.1fr] gap-12 lg:gap-20 items-start">
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 py-16 lg:py-24 grid lg:grid-cols-12 gap-y-14 lg:gap-x-10 items-start">
         {/* Left: pitch */}
-        <div className="lg:pt-6">
-          <div className="inline-flex items-center gap-2.5 text-[11.5px] uppercase tracking-[0.2em] font-semibold text-muted-foreground">
-            <span className="inline-block w-7 h-px" style={{ background: "hsl(var(--brand-accent))" }} />
+        <div className="lg:col-span-5">
+          <div className="flex items-baseline gap-4 kn-caps text-muted-foreground">
+            <span className="inline-block w-10 h-px translate-y-[-3px]" style={{ background: "hsl(var(--brand-accent))" }} />
             Request a Proposal
           </div>
-          <h1 className="font-display font-[450] text-[38px] lg:text-[52px] leading-[1.02] tracking-[-0.03em] mt-5">
-            Let&rsquo;s build a benefits program <span className="italic" style={{ color: "hsl(var(--primary))" }}>around your people.</span>
+          <h1 className="font-display font-[380] mt-7 text-[40px] lg:text-[56px] leading-[1.0] tracking-[-0.03em]">
+            Let&rsquo;s build a benefits program <em className="font-[420]" style={{ color: "hsl(var(--primary))" }}>around your people.</em>
           </h1>
-          <p className="mt-5 text-[16px] leading-[1.6] text-muted-foreground max-w-md">
+          <p className="mt-6 text-[15.5px] leading-[1.65] text-muted-foreground max-w-[28rem]">
             Tell us a little about your group and our team will reach out to start the
-            conversation. No obligation, no cost, just a clear look at what your benefits
+            conversation. No obligation, no cost — just a clear look at what your benefits
             program could be.
           </p>
 
-          <ul className="mt-8 space-y-3.5 text-[14px] text-muted-foreground">
+          <div className="mt-10 max-w-[28rem]">
             {[
               "A dedicated advisor, not a call center",
               "Strategy across fully insured, level funded, and self-funded",
               "Guidance for employers of every size",
-            ].map((t) => (
-              <li key={t} className="flex items-start gap-2.5">
-                <CheckCircle2 size={17} className="mt-[1px] shrink-0" style={{ color: "hsl(var(--brand-accent))" }} />
-                <span>{t}</span>
-              </li>
+            ].map((t, i) => (
+              <div key={t} className="flex items-baseline gap-4 border-t border-border py-4 last:border-b">
+                <span className="font-display italic text-[15px] shrink-0" style={{ color: "hsl(var(--brand-accent))" }}>
+                  0{i + 1}
+                </span>
+                <span className="text-[14px] leading-[1.6]">{t}</span>
+              </div>
             ))}
-          </ul>
+          </div>
 
-          <div className="mt-9 pt-7 border-t border-border">
-            <div className="text-[12px] text-muted-foreground">Prefer to talk it through?</div>
+          <div className="mt-10">
+            <div className="kn-caps text-muted-foreground">Prefer to talk it through?</div>
             <a
               href="https://calendly.com/kennion/call"
               onClick={openCalendly}
-              className="mt-2 inline-flex items-center gap-1.5 text-[14px] font-medium text-primary hover:underline underline-offset-4 cursor-pointer"
+              className="mt-3 inline-flex items-center gap-2.5 kn-link text-[13px] font-semibold uppercase tracking-[0.1em] cursor-pointer"
             >
-              <Calendar size={15} /> Schedule a call
+              <Calendar size={14} strokeWidth={1.8} style={{ color: "hsl(var(--brand-accent))" }} />
+              Schedule a call
             </a>
           </div>
         </div>
 
         {/* Right: form / success */}
-        <div>
+        <div className="lg:col-span-7 lg:border-l lg:border-border lg:pl-14">
           {submitted ? (
-            <div className="rounded-2xl border border-border bg-card p-8 lg:p-10 shadow-[0_24px_60px_-30px_rgba(15,30,60,.4)]" data-testid="card-quote-success">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <CheckCircle2 size={24} className="text-primary" />
-              </div>
-              <h2 className="mt-5 font-display font-[450] text-[28px] tracking-[-0.02em]">Thank you, we&rsquo;ve got it.</h2>
-              <p className="mt-3 text-[15px] leading-[1.6] text-muted-foreground">
+            <div className="max-w-[36rem]" data-testid="card-quote-success">
+              <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>Request received</div>
+              <h2 className="mt-4 font-display font-[400] text-[36px] lg:text-[44px] leading-[1.05] tracking-[-0.025em]">
+                Thank you — we&rsquo;ve got it.
+              </h2>
+              <p className="mt-5 text-[15px] leading-[1.7] text-muted-foreground border-t border-border pt-5">
                 Your request is on its way to our team. Someone from Kennion will be in touch
                 shortly at the email and phone number you provided. There&rsquo;s nothing else you
                 need to do.
               </p>
-              <div className="mt-7 flex flex-wrap items-center gap-3">
-                <Link href="/" className="inline-flex items-center gap-1.5 text-[14px] font-medium bg-primary text-primary-foreground hover:opacity-90 px-5 py-2.5 rounded-md">
-                  Back to homepage <ArrowRight size={15} />
+              <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
+                <Link href="/" className="group inline-flex items-center gap-3 bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold tracking-[0.08em] uppercase transition-colors hover:bg-[hsl(var(--ink))]">
+                  Back to homepage
+                  <ArrowRight size={14} strokeWidth={2} className="transition-transform group-hover:translate-x-1" />
                 </Link>
-                <a href="https://calendly.com/kennion/call" onClick={openCalendly} className="inline-flex items-center gap-1.5 text-[14px] font-medium border border-border hover:bg-black/[.03] px-5 py-2.5 rounded-md cursor-pointer">
-                  <Calendar size={15} /> Schedule a call
+                <a href="https://calendly.com/kennion/call" onClick={openCalendly} className="kn-link text-[13px] font-semibold uppercase tracking-[0.1em] cursor-pointer">
+                  Schedule a call
                 </a>
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-border bg-card p-6 lg:p-8 shadow-[0_24px_60px_-30px_rgba(15,30,60,.4)]">
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="name">Your Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input id="name" placeholder="Jordan Smith" className="pl-9" {...form.register("name")} data-testid="input-name" />
-                    </div>
-                    {form.formState.errors.name && <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="companyName">Company</Label>
-                    <div className="relative">
-                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input id="companyName" placeholder="Acme Corp" className="pl-9" {...form.register("companyName")} data-testid="input-company" />
-                    </div>
-                    {form.formState.errors.companyName && <p className="text-xs text-destructive">{form.formState.errors.companyName.message}</p>}
-                  </div>
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input id="email" type="email" placeholder="you@company.com" className="pl-9" {...form.register("email")} data-testid="input-email" />
-                    </div>
-                    {form.formState.errors.email && <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="phone">Phone</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input id="phone" type="tel" placeholder="(555) 123-4567" className="pl-9" {...form.register("phone")} data-testid="input-phone" />
-                    </div>
-                    {form.formState.errors.phone && <p className="text-xs text-destructive">{form.formState.errors.phone.message}</p>}
-                  </div>
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="employerSize">Group Size</Label>
+            <div className="max-w-[36rem]">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <div className="grid sm:grid-cols-2 gap-x-10 gap-y-8">
+                  <Field label="Your Name" htmlFor="name" error={form.formState.errors.name?.message}>
+                    <Input id="name" placeholder="Jordan Smith" className={FIELD_INPUT_CLS} {...form.register("name")} data-testid="input-name" />
+                  </Field>
+                  <Field label="Company" htmlFor="companyName" error={form.formState.errors.companyName?.message}>
+                    <Input id="companyName" placeholder="Acme Corp" className={FIELD_INPUT_CLS} {...form.register("companyName")} data-testid="input-company" />
+                  </Field>
+                  <Field label="Email" htmlFor="email" error={form.formState.errors.email?.message}>
+                    <Input id="email" type="email" placeholder="you@company.com" className={FIELD_INPUT_CLS} {...form.register("email")} data-testid="input-email" />
+                  </Field>
+                  <Field label="Phone" htmlFor="phone" error={form.formState.errors.phone?.message}>
+                    <Input id="phone" type="tel" placeholder="(555) 123-4567" className={FIELD_INPUT_CLS} {...form.register("phone")} data-testid="input-phone" />
+                  </Field>
+                  <Field label="Group Size" htmlFor="employerSize" error={form.formState.errors.employerSize?.message}>
                     <Select value={form.watch("employerSize")} onValueChange={(v) => form.setValue("employerSize", v, { shouldValidate: true })}>
-                      <SelectTrigger id="employerSize" data-testid="select-size"><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectTrigger id="employerSize" className={selectCls} data-testid="select-size"><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
                         {EMPLOYER_SIZES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                    {form.formState.errors.employerSize && <p className="text-xs text-destructive">{form.formState.errors.employerSize.message}</p>}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="fundingInterest">Funding Interest</Label>
+                  </Field>
+                  <Field label="Funding Interest" htmlFor="fundingInterest" error={form.formState.errors.fundingInterest?.message}>
                     <Select value={form.watch("fundingInterest")} onValueChange={(v) => form.setValue("fundingInterest", v, { shouldValidate: true })}>
-                      <SelectTrigger id="fundingInterest" data-testid="select-funding"><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectTrigger id="fundingInterest" className={selectCls} data-testid="select-funding"><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
                         {FUNDING_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                    {form.formState.errors.fundingInterest && <p className="text-xs text-destructive">{form.formState.errors.fundingInterest.message}</p>}
-                  </div>
+                  </Field>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="currentCoverage">Current Coverage / Renewal Timing <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                  <Input id="currentCoverage" placeholder="e.g. Renewing Jan 1, currently fully insured" {...form.register("currentCoverage")} data-testid="input-coverage" />
-                </div>
+                <Field label="Current Coverage / Renewal Timing" htmlFor="currentCoverage" optional>
+                  <Input id="currentCoverage" placeholder="e.g. Renewing Jan 1, currently fully insured" className={FIELD_INPUT_CLS} {...form.register("currentCoverage")} data-testid="input-coverage" />
+                </Field>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="message">Anything else? <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                  <Textarea id="message" rows={3} placeholder="Tell us what you're looking for or what's not working today." {...form.register("message")} data-testid="input-message" />
-                </div>
+                <Field label="Anything else?" htmlFor="message" optional>
+                  <Textarea
+                    id="message"
+                    rows={3}
+                    placeholder="Tell us what you're looking for or what's not working today."
+                    className="rounded-none border-0 border-b border-border bg-transparent px-0 text-[15px] placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors resize-none"
+                    {...form.register("message")}
+                    data-testid="input-message"
+                  />
+                </Field>
 
-                <Button type="submit" className="w-full gap-1.5 mt-1" disabled={isLoading} data-testid="button-submit-quote">
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Submit Request <ArrowRight className="h-4 w-4" /></>}
-                </Button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  data-testid="button-submit-quote"
+                  className="group w-full inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground px-6 py-4 text-[13px] font-semibold tracking-[0.08em] uppercase transition-colors hover:bg-[hsl(var(--ink))] disabled:opacity-60"
+                >
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                    <>
+                      Submit Request
+                      <ArrowRight size={14} strokeWidth={2} className="transition-transform group-hover:translate-x-1" />
+                    </>
+                  )}
+                </button>
               </form>
 
-              <div className="mt-5 pt-4 border-t border-border flex items-center gap-2 text-[11.5px] text-muted-foreground">
-                <ShieldCheck className="h-3.5 w-3.5" />
+              <div className="mt-6 pt-5 border-t border-border flex items-center gap-2.5 text-[11.5px] uppercase tracking-[0.1em] text-muted-foreground">
+                <ShieldCheck size={13} strokeWidth={1.8} style={{ color: "hsl(var(--brand-accent))" }} />
                 Your information goes straight to our team. We never sell your data.
               </div>
             </div>
