@@ -277,19 +277,21 @@ function Hero() {
 function ProofBand() {
   const items = [
     ["Decades deep", "in this market"],
-    ["Every size group", "from 2 lives to enterprise"],
+    ["Every size", "groups from 2 lives to enterprise"],
     ["Every structure", "fully insured to self-funded"],
     ["One team", "advice through administration"],
   ];
   return (
-    <div className="border-y border-border">
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 grid grid-cols-2 lg:grid-cols-4">
+    <div>
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+        <div className="border-y border-border grid grid-cols-2 lg:grid-cols-4">
         {items.map(([big, small], i) => (
           <div key={big} className={`py-7 lg:py-9 pr-6 ${i > 0 ? "lg:border-l lg:border-border lg:pl-8" : ""} ${i % 2 === 1 ? "border-l border-border pl-6 lg:pl-8" : ""} ${i > 1 ? "border-t border-border lg:border-t-0" : ""}`}>
             <div className="font-display font-bold text-[24px] lg:text-[30px] leading-none tracking-[-0.03em]">{big}</div>
             <div className="mt-2 text-[12px] uppercase tracking-[0.1em] text-muted-foreground">{small}</div>
           </div>
         ))}
+        </div>
       </div>
     </div>
   );
