@@ -304,8 +304,9 @@ function Hero() {
           </Reveal>
           <Reveal delay={180}>
             <p className="mt-8 text-[16px] lg:text-[17px] leading-[1.65] text-muted-foreground max-w-[30rem]">
-              Kennion pairs deep market experience with serious technology. Employers use us
-              to find the ideas their last broker never brought up.
+              Kennion is an employee benefits agency. Our advisors pair deep market
+              experience with serious technology to bring you the ideas your last broker
+              never did.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
               <SolidButton href="/quote">Request a Proposal</SolidButton>
@@ -344,6 +345,47 @@ function ProofBand() {
         ))}
       </div>
     </div>
+  );
+}
+
+/* ── who we help ───────────────────────────────────────────────────── */
+
+function WhoWeHelp() {
+  const cases = [
+    {
+      label: "Growing Company",
+      h: "Setting up benefits for the first time?",
+      p: "You are hiring and it is time for a real program. Our advisors design it around your budget, set up online enrollment, and make benefits a reason people join.",
+      cta: "Start a program",
+    },
+    {
+      label: "Tired of Your Broker",
+      h: "High rates, rough renewals, no new ideas?",
+      p: "If every renewal is a higher number and a shrug, you are due for a second opinion. Send us your census and see what you have been missing.",
+      cta: "Get a second opinion",
+    },
+  ];
+  return (
+    <section className="py-20 lg:py-28">
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+        <SectionHead label="Who We Help">
+          <div className="grid md:grid-cols-2 gap-y-12 md:gap-x-0">
+            {cases.map((c, i) => (
+              <Reveal key={c.label} delay={i * 80}>
+                <div className={`h-full flex flex-col items-start md:pr-12 ${i > 0 ? "md:border-l md:border-border md:pl-12 md:pr-0" : ""}`}>
+                  <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>{c.label}</div>
+                  <h3 className={`${H3} mt-4 text-[24px] lg:text-[30px] leading-[1.12] max-w-[16em]`}>{c.h}</h3>
+                  <p className="mt-4 text-[14.5px] leading-[1.7] text-muted-foreground max-w-[26rem]">{c.p}</p>
+                  <Link href="/quote" className="kn-link mt-6 text-[13px] font-semibold uppercase tracking-[0.1em] text-foreground">
+                    {c.cta}
+                  </Link>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </SectionHead>
+      </div>
+    </section>
   );
 }
 
@@ -709,6 +751,7 @@ export default function LandingPage() {
       <Nav />
       <main>
         <Hero />
+        <WhoWeHelp />
         <Platform />
         <Options />
         <HowItWorks />
