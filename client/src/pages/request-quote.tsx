@@ -27,7 +27,7 @@ function isValidUSPhone(phone: string): boolean {
 }
 
 const EMPLOYER_SIZES = [
-  "1-50 employees",
+  "2-50 employees",
   "51-100 employees",
   "101-500 employees",
   "501-1,000 employees",
