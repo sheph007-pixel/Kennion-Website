@@ -166,19 +166,18 @@ export default function RequestQuotePage() {
             Request a Proposal
           </div>
           <h1 className="font-display font-bold mt-7 text-[clamp(2.4rem,6vw,3.5rem)] leading-[1.0] tracking-[-0.035em]">
-            Let&rsquo;s build a benefits program <span style={{ color: "hsl(var(--primary))" }}>around your people.</span>
+            See every option <span style={{ color: "hsl(var(--primary))" }}>for your group.</span>
           </h1>
           <p className="mt-6 text-[15.5px] leading-[1.65] text-muted-foreground max-w-[28rem]">
-            Tell us a little about your group and our team will reach out to start the
-            conversation. No obligation, no cost, just a clear look at what your benefits
-            program could be.
+            Tell us a little about your group and our team will take it from there. It costs
+            nothing to see what we would put on the table.
           </p>
 
           <div className="mt-10 max-w-[28rem]">
             {[
-              "A dedicated advisor, not a call center",
-              "Strategy across fully insured, level funded, and self-funded",
-              "Guidance for employers of every size",
+              "Every major carrier, quoted side by side",
+              "Online enrollment, no paper anywhere",
+              "A team that runs it all year",
             ].map((t) => (
               <div key={t} className="flex items-baseline gap-4 border-t border-border py-4 last:border-b">
                 <span className="inline-block w-5 h-px translate-y-[-4px] shrink-0" style={{ background: "hsl(var(--brand-accent))" }} />
