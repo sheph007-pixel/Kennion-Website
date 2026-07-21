@@ -304,9 +304,8 @@ function Hero() {
           </Reveal>
           <Reveal delay={180}>
             <p className="mt-8 text-[16px] lg:text-[17px] leading-[1.65] text-muted-foreground max-w-[30rem]">
-              Kennion is an employee benefits agency. Our advisors pair deep market
-              experience with serious technology to bring you the ideas your last broker
-              never did.
+              A team of advisors ready to help, and technology that handles the busywork.
+              Come see the ideas your last broker never brought you.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
               <SolidButton href="/quote">Request a Proposal</SolidButton>
@@ -508,9 +507,9 @@ function Options() {
               <span style={{ color: "hsl(var(--primary))" }}>you knew existed.</span>
             </h2>
             <p className="lg:col-span-5 text-[15px] leading-[1.65] text-muted-foreground lg:pb-2 max-w-[26rem]">
-              If every renewal looks like last year with a higher number, you are looking at
-              the status quo, not the market. We bring the structures most brokers never show,
-              and we tell you which one we would pick.
+              If every renewal looks like last year with a higher number, you are not seeing
+              the market. We bring the structures most brokers skip, and we tell you which
+              one we would pick.
             </p>
           </div>
         </SectionHead>
@@ -530,7 +529,7 @@ function Options() {
 function HowItWorks() {
   const steps = [
     { t: "Send your census", d: "A spreadsheet is all we need to get started." },
-    { t: "See something new", d: "Options you have not seen before, with real rates, side by side." },
+    { t: "See something new", d: "Fresh options with real rates, side by side." },
     { t: "We run the rest", d: "Enrollment, renewals, and the day-to-day. Handled." },
   ];
   return (
@@ -567,8 +566,8 @@ function FinalCTA() {
           See what your group is missing.
         </h2>
         <p className="mt-7 text-[16px] leading-[1.65] text-white/70 max-w-[34rem]">
-          Send us your census and we will come back with options you have never been shown
-          and ideas that change how you think about benefits. It costs nothing to look.
+          Send us your census and we will come back with something new. It costs
+          nothing to look.
         </p>
         <div className="mt-10 flex flex-wrap items-center gap-x-9 gap-y-5">
           <SolidButton href="/quote" tone="paper">Request a Proposal</SolidButton>
