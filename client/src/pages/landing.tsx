@@ -113,7 +113,7 @@ function Nav({ onContact }: { onContact: () => void }) {
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-[hsl(var(--background))]/92 backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--background))]/85">
+    <header className="sticky top-0 z-40 border-b border-border bg-[hsl(var(--background))]">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10 flex items-center justify-between h-[64px] lg:h-[68px]">
         <Link href="/" className="flex items-center">
           <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-7 lg:h-8 w-auto" style={{ mixBlendMode: "multiply" }} />
