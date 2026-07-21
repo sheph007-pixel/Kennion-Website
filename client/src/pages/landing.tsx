@@ -203,7 +203,7 @@ function ProductVisual() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: "hsl(var(--brand-accent))" }} />
             <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "hsl(var(--brand-accent))" }} />
           </span>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">AI review complete</span>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Underwriting review complete</span>
         </div>
       </div>
 
@@ -436,7 +436,7 @@ function HowWeDoIt() {
             </div>
           </Reveal>
 
-          {/* AI analysis */}
+          {/* Analysis */}
           <Reveal delay={140}>
             <div className="bg-[hsl(var(--ink))] p-6 lg:p-8 h-full flex flex-col">
               <div className="border border-white/10 bg-white/[0.04] p-4 mb-7 overflow-hidden">
@@ -452,22 +452,15 @@ function HowWeDoIt() {
                   <span className="text-[10.5px] uppercase tracking-[0.08em] text-white/50">Review in progress</span>
                 </div>
               </div>
-              <h3 className={`${H3} text-[21px]`}>AI-assisted analysis</h3>
+              <h3 className={`${H3} text-[21px]`}>Deeper analysis</h3>
               <p className="mt-3 text-[13.5px] leading-[1.7] text-white/60">
-                AI tidies the data you send and writes a plain-English read on your group's
-                risk, on top of experienced underwriting eyes. Nothing gets missed, and
-                nothing is decided by a robot.
+                The latest analytical tools layered on experienced underwriting eyes. Your
+                group gets a sharper read than a spreadsheet ever gave it.
               </p>
             </div>
           </Reveal>
         </div>
 
-        <Reveal>
-          <p className="mt-8 text-[13px] text-white/50">
-            This is the software we actually run, not an illustration.{" "}
-            <Link href="/quote" className="kn-link text-white/80">Request a quote and you will be inside it this week.</Link>
-          </p>
-        </Reveal>
       </div>
     </section>
   );
