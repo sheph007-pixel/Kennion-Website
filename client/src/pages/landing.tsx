@@ -334,7 +334,7 @@ function Problem() {
           <div className="grid md:grid-cols-2 gap-y-12 md:gap-x-0">
             {cases.map((c, i) => (
               <Reveal key={c.label} delay={i * 80}>
-                <div className={`h-full flex flex-col items-start md:pr-12 ${i > 0 ? "md:border-l md:border-border md:pl-12 md:pr-0" : ""}`}>
+                <div className={`h-full flex flex-col items-start ${i === 0 ? "md:pr-12" : "md:pl-12 md:border-l md:border-border"}`}>
                   <div className="kn-photo w-full mb-7">
                     <img src={c.img} alt={c.alt} className="w-full aspect-[16/9] object-cover" loading="lazy" />
                   </div>
