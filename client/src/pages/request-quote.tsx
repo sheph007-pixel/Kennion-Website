@@ -163,7 +163,7 @@ export default function RequestQuotePage() {
         <div className="lg:col-span-5">
           <div className="flex items-baseline gap-4 kn-caps text-muted-foreground">
             <span className="inline-block w-10 h-px translate-y-[-3px]" style={{ background: "hsl(var(--brand-accent))" }} />
-            Request a Proposal
+            Request a Quote
           </div>
           <h1 className="font-display font-bold mt-7 text-[clamp(2.4rem,6vw,3.5rem)] leading-[1.0] tracking-[-0.035em]">
             Better benefits <span style={{ color: "hsl(var(--primary))" }}>start here.</span>
