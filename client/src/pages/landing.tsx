@@ -277,9 +277,9 @@ function Hero() {
 function ProofBand() {
   const items = [
     ["Decades deep", "in this market"],
-    ["Zero patience", "for the status quo"],
-    ["New ideas", "at every renewal"],
-    ["Honest pushback", "when it saves you money"],
+    ["Every size group", "from 2 lives to enterprise"],
+    ["Every structure", "fully insured to self-funded"],
+    ["One team", "advice through administration"],
   ];
   return (
     <div className="border-y border-border">
