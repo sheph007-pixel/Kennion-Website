@@ -34,7 +34,6 @@ const H1 = "font-display font-bold tracking-[-0.04em] leading-[0.96] text-[clamp
 const H2 = "font-display font-bold tracking-[-0.03em] leading-[1.0] text-[clamp(2rem,4.8vw,3.8rem)]";
 const H2_SM = "font-display font-bold tracking-[-0.025em] leading-[1.04] text-[clamp(1.7rem,3.4vw,2.5rem)]";
 const H3 = "font-display font-semibold tracking-[-0.02em]";
-const NUM = "text-[11px] font-bold tracking-[0.12em] tabular-nums";
 
 /* ── motion ────────────────────────────────────────────────────────── */
 
@@ -74,13 +73,13 @@ function Reveal({ children, delay = 0, className = "", y = 14 }: {
 
 /* ── shared bits ───────────────────────────────────────────────────── */
 
-function SectionHead({ no, label, children, dark = false }: {
-  no: string; label: string; children: React.ReactNode; dark?: boolean;
+function SectionHead({ label, children, dark = false }: {
+  label: string; children: React.ReactNode; dark?: boolean;
 }) {
   return (
     <Reveal>
       <div className={`flex items-baseline gap-4 border-b pb-4 ${dark ? "border-white/15" : "border-foreground/20"}`}>
-        <span className={NUM} style={{ color: "hsl(var(--brand-accent))" }}>{no}</span>
+        <span className="inline-block w-6 h-px translate-y-[-3px]" style={{ background: "hsl(var(--brand-accent))" }} />
         <span className={`kn-caps ${dark ? "text-white/60" : "text-muted-foreground"}`}>{label}</span>
       </div>
       <div className="pt-8 lg:pt-14">{children}</div>
@@ -241,9 +240,9 @@ function Hero() {
           <div className="mt-10 lg:mt-16 grid lg:grid-cols-12 gap-y-10 lg:gap-x-10 border-t border-foreground/20 pt-8 lg:pt-12 items-start">
             <div className="lg:col-span-5">
               <p className="text-[16px] lg:text-[17px] leading-[1.65] text-muted-foreground max-w-[34rem]">
-                Kennion is a full-service, independent employee benefits advisory firm. We help
-                employers of every size design, deliver, and manage benefits programs that attract
-                talent, control cost, and take work off HR&rsquo;s plate, across every funding strategy.
+                Kennion is an independent employee benefits advisory firm. We design and manage
+                programs that help employers win talent and keep costs in check, and we take the
+                day-to-day benefits work off HR&rsquo;s plate.
               </p>
               <div className="mt-8 lg:mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
                 <SolidButton href="/quote">Request a Proposal</SolidButton>
@@ -255,8 +254,8 @@ function Hero() {
 
             <div className="lg:col-span-3 lg:border-l lg:border-border lg:pl-10 self-stretch flex flex-col justify-between gap-8">
               {[
-                ["Independent", "We work for you, not an insurer. Advice with no quotas and no conflicts."],
-                ["95%+ retention", "Clients stay, year after year. Retention is the clearest proof the model works."],
+                ["Independent", "We answer to you, not an insurance carrier. Nobody here has a quota to protect."],
+                ["95%+ retention", "Most of our clients have been with us for years. They stay because the model works."],
               ].map(([t, d]) => (
                 <div key={t as string} className="border-t border-border pt-4 lg:border-t-0 lg:pt-0">
                   <div className={`${H3} text-[20px] leading-none`}>{t}</div>
@@ -311,19 +310,19 @@ function Ticker() {
 
 function Solutions() {
   const services = [
-    { t: "Benefits Strategy & Plan Design", d: "We start with your goals and budget, then architect a program that fits: medical, dental, vision, life, disability, and supplemental." },
-    { t: "Marketing & Carrier Placement", d: "We take your group to the market, negotiate on your behalf, and bring back options built around leverage, not defaults." },
-    { t: "Data, Analytics & Benchmarking", d: "Claims insight, utilization trends, and peer benchmarking, so every decision is grounded in evidence, not guesswork." },
-    { t: "Benefits Administration & Technology", d: "Modern enrollment and administration platforms that streamline open enrollment and give HR one place to work." },
-    { t: "Compliance, ACA & ERISA", d: "Reporting, notices, and documentation handled, so you stay current without deciphering federal regulations." },
-    { t: "Pharmacy & Rx Strategy", d: "Pharmacy is one of the fastest-growing cost drivers. We build strategies that manage spend without hurting members." },
-    { t: "Employee Communication & Engagement", d: "Clear, year-round communication and decision support that helps employees actually use the benefits you provide." },
-    { t: "Ongoing Service & Advocacy", d: "A dedicated team for claims questions, billing issues, mid-year changes, and renewals, every day of the year." },
+    { t: "Benefits Strategy & Plan Design", d: "Most benefits programs were inherited, not designed. We start over from your budget and your workforce and build a lineup that actually fits." },
+    { t: "Marketing & Carrier Placement", d: "When your group goes to market, leverage matters. We run the process and push the carriers until the options are worth choosing between." },
+    { t: "Data, Analytics & Benchmarking", d: "You can't manage what you can't see. We put claims experience and peer benchmarks in front of you before decisions get made." },
+    { t: "Benefits Administration & Technology", d: "Enrollment platforms your HR team will actually like using, with one place for elections, changes, and reporting all year." },
+    { t: "Compliance, ACA & ERISA", d: "The notices, filings, and plan documents are our job to track. You stay current without reading federal regulations." },
+    { t: "Pharmacy & Rx Strategy", d: "Drug spend is climbing faster than anything else on your renewal. We work to contain it without your members feeling squeezed." },
+    { t: "Employee Communication & Engagement", d: "A benefit nobody understands might as well not exist. We make sure your people know what they have and how to use it." },
+    { t: "Ongoing Service & Advocacy", d: "A claim gets denied, a bill looks wrong, someone lost a card. Your team calls us and we handle it." },
   ];
   return (
     <section id="solutions" className="py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead no="01" label="What We Do">
+        <SectionHead label="What We Do">
           <div className="grid lg:grid-cols-12 gap-y-8 lg:gap-x-10 items-end mb-12 lg:mb-20">
             <h2 className={`${H2} lg:col-span-8`}>
               A full spectrum of solutions,
@@ -331,9 +330,8 @@ function Solutions() {
               <span style={{ color: "hsl(var(--primary))" }}>under one roof.</span>
             </h2>
             <p className="lg:col-span-4 text-[15px] leading-[1.65] text-muted-foreground lg:pb-2">
-              We don&rsquo;t just place coverage. We build the best possible program, then manage it for
-              you year after year, with the strategy, technology, and partners of a national firm,
-              for employers of every size.
+              We don&rsquo;t place coverage and then disappear until renewal. We build the program,
+              run it all year, and bring the resources of a national firm to groups of any size.
             </p>
           </div>
         </SectionHead>
@@ -341,14 +339,11 @@ function Solutions() {
         <div>
           {services.map((s, i) => (
             <Reveal key={s.t} delay={Math.min(i * 40, 160)}>
-              <div className="group grid grid-cols-[2.5rem_1fr] lg:grid-cols-[6rem_1fr_1fr_4rem] gap-x-4 lg:gap-x-10 items-baseline border-t border-border py-5 lg:py-7 transition-colors hover:bg-foreground/[0.025]">
-                <span className={`${NUM} text-muted-foreground/70 group-hover:text-[hsl(var(--brand-accent))] transition-colors`}>
-                  {String(i + 1).padStart(2, "0")}
-                </span>
+              <div className="group grid grid-cols-1 lg:grid-cols-[1fr_1fr_4rem] gap-x-10 items-baseline border-t border-border py-5 lg:py-7 transition-colors hover:bg-foreground/[0.025]">
                 <h3 className={`${H3} text-[19px] lg:text-[24px] leading-[1.15]`}>
                   {s.t}
                 </h3>
-                <p className="col-span-2 col-start-2 mt-2 lg:col-span-1 lg:col-start-auto lg:mt-0 text-[13.5px] leading-[1.65] text-muted-foreground max-w-[34rem]">
+                <p className="mt-2 lg:mt-0 text-[13.5px] leading-[1.65] text-muted-foreground max-w-[34rem]">
                   {s.d}
                 </p>
                 <ArrowRight size={18} strokeWidth={1.6} className="hidden lg:block justify-self-end self-center opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0 text-foreground" />
@@ -366,27 +361,27 @@ function Solutions() {
 
 function WhoWeServe() {
   const segments = [
-    { t: "Small Business", d: "Right-sized guidance, better rates, and technology that punches well above your headcount. You get a real advisor, not a call center." },
-    { t: "Middle Market", d: "Sophisticated strategy, data, and advocacy for growing organizations that have outgrown a one-size-fits-all broker." },
-    { t: "Large & Enterprise", d: "Consulting-grade analytics, financial modeling, and dedicated service teams for complex, multi-location employers." },
+    { t: "Small Business", d: "You get a named advisor who knows your group, better rates than you could find on your own, and technology usually reserved for much larger employers." },
+    { t: "Middle Market", d: "Growing organizations tend to outgrow their broker before they notice. We bring the analytics and the advocacy your size now warrants." },
+    { t: "Large & Enterprise", d: "Complex census, multiple locations, real financial exposure. Our consulting bench models it and a dedicated team runs it." },
   ];
   const funding = [
-    { n: "01", t: "Fully Insured", d: "Predictable, simple, and fully transferred risk. The right fit for many groups, priced competitively." },
-    { n: "02", t: "Level Funded", d: "The middle path: the cash-flow stability of fully insured with the savings potential of self-funding." },
-    { n: "03", t: "Self-Funded", d: "Maximum control, transparency, and long-term savings for groups ready to take on managed risk." },
+    { t: "Fully Insured", d: "The carrier takes the risk and your monthly cost stays fixed. Still the best answer for plenty of groups, and we price it hard." },
+    { t: "Level Funded", d: "Fixed payments like fully insured, with money back in years when claims run well. Often the smartest middle ground." },
+    { t: "Self-Funded", d: "You keep the margin a carrier would have kept. More control and more transparency, for groups ready to manage the risk." },
   ];
   return (
     <section id="who-we-serve" className="bg-[hsl(var(--ink))] text-white py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead no="02" label="Who We Serve" dark>
+        <SectionHead label="Who We Serve" dark>
           <h2 className={`${H2} mb-6`}>
             Built for employers
             <br />
             of every size.
           </h2>
           <p className="text-[15.5px] leading-[1.65] text-white/60 max-w-[38rem] mb-12 lg:mb-20">
-            From a growing small business to a complex, multi-state enterprise, our team scales the
-            strategy and service to fit, never the other way around.
+            Whether you have twelve employees or twelve locations, the strategy and the service
+            scale to fit you. Never the other way around.
           </p>
         </SectionHead>
 
@@ -394,8 +389,7 @@ function WhoWeServe() {
           <div className="grid md:grid-cols-3 border-t border-white/15">
             {segments.map((s, i) => (
               <div key={s.t} className={`pt-7 pb-9 md:pr-10 ${i > 0 ? "md:pl-10 md:border-l md:border-white/15 border-t border-white/15 md:border-t-0" : ""}`}>
-                <div className={`${NUM} text-white/40`}>0{i + 1}</div>
-                <h3 className={`${H3} mt-4 text-[23px] lg:text-[26px] leading-[1.1]`}>{s.t}</h3>
+                <h3 className={`${H3} text-[23px] lg:text-[26px] leading-[1.1]`}>{s.t}</h3>
                 <p className="mt-4 text-[13.5px] leading-[1.7] text-white/60 max-w-[24rem]">{s.d}</p>
               </div>
             ))}
@@ -410,16 +404,15 @@ function WhoWeServe() {
                 One strategy doesn&rsquo;t fit every employer.
               </h3>
               <p className="mt-5 text-[14px] leading-[1.7] text-white/55 max-w-[24rem]">
-                We model the options and recommend the funding approach that fits your risk
-                tolerance and goals, then manage it, and revisit it, every year.
+                We model the options against your claims history and risk tolerance, make a
+                recommendation, and revisit it at every renewal.
               </p>
             </div>
             <div className="lg:col-span-8">
               {funding.map((f) => (
-                <div key={f.t} className="grid grid-cols-[2.5rem_1fr] lg:grid-cols-[4.5rem_16rem_1fr] gap-x-4 lg:gap-x-8 items-baseline border-t border-white/15 py-5 lg:py-6">
-                  <span className={`${NUM} text-white/40`}>{f.n}</span>
+                <div key={f.t} className="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-x-8 items-baseline border-t border-white/15 py-5 lg:py-6">
                   <h4 className={`${H3} text-[19px] lg:text-[21px]`}>{f.t}</h4>
-                  <p className="col-span-2 col-start-2 mt-2 lg:col-span-1 lg:col-start-auto lg:mt-0 text-[13.5px] leading-[1.7] text-white/60">{f.d}</p>
+                  <p className="mt-2 lg:mt-0 text-[13.5px] leading-[1.7] text-white/60">{f.d}</p>
                 </div>
               ))}
               <div className="border-t border-white/15" />
@@ -435,16 +428,16 @@ function WhoWeServe() {
 
 function Approach() {
   const steps = [
-    { t: "Discover", d: "We learn your workforce, your goals, and where your current program is falling short." },
-    { t: "Strategize", d: "We model funding options and design a program built around your budget and your people." },
-    { t: "Market & Place", d: "We take your group to the right partners and negotiate hard on your behalf." },
-    { t: "Implement", d: "Enrollment, technology, and employee communication, set up and handled for you." },
-    { t: "Manage", d: "Renewals, compliance, claims advocacy, and strategy reviews, all year long." },
+    { t: "Discover", d: "We start by understanding your workforce and where the current program falls short." },
+    { t: "Strategize", d: "Then we model the funding options and design around your budget." },
+    { t: "Market & Place", d: "We take the group to market and negotiate on your behalf." },
+    { t: "Implement", d: "Enrollment, technology, and employee communication get set up and handled for you." },
+    { t: "Manage", d: "And we stay on it through the year: renewals, compliance, claims advocacy, strategy reviews." },
   ];
   return (
     <section id="approach" className="py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead no="03" label="Our Approach">
+        <SectionHead label="Our Approach">
           <div className="grid lg:grid-cols-12 gap-y-12 lg:gap-x-10">
             <div className="lg:col-span-5">
               <div className="lg:sticky lg:top-32">
@@ -494,17 +487,17 @@ function WhyKennion() {
     { v: "0", l: "Quotas. Independent and conflict-free" },
   ];
   const differentiators = [
-    { t: "Experienced Leadership", d: "A senior team that has seen every market cycle and knows how to win a renewal. Deep expertise, not a rotating cast of junior reps." },
-    { t: "Client-First Advocacy", d: "Independent and conflict-free. Your renewal gets shopped every year and negotiated hard, never rubber-stamped." },
-    { t: "Proven Retention", d: "Our clients stay with us above 95% year over year. Retention like that is the clearest proof that the model works." },
-    { t: "Full-Service Breadth", d: "Strategy, technology, compliance, and service under one roof, with a deep bench of solutions, programs, and partners." },
-    { t: "Growing Fast", d: "One of the fastest-growing benefits advisories in the region, adding clients and capabilities while keeping service personal." },
-    { t: "Technology-Driven", d: "Modern administration, analytics, and enrollment built for today's HR teams. The tools of a national firm, delivered locally." },
+    { t: "Experienced Leadership", d: "The people on your account have seen every market cycle and know how a renewal gets won. No rotating cast of junior reps." },
+    { t: "Client-First Advocacy", d: "Your renewal gets shopped and negotiated every year, because nobody here has a carrier quota to protect." },
+    { t: "Proven Retention", d: "More than 95% of our clients stay with us year over year. We think that says more than any pitch could." },
+    { t: "Full-Service Breadth", d: "Strategy, technology, compliance, and day-to-day service all live under one roof, so nothing falls between vendors." },
+    { t: "Growing Fast", d: "One of the fastest-growing benefits advisories in the region, and service has stayed personal while we grow." },
+    { t: "Technology-Driven", d: "Modern enrollment, administration, and analytics, delivered with local service instead of a national call queue." },
   ];
   return (
     <section id="why-us" className="pb-20 lg:pb-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead no="04" label="Why Kennion">
+        <SectionHead label="Why Kennion">
           <h2 className={H2}>
             The difference an
             <br />
@@ -549,7 +542,7 @@ function Contact() {
   return (
     <section id="contact" className="py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead no="05" label="Contact">
+        <SectionHead label="Contact">
           <div className="grid lg:grid-cols-12 gap-y-14 lg:gap-x-10">
             <div className="lg:col-span-6">
               <h2 className={H2}>
@@ -594,8 +587,8 @@ function Contact() {
                   Ready for a benefits partner that works for you?
                 </h3>
                 <p className="mt-4 text-[14px] leading-[1.7] text-muted-foreground max-w-[30rem]">
-                  Tell us a little about your group and our team will reach out to start the
-                  conversation: strategy, options, and a clear picture of what your program could be.
+                  Tell us a little about your group and our team will reach out. We&rsquo;ll come
+                  back with options and a clear picture of what your program could be.
                 </p>
                 <div className="mt-7">
                   <SolidButton href="/quote">Request a Proposal</SolidButton>
@@ -645,8 +638,8 @@ function FinalCTA() {
           Better benefits start with a better advisor.
         </h2>
         <p className="mt-7 text-[16px] leading-[1.65] text-white/70 max-w-[36rem]">
-          Tell us about your group and we&rsquo;ll show you what a real benefits partnership looks
-          like. No obligation, no cost, no pressure. Just a clear plan for your people.
+          Tell us about your group and we&rsquo;ll show you what a real benefits partnership
+          looks like. There&rsquo;s no cost to find out, and no pressure to move.
         </p>
         <div className="mt-10 flex flex-wrap items-center gap-x-9 gap-y-5">
           <SolidButton href="/quote" tone="paper">Request a Proposal</SolidButton>

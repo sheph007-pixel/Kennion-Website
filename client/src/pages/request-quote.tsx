@@ -179,11 +179,9 @@ export default function RequestQuotePage() {
               "A dedicated advisor, not a call center",
               "Strategy across fully insured, level funded, and self-funded",
               "Guidance for employers of every size",
-            ].map((t, i) => (
+            ].map((t) => (
               <div key={t} className="flex items-baseline gap-4 border-t border-border py-4 last:border-b">
-                <span className="text-[11px] font-bold tracking-[0.12em] tabular-nums shrink-0" style={{ color: "hsl(var(--brand-accent))" }}>
-                  0{i + 1}
-                </span>
+                <span className="inline-block w-5 h-px translate-y-[-4px] shrink-0" style={{ background: "hsl(var(--brand-accent))" }} />
                 <span className="text-[14px] leading-[1.6]">{t}</span>
               </div>
             ))}
