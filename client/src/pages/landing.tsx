@@ -107,9 +107,9 @@ function Nav({ onContact }: { onContact: () => void }) {
   const [open, setOpen] = useState(false);
 
   const links = [
-    ["#technology", "Technology"],
-    ["#options", "Options"],
-    ["#how", "How It Works"],
+    ["#what", "What We Do"],
+    ["#how", "How We Do It"],
+    ["#why", "Why Kennion"],
   ];
 
   return (
@@ -295,9 +295,9 @@ function ProofBand() {
   );
 }
 
-/* ── who we help ───────────────────────────────────────────────────── */
+/* ── the problem ───────────────────────────────────────────────────── */
 
-function WhoWeHelp() {
+function Problem() {
   const cases = [
     {
       img: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=70&auto=format&fit=crop",
@@ -319,7 +319,18 @@ function WhoWeHelp() {
   return (
     <section className="py-20 lg:py-28">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead label="Who We Help">
+        <SectionHead label="The Problem">
+          <div className="grid lg:grid-cols-12 gap-y-6 lg:gap-x-10 items-end mb-12 lg:mb-16">
+            <h2 className={`${H2} lg:col-span-7`}>
+              Benefits keep costing more
+              <br />
+              <span style={{ color: "hsl(var(--primary))" }}>and delivering less.</span>
+            </h2>
+            <p className="lg:col-span-5 text-[15px] leading-[1.65] text-muted-foreground lg:pb-2 max-w-[26rem]">
+              Premiums climb every year, employees are not sure what they actually have, and
+              HR is stuck in the middle. Sound familiar? You are who we built this for.
+            </p>
+          </div>
           <div className="grid md:grid-cols-2 gap-y-12 md:gap-x-0">
             {cases.map((c, i) => (
               <Reveal key={c.label} delay={i * 80}>
@@ -343,25 +354,39 @@ function WhoWeHelp() {
   );
 }
 
-/* ── platform (dark) ───────────────────────────────────────────────── */
+/* ── how we do it (dark): 3 steps + the tools behind them ──────────── */
 
-function Technology() {
+function HowWeDoIt() {
+  const steps = [
+    { t: "Send your census", d: "A spreadsheet is all we need to get started." },
+    { t: "See something new", d: "Fresh ideas priced with real rates, back fast." },
+    { t: "We run the rest", d: "Enrollment, renewals, and the day-to-day. Handled." },
+  ];
   return (
-    <section id="technology" className="bg-[hsl(var(--ink))] text-white py-20 lg:py-32">
+    <section id="how" className="bg-[hsl(var(--ink))] text-white py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead label="Technology" dark>
-          <div className="grid lg:grid-cols-12 gap-y-6 lg:gap-x-10 items-end mb-12 lg:mb-16">
-            <h2 className={`${H2} lg:col-span-7`}>
-              Benefits, run
-              <br />
-              like software.
-            </h2>
-            <p className="lg:col-span-5 text-[15px] leading-[1.65] text-white/60 lg:pb-2 max-w-[26rem]">
-              The tools you would expect from a technology company, built by a team that got
-              tired of watching benefits stand still.
-            </p>
+        <SectionHead label="How We Do It" dark>
+          <div className="grid md:grid-cols-3 gap-y-10 md:gap-x-10">
+            {steps.map((s, i) => (
+              <Reveal key={s.t} delay={i * 80}>
+                <div className={`md:pr-6 ${i > 0 ? "md:border-l md:border-white/15 md:pl-10" : ""}`}>
+                  <div className="font-display font-bold text-[44px] lg:text-[56px] leading-none tracking-[-0.04em] tabular-nums" style={{ color: "hsl(var(--brand-accent))" }}>
+                    {i + 1}
+                  </div>
+                  <h3 className={`${H3} mt-5 text-[22px] lg:text-[25px]`}>{s.t}</h3>
+                  <p className="mt-3 text-[14px] leading-[1.7] text-white/60 max-w-[20rem]">{s.d}</p>
+                </div>
+              </Reveal>
+            ))}
           </div>
         </SectionHead>
+
+        <Reveal>
+          <div className="mt-16 lg:mt-24 mb-8 flex items-baseline justify-between gap-6 flex-wrap">
+            <h3 className={`${H3} text-[24px] lg:text-[30px]`}>Benefits, run like software.</h3>
+            <span className="kn-caps text-white/50">The Tools Behind It</span>
+          </div>
+        </Reveal>
 
         <div className="grid md:grid-cols-3 gap-px bg-white/10 border border-white/10">
           {/* Quote online */}
@@ -452,9 +477,9 @@ function Options() {
     </span>
   ));
   return (
-    <section id="options" className="py-20 lg:py-32">
+    <section id="what" className="py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead label="Options">
+        <SectionHead label="What We Do">
           <div className="grid lg:grid-cols-12 gap-y-6 lg:gap-x-10 items-end">
             <h2 className={`${H2} lg:col-span-7`}>
               More options than
@@ -479,30 +504,36 @@ function Options() {
   );
 }
 
-/* ── how it works ──────────────────────────────────────────────────── */
+/* ── why kennion ───────────────────────────────────────────────────── */
 
-function HowItWorks() {
-  const steps = [
-    { t: "Send your census", d: "A spreadsheet is all we need to get started." },
-    { t: "See something new", d: "Fresh options with real rates, side by side." },
-    { t: "We run the rest", d: "Enrollment, renewals, and the day-to-day. Handled." },
+function WhyKennion() {
+  const rows = [
+    { t: "Advisors who push back", d: "You get a recommendation, not a menu. If an option is not worth your money, we say so." },
+    { t: "More of the market", d: "Carriers and structures most employers are never shown, priced and compared for you." },
+    { t: "Less work for your team", d: "Online enrollment and digital tools take the paperwork off HR's desk." },
   ];
   return (
-    <section id="how" className="border-t border-border py-20 lg:py-32">
+    <section id="why" className="py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead label="How It Works">
-          <div className="grid md:grid-cols-3 gap-y-10 md:gap-x-10">
-            {steps.map((s, i) => (
-              <Reveal key={s.t} delay={i * 80}>
-                <div className={`md:pr-6 ${i > 0 ? "md:border-l md:border-border md:pl-10" : ""}`}>
-                  <div className="font-display font-bold text-[44px] lg:text-[56px] leading-none tracking-[-0.04em] tabular-nums" style={{ color: "hsl(var(--brand-accent))" }}>
-                    {i + 1}
-                  </div>
-                  <h3 className={`${H3} mt-5 text-[22px] lg:text-[25px]`}>{s.t}</h3>
-                  <p className="mt-3 text-[14px] leading-[1.7] text-muted-foreground max-w-[20rem]">{s.d}</p>
+        <SectionHead label="Why Kennion">
+          <div className="grid lg:grid-cols-12 gap-y-12 lg:gap-x-10 items-start">
+            <div className="lg:col-span-4">
+              <div className="font-display font-bold text-[84px] lg:text-[120px] leading-[0.9] tracking-[-0.045em] tabular-nums">
+                95<span style={{ color: "hsl(var(--brand-accent))" }}>%</span>
+              </div>
+              <div className="mt-4 text-[12px] uppercase tracking-[0.1em] text-muted-foreground max-w-[15rem] leading-[1.5]">
+                Of our clients stay with us, year over year
+              </div>
+            </div>
+            <div className="lg:col-span-8">
+              {rows.map((r) => (
+                <div key={r.t} className="grid grid-cols-1 lg:grid-cols-[18rem_1fr] gap-x-8 items-baseline border-t border-border py-6 lg:py-7">
+                  <h3 className={`${H3} text-[20px] lg:text-[23px]`}>{r.t}</h3>
+                  <p className="mt-2 lg:mt-0 text-[14px] leading-[1.7] text-muted-foreground">{r.d}</p>
                 </div>
-              </Reveal>
-            ))}
+              ))}
+              <div className="border-t border-border" />
+            </div>
           </div>
         </SectionHead>
       </div>
@@ -774,9 +805,9 @@ function Footer({ onContact }: { onContact: () => void }) {
           <div>
             <div className="kn-caps text-white/40 mb-5">Company</div>
             <ul className="space-y-3 text-[13.5px] text-white/70">
-              <li><a href="#technology" className="kn-link-rev hover:text-white transition-colors">Technology</a></li>
-              <li><a href="#options" className="kn-link-rev hover:text-white transition-colors">Options</a></li>
-              <li><a href="#how" className="kn-link-rev hover:text-white transition-colors">How It Works</a></li>
+              <li><a href="#what" className="kn-link-rev hover:text-white transition-colors">What We Do</a></li>
+              <li><a href="#how" className="kn-link-rev hover:text-white transition-colors">How We Do It</a></li>
+              <li><a href="#why" className="kn-link-rev hover:text-white transition-colors">Why Kennion</a></li>
               <li><a href="#contact" className="kn-link-rev hover:text-white transition-colors">Contact</a></li>
             </ul>
           </div>
@@ -822,10 +853,10 @@ export default function LandingPage() {
       <Nav onContact={openContact} />
       <main>
         <Hero />
-        <WhoWeHelp />
-        <Technology />
+        <Problem />
         <Options />
-        <HowItWorks />
+        <HowWeDoIt />
+        <WhyKennion />
         <FinalCTA onContact={openContact} />
       </main>
       <Footer onContact={openContact} />
