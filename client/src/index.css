@@ -365,6 +365,95 @@
 
 /* === Kennion homepage redesign utilities === */
 
+/* Scoped palette for the public marketing site (.kn-landing wrapper).
+   Editorial "paper & ink" scheme: warm paper ground, ink type, navy
+   primary, bronze accent. Deliberately overrides app tokens (and the
+   dark theme) inside the landing subtree only. */
+.kn-landing {
+  --background: 40 30% 97%;
+  --foreground: 218 30% 11%;
+  --border: 40 12% 85%;
+  --card: 40 30% 97%;
+  --card-foreground: 218 30% 11%;
+  --muted: 40 18% 93%;
+  --muted-foreground: 220 9% 39%;
+  --primary: 213 62% 22%;
+  --primary-foreground: 40 30% 97%;
+  --brand-accent: 30 52% 40%;
+  --brand-accent-foreground: 40 30% 97%;
+  --ink: 218 35% 9%;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+.kn-landing ::selection {
+  background: hsl(213 62% 22%);
+  color: hsl(40 30% 97%);
+}
+
+/* Letterspaced small-caps label — the landing page's only "eyebrow". */
+.kn-caps {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* Animated editorial underline for text links. */
+.kn-link {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 100% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+  padding-bottom: 2px;
+}
+.kn-link:hover {
+  background-size: 0% 1px;
+  background-position: 100% 100%;
+}
+.kn-link-rev {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 100% 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+  padding-bottom: 2px;
+}
+.kn-link-rev:hover {
+  background-size: 100% 1px;
+  background-position: 0 100%;
+}
+
+/* Slow specialty ticker between hero and services. */
+@keyframes kn-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.kn-marquee {
+  animation: kn-marquee 48s linear infinite;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kn-marquee { animation: none; }
+  .kn-landing * { transition-duration: 0.01ms !important; }
+}
+
+/* Ink-duotone photo treatment — grayscale base + navy multiply wash. */
+.kn-photo { position: relative; overflow: hidden; }
+.kn-photo img {
+  filter: grayscale(100%) contrast(1.06) brightness(1.02);
+  display: block;
+}
+.kn-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: hsl(213 62% 22%);
+  mix-blend-mode: multiply;
+  opacity: 0.28;
+  pointer-events: none;
+}
+
 .font-display {
   font-family: 'Fraunces', Georgia, serif;
   font-optical-sizing: auto;
