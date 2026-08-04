@@ -8,24 +8,14 @@ import {
   type Proposal,
   type RiskScreen,
   type InsertRiskScreen,
-  type FileShare,
-  type InsertFileShare,
-  type SharedFile,
-  type InsertSharedFile,
   users,
   groups,
   censusEntries,
   proposals,
   riskScreens,
-  fileShares,
-  sharedFiles,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
-
-// File metadata as surfaced to clients — deliberately omits dataBase64 so
-// file bytes never ride along in a JSON list (or the request logger).
-export type SharedFileMeta = Omit<SharedFile, "dataBase64">;
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -85,25 +75,6 @@ export interface IStorage {
   bumpQuoteView(groupId: string): Promise<void>;
   setQuotePublicToken(groupId: string, token: string | null): Promise<Group | undefined>;
   markQuotePubliclyAccepted(groupId: string): Promise<Group | undefined>;
-
-  // ── Secure file sharing (code-gated single vault) ───────────────────
-  createFileShare(data: InsertFileShare): Promise<FileShare>;
-  getFileShare(id: string): Promise<FileShare | undefined>;
-  updateFileShare(id: string, data: Partial<FileShare>): Promise<FileShare | undefined>;
-  isCodeTaken(code: string, exceptId?: string): Promise<boolean>;
-  // The single vault the /files page drives. getOrCreate seeds it with
-  // the given default codes on first use so the feature works even on a
-  // fresh db:push that skipped the SQL migration.
-  getDefaultFileShare(): Promise<FileShare | undefined>;
-  getOrCreateDefaultFileShare(defaults: { name: string; code: string; adminCode: string }): Promise<FileShare>;
-  bumpShareAccess(id: string): Promise<void>;
-
-  addSharedFile(data: InsertSharedFile): Promise<SharedFileMeta>;
-  getSharedFilesMeta(shareId: string): Promise<SharedFileMeta[]>;
-  getSharedFileMeta(id: string): Promise<SharedFileMeta | undefined>;
-  // Full row incl. base64 bytes — only the download endpoints call this.
-  getSharedFileWithData(id: string): Promise<SharedFile | undefined>;
-  deleteSharedFile(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -362,114 +333,6 @@ export class DatabaseStorage implements IStorage {
     await db.update(riskScreens)
       .set({ pdfBase64, resultJson: resultJson as any })
       .where(eq(riskScreens.id, id));
-  }
-
-  // ── Secure file sharing (code-gated) ──────────────────────────────
-
-  async createFileShare(data: InsertFileShare): Promise<FileShare> {
-    const [row] = await db.insert(fileShares).values(data).returning();
-    return row;
-  }
-
-  async getFileShare(id: string): Promise<FileShare | undefined> {
-    const [row] = await db.select().from(fileShares).where(eq(fileShares.id, id));
-    return row;
-  }
-
-  async updateFileShare(id: string, data: Partial<FileShare>): Promise<FileShare | undefined> {
-    const [row] = await db.update(fileShares).set(data).where(eq(fileShares.id, id)).returning();
-    return row;
-  }
-
-  async isCodeTaken(code: string, exceptId?: string): Promise<boolean> {
-    const rows = await db.select({ id: fileShares.id }).from(fileShares).where(eq(fileShares.code, code));
-    return rows.some((r) => r.id !== exceptId);
-  }
-
-  async getDefaultFileShare(): Promise<FileShare | undefined> {
-    const [row] = await db.select().from(fileShares).where(eq(fileShares.isDefault, true)).limit(1);
-    return row;
-  }
-
-  async getOrCreateDefaultFileShare(defaults: { name: string; code: string; adminCode: string }): Promise<FileShare> {
-    const existing = await this.getDefaultFileShare();
-    if (existing) return existing;
-    // Reuse the seeded row if the SQL migration already made one but the
-    // is_default flag somehow didn't stick; otherwise create fresh.
-    const [row] = await db
-      .insert(fileShares)
-      .values({
-        name: defaults.name,
-        code: defaults.code,
-        adminCode: defaults.adminCode,
-        isDefault: true,
-        enabled: true,
-      })
-      .returning();
-    return row;
-  }
-
-  async bumpShareAccess(id: string): Promise<void> {
-    await db.execute(sql`
-      UPDATE file_shares
-      SET access_count = access_count + 1,
-          last_accessed_at = NOW()
-      WHERE id = ${id}
-    `);
-  }
-
-  async addSharedFile(data: InsertSharedFile): Promise<SharedFileMeta> {
-    const [row] = await db.insert(sharedFiles).values(data).returning({
-      id: sharedFiles.id,
-      shareId: sharedFiles.shareId,
-      fileName: sharedFiles.fileName,
-      mimeType: sharedFiles.mimeType,
-      sizeBytes: sharedFiles.sizeBytes,
-      uploadedByAdminId: sharedFiles.uploadedByAdminId,
-      createdAt: sharedFiles.createdAt,
-    });
-    return row;
-  }
-
-  async getSharedFilesMeta(shareId: string): Promise<SharedFileMeta[]> {
-    return db
-      .select({
-        id: sharedFiles.id,
-        shareId: sharedFiles.shareId,
-        fileName: sharedFiles.fileName,
-        mimeType: sharedFiles.mimeType,
-        sizeBytes: sharedFiles.sizeBytes,
-        uploadedByAdminId: sharedFiles.uploadedByAdminId,
-        createdAt: sharedFiles.createdAt,
-      })
-      .from(sharedFiles)
-      .where(eq(sharedFiles.shareId, shareId))
-      .orderBy(desc(sharedFiles.createdAt));
-  }
-
-  async getSharedFileMeta(id: string): Promise<SharedFileMeta | undefined> {
-    const [row] = await db
-      .select({
-        id: sharedFiles.id,
-        shareId: sharedFiles.shareId,
-        fileName: sharedFiles.fileName,
-        mimeType: sharedFiles.mimeType,
-        sizeBytes: sharedFiles.sizeBytes,
-        uploadedByAdminId: sharedFiles.uploadedByAdminId,
-        createdAt: sharedFiles.createdAt,
-      })
-      .from(sharedFiles)
-      .where(eq(sharedFiles.id, id));
-    return row;
-  }
-
-  async getSharedFileWithData(id: string): Promise<SharedFile | undefined> {
-    const [row] = await db.select().from(sharedFiles).where(eq(sharedFiles.id, id));
-    return row;
-  }
-
-  async deleteSharedFile(id: string): Promise<void> {
-    await db.delete(sharedFiles).where(eq(sharedFiles.id, id));
   }
 }
 
