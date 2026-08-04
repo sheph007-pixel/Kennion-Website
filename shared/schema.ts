@@ -128,6 +128,51 @@ export const riskScreens = pgTable("risk_screens", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// ── Secure file sharing (Dropbox-style, code-gated) ──────────────────
+// An admin creates a "share" — a named bundle of files protected by a
+// short access code. The single public link www.kennion.com/files works
+// for every share: the recipient types their code and the code alone
+// identifies (and unlocks) the share. Files are stored as base64 in the
+// DB, matching the proposals.pdfBase64 pattern, because Railway's
+// filesystem is ephemeral and there is no object store.
+export const fileShares = pgTable("file_shares", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  // Human label shown to the admin (and, if set, to the recipient).
+  name: text("name").notNull(),
+  // The access code the recipient types. Stored retrievably (not hashed)
+  // because the admin must be able to look it up to re-send it to people.
+  // Unique across shares — the code alone identifies which share to open.
+  code: text("code").notNull().unique(),
+  // Optional short message shown to the recipient once unlocked.
+  note: text("note"),
+  createdByAdminId: varchar("created_by_admin_id").references(() => users.id),
+  // When false the code stops working (soft revoke) without deleting files.
+  enabled: boolean("enabled").default(true).notNull(),
+  // Optional hard expiry; past this instant the code stops working.
+  expiresAt: timestamp("expires_at"),
+  accessCount: integer("access_count").default(0).notNull(),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const sharedFiles = pgTable("shared_files", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  shareId: varchar("share_id").notNull().references(() => fileShares.id, { onDelete: "cascade" }),
+  fileName: text("file_name").notNull(),
+  mimeType: text("mime_type").default("application/octet-stream").notNull(),
+  sizeBytes: integer("size_bytes").default(0).notNull(),
+  // Base64-encoded file bytes. Kept out of every list response and never
+  // logged — only streamed as binary from the download endpoints.
+  dataBase64: text("data_base64").notNull(),
+  uploadedByAdminId: varchar("uploaded_by_admin_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type FileShare = typeof fileShares.$inferSelect;
+export type InsertFileShare = typeof fileShares.$inferInsert;
+export type SharedFile = typeof sharedFiles.$inferSelect;
+export type InsertSharedFile = typeof sharedFiles.$inferInsert;
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   verified: true,

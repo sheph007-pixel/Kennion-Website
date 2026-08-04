@@ -40,6 +40,7 @@ import {
   updateGroupStatusSchema,
   internalSalesQuoteInputSchema,
   contactInquirySchema,
+  type SharedFile,
 } from "@shared/schema";
 import ConnectPgSimple from "connect-pg-simple";
 import { log } from "./index";
@@ -98,6 +99,10 @@ declare module "express-session" {
         aiCleaned?: any;
       };
     };
+    // Share IDs the current (logged-out) visitor has unlocked by entering
+    // the right code on /files. Download endpoints check membership here
+    // so the code itself is never replayed on every file request.
+    unlockedShareIds?: string[];
   }
 }
 
@@ -4224,6 +4229,340 @@ export async function registerRoutes(
     } catch (err: any) {
       log(`Public acceptance error: ${err?.message || err}`, "routes");
       res.status(500).json({ message: err?.message || "Failed to submit acceptance." });
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Secure file sharing (Dropbox-style, code-gated) — served at /files
+  //
+  // Admin: create shares (named file bundles) with an access code, upload
+  // files, view/copy the code + link to send. Public: one link
+  // (www.kennion.com/files) works for everyone — the recipient types their
+  // code and the code alone unlocks the matching share. Files are stored
+  // as base64 in the DB (Railway's disk is ephemeral). File bytes are only
+  // ever streamed as binary, never serialized into a JSON response/log.
+  // ═══════════════════════════════════════════════════════════════════
+
+  // 25 MB / file, up to 10 files per upload keeps request memory bounded
+  // (multer buffers in memory before we base64 it into the DB).
+  const fileShareUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 25 * 1024 * 1024, files: 10 },
+  });
+
+  // Unambiguous alphabet (no 0/O/1/I/L) so codes are easy to read aloud
+  // and type. 8 chars ⇒ ~30 bits, plenty for share links; uniqueness is
+  // still enforced against the DB below.
+  const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  function generateShareCode(len = 8): string {
+    const bytes = crypto.randomBytes(len);
+    let out = "";
+    for (let i = 0; i < len; i++) out += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
+    return out;
+  }
+  async function generateUniqueShareCode(): Promise<string> {
+    for (let i = 0; i < 12; i++) {
+      const code = generateShareCode();
+      if (!(await storage.isCodeTaken(code))) return code;
+    }
+    // Astronomically unlikely; widen on the off chance of exhaustion.
+    return generateShareCode(10);
+  }
+  // Normalize codes so "abcd-1234", "ABCD1234", " abcd1234 " all match.
+  function normalizeCode(raw: unknown): string {
+    return String(raw ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  }
+  // Constant-time-ish equality to avoid leaking match length via timing.
+  function safeEqual(a: string, b: string): boolean {
+    const ba = Buffer.from(a);
+    const bb = Buffer.from(b);
+    if (ba.length !== bb.length) return false;
+    return crypto.timingSafeEqual(ba, bb);
+  }
+
+  // Best-effort in-memory brute-force throttle for the public unlock path,
+  // keyed by client IP. Resets on redeploy — fine for a share-code gate.
+  const unlockAttempts = new Map<string, { count: number; first: number }>();
+  const UNLOCK_WINDOW_MS = 10 * 60 * 1000;
+  const UNLOCK_MAX = 20;
+  function unlockThrottled(ip: string): boolean {
+    const now = Date.now();
+    const rec = unlockAttempts.get(ip);
+    if (!rec || now - rec.first > UNLOCK_WINDOW_MS) {
+      unlockAttempts.set(ip, { count: 1, first: now });
+      return false;
+    }
+    rec.count += 1;
+    return rec.count > UNLOCK_MAX;
+  }
+
+  function shareLink(req: Request): string {
+    const proto = (req.headers["x-forwarded-proto"] as string)?.split(",")[0] || req.protocol;
+    const host = req.headers["x-forwarded-host"] || req.headers.host;
+    return `${proto}://${host}/files`;
+  }
+
+  // ── Admin: manage shares ────────────────────────────────────────────
+
+  app.get("/api/admin/files/shares", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const shares = await storage.getAllFileShares();
+      const withFiles = await Promise.all(
+        shares.map(async (s) => ({
+          ...s,
+          link: shareLink(req),
+          files: await storage.getSharedFilesMeta(s.id),
+        })),
+      );
+      res.json({ shares: withFiles });
+    } catch (err: any) {
+      log(`[files] list shares error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: "Failed to load shares" });
+    }
+  });
+
+  app.post("/api/admin/files/shares", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const name = String(req.body?.name ?? "").trim();
+      if (!name) return res.status(400).json({ message: "A name is required" });
+      const note = req.body?.note ? String(req.body.note).trim().slice(0, 2000) : null;
+
+      let code: string;
+      if (req.body?.code) {
+        code = normalizeCode(req.body.code);
+        if (code.length < 4) return res.status(400).json({ message: "Code must be at least 4 characters (letters/numbers)" });
+        if (await storage.isCodeTaken(code)) return res.status(409).json({ message: "That code is already in use — pick another" });
+      } else {
+        code = await generateUniqueShareCode();
+      }
+
+      let expiresAt: Date | null = null;
+      if (req.body?.expiresAt) {
+        const d = new Date(req.body.expiresAt);
+        if (!isNaN(d.getTime())) expiresAt = d;
+      }
+
+      const share = await storage.createFileShare({
+        name: name.slice(0, 200),
+        code,
+        note,
+        expiresAt,
+        createdByAdminId: req.session.userId!,
+      });
+      res.json({ share: { ...share, link: shareLink(req), files: [] } });
+    } catch (err: any) {
+      log(`[files] create share error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: "Failed to create share" });
+    }
+  });
+
+  app.patch("/api/admin/files/shares/:id", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const share = await storage.getFileShare(req.params.id);
+      if (!share) return res.status(404).json({ message: "Share not found" });
+
+      const updates: Record<string, unknown> = {};
+      if (typeof req.body?.name === "string" && req.body.name.trim()) updates.name = req.body.name.trim().slice(0, 200);
+      if (req.body?.note !== undefined) updates.note = req.body.note ? String(req.body.note).trim().slice(0, 2000) : null;
+      if (typeof req.body?.enabled === "boolean") updates.enabled = req.body.enabled;
+      if (req.body?.expiresAt !== undefined) {
+        if (!req.body.expiresAt) updates.expiresAt = null;
+        else {
+          const d = new Date(req.body.expiresAt);
+          if (!isNaN(d.getTime())) updates.expiresAt = d;
+        }
+      }
+      // Regenerate a fresh code, or set a specific one.
+      if (req.body?.regenerateCode) {
+        updates.code = await generateUniqueShareCode();
+      } else if (req.body?.code) {
+        const code = normalizeCode(req.body.code);
+        if (code.length < 4) return res.status(400).json({ message: "Code must be at least 4 characters" });
+        if (code !== share.code && (await storage.isCodeTaken(code))) {
+          return res.status(409).json({ message: "That code is already in use" });
+        }
+        updates.code = code;
+      }
+
+      const updated = await storage.updateFileShare(share.id, updates);
+      const files = await storage.getSharedFilesMeta(share.id);
+      res.json({ share: { ...updated, link: shareLink(req), files } });
+    } catch (err: any) {
+      log(`[files] update share error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: "Failed to update share" });
+    }
+  });
+
+  app.delete("/api/admin/files/shares/:id", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const share = await storage.getFileShare(req.params.id);
+      if (!share) return res.status(404).json({ message: "Share not found" });
+      await storage.deleteFileShare(share.id);
+      res.json({ ok: true });
+    } catch (err: any) {
+      log(`[files] delete share error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: "Failed to delete share" });
+    }
+  });
+
+  app.post(
+    "/api/admin/files/shares/:id/files",
+    requireAdmin,
+    fileShareUpload.array("files", 10),
+    async (req: Request, res: Response) => {
+      try {
+        const share = await storage.getFileShare(req.params.id);
+        if (!share) return res.status(404).json({ message: "Share not found" });
+        const files = (req.files as Express.Multer.File[]) || [];
+        if (files.length === 0) return res.status(400).json({ message: "No files uploaded" });
+
+        const added: unknown[] = [];
+        for (const f of files) {
+          const meta = await storage.addSharedFile({
+            shareId: share.id,
+            fileName: f.originalname.slice(0, 255),
+            mimeType: f.mimetype || "application/octet-stream",
+            sizeBytes: f.size,
+            dataBase64: f.buffer.toString("base64"),
+            uploadedByAdminId: req.session.userId!,
+          });
+          added.push(meta);
+        }
+        const allFiles = await storage.getSharedFilesMeta(share.id);
+        log(`[files] ${added.length} file(s) added to share ${share.id}`, "routes");
+        res.json({ files: allFiles });
+      } catch (err: any) {
+        log(`[files] upload error: ${err?.message || err}`, "routes");
+        res.status(500).json({ message: "Failed to upload files" });
+      }
+    },
+  );
+
+  app.delete("/api/admin/files/:fileId", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const meta = await storage.getSharedFileMeta(req.params.fileId);
+      if (!meta) return res.status(404).json({ message: "File not found" });
+      await storage.deleteSharedFile(meta.id);
+      res.json({ ok: true });
+    } catch (err: any) {
+      log(`[files] delete file error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: "Failed to delete file" });
+    }
+  });
+
+  // Admin download — no code needed (already authenticated).
+  app.get("/api/admin/files/:fileId/download", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const file = await storage.getSharedFileWithData(req.params.fileId);
+      if (!file) return res.status(404).json({ message: "File not found" });
+      streamSharedFile(res, file, req.query.inline === "1");
+    } catch (err: any) {
+      log(`[files] admin download error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: "Failed to download file" });
+    }
+  });
+
+  // ── Public: unlock a share with a code, then download ───────────────
+
+  // Streams the file bytes as binary — never through res.json, so file
+  // contents never reach the request logger.
+  function streamSharedFile(res: Response, file: SharedFile, inline: boolean): void {
+    const buffer = Buffer.from(file.dataBase64, "base64");
+    const dispo = inline ? "inline" : "attachment";
+    // Strip characters that would break the header; keep it simple/ASCII.
+    const safeName = file.fileName.replace(/[^\w.\- ]/g, "_") || "download";
+    res.setHeader("Content-Type", file.mimeType || "application/octet-stream");
+    res.setHeader("Content-Disposition", `${dispo}; filename="${safeName}"`);
+    res.setHeader("Content-Length", String(buffer.length));
+    res.end(buffer);
+  }
+
+  app.post("/api/files/access", async (req: Request, res: Response) => {
+    try {
+      const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.ip || "unknown";
+      if (unlockThrottled(ip)) {
+        return res.status(429).json({ message: "Too many attempts. Please wait a few minutes and try again." });
+      }
+      const code = normalizeCode(req.body?.code);
+      if (!code) return res.status(400).json({ message: "Enter your access code" });
+
+      const share = await storage.getUnlockableShareByCode(code);
+      // Extra guard: getUnlockableShareByCode already matched exactly, but
+      // re-verify with a constant-time compare for good measure.
+      if (!share || !safeEqual(share.code, code)) {
+        return res.status(401).json({ message: "That code doesn't match an active share." });
+      }
+
+      await storage.bumpShareAccess(share.id);
+      const set = new Set(req.session.unlockedShareIds || []);
+      set.add(share.id);
+      req.session.unlockedShareIds = Array.from(set);
+
+      const files = await storage.getSharedFilesMeta(share.id);
+      req.session.save(() => {
+        res.json({
+          share: { id: share.id, name: share.name, note: share.note },
+          files: files.map((f) => ({ id: f.id, fileName: f.fileName, mimeType: f.mimeType, sizeBytes: f.sizeBytes })),
+        });
+      });
+    } catch (err: any) {
+      log(`[files] access error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: "Something went wrong. Please try again." });
+    }
+  });
+
+  // Re-hydrate the unlocked shares after a page refresh (session-backed).
+  app.get("/api/files/session", async (req: Request, res: Response) => {
+    try {
+      const ids = req.session.unlockedShareIds || [];
+      const shares = [];
+      for (const id of ids) {
+        const share = await storage.getFileShare(id);
+        // Drop shares that were since revoked/expired/deleted.
+        if (!share || !share.enabled || (share.expiresAt && share.expiresAt.getTime() < Date.now())) continue;
+        const files = await storage.getSharedFilesMeta(share.id);
+        shares.push({
+          share: { id: share.id, name: share.name, note: share.note },
+          files: files.map((f) => ({ id: f.id, fileName: f.fileName, mimeType: f.mimeType, sizeBytes: f.sizeBytes })),
+        });
+      }
+      res.json({ shares });
+    } catch (err: any) {
+      log(`[files] session error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: "Failed to load session" });
+    }
+  });
+
+  app.post("/api/files/lock", (req: Request, res: Response) => {
+    req.session.unlockedShareIds = [];
+    req.session.save(() => res.json({ ok: true }));
+  });
+
+  // Public download — allowed only if the visitor unlocked the owning
+  // share in this session, OR they're a logged-in admin.
+  app.get("/api/files/download/:fileId", async (req: Request, res: Response) => {
+    try {
+      const file = await storage.getSharedFileWithData(req.params.fileId);
+      if (!file) return res.status(404).json({ message: "File not found" });
+
+      const unlocked = (req.session.unlockedShareIds || []).includes(file.shareId);
+      let allowed = unlocked;
+      if (!allowed && req.session.userId) {
+        const user = await storage.getUser(req.session.userId);
+        allowed = user?.role === "admin";
+      }
+      if (!allowed) return res.status(403).json({ message: "Enter the access code first." });
+
+      // Belt-and-suspenders: honor revoke/expiry even mid-session.
+      const share = await storage.getFileShare(file.shareId);
+      if (!req.session.userId && (!share || !share.enabled || (share.expiresAt && share.expiresAt.getTime() < Date.now()))) {
+        return res.status(403).json({ message: "This share is no longer available." });
+      }
+
+      streamSharedFile(res, file, req.query.inline === "1");
+    } catch (err: any) {
+      log(`[files] download error: ${err?.message || err}`, "routes");
+      res.status(500).json({ message: "Failed to download file" });
     }
   });
 

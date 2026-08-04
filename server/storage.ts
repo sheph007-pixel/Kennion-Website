@@ -8,14 +8,24 @@ import {
   type Proposal,
   type RiskScreen,
   type InsertRiskScreen,
+  type FileShare,
+  type InsertFileShare,
+  type SharedFile,
+  type InsertSharedFile,
   users,
   groups,
   censusEntries,
   proposals,
   riskScreens,
+  fileShares,
+  sharedFiles,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, and, gt, isNull, or } from "drizzle-orm";
+
+// File metadata as surfaced to clients — deliberately omits dataBase64 so
+// file bytes never ride along in a JSON list (or the request logger).
+export type SharedFileMeta = Omit<SharedFile, "dataBase64">;
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -75,6 +85,25 @@ export interface IStorage {
   bumpQuoteView(groupId: string): Promise<void>;
   setQuotePublicToken(groupId: string, token: string | null): Promise<Group | undefined>;
   markQuotePubliclyAccepted(groupId: string): Promise<Group | undefined>;
+
+  // ── Secure file sharing (code-gated) ────────────────────────────────
+  createFileShare(data: InsertFileShare): Promise<FileShare>;
+  getFileShare(id: string): Promise<FileShare | undefined>;
+  getAllFileShares(): Promise<FileShare[]>;
+  updateFileShare(id: string, data: Partial<FileShare>): Promise<FileShare | undefined>;
+  deleteFileShare(id: string): Promise<void>;
+  isCodeTaken(code: string): Promise<boolean>;
+  // Returns the share ONLY if the code matches, the share is enabled and
+  // not expired. Used by the public unlock path.
+  getUnlockableShareByCode(code: string): Promise<FileShare | undefined>;
+  bumpShareAccess(id: string): Promise<void>;
+
+  addSharedFile(data: InsertSharedFile): Promise<SharedFileMeta>;
+  getSharedFilesMeta(shareId: string): Promise<SharedFileMeta[]>;
+  getSharedFileMeta(id: string): Promise<SharedFileMeta | undefined>;
+  // Full row incl. base64 bytes — only the download endpoints call this.
+  getSharedFileWithData(id: string): Promise<SharedFile | undefined>;
+  deleteSharedFile(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -333,6 +362,114 @@ export class DatabaseStorage implements IStorage {
     await db.update(riskScreens)
       .set({ pdfBase64, resultJson: resultJson as any })
       .where(eq(riskScreens.id, id));
+  }
+
+  // ── Secure file sharing (code-gated) ──────────────────────────────
+
+  async createFileShare(data: InsertFileShare): Promise<FileShare> {
+    const [row] = await db.insert(fileShares).values(data).returning();
+    return row;
+  }
+
+  async getFileShare(id: string): Promise<FileShare | undefined> {
+    const [row] = await db.select().from(fileShares).where(eq(fileShares.id, id));
+    return row;
+  }
+
+  async getAllFileShares(): Promise<FileShare[]> {
+    return db.select().from(fileShares).orderBy(desc(fileShares.createdAt));
+  }
+
+  async updateFileShare(id: string, data: Partial<FileShare>): Promise<FileShare | undefined> {
+    const [row] = await db.update(fileShares).set(data).where(eq(fileShares.id, id)).returning();
+    return row;
+  }
+
+  async deleteFileShare(id: string): Promise<void> {
+    // shared_files cascade via the FK ON DELETE CASCADE.
+    await db.delete(fileShares).where(eq(fileShares.id, id));
+  }
+
+  async isCodeTaken(code: string): Promise<boolean> {
+    const [row] = await db.select({ id: fileShares.id }).from(fileShares).where(eq(fileShares.code, code));
+    return !!row;
+  }
+
+  async getUnlockableShareByCode(code: string): Promise<FileShare | undefined> {
+    const [row] = await db
+      .select()
+      .from(fileShares)
+      .where(
+        and(
+          eq(fileShares.code, code),
+          eq(fileShares.enabled, true),
+          or(isNull(fileShares.expiresAt), gt(fileShares.expiresAt, new Date())),
+        ),
+      );
+    return row;
+  }
+
+  async bumpShareAccess(id: string): Promise<void> {
+    await db.execute(sql`
+      UPDATE file_shares
+      SET access_count = access_count + 1,
+          last_accessed_at = NOW()
+      WHERE id = ${id}
+    `);
+  }
+
+  async addSharedFile(data: InsertSharedFile): Promise<SharedFileMeta> {
+    const [row] = await db.insert(sharedFiles).values(data).returning({
+      id: sharedFiles.id,
+      shareId: sharedFiles.shareId,
+      fileName: sharedFiles.fileName,
+      mimeType: sharedFiles.mimeType,
+      sizeBytes: sharedFiles.sizeBytes,
+      uploadedByAdminId: sharedFiles.uploadedByAdminId,
+      createdAt: sharedFiles.createdAt,
+    });
+    return row;
+  }
+
+  async getSharedFilesMeta(shareId: string): Promise<SharedFileMeta[]> {
+    return db
+      .select({
+        id: sharedFiles.id,
+        shareId: sharedFiles.shareId,
+        fileName: sharedFiles.fileName,
+        mimeType: sharedFiles.mimeType,
+        sizeBytes: sharedFiles.sizeBytes,
+        uploadedByAdminId: sharedFiles.uploadedByAdminId,
+        createdAt: sharedFiles.createdAt,
+      })
+      .from(sharedFiles)
+      .where(eq(sharedFiles.shareId, shareId))
+      .orderBy(desc(sharedFiles.createdAt));
+  }
+
+  async getSharedFileMeta(id: string): Promise<SharedFileMeta | undefined> {
+    const [row] = await db
+      .select({
+        id: sharedFiles.id,
+        shareId: sharedFiles.shareId,
+        fileName: sharedFiles.fileName,
+        mimeType: sharedFiles.mimeType,
+        sizeBytes: sharedFiles.sizeBytes,
+        uploadedByAdminId: sharedFiles.uploadedByAdminId,
+        createdAt: sharedFiles.createdAt,
+      })
+      .from(sharedFiles)
+      .where(eq(sharedFiles.id, id));
+    return row;
+  }
+
+  async getSharedFileWithData(id: string): Promise<SharedFile | undefined> {
+    const [row] = await db.select().from(sharedFiles).where(eq(sharedFiles.id, id));
+    return row;
+  }
+
+  async deleteSharedFile(id: string): Promise<void> {
+    await db.delete(sharedFiles).where(eq(sharedFiles.id, id));
   }
 }
 
