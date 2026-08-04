@@ -21,7 +21,7 @@ import {
   sharedFiles,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql, and, gt, isNull, or } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 // File metadata as surfaced to clients — deliberately omits dataBase64 so
 // file bytes never ride along in a JSON list (or the request logger).
@@ -86,16 +86,16 @@ export interface IStorage {
   setQuotePublicToken(groupId: string, token: string | null): Promise<Group | undefined>;
   markQuotePubliclyAccepted(groupId: string): Promise<Group | undefined>;
 
-  // ── Secure file sharing (code-gated) ────────────────────────────────
+  // ── Secure file sharing (code-gated single vault) ───────────────────
   createFileShare(data: InsertFileShare): Promise<FileShare>;
   getFileShare(id: string): Promise<FileShare | undefined>;
-  getAllFileShares(): Promise<FileShare[]>;
   updateFileShare(id: string, data: Partial<FileShare>): Promise<FileShare | undefined>;
-  deleteFileShare(id: string): Promise<void>;
-  isCodeTaken(code: string): Promise<boolean>;
-  // Returns the share ONLY if the code matches, the share is enabled and
-  // not expired. Used by the public unlock path.
-  getUnlockableShareByCode(code: string): Promise<FileShare | undefined>;
+  isCodeTaken(code: string, exceptId?: string): Promise<boolean>;
+  // The single vault the /files page drives. getOrCreate seeds it with
+  // the given default codes on first use so the feature works even on a
+  // fresh db:push that skipped the SQL migration.
+  getDefaultFileShare(): Promise<FileShare | undefined>;
+  getOrCreateDefaultFileShare(defaults: { name: string; code: string; adminCode: string }): Promise<FileShare>;
   bumpShareAccess(id: string): Promise<void>;
 
   addSharedFile(data: InsertSharedFile): Promise<SharedFileMeta>;
@@ -376,36 +376,36 @@ export class DatabaseStorage implements IStorage {
     return row;
   }
 
-  async getAllFileShares(): Promise<FileShare[]> {
-    return db.select().from(fileShares).orderBy(desc(fileShares.createdAt));
-  }
-
   async updateFileShare(id: string, data: Partial<FileShare>): Promise<FileShare | undefined> {
     const [row] = await db.update(fileShares).set(data).where(eq(fileShares.id, id)).returning();
     return row;
   }
 
-  async deleteFileShare(id: string): Promise<void> {
-    // shared_files cascade via the FK ON DELETE CASCADE.
-    await db.delete(fileShares).where(eq(fileShares.id, id));
+  async isCodeTaken(code: string, exceptId?: string): Promise<boolean> {
+    const rows = await db.select({ id: fileShares.id }).from(fileShares).where(eq(fileShares.code, code));
+    return rows.some((r) => r.id !== exceptId);
   }
 
-  async isCodeTaken(code: string): Promise<boolean> {
-    const [row] = await db.select({ id: fileShares.id }).from(fileShares).where(eq(fileShares.code, code));
-    return !!row;
+  async getDefaultFileShare(): Promise<FileShare | undefined> {
+    const [row] = await db.select().from(fileShares).where(eq(fileShares.isDefault, true)).limit(1);
+    return row;
   }
 
-  async getUnlockableShareByCode(code: string): Promise<FileShare | undefined> {
+  async getOrCreateDefaultFileShare(defaults: { name: string; code: string; adminCode: string }): Promise<FileShare> {
+    const existing = await this.getDefaultFileShare();
+    if (existing) return existing;
+    // Reuse the seeded row if the SQL migration already made one but the
+    // is_default flag somehow didn't stick; otherwise create fresh.
     const [row] = await db
-      .select()
-      .from(fileShares)
-      .where(
-        and(
-          eq(fileShares.code, code),
-          eq(fileShares.enabled, true),
-          or(isNull(fileShares.expiresAt), gt(fileShares.expiresAt, new Date())),
-        ),
-      );
+      .insert(fileShares)
+      .values({
+        name: defaults.name,
+        code: defaults.code,
+        adminCode: defaults.adminCode,
+        isDefault: true,
+        enabled: true,
+      })
+      .returning();
     return row;
   }
 

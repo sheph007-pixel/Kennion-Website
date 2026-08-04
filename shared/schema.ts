@@ -129,26 +129,30 @@ export const riskScreens = pgTable("risk_screens", {
 });
 
 // ── Secure file sharing (Dropbox-style, code-gated) ──────────────────
-// An admin creates a "share" — a named bundle of files protected by a
-// short access code. The single public link www.kennion.com/files works
-// for every share: the recipient types their code and the code alone
-// identifies (and unlocks) the share. Files are stored as base64 in the
-// DB, matching the proposals.pdfBase64 pattern, because Railway's
-// filesystem is ephemeral and there is no object store.
+// A single shared "vault" of files served at www.kennion.com/files,
+// protected by two codes: a viewer code (recipients type it to view /
+// download) and an admin code (the owner types it to upload / manage) —
+// both on the same page, no login required. Files are stored as base64
+// in the DB, matching the proposals.pdfBase64 pattern, because Railway's
+// filesystem is ephemeral and there is no object store. (The table can
+// hold more than one row, but the app drives a single is_default vault.)
 export const fileShares = pgTable("file_shares", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  // Human label shown to the admin (and, if set, to the recipient).
+  // Human label shown at the top of the vault.
   name: text("name").notNull(),
-  // The access code the recipient types. Stored retrievably (not hashed)
-  // because the admin must be able to look it up to re-send it to people.
-  // Unique across shares — the code alone identifies which share to open.
+  // The VIEWER code (recipients type this to view/download). Stored
+  // retrievably (not hashed) so the owner can look it up to re-send it.
   code: text("code").notNull().unique(),
+  // The ADMIN code (owner types this to upload/manage from the same page).
+  adminCode: text("admin_code"),
+  // Marks the one vault the /files page drives. Exactly one row is true.
+  isDefault: boolean("is_default").default(false).notNull(),
   // Optional short message shown to the recipient once unlocked.
   note: text("note"),
   createdByAdminId: varchar("created_by_admin_id").references(() => users.id),
-  // When false the code stops working (soft revoke) without deleting files.
+  // When false the codes stop working (soft revoke) without deleting files.
   enabled: boolean("enabled").default(true).notNull(),
-  // Optional hard expiry; past this instant the code stops working.
+  // Optional hard expiry; past this instant the codes stop working.
   expiresAt: timestamp("expires_at"),
   accessCount: integer("access_count").default(0).notNull(),
   lastAccessedAt: timestamp("last_accessed_at"),
