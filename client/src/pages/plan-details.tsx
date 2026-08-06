@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -128,16 +128,41 @@ export default function PlanDetailsPage() {
             <h1 className="text-2xl font-bold tracking-tight">Plan Details</h1>
             <p className="mt-1 text-sm text-primary">{ALL_PLANS_INCLUDE}</p>
           </div>
-          <a
-            href="https://www.kennionprogram.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover-elevate"
-            data-testid="link-program-website"
-          >
-            Program Website
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Download the full plan comparison (every Medical / Dental /
+                Vision / Supplemental plan) as a file to share or print.
+                Static assets served from client/public/downloads — kept in
+                sync with shared/plan-benefits.ts by
+                scripts/gen-plan-comparison.py. */}
+            <a
+              href="/downloads/Kennion-Health-Plans-Comparison.xlsx"
+              download
+              className="inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover-elevate"
+              data-testid="link-download-excel"
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5" />
+              Download Excel
+            </a>
+            <a
+              href="/downloads/Kennion-Health-Plans-Comparison.pdf"
+              download
+              className="inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover-elevate"
+              data-testid="link-download-pdf"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Download PDF
+            </a>
+            <a
+              href="https://www.kennionprogram.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover-elevate"
+              data-testid="link-program-website"
+            >
+              Program Website
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
