@@ -137,11 +137,11 @@ HOSP_ROWS = [
     ("Inpatient / Outpatient Surgery", "surgery"),
 ]
 
+# Health (medical) plans only — the downloadable comparison covers the
+# medical plans exclusively. Dental / Vision / Supplemental rows still parse
+# above (kept in sync for validation) but are not exported.
 TABS = [
     ("Medical", MEDICAL, MED_ROWS),
-    ("Dental", DENTAL, DEN_ROWS),
-    ("Vision", VISION, VIS_ROWS),
-    ("Voluntary Hospital", HOSPITAL, HOSP_ROWS),
 ]
 
 # Shared palette (matches the site's navy header + section band + cue colors).
@@ -255,37 +255,6 @@ def build_excel(path: Path):
         fc.font = Font(italic=True, size=9, color="64748B")
         fc.alignment = left
 
-    # Voluntary Benefits — simple two-column sheet
-    ws = wb.create_sheet("Voluntary Benefits")
-    ws.sheet_view.showGridLines = False
-    ws.merge_cells("A1:B1")
-    ws.cell(1, 1, "Kennion Health Plans — Voluntary Benefits").font = title_font
-    for col, head in ((1, "Benefit"), (2, "Coverage")):
-        c = ws.cell(3, col, head)
-        c.font = white_bold
-        c.fill = PatternFill("solid", fgColor=NAVY)
-        c.alignment = left
-        c.border = border
-    r = 4
-    for s in SUPP:
-        a = ws.cell(r, 1, s["name"])
-        a.font = label_font
-        a.alignment = left
-        a.border = border
-        cov = s.get("coverage", "")
-        if s.get("note"):
-            cov += f"\n({s['note']})"
-        b = ws.cell(r, 2, cov)
-        b.alignment = left
-        b.border = border
-        b.font = Font(size=10, color=INK)
-        ws.row_dimensions[r].height = 32
-        r += 1
-    ws.column_dimensions["A"].width = 34
-    ws.column_dimensions["B"].width = 70
-
-    order = ["Medical", "Dental", "Vision", "Voluntary Benefits", "Voluntary Hospital"]
-    wb._sheets.sort(key=lambda s: order.index(s.title))
     wb.save(path)
     print(f"[gen-plan-comparison] wrote {path.relative_to(REPO)}", file=sys.stderr)
 
@@ -383,30 +352,6 @@ def build_pdf(path: Path):
         flow.append(Paragraph(ALL_INCLUDE.replace("&", "&amp;"), sub))
         flow.append(build_grid(plans, rows))
         flow.append(Paragraph(FOOTNOTE.replace("&", "&amp;").replace("—", "&mdash;"), foot))
-
-    # Voluntary Benefits page
-    flow.append(PageBreak())
-    flow.append(Paragraph("Kennion Health Plans &mdash; Voluntary Benefits", h1))
-    flow.append(Spacer(1, 6))
-    big = ParagraphStyle("big", parent=styles["Normal"], fontSize=9, leading=12, textColor=ink)
-    bigb = ParagraphStyle("bigb", parent=big, fontName="Helvetica-Bold")
-    noteS = ParagraphStyle("note", parent=big, fontSize=8,
-                           textColor=colors.HexColor("#" + GREY), fontName="Helvetica-Oblique")
-    vb = [[Paragraph("BENEFIT", head_cell), Paragraph("COVERAGE", head_cell_l)]]
-    for s in SUPP:
-        cov = [Paragraph(s.get("coverage", "").replace("&", "&amp;"), big)]
-        if s.get("note"):
-            cov.append(Paragraph(s["note"].replace("&", "&amp;"), noteS))
-        vb.append([Paragraph(s["name"].replace("&", "&amp;"), bigb), cov])
-    vt = Table(vb, colWidths=[2.6 * inch, page_w - 2.6 * inch])
-    vt.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), navy),
-        ("GRID", (0, 0), (-1, -1), 0.4, grid_c),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-        ("LEFTPADDING", (0, 0), (-1, -1), 6),
-    ]))
-    flow.append(vt)
 
     doc.build(flow)
     print(f"[gen-plan-comparison] wrote {path.relative_to(REPO)}", file=sys.stderr)
