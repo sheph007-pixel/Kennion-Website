@@ -6,21 +6,7 @@
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link } from "wouter";
-import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Calendar, Check } from "lucide-react";
-
-declare global {
-  interface Window { Calendly?: any; }
-}
-
-function openCalendly(e?: React.MouseEvent) {
-  if (e) e.preventDefault();
-  const url = "https://calendly.com/kennion/call";
-  if (typeof window !== "undefined" && window.Calendly && typeof window.Calendly.initPopupWidget === "function") {
-    window.Calendly.initPopupWidget({ url });
-  } else {
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
-}
+import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check } from "lucide-react";
 
 const KENNION_LOGO_URL = "https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/attachments/production/5004437337/logo/qGPs3ykt503dCIwP_qHVHmcxV3JVHXZucQ.png";
 

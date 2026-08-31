@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "wouter";
 import { z } from "zod";
-import { ArrowRight, ArrowLeft, Loader2, Calendar, ShieldCheck } from "lucide-react";
+import { ArrowRight, ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -55,17 +55,6 @@ const quoteFormSchema = z.object({
 });
 
 type QuoteForm = z.infer<typeof quoteFormSchema>;
-
-function openCalendly(e?: React.MouseEvent) {
-  if (e) e.preventDefault();
-  const url = "https://calendly.com/kennion/call";
-  const w = window as any;
-  if (typeof window !== "undefined" && w.Calendly?.initPopupWidget) {
-    w.Calendly.initPopupWidget({ url });
-  } else {
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
-}
 
 /* Editorial field chrome: small-caps label above a ruled, squared input. */
 const FIELD_INPUT_CLS =
@@ -185,18 +174,6 @@ export default function RequestQuotePage() {
               </div>
             ))}
           </div>
-
-          <div className="mt-10">
-            <div className="kn-caps text-muted-foreground">Prefer to talk it through?</div>
-            <a
-              href="https://calendly.com/kennion/call"
-              onClick={openCalendly}
-              className="mt-3 inline-flex items-center gap-2.5 kn-link text-[13px] font-semibold uppercase tracking-[0.1em] cursor-pointer"
-            >
-              <Calendar size={14} strokeWidth={1.8} style={{ color: "hsl(var(--brand-accent))" }} />
-              Schedule a call
-            </a>
-          </div>
         </div>
 
         {/* Right: form / success */}
@@ -216,11 +193,7 @@ export default function RequestQuotePage() {
                 <Link href="/" className="group inline-flex items-center gap-3 bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold tracking-[0.08em] uppercase transition-colors hover:bg-[hsl(var(--ink))]">
                   Back to homepage
                   <ArrowRight size={14} strokeWidth={2} className="transition-transform group-hover:translate-x-1" />
-                </Link>
-                <a href="https://calendly.com/kennion/call" onClick={openCalendly} className="kn-link text-[13px] font-semibold uppercase tracking-[0.1em] cursor-pointer">
-                  Schedule a call
-                </a>
-              </div>
+                </Link>              </div>
             </div>
           ) : (
             <div className="max-w-[36rem]">
