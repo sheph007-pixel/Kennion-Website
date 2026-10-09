@@ -45,7 +45,7 @@
   --chart-3: 225 70% 42%;
   --chart-4: 240 60% 45%;
   --chart-5: 255 55% 48%;
-  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  --font-sans: 'Figtree', 'Avenir Next', 'Inter', system-ui, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: 'JetBrains Mono', Menlo, monospace;
   --radius: .5rem;
@@ -464,8 +464,7 @@ html {
 }
 
 .font-display {
-  font-family: 'Inter Tight', 'Inter', system-ui, -apple-system, sans-serif;
-  font-feature-settings: 'ss01' on, 'cv11' on;
+  font-family: 'Figtree', 'Avenir Next', 'Inter', system-ui, -apple-system, sans-serif;
 }
 .font-mono {
   font-family: 'JetBrains Mono', ui-monospace, monospace;

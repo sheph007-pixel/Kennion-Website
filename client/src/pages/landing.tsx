@@ -1,7 +1,7 @@
 // Kennion Benefit Advisors public marketing homepage.
 // Positioning: a large, established, tech-forward benefits agency.
 // Lean page: hero with product visual, proof band, technology story,
-// options, how it works, CTA + contact, footer. Inter Tight type,
+// options, how it works, CTA + contact, footer. Figtree type,
 // paper & ink palette scoped via .kn-landing (see index.css).
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
