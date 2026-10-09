@@ -12,9 +12,9 @@ const KENNION_LOGO_URL = "https://s3.amazonaws.com/cdn.freshdesk.com/data/helpde
 
 /* ── type scale ────────────────────────────────────────────────────── */
 
-const H1 = "font-display font-bold tracking-[-0.04em] leading-[0.96] text-[clamp(2.75rem,10vw,6.9rem)]";
-const H2 = "font-display font-bold tracking-[-0.03em] leading-[1.0] text-[clamp(2rem,4.8vw,3.8rem)]";
-const H3 = "font-display font-semibold tracking-[-0.02em]";
+const H1 = "font-display font-semibold tracking-[-0.01em] leading-[1.05] text-[clamp(2.75rem,10vw,6.9rem)]";
+const H2 = "font-display font-semibold tracking-[-0.015em] leading-[1.1] text-[clamp(2rem,4.8vw,3.8rem)]";
+const H3 = "font-display font-semibold tracking-[-0.01em]";
 
 /* ── motion ────────────────────────────────────────────────────────── */
 
@@ -86,8 +86,8 @@ function SolidButton({ href, onClick, children, external = false, tone = "ink" }
   tone?: "ink" | "paper";
 }) {
   const cls = tone === "ink"
-    ? "group inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold tracking-[0.08em] uppercase transition-colors hover:bg-[hsl(var(--ink))]"
-    : "group inline-flex items-center justify-center gap-3 bg-[hsl(var(--background))] text-primary px-6 py-3.5 text-[13px] font-semibold tracking-[0.08em] uppercase transition-opacity hover:opacity-90";
+    ? "group inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold  transition-colors hover:bg-[hsl(var(--ink))]"
+    : "group inline-flex items-center justify-center gap-3 bg-[hsl(var(--background))] text-primary px-6 py-3.5 text-[13px] font-semibold  transition-opacity hover:opacity-90";
   const inner = (
     <>
       {children}
@@ -120,7 +120,7 @@ function Nav({ onContact }: { onContact: () => void }) {
 
         <nav className="hidden lg:flex items-center gap-8">
           {links.map(([href, label]) => (
-            <a key={href} href={href} className="kn-link-rev text-[11.5px] uppercase tracking-[0.16em] font-semibold text-muted-foreground hover:text-foreground transition-colors">
+            <a key={href} href={href} className="kn-link-rev text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
               {label}
             </a>
           ))}
@@ -128,10 +128,10 @@ function Nav({ onContact }: { onContact: () => void }) {
 
         <div className="hidden lg:flex items-center gap-6">
           <span className="w-px h-4 bg-border" aria-hidden="true" />
-          <button onClick={onContact} className="kn-link-rev text-[11.5px] uppercase tracking-[0.16em] font-semibold text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={onContact} className="kn-link-rev text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
             Contact
           </button>
-          <Link href="/quote" className="inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-5 py-2.5 text-[11.5px] font-semibold uppercase tracking-[0.14em] transition-colors hover:bg-[hsl(var(--ink))]">
+          <Link href="/quote" className="inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-5 py-2.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--ink))]">
             Request a Quote
           </Link>
         </div>
@@ -148,10 +148,10 @@ function Nav({ onContact }: { onContact: () => void }) {
               {label}
             </a>
           ))}
-          <Link href="/quote" className="mt-6 flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-3.5 text-[12px] font-semibold uppercase tracking-[0.14em]">
+          <Link href="/quote" className="mt-6 flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-3.5 text-[13.5px] font-semibold ">
             Request a Quote
           </Link>
-          <button onClick={() => { setOpen(false); onContact(); }} className="mt-6 block text-[11.5px] uppercase tracking-[0.14em] font-semibold text-muted-foreground kn-link w-max">
+          <button onClick={() => { setOpen(false); onContact(); }} className="mt-6 block text-[13px] font-semibold text-muted-foreground kn-link w-max">
             Contact
           </button>
         </div>
@@ -171,13 +171,13 @@ function ProductVisual() {
   return (
     <div className="relative select-none pt-6 pb-12 pr-2 lg:pr-0" aria-hidden="true">
       {/* proposal card */}
-      <div className="relative bg-white border border-border shadow-[0_44px_90px_-42px_rgba(15,30,60,0.5)] rotate-[0.6deg]">
+      <div className="relative bg-white border border-border shadow-sm">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
             <div className="kn-caps text-muted-foreground">Proposal</div>
             <div className={`${H3} text-[17px] mt-1`}>Group of 42</div>
           </div>
-          <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em] border border-border px-2.5 py-1.5 text-muted-foreground">
+          <span className="text-[12px] font-semibold border border-border px-2.5 py-1.5 text-muted-foreground">
             23 plans quoted
           </span>
         </div>
@@ -191,34 +191,34 @@ function ProductVisual() {
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-display font-bold text-[17px] tracking-[-0.02em] tabular-nums">${p.rate}</div>
-                <div className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">per employee</div>
+                <div className="font-display font-semibold text-[17px] tracking-[-0.01em] tabular-nums">${p.rate}</div>
+                <div className="text-[12px] text-muted-foreground">per employee</div>
               </div>
             </div>
           ))}
         </div>
         <div className="flex items-center gap-2.5 px-5 py-3.5 border-t border-border bg-muted/50">
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: "hsl(var(--brand-accent))" }} />
+            <span className="absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: "hsl(var(--brand-accent))" }} />
             <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "hsl(var(--brand-accent))" }} />
           </span>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Underwriting review complete</span>
+          <span className="text-[12.5px] font-semibold text-muted-foreground">Underwriting review complete</span>
         </div>
       </div>
 
       {/* enrollment card */}
-      <div className="absolute -bottom-2 -left-3 sm:-left-6 w-[62%] max-w-[260px] bg-[hsl(var(--ink))] text-white p-4 shadow-[0_30px_60px_-24px_rgba(10,20,40,0.6)] -rotate-[1.4deg]">
+      <div className="absolute -bottom-2 -left-3 sm:-left-6 w-[62%] max-w-[260px] bg-[hsl(var(--ink))] text-white p-4 shadow-sm">
         <div className="kn-caps text-white/50">Open Enrollment</div>
         <div className="mt-3 flex items-baseline justify-between">
-          <span className="font-display font-bold text-[26px] leading-none tracking-[-0.03em] tabular-nums">38<span className="text-white/40">/42</span></span>
-          <span className="text-[10px] uppercase tracking-[0.1em] text-white/50">enrolled online</span>
+          <span className="font-display font-semibold text-[26px] leading-none tracking-[-0.01em] tabular-nums">38<span className="text-white/40">/42</span></span>
+          <span className="text-[12px] text-white/50">enrolled online</span>
         </div>
         <div className="mt-3 h-[3px] w-full bg-white/15">
           <div className="h-full" style={{ width: "90%", background: "hsl(var(--brand-accent))" }} />
         </div>
         <div className="mt-3.5 space-y-2">
           {["Elections sent to carrier", "Digital forms signed"].map((t) => (
-            <div key={t} className="flex items-center gap-2 text-[11px] text-white/70">
+            <div key={t} className="flex items-center gap-2 text-[12.5px] text-white/70">
               <Check size={11} strokeWidth={2.5} style={{ color: "hsl(var(--brand-accent))" }} />
               {t}
             </div>
@@ -227,8 +227,8 @@ function ProductVisual() {
       </div>
 
       {/* census chip */}
-      <div className="absolute top-0 right-2 sm:right-6 bg-white border border-border px-3 py-2 shadow-[0_16px_36px_-16px_rgba(15,30,60,0.4)] rotate-[1.2deg]">
-        <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Census received · 42 lives</span>
+      <div className="absolute top-0 right-2 sm:right-6 bg-white border border-border px-3 py-2 shadow-sm">
+        <span className="text-[12px] font-semibold text-muted-foreground">Census received · 42 lives</span>
       </div>
     </div>
   );
@@ -242,7 +242,7 @@ function Hero() {
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10 pt-12 lg:pt-24 pb-16 lg:pb-24 grid lg:grid-cols-12 gap-y-12 lg:gap-x-16 items-center">
         <div className="lg:col-span-7">
           <Reveal delay={90}>
-            <h1 className="font-display font-bold tracking-[-0.04em] leading-[0.98] text-[clamp(2.5rem,8vw,4.6rem)]">
+            <h1 className="font-display font-semibold tracking-[-0.01em] leading-[1.05] text-[clamp(2.5rem,8vw,4.6rem)]">
               A new kind of
               <br />
               benefits agency<span style={{ color: "hsl(var(--brand-accent))" }}>.</span>
@@ -256,7 +256,7 @@ function Hero() {
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
               <SolidButton href="/quote">Request a Quote</SolidButton>
-              <a href="#how" className="kn-link text-[13px] font-semibold uppercase tracking-[0.1em] text-foreground">
+              <a href="#how" className="kn-link text-[13px] font-semibold text-foreground">
                 See how it works
               </a>
             </div>
@@ -286,8 +286,8 @@ function ProofBand() {
         <div className="border-y border-border grid grid-cols-2 lg:grid-cols-4">
         {items.map(([big, small], i) => (
           <div key={big} className={`py-7 lg:py-9 pr-6 ${i > 0 ? "lg:border-l lg:border-border lg:pl-8" : ""} ${i % 2 === 1 ? "border-l border-border pl-6 lg:pl-8" : ""} ${i > 1 ? "border-t border-border lg:border-t-0" : ""}`}>
-            <div className="font-display font-bold text-[24px] lg:text-[30px] leading-none tracking-[-0.03em]">{big}</div>
-            <div className="mt-2 text-[12px] uppercase tracking-[0.1em] text-muted-foreground">{small}</div>
+            <div className="font-display font-semibold text-[24px] lg:text-[30px] leading-none tracking-[-0.01em]">{big}</div>
+            <div className="mt-2 text-[13.5px] text-muted-foreground">{small}</div>
           </div>
         ))}
         </div>
@@ -342,7 +342,7 @@ function Problem() {
                   <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>{c.label}</div>
                   <h3 className={`${H3} mt-4 text-[24px] lg:text-[30px] leading-[1.12] max-w-[16em]`}>{c.h}</h3>
                   <p className="mt-4 text-[14.5px] leading-[1.7] text-muted-foreground max-w-[26rem]">{c.p}</p>
-                  <Link href="/quote" className="kn-link mt-6 text-[13px] font-semibold uppercase tracking-[0.1em] text-foreground">
+                  <Link href="/quote" className="kn-link mt-6 text-[13px] font-semibold text-foreground">
                     {c.cta}
                   </Link>
                 </div>
@@ -371,7 +371,7 @@ function HowWeDoIt() {
             {steps.map((s, i) => (
               <Reveal key={s.t} delay={i * 80}>
                 <div className={`md:pr-6 ${i > 0 ? "md:border-l md:border-white/15 md:pl-10" : ""}`}>
-                  <div className="font-display font-bold text-[44px] lg:text-[56px] leading-none tracking-[-0.04em] tabular-nums" style={{ color: "hsl(var(--brand-accent))" }}>
+                  <div className="font-display font-semibold text-[44px] lg:text-[56px] leading-none tracking-[-0.01em] tabular-nums" style={{ color: "hsl(var(--brand-accent))" }}>
                     {i + 1}
                   </div>
                   <h3 className={`${H3} mt-5 text-[22px] lg:text-[25px]`}>{s.t}</h3>
@@ -395,7 +395,7 @@ function HowWeDoIt() {
               <div className="border border-white/10 bg-white/[0.04] p-4 mb-7 min-h-[132px]">
                 {[["Healthy 500", "82%"], ["Healthy 1000", "70%"], ["HSA 2500", "58%"]].map(([n, w]) => (
                   <div key={n} className="flex items-center gap-3 py-2 border-b border-white/10 last:border-b-0">
-                    <span className="text-[10.5px] uppercase tracking-[0.08em] text-white/50 w-24 shrink-0">{n}</span>
+                    <span className="text-[12px] text-white/50 w-24 shrink-0">{n}</span>
                     <div className="h-[3px] flex-1 bg-white/10">
                       <div className="h-full" style={{ width: w, background: "hsl(var(--brand-accent))" }} />
                     </div>
@@ -415,13 +415,13 @@ function HowWeDoIt() {
             <div className="bg-[hsl(var(--ink))] p-6 lg:p-8 h-full flex flex-col">
               <div className="border border-white/10 bg-white/[0.04] p-4 mb-7 min-h-[132px]">
                 <div className="flex items-baseline justify-between">
-                  <span className="font-display font-bold text-[22px] tracking-[-0.03em] tabular-nums">90%</span>
-                  <span className="text-[10px] uppercase tracking-[0.1em] text-white/50">enrolled</span>
+                  <span className="font-display font-semibold text-[22px] tracking-[-0.01em] tabular-nums">90%</span>
+                  <span className="text-[12px] text-white/50">enrolled</span>
                 </div>
                 <div className="mt-2.5 h-[3px] w-full bg-white/10">
                   <div className="h-full w-[90%]" style={{ background: "hsl(var(--brand-accent))" }} />
                 </div>
-                <div className="mt-3 flex items-center gap-2 text-[10.5px] uppercase tracking-[0.08em] text-white/50">
+                <div className="mt-3 flex items-center gap-2 text-[12px] text-white/50">
                   <Check size={11} strokeWidth={2.5} style={{ color: "hsl(var(--brand-accent))" }} />
                   No paper anywhere
                 </div>
@@ -444,10 +444,10 @@ function HowWeDoIt() {
                 </div>
                 <div className="mt-3 flex items-center gap-2">
                   <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: "hsl(var(--brand-accent))" }} />
+                    <span className="absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: "hsl(var(--brand-accent))" }} />
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: "hsl(var(--brand-accent))" }} />
                   </span>
-                  <span className="text-[10.5px] uppercase tracking-[0.08em] text-white/50">Review in progress</span>
+                  <span className="text-[12px] text-white/50">Review in progress</span>
                 </div>
               </div>
               <h3 className={`${H3} text-[21px]`}>Deeper analysis</h3>
@@ -473,7 +473,7 @@ function Options() {
     "HSA Plans", "Online Enrollment",
   ];
   const row = chips.map((c, i) => (
-    <span key={i} className="inline-block border border-border px-4 py-2.5 mr-3 text-[12px] font-semibold uppercase tracking-[0.1em] text-muted-foreground whitespace-nowrap bg-white/60">
+    <span key={i} className="inline-block border border-border px-4 py-2.5 mr-3 text-[13.5px] font-semibold text-muted-foreground whitespace-nowrap bg-white/60">
       {c}
     </span>
   ));
@@ -519,10 +519,10 @@ function WhyKennion() {
         <SectionHead label="Why Kennion">
           <div className="grid lg:grid-cols-12 gap-y-12 lg:gap-x-10 items-start">
             <div className="lg:col-span-4">
-              <div className="font-display font-bold text-[84px] lg:text-[120px] leading-[0.9] tracking-[-0.045em] tabular-nums">
+              <div className="font-display font-semibold text-[84px] lg:text-[120px] leading-[0.9] tracking-[-0.01em] tabular-nums">
                 95<span style={{ color: "hsl(var(--brand-accent))" }}>%</span>
               </div>
-              <div className="mt-4 text-[12px] uppercase tracking-[0.1em] text-muted-foreground max-w-[15rem] leading-[1.5]">
+              <div className="mt-4 text-[13.5px] text-muted-foreground max-w-[15rem] leading-[1.5]">
                 Of our clients stay with us, year over year
               </div>
             </div>
@@ -599,7 +599,7 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
       <p className="mt-3 text-[14px] leading-[1.7] text-muted-foreground">
         The right person on our team will get back to you shortly.
       </p>
-      <button onClick={onClose} className="mt-7 inline-flex items-center justify-center bg-primary text-primary-foreground px-6 py-3 text-[12px] font-semibold tracking-[0.1em] uppercase hover:bg-[hsl(var(--ink))] transition-colors">
+      <button onClick={onClose} className="mt-7 inline-flex items-center justify-center bg-primary text-primary-foreground px-6 py-3 text-[13.5px] font-semibold hover:bg-[hsl(var(--ink))] transition-colors">
         Done
       </button>
     </div>
@@ -614,7 +614,7 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
                 key={r}
                 type="button"
                 onClick={() => setRole(r)}
-                className={`px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.1em] border transition-colors ${role === r ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+                className={`px-4 py-2 text-[13.5px] font-semibold border transition-colors ${role === r ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
               >
                 {r}
               </button>
@@ -637,7 +637,7 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
       <button
         type="submit"
         disabled={state === "sending"}
-        className="mt-7 w-full inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold tracking-[0.08em] uppercase transition-colors hover:bg-[hsl(var(--ink))] disabled:opacity-60"
+        className="mt-7 w-full inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--ink))] disabled:opacity-60"
       >
         {state === "sending" ? "Sending..." : "Send Message"}
       </button>
@@ -676,7 +676,7 @@ function FinalCTA({ onContact }: { onContact: () => void }) {
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10 grid lg:grid-cols-12 gap-y-12 lg:gap-x-16 items-center">
         <div className="lg:col-span-7">
         <div className="kn-caps text-white/50">Get Started</div>
-        <h2 className="mt-6 font-display font-bold tracking-[-0.035em] leading-[0.98] text-[clamp(2.4rem,6.5vw,4.75rem)] max-w-[15em]">
+        <h2 className="mt-6 font-display font-bold tracking-[-0.01em] leading-[0.98] text-[clamp(2.4rem,6.5vw,4.75rem)] max-w-[15em]">
           See what your group is missing.
         </h2>
         <p className="mt-7 text-[16px] leading-[1.65] text-white/70 max-w-[34rem]">
@@ -775,7 +775,7 @@ function LegalModal({ kind, onClose }: { kind: string | null; onClose: () => voi
         </div>
 
         <div className="px-6 lg:px-8 py-4 border-t border-border flex justify-end">
-          <button onClick={onClose} className="text-[11.5px] font-semibold uppercase tracking-[0.14em] bg-primary text-primary-foreground px-5 py-2.5 hover:bg-[hsl(var(--ink))] transition-colors">
+          <button onClick={onClose} className="text-[13px] font-semibold bg-primary text-primary-foreground px-5 py-2.5 hover:bg-[hsl(var(--ink))] transition-colors">
             Close
           </button>
         </div>
@@ -794,10 +794,10 @@ function Footer({ onContact }: { onContact: () => void }) {
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
         <div className="grid sm:grid-cols-2 md:grid-cols-[1.6fr_1fr_1fr] gap-x-10 gap-y-12 pb-14 lg:pb-16">
           <div className="sm:col-span-2 md:col-span-1">
-            <div className="font-display font-bold text-[26px] tracking-[-0.02em] leading-none">Kennion</div>
+            <div className="font-display font-semibold text-[26px] tracking-[-0.01em] leading-none">Kennion</div>
             <div className="kn-caps text-white/40 mt-3">The Modern Benefits Agency</div>
             <Link href="/quote"
-               className="mt-8 inline-flex items-center gap-2.5 text-[11.5px] font-semibold uppercase tracking-[0.14em] bg-[hsl(var(--background))] text-[hsl(var(--ink))] px-5 py-3 hover:opacity-90 transition-opacity">
+               className="mt-8 inline-flex items-center gap-2.5 text-[13px] font-semibold bg-[hsl(var(--background))] text-[hsl(var(--ink))] px-5 py-3 hover:opacity-90 transition-opacity">
               Request a Quote
               <ArrowRight size={13} strokeWidth={2} />
             </Link>
@@ -822,7 +822,7 @@ function Footer({ onContact }: { onContact: () => void }) {
           </div>
         </div>
 
-        <div className="border-t border-white/10 py-6 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 text-[11.5px] text-white/40">
+        <div className="border-t border-white/10 py-6 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 text-[13px] text-white/40">
           <span>© {year} Kennion Benefit Advisors. All rights reserved.</span>
           <span className="hidden lg:inline">2828 Old 280 Court, Vestavia, AL 35243</span>
           <div className="flex items-center gap-6">
@@ -834,7 +834,7 @@ function Footer({ onContact }: { onContact: () => void }) {
 
       {/* Oversized wordmark colophon, clipped at the page's bottom edge. */}
       <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10 select-none pointer-events-none" aria-hidden="true">
-        <div className="font-display font-extrabold uppercase text-[19vw] lg:text-[240px] leading-[0.78] tracking-[-0.045em] text-white/[0.05] whitespace-nowrap -mb-[0.14em]">
+        <div className="font-display font-extrabold text-[19vw] lg:text-[240px] leading-[0.78] tracking-[-0.01em] text-white/[0.05] whitespace-nowrap -mb-[0.14em]">
           Kennion
         </div>
       </div>

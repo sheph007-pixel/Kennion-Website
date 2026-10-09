@@ -69,7 +69,7 @@ function Field({ label, error, optional = false, children, htmlFor }: {
     <div>
       <label htmlFor={htmlFor} className="kn-caps text-muted-foreground block">
         {label}
-        {optional && <span className="ml-2 normal-case tracking-normal font-normal text-[11px]">(optional)</span>}
+        {optional && <span className="ml-2 normal-case tracking-normal font-normal text-[12.5px]">(optional)</span>}
       </label>
       <div className="mt-1">{children}</div>
       {error && <p className="mt-1.5 text-xs text-destructive">{error}</p>}
@@ -141,7 +141,7 @@ export default function RequestQuotePage() {
           <Link href="/" className="flex items-center">
             <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-8 w-auto" style={{ mixBlendMode: "multiply" }} />
           </Link>
-          <Link href="/" className="inline-flex items-center gap-2 text-[11.5px] uppercase tracking-[0.16em] font-semibold text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/" className="inline-flex items-center gap-2 text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft size={13} strokeWidth={2} /> Back to home
           </Link>
         </div>
@@ -190,7 +190,7 @@ export default function RequestQuotePage() {
                 need to do.
               </p>
               <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
-                <Link href="/" className="group inline-flex items-center gap-3 bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold tracking-[0.08em] uppercase transition-colors hover:bg-[hsl(var(--ink))]">
+                <Link href="/" className="group inline-flex items-center gap-3 bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--ink))]">
                   Back to homepage
                   <ArrowRight size={14} strokeWidth={2} className="transition-transform group-hover:translate-x-1" />
                 </Link>              </div>
@@ -248,7 +248,7 @@ export default function RequestQuotePage() {
                   type="submit"
                   disabled={isLoading}
                   data-testid="button-submit-quote"
-                  className="group w-full inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground px-6 py-4 text-[13px] font-semibold tracking-[0.08em] uppercase transition-colors hover:bg-[hsl(var(--ink))] disabled:opacity-60"
+                  className="group w-full inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground px-6 py-4 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--ink))] disabled:opacity-60"
                 >
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
                     <>
@@ -259,7 +259,7 @@ export default function RequestQuotePage() {
                 </button>
               </form>
 
-              <div className="mt-6 pt-5 border-t border-border flex items-center gap-2.5 text-[11.5px] uppercase tracking-[0.1em] text-muted-foreground">
+              <div className="mt-6 pt-5 border-t border-border flex items-center gap-2.5 text-[13px] text-muted-foreground">
                 <ShieldCheck size={13} strokeWidth={1.8} style={{ color: "hsl(var(--brand-accent))" }} />
                 Your information goes straight to our team. We never sell your data.
               </div>
