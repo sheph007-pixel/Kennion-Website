@@ -5,13 +5,13 @@ interface KennionLogoProps {
   linkTo?: string;
 }
 
-// The PNG is high-res (2x), so size it by height rather than its natural size.
-const HEIGHTS = { sm: "h-8", md: "h-11", lg: "h-14" } as const;
+// Vector logo: size it by height.
+const HEIGHTS = { sm: "h-7", md: "h-10", lg: "h-12" } as const;
 
 export function KennionLogo({ size = "md", linkTo = "/" }: KennionLogoProps) {
   const content = (
     <img
-      src="/kennion-logo.png"
+      src="/kennion-logo.svg"
       alt="Kennion Benefit Advisors"
       className={`cursor-pointer w-auto ${HEIGHTS[size]}`}
       data-testid="logo-kennion"

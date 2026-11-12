@@ -17,7 +17,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 const KENNION_LOGO_URL =
-  "/kennion-logo.png";
+  "/kennion-logo.svg";
 
 function isValidUSPhone(phone: string): boolean {
   const digits = phone.replace(/\D/g, "");
@@ -139,7 +139,7 @@ export default function RequestQuotePage() {
       <header className="border-b border-border">
         <div className="mx-auto max-w-[1320px] px-6 lg:px-10 h-[68px] flex items-center justify-between">
           <Link href="/" className="flex items-center">
-            <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-12 w-auto" />
+            <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-11 w-auto" />
           </Link>
           <Link href="/" className="inline-flex items-center gap-2 text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft size={13} strokeWidth={2} /> Back to home
