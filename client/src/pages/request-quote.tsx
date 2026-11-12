@@ -139,7 +139,7 @@ export default function RequestQuotePage() {
       <header className="border-b border-border">
         <div className="mx-auto max-w-[1320px] px-6 lg:px-10 h-[68px] flex items-center justify-between">
           <Link href="/" className="flex items-center">
-            <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-10 w-auto" />
+            <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-[26px] w-auto" />
           </Link>
           <Link href="/" className="inline-flex items-center gap-2 text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft size={13} strokeWidth={2} /> Back to home
