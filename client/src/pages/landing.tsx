@@ -114,9 +114,9 @@ function Nav({ onContact }: { onContact: () => void }) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-[hsl(var(--background))]">
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 flex items-center justify-between h-[72px] lg:h-[84px]">
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 flex items-center justify-between h-[68px] lg:h-[76px]">
         <Link href="/" className="flex items-center">
-          <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-10 lg:h-[52px] w-auto" />
+          <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-9 lg:h-11 w-auto" />
         </Link>
 
         <nav className="hidden lg:flex items-center gap-8">
@@ -739,7 +739,7 @@ function Footer({ onContact }: { onContact: () => void }) {
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
         <div className="grid sm:grid-cols-2 md:grid-cols-[1.6fr_1fr_1fr] gap-x-10 gap-y-12 pb-14 lg:pb-16">
           <div className="sm:col-span-2 md:col-span-1">
-            <img src="/kennion-logo-white.svg" alt="Kennion Benefit Advisors" className="h-12 w-auto" />
+            <img src="/kennion-logo-white.svg" alt="Kennion Benefit Advisors" className="h-11 w-auto" />
             <div className="kn-caps text-white/40 mt-3">The Modern Benefits Agency</div>
             <a href={QUOTE_URL}
                className="mt-8 inline-flex items-center gap-2.5 text-[13px] font-semibold rounded-md bg-primary text-primary-foreground px-5 py-3 hover:bg-[hsl(var(--primary-hover))] transition-colors">

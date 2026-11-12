@@ -6,7 +6,7 @@ interface KennionLogoProps {
 }
 
 // Vector logo: size it by height.
-const HEIGHTS = { sm: "h-7", md: "h-10", lg: "h-12" } as const;
+const HEIGHTS = { sm: "h-7", md: "h-9", lg: "h-11" } as const;
 
 export function KennionLogo({ size = "md", linkTo = "/" }: KennionLogoProps) {
   const content = (
