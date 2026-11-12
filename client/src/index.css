@@ -376,30 +376,33 @@ html {
 }
 
 .kn-landing {
-  --background: 40 30% 97%;
-  --foreground: 218 30% 11%;
-  --border: 40 12% 85%;
-  --card: 40 30% 97%;
-  --card-foreground: 218 30% 11%;
-  --muted: 40 18% 93%;
-  --muted-foreground: 220 9% 39%;
-  --primary: 213 62% 22%;
-  --primary-foreground: 40 30% 97%;
-  --brand-accent: 30 52% 40%;
-  --brand-accent-foreground: 40 30% 97%;
-  --ink: 218 35% 9%;
+  /* Same family as app.kennion.com: cool gray page, navy, Kennion blue. */
+  --background: 210 20% 97%;
+  --foreground: 211 40% 14%;
+  --border: 204 12% 88%;
+  --card: 0 0% 100%;
+  --card-foreground: 211 40% 14%;
+  --muted: 210 18% 93%;
+  --muted-foreground: 205 6% 40%;
+  --primary: 211 65% 17%;
+  --primary-foreground: 0 0% 100%;
+  --brand-accent: 207 70% 38%;
+  --brand-accent-soft: 205 75% 70%;
+  --brand-accent-foreground: 0 0% 100%;
+  --ink: 211 60% 12%;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
 }
 .kn-landing ::selection {
-  background: hsl(213 62% 22%);
-  color: hsl(40 30% 97%);
+  background: hsl(207 70% 38%);
+  color: #fff;
 }
 
 /* Letterspaced small-caps label — the landing page's only "eyebrow". */
 .kn-caps {
   font-size: 13px;
   font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 /* Animated editorial underline for text links. */
@@ -445,20 +448,10 @@ html {
   .kn-landing * { transition-duration: 0.01ms !important; }
 }
 
-/* Ink-duotone photo treatment — grayscale base + navy multiply wash. */
-.kn-photo { position: relative; overflow: hidden; }
+/* Photos: natural colour, soft corners. */
+.kn-photo { position: relative; overflow: hidden; border-radius: 12px; }
 .kn-photo img {
-  filter: grayscale(100%) contrast(1.06) brightness(1.02);
   display: block;
-}
-.kn-photo::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: hsl(213 62% 22%);
-  mix-blend-mode: multiply;
-  opacity: 0.28;
-  pointer-events: none;
 }
 
 .font-display {

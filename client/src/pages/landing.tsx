@@ -2,11 +2,11 @@
 // Positioning: a large, established, tech-forward benefits agency.
 // Lean page: hero with product visual, proof band, technology story,
 // options, how it works, CTA + contact, footer. Google Sans Flex type,
-// paper & ink palette scoped via .kn-landing (see index.css).
+// cool navy palette scoped via .kn-landing (see index.css).
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link } from "wouter";
-import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, FileSpreadsheet, MousePointerClick, LineChart } from "lucide-react";
 
 const QUOTE_URL = "https://app.kennion.com/quote";
 const KENNION_LOGO_URL = "https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/attachments/production/5004437337/logo/qGPs3ykt503dCIwP_qHVHmcxV3JVHXZucQ.png";
@@ -73,11 +73,8 @@ function SectionHead({ label, children, dark = false }: {
 }) {
   return (
     <Reveal>
-      <div className={`flex items-baseline gap-4 border-b pb-4 ${dark ? "border-white/15" : "border-foreground/20"}`}>
-        <span className="inline-block w-6 h-px translate-y-[-3px]" style={{ background: "hsl(var(--brand-accent))" }} />
-        <span className={`kn-caps ${dark ? "text-white/60" : "text-muted-foreground"}`}>{label}</span>
-      </div>
-      <div className="pt-8 lg:pt-14">{children}</div>
+      <div className={`kn-caps ${dark ? "text-[hsl(var(--brand-accent-soft))]" : "text-[hsl(var(--brand-accent))]"}`}>{label}</div>
+      <div className="pt-4 lg:pt-5">{children}</div>
     </Reveal>
   );
 }
@@ -87,8 +84,8 @@ function SolidButton({ href, onClick, children, external = false, tone = "ink" }
   tone?: "ink" | "paper";
 }) {
   const cls = tone === "ink"
-    ? "group inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold  transition-colors hover:bg-[hsl(var(--ink))]"
-    : "group inline-flex items-center justify-center gap-3 bg-[hsl(var(--background))] text-primary px-6 py-3.5 text-[13px] font-semibold  transition-opacity hover:opacity-90";
+    ? "group inline-flex items-center justify-center gap-3 rounded-lg bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold  transition-colors hover:bg-[hsl(var(--ink))]"
+    : "group inline-flex items-center justify-center gap-3 rounded-lg bg-[hsl(var(--background))] text-primary px-6 py-3.5 text-[13px] font-semibold  transition-opacity hover:opacity-90";
   const inner = (
     <>
       {children}
@@ -135,7 +132,7 @@ function Nav({ onContact }: { onContact: () => void }) {
           <button onClick={onContact} className="kn-link-rev text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
             Contact
           </button>
-          <a href={QUOTE_URL} className="inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-5 py-2.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--ink))]">
+          <a href={QUOTE_URL} className="inline-flex items-center gap-2.5 rounded-lg bg-primary text-primary-foreground px-5 py-2.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--ink))]">
             Request a Quote
           </a>
         </div>
@@ -152,7 +149,7 @@ function Nav({ onContact }: { onContact: () => void }) {
               {label}
             </a>
           ))}
-          <a href={QUOTE_URL} className="mt-6 flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-3.5 text-[13.5px] font-semibold ">
+          <a href={QUOTE_URL} className="mt-6 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground px-5 py-3.5 text-[13.5px] font-semibold ">
             Request a Quote
           </a>
           <button onClick={() => { setOpen(false); onContact(); }} className="mt-6 block text-[13px] font-semibold text-muted-foreground kn-link w-max">
@@ -173,15 +170,15 @@ function ProductVisual() {
     { name: "Healthy 2500 HSA", rate: "341", bar: "58%" },
   ];
   return (
-    <div className="relative select-none pt-6 pb-12 pr-2 lg:pr-0" aria-hidden="true">
+    <div className="relative select-none" aria-hidden="true">
       {/* proposal card */}
-      <div className="relative bg-white border border-border shadow-sm">
+      <div className="relative bg-white border border-border rounded-xl shadow-md overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
             <div className="kn-caps text-muted-foreground">Proposal</div>
             <div className={`${H3} text-[17px] mt-1`}>Group of 42</div>
           </div>
-          <span className="text-[12px] font-semibold border border-border px-2.5 py-1.5 text-muted-foreground">
+          <span className="text-[12px] font-semibold rounded-full bg-muted px-3 py-1 text-muted-foreground">
             23 plans quoted
           </span>
         </div>
@@ -190,8 +187,8 @@ function ProductVisual() {
             <div key={p.name} className="grid grid-cols-[1fr_auto] gap-x-4 items-center border-b border-border/70 last:border-b-0 py-3.5">
               <div>
                 <div className="text-[13px] font-semibold tracking-[-0.01em]">{p.name}</div>
-                <div className="mt-2 h-[3px] w-full bg-muted">
-                  <div className="h-full bg-primary/70" style={{ width: p.bar }} />
+                <div className="mt-2 h-[4px] w-full rounded-full bg-muted overflow-hidden">
+                  <div className="h-full rounded-full bg-[hsl(var(--brand-accent))]" style={{ width: p.bar }} />
                 </div>
               </div>
               <div className="text-right">
@@ -203,36 +200,10 @@ function ProductVisual() {
         </div>
         <div className="flex items-center gap-2.5 px-5 py-3.5 border-t border-border bg-muted/50">
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: "hsl(var(--brand-accent))" }} />
             <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "hsl(var(--brand-accent))" }} />
           </span>
           <span className="text-[12.5px] font-semibold text-muted-foreground">Underwriting review complete</span>
         </div>
-      </div>
-
-      {/* enrollment card */}
-      <div className="absolute -bottom-2 -left-3 sm:-left-6 w-[62%] max-w-[260px] bg-[hsl(var(--ink))] text-white p-4 shadow-sm">
-        <div className="kn-caps text-white/50">Open Enrollment</div>
-        <div className="mt-3 flex items-baseline justify-between">
-          <span className="font-display font-semibold text-[26px] leading-none tracking-[-0.01em] tabular-nums">38<span className="text-white/40">/42</span></span>
-          <span className="text-[12px] text-white/50">enrolled online</span>
-        </div>
-        <div className="mt-3 h-[3px] w-full bg-white/15">
-          <div className="h-full" style={{ width: "90%", background: "hsl(var(--brand-accent))" }} />
-        </div>
-        <div className="mt-3.5 space-y-2">
-          {["Elections sent to carrier", "Digital forms signed"].map((t) => (
-            <div key={t} className="flex items-center gap-2 text-[12.5px] text-white/70">
-              <Check size={11} strokeWidth={2.5} style={{ color: "hsl(var(--brand-accent))" }} />
-              {t}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* census chip */}
-      <div className="absolute top-0 right-2 sm:right-6 bg-white border border-border px-3 py-2 shadow-sm">
-        <span className="text-[12px] font-semibold text-muted-foreground">Census received · 42 lives</span>
       </div>
     </div>
   );
@@ -249,7 +220,7 @@ function Hero() {
             <h1 className="font-display font-semibold tracking-[-0.01em] leading-[1.05] text-[clamp(2.5rem,8vw,4.6rem)]">
               A new kind of
               <br />
-              benefits agency<span style={{ color: "hsl(var(--brand-accent))" }}>.</span>
+              benefits agency.
             </h1>
           </Reveal>
           <Reveal delay={180}>
@@ -375,7 +346,7 @@ function HowWeDoIt() {
             {steps.map((s, i) => (
               <Reveal key={s.t} delay={i * 80}>
                 <div className={`md:pr-6 ${i > 0 ? "md:border-l md:border-white/15 md:pl-10" : ""}`}>
-                  <div className="font-display font-semibold text-[44px] lg:text-[56px] leading-none tracking-[-0.01em] tabular-nums" style={{ color: "hsl(var(--brand-accent))" }}>
+                  <div className="grid place-items-center w-10 h-10 rounded-full bg-white/10 text-[15px] font-semibold tabular-nums">
                     {i + 1}
                   </div>
                   <h3 className={`${H3} mt-5 text-[22px] lg:text-[25px]`}>{s.t}</h3>
@@ -392,19 +363,12 @@ function HowWeDoIt() {
           </div>
         </Reveal>
 
-        <div className="grid md:grid-cols-3 gap-px bg-white/10 border border-white/10">
+        <div className="grid md:grid-cols-3 gap-4">
           {/* Quote online */}
           <Reveal>
-            <div className="bg-[hsl(var(--ink))] p-6 lg:p-8 h-full flex flex-col">
-              <div className="border border-white/10 bg-white/[0.04] p-4 mb-7 min-h-[132px]">
-                {[["Healthy 500", "82%"], ["Healthy 1000", "70%"], ["HSA 2500", "58%"]].map(([n, w]) => (
-                  <div key={n} className="flex items-center gap-3 py-2 border-b border-white/10 last:border-b-0">
-                    <span className="text-[12px] text-white/50 w-24 shrink-0">{n}</span>
-                    <div className="h-[3px] flex-1 bg-white/10">
-                      <div className="h-full" style={{ width: w, background: "hsl(var(--brand-accent))" }} />
-                    </div>
-                  </div>
-                ))}
+            <div className="rounded-xl bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col">
+              <div className="grid place-items-center w-12 h-12 rounded-xl bg-white/10 mb-6">
+                <FileSpreadsheet size={22} strokeWidth={1.8} className="text-[hsl(var(--brand-accent-soft))]" />
               </div>
               <h3 className={`${H3} text-[21px]`}>Quote online</h3>
               <p className="mt-3 text-[13.5px] leading-[1.7] text-white/60">
@@ -416,19 +380,9 @@ function HowWeDoIt() {
 
           {/* Enroll online */}
           <Reveal delay={70}>
-            <div className="bg-[hsl(var(--ink))] p-6 lg:p-8 h-full flex flex-col">
-              <div className="border border-white/10 bg-white/[0.04] p-4 mb-7 min-h-[132px]">
-                <div className="flex items-baseline justify-between">
-                  <span className="font-display font-semibold text-[22px] tracking-[-0.01em] tabular-nums">90%</span>
-                  <span className="text-[12px] text-white/50">enrolled</span>
-                </div>
-                <div className="mt-2.5 h-[3px] w-full bg-white/10">
-                  <div className="h-full w-[90%]" style={{ background: "hsl(var(--brand-accent))" }} />
-                </div>
-                <div className="mt-3 flex items-center gap-2 text-[12px] text-white/50">
-                  <Check size={11} strokeWidth={2.5} style={{ color: "hsl(var(--brand-accent))" }} />
-                  No paper anywhere
-                </div>
+            <div className="rounded-xl bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col">
+              <div className="grid place-items-center w-12 h-12 rounded-xl bg-white/10 mb-6">
+                <MousePointerClick size={22} strokeWidth={1.8} className="text-[hsl(var(--brand-accent-soft))]" />
               </div>
               <h3 className={`${H3} text-[21px]`}>Enroll online</h3>
               <p className="mt-3 text-[13.5px] leading-[1.7] text-white/60">
@@ -440,19 +394,9 @@ function HowWeDoIt() {
 
           {/* Analysis */}
           <Reveal delay={140}>
-            <div className="bg-[hsl(var(--ink))] p-6 lg:p-8 h-full flex flex-col">
-              <div className="border border-white/10 bg-white/[0.04] p-4 mb-7 min-h-[132px] overflow-hidden">
-                <div className="kn-caps text-white/50">Analyzing group</div>
-                <div className="relative mt-3 h-[3px] w-full bg-white/10 overflow-hidden">
-                  <div className="kn-scan absolute inset-y-0 w-1/4" style={{ background: "hsl(var(--brand-accent))" }} />
-                </div>
-                <div className="mt-3 flex items-center gap-2">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: "hsl(var(--brand-accent))" }} />
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: "hsl(var(--brand-accent))" }} />
-                  </span>
-                  <span className="text-[12px] text-white/50">Review in progress</span>
-                </div>
+            <div className="rounded-xl bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col">
+              <div className="grid place-items-center w-12 h-12 rounded-xl bg-white/10 mb-6">
+                <LineChart size={22} strokeWidth={1.8} className="text-[hsl(var(--brand-accent-soft))]" />
               </div>
               <h3 className={`${H3} text-[21px]`}>Deeper analysis</h3>
               <p className="mt-3 text-[13.5px] leading-[1.7] text-white/60">
@@ -477,7 +421,7 @@ function Options() {
     "HSA Plans", "Online Enrollment",
   ];
   const row = chips.map((c, i) => (
-    <span key={i} className="inline-block border border-border px-4 py-2.5 mr-3 text-[13.5px] font-semibold text-muted-foreground whitespace-nowrap bg-white/60">
+    <span key={i} className="inline-block rounded-full border border-border px-4 py-2 text-[13.5px] font-semibold text-foreground/80 whitespace-nowrap bg-white">
       {c}
     </span>
   ));
@@ -499,11 +443,8 @@ function Options() {
           </div>
         </SectionHead>
       </div>
-      <div className="mt-12 lg:mt-16 overflow-hidden py-1" aria-hidden="true">
-        <div className="kn-marquee flex w-max">
-          <div className="flex items-center">{row}</div>
-          <div className="flex items-center">{row}</div>
-        </div>
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 mt-10 lg:mt-12">
+        <div className="flex flex-wrap gap-2.5">{row}</div>
       </div>
     </section>
   );
@@ -524,7 +465,7 @@ function WhyKennion() {
           <div className="grid lg:grid-cols-12 gap-y-12 lg:gap-x-10 items-start">
             <div className="lg:col-span-4">
               <div className="font-display font-semibold text-[84px] lg:text-[120px] leading-[0.9] tracking-[-0.01em] tabular-nums">
-                95<span style={{ color: "hsl(var(--brand-accent))" }}>%</span>
+                95%
               </div>
               <div className="mt-4 text-[13.5px] text-muted-foreground max-w-[15rem] leading-[1.5]">
                 Of our clients stay with us, year over year
@@ -603,7 +544,7 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
       <p className="mt-3 text-[14px] leading-[1.7] text-muted-foreground">
         The right person on our team will get back to you shortly.
       </p>
-      <button onClick={onClose} className="mt-7 inline-flex items-center justify-center bg-primary text-primary-foreground px-6 py-3 text-[13.5px] font-semibold hover:bg-[hsl(var(--ink))] transition-colors">
+      <button onClick={onClose} className="mt-7 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-6 py-3 text-[13.5px] font-semibold hover:bg-[hsl(var(--ink))] transition-colors">
         Done
       </button>
     </div>
@@ -641,7 +582,7 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
       <button
         type="submit"
         disabled={state === "sending"}
-        className="mt-7 w-full inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--ink))] disabled:opacity-60"
+        className="mt-7 w-full inline-flex items-center justify-center gap-3 rounded-lg bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--ink))] disabled:opacity-60"
       >
         {state === "sending" ? "Sending..." : "Send Message"}
       </button>
@@ -779,7 +720,7 @@ function LegalModal({ kind, onClose }: { kind: string | null; onClose: () => voi
         </div>
 
         <div className="px-6 lg:px-8 py-4 border-t border-border flex justify-end">
-          <button onClick={onClose} className="text-[13px] font-semibold bg-primary text-primary-foreground px-5 py-2.5 hover:bg-[hsl(var(--ink))] transition-colors">
+          <button onClick={onClose} className="text-[13px] font-semibold rounded-lg bg-primary text-primary-foreground px-5 py-2.5 hover:bg-[hsl(var(--ink))] transition-colors">
             Close
           </button>
         </div>
@@ -801,7 +742,7 @@ function Footer({ onContact }: { onContact: () => void }) {
             <div className="font-display font-semibold text-[26px] tracking-[-0.01em] leading-none">Kennion</div>
             <div className="kn-caps text-white/40 mt-3">The Modern Benefits Agency</div>
             <a href={QUOTE_URL}
-               className="mt-8 inline-flex items-center gap-2.5 text-[13px] font-semibold bg-[hsl(var(--background))] text-[hsl(var(--ink))] px-5 py-3 hover:opacity-90 transition-opacity">
+               className="mt-8 inline-flex items-center gap-2.5 text-[13px] font-semibold rounded-lg bg-[hsl(var(--background))] text-[hsl(var(--ink))] px-5 py-3 hover:opacity-90 transition-opacity">
               Request a Quote
               <ArrowRight size={13} strokeWidth={2} />
             </a>
@@ -833,13 +774,6 @@ function Footer({ onContact }: { onContact: () => void }) {
             <button onClick={() => setLegalOpen("privacy")} className="kn-link-rev hover:text-white/80 transition-colors">Privacy</button>
             <button onClick={() => setLegalOpen("terms")} className="kn-link-rev hover:text-white/80 transition-colors">Terms</button>
           </div>
-        </div>
-      </div>
-
-      {/* Oversized wordmark colophon, clipped at the page's bottom edge. */}
-      <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10 select-none pointer-events-none" aria-hidden="true">
-        <div className="font-display font-extrabold text-[19vw] lg:text-[240px] leading-[0.78] tracking-[-0.01em] text-white/[0.05] whitespace-nowrap -mb-[0.14em]">
-          Kennion
         </div>
       </div>
 
