@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -6,7 +7,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ThemeProvider } from "@/components/theme-provider";
 import LandingPage from "@/pages/landing";
-import RequestQuotePage from "@/pages/request-quote";
 import LoginPage from "@/pages/login";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
@@ -67,15 +67,23 @@ function PublicRoute({ component: Component }: { component: React.ComponentType 
   return <Component />;
 }
 
+const QUOTE_URL = "https://app.kennion.com/quote";
+
+function ExternalQuoteRedirect() {
+  useEffect(() => {
+    window.location.replace(QUOTE_URL);
+  }, []);
+  return null;
+}
+
 function Router() {
   return (
     <Switch>
       <Route path="/" component={LandingPage} />
-      <Route path="/quote" component={RequestQuotePage} />
+      {/* The quote form now lives on app.kennion.com. */}
+      <Route path="/quote" component={ExternalQuoteRedirect} />
       {/* Public self-registration is closed — prospects use the quote form. */}
-      <Route path="/register">
-        <Redirect to="/quote" />
-      </Route>
+      <Route path="/register" component={ExternalQuoteRedirect} />
       <Route path="/login">
         <PublicRoute component={LoginPage} />
       </Route>

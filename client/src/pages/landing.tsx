@@ -8,6 +8,7 @@ import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link } from "wouter";
 import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check } from "lucide-react";
 
+const QUOTE_URL = "https://app.kennion.com/quote";
 const KENNION_LOGO_URL = "https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/attachments/production/5004437337/logo/qGPs3ykt503dCIwP_qHVHmcxV3JVHXZucQ.png";
 
 /* ── type scale ────────────────────────────────────────────────────── */
@@ -97,6 +98,9 @@ function SolidButton({ href, onClick, children, external = false, tone = "ink" }
   if (external) {
     return <a href={href} onClick={onClick} className={cls} target={onClick ? undefined : "_blank"} rel="noopener noreferrer">{inner}</a>;
   }
+  if (/^https?:\/\//.test(href)) {
+    return <a href={href} onClick={onClick} className={cls}>{inner}</a>;
+  }
   return <Link href={href} className={cls}>{inner}</Link>;
 }
 
@@ -131,9 +135,9 @@ function Nav({ onContact }: { onContact: () => void }) {
           <button onClick={onContact} className="kn-link-rev text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
             Contact
           </button>
-          <Link href="/quote" className="inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-5 py-2.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--ink))]">
+          <a href={QUOTE_URL} className="inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-5 py-2.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--ink))]">
             Request a Quote
-          </Link>
+          </a>
         </div>
 
         <button className="lg:hidden w-10 h-10 grid place-items-center -mr-2" onClick={() => setOpen(!open)} aria-label="Menu">
@@ -148,9 +152,9 @@ function Nav({ onContact }: { onContact: () => void }) {
               {label}
             </a>
           ))}
-          <Link href="/quote" className="mt-6 flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-3.5 text-[13.5px] font-semibold ">
+          <a href={QUOTE_URL} className="mt-6 flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-3.5 text-[13.5px] font-semibold ">
             Request a Quote
-          </Link>
+          </a>
           <button onClick={() => { setOpen(false); onContact(); }} className="mt-6 block text-[13px] font-semibold text-muted-foreground kn-link w-max">
             Contact
           </button>
@@ -255,7 +259,7 @@ function Hero() {
               employer needs.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
-              <SolidButton href="/quote">Request a Quote</SolidButton>
+              <SolidButton href={QUOTE_URL}>Request a Quote</SolidButton>
               <a href="#how" className="kn-link text-[13px] font-semibold text-foreground">
                 See how it works
               </a>
@@ -342,9 +346,9 @@ function Problem() {
                   <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>{c.label}</div>
                   <h3 className={`${H3} mt-4 text-[24px] lg:text-[30px] leading-[1.12] max-w-[16em]`}>{c.h}</h3>
                   <p className="mt-4 text-[14.5px] leading-[1.7] text-muted-foreground max-w-[26rem]">{c.p}</p>
-                  <Link href="/quote" className="kn-link mt-6 text-[13px] font-semibold text-foreground">
+                  <a href={QUOTE_URL} className="kn-link mt-6 text-[13px] font-semibold text-foreground">
                     {c.cta}
-                  </Link>
+                  </a>
                 </div>
               </Reveal>
             ))}
@@ -686,7 +690,7 @@ function FinalCTA({ onContact }: { onContact: () => void }) {
           the right person will get back to you.
         </p>
         <div className="mt-10">
-          <SolidButton href="/quote" tone="paper">Request a Quote</SolidButton>
+          <SolidButton href={QUOTE_URL} tone="paper">Request a Quote</SolidButton>
         </div>
 
         </div>
@@ -796,11 +800,11 @@ function Footer({ onContact }: { onContact: () => void }) {
           <div className="sm:col-span-2 md:col-span-1">
             <div className="font-display font-semibold text-[26px] tracking-[-0.01em] leading-none">Kennion</div>
             <div className="kn-caps text-white/40 mt-3">The Modern Benefits Agency</div>
-            <Link href="/quote"
+            <a href={QUOTE_URL}
                className="mt-8 inline-flex items-center gap-2.5 text-[13px] font-semibold bg-[hsl(var(--background))] text-[hsl(var(--ink))] px-5 py-3 hover:opacity-90 transition-opacity">
               Request a Quote
               <ArrowRight size={13} strokeWidth={2} />
-            </Link>
+            </a>
           </div>
 
           <div>
@@ -816,7 +820,7 @@ function Footer({ onContact }: { onContact: () => void }) {
           <div>
             <div className="kn-caps text-white/40 mb-5">Contact</div>
             <ul className="space-y-3 text-[13.5px] text-white/70">
-              <li><Link href="/quote" className="kn-link-rev hover:text-white transition-colors">Request a Quote</Link></li>
+              <li><a href={QUOTE_URL} className="kn-link-rev hover:text-white transition-colors">Request a Quote</a></li>
               <li><button onClick={onContact} className="kn-link-rev hover:text-white transition-colors">Contact Us</button></li>
             </ul>
           </div>
