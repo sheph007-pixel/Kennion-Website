@@ -6,8 +6,8 @@
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link } from "wouter";
-import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, FileSpreadsheet, MousePointerClick, LineChart } from "lucide-react";
-import { KMark, KPattern, Chevron } from "@/components/brand-shapes";
+import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, FileSpreadsheet, MousePointerClick, LineChart, Stethoscope, Smile, Eye, ShieldCheck, Accessibility, HeartHandshake, Scale, Wallet, Receipt, Pill, PiggyBank, MonitorSmartphone, Upload } from "lucide-react";
+import { KPattern } from "@/components/brand-shapes";
 
 const QUOTE_URL = "https://app.kennion.com/quote";
 const KENNION_LOGO_URL = "/kennion-logo.svg";
@@ -65,6 +65,24 @@ function Reveal({ children, delay = 0, className = "", y = 14 }: {
       {children}
     </div>
   );
+}
+
+/** Counts from 0 to `to` once `go` turns true (respects reduced motion). */
+function useCountUp(to: number, go: boolean, ms = 1100) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    if (!go) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) { setV(to); return; }
+    let raf = 0; const t0 = performance.now();
+    const tick = (t: number) => {
+      const k = Math.min(1, (t - t0) / ms);
+      setV(Math.round(to * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [go, to, ms]);
+  return v;
 }
 
 /* ── shared bits ───────────────────────────────────────────────────── */
@@ -164,14 +182,41 @@ function Nav({ onContact }: { onContact: () => void }) {
 
 /* ── hero product visual (pure CSS, depicts the real quoting flow) ─── */
 
+function PlanRow({ name, rate, bar, go, delay }: { name: string; rate: number; bar: number; go: boolean; delay: number }) {
+  const [on, setOn] = useState(false);
+  useEffect(() => { if (go) { const t = setTimeout(() => setOn(true), delay); return () => clearTimeout(t); } }, [go, delay]);
+  const v = useCountUp(rate, on, 900);
+  return (
+    <div className="grid grid-cols-[1fr_auto] gap-x-4 items-center border-b border-border/70 last:border-b-0 py-3.5">
+      <div>
+        <div className="text-[13px] font-semibold tracking-[-0.01em]">{name}</div>
+        <div className="mt-2 h-[4px] w-full rounded-full bg-muted overflow-hidden">
+          <div className="h-full rounded-full bg-[hsl(var(--brand-accent))] transition-[width] duration-[1100ms] ease-out" style={{ width: on ? `${bar}%` : "0%" }} />
+        </div>
+      </div>
+      <div className="text-right">
+        <div className="font-display font-semibold text-[17px] tracking-[-0.01em] tabular-nums">${v}</div>
+        <div className="text-[12px] text-muted-foreground">per employee</div>
+      </div>
+    </div>
+  );
+}
+
 function ProductVisual() {
   const plans = [
-    { name: "Healthy 500", rate: "412", bar: "82%" },
-    { name: "Healthy 1000", rate: "376", bar: "70%" },
-    { name: "Healthy 2500 HSA", rate: "341", bar: "58%" },
+    { name: "Healthy 500", rate: 412, bar: 82 },
+    { name: "Healthy 1000", rate: 376, bar: 70 },
+    { name: "Healthy 2500 HSA", rate: 341, bar: 58 },
   ];
+  const [go, setGo] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setGo(true), 450); return () => clearTimeout(t); }, []);
   return (
     <div className="relative select-none" aria-hidden="true">
+      {/* floating census chip */}
+      <div className="kn-float absolute -left-8 -top-11 z-10 hidden lg:flex items-center gap-2.5 rounded-full bg-white border border-border shadow-md pl-2 pr-4 py-2">
+        <span className="grid place-items-center w-7 h-7 rounded-full bg-[hsl(var(--brand-accent))] text-white"><Upload size={14} strokeWidth={2.2} /></span>
+        <span className="text-[12.5px] font-semibold">Census uploaded · 42 employees</span>
+      </div>
       {/* proposal card */}
       <div className="relative bg-white border border-border rounded-[10px] shadow-md overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
@@ -184,23 +229,11 @@ function ProductVisual() {
           </span>
         </div>
         <div className="px-5 py-2">
-          {plans.map((p) => (
-            <div key={p.name} className="grid grid-cols-[1fr_auto] gap-x-4 items-center border-b border-border/70 last:border-b-0 py-3.5">
-              <div>
-                <div className="text-[13px] font-semibold tracking-[-0.01em]">{p.name}</div>
-                <div className="mt-2 h-[4px] w-full rounded-full bg-muted overflow-hidden">
-                  <div className="h-full rounded-full bg-[hsl(var(--brand-accent))]" style={{ width: p.bar }} />
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="font-display font-semibold text-[17px] tracking-[-0.01em] tabular-nums">${p.rate}</div>
-                <div className="text-[12px] text-muted-foreground">per employee</div>
-              </div>
-            </div>
-          ))}
+          {plans.map((p, i) => <PlanRow key={p.name} {...p} go={go} delay={i * 160} />)}
         </div>
         <div className="flex items-center gap-2.5 px-5 py-3.5 border-t border-border bg-muted/50">
           <span className="relative flex h-2 w-2">
+            <span className="kn-ping absolute inline-flex h-full w-full rounded-full" style={{ background: "hsl(var(--brand-accent))" }} />
             <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "hsl(var(--brand-accent))" }} />
           </span>
           <span className="text-[12.5px] font-semibold text-muted-foreground">Underwriting review complete</span>
@@ -242,11 +275,8 @@ function Hero() {
           </Reveal>
         </div>
 
-        <Reveal delay={220} className="lg:col-span-5 relative">
-          <KMark className="pointer-events-none absolute -right-10 -top-16 h-[130%] w-auto text-[hsl(var(--ink))] opacity-[0.06] hidden lg:block" />
-          <div className="relative">
-            <ProductVisual />
-          </div>
+        <Reveal delay={220} className="lg:col-span-5">
+          <ProductVisual />
         </Reveal>
       </div>
 
@@ -281,41 +311,19 @@ function ProofBand() {
 
 /* ── the problem ───────────────────────────────────────────────────── */
 
-function ProblemArt({ kind }: { kind: string }) {
-  if (kind === "k") {
-    return (
-      <div className="relative w-full mb-7 aspect-[16/9] overflow-hidden rounded-[12px] bg-[hsl(var(--ink))]" aria-hidden="true">
-        <KMark className="absolute -right-[6%] -top-[18%] h-[136%] w-auto text-[hsl(var(--navy2))]" />
-        <div className="absolute left-7 top-7 h-1 w-9 rounded-full bg-[hsl(var(--brand-accent-soft))]" />
-        <div className="absolute left-7 bottom-7 text-white">
-          <div className="kn-caps text-white/50">New program</div>
-          <div className="font-display font-semibold text-[26px] lg:text-[32px] leading-[1.05] tracking-[-0.01em] mt-2">Built from day one.</div>
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="relative w-full mb-7 aspect-[16/9] overflow-hidden rounded-[12px] bg-[hsl(var(--ink))]" aria-hidden="true">
-      <Chevron className="absolute right-0 top-0 h-full w-[46%] text-[hsl(var(--brand-accent))]" />
-      <div className="absolute left-7 top-1/2 -translate-y-1/2 text-white">
-        <div className="kn-caps text-white/50">Second opinion</div>
-        <div className="font-display font-semibold text-[26px] lg:text-[32px] leading-[1.05] tracking-[-0.01em] mt-2">See what you<br />are missing.</div>
-      </div>
-    </div>
-  );
-}
-
 function Problem() {
   const cases = [
     {
-      art: "k",
+      img: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=70&auto=format&fit=crop",
+      alt: "A growing team collaborating in an office",
       label: "Growing Company",
       h: "Setting up benefits for the first\u00a0time?",
       p: "You are hiring and it is time for a real program. Our advisors design it around your budget, set up online enrollment, and make benefits a reason people join.",
       cta: "Get a Quote",
     },
     {
-      art: "chevron",
+      img: "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&q=70&auto=format&fit=crop",
+      alt: "An advisor meeting with a client",
       label: "Time for Something Better",
       h: "High rates, rough renewals, no new\u00a0ideas?",
       p: "If every renewal is a higher number and nothing else changes, get a second opinion. Send us your census and see what you have been missing.",
@@ -341,7 +349,9 @@ function Problem() {
             {cases.map((c, i) => (
               <Reveal key={c.label} delay={i * 80}>
                 <div className={`h-full flex flex-col items-start ${i === 0 ? "md:pr-12" : "md:pl-12 md:border-l md:border-border"}`}>
-                  <ProblemArt kind={c.art} />
+                  <div className="kn-photo w-full mb-7">
+                    <img src={c.img} alt={c.alt} className="w-full aspect-[16/9] object-cover" loading="lazy" />
+                  </div>
                   <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>{c.label}</div>
                   <h3 className={`${H3} mt-4 text-[24px] lg:text-[30px] leading-[1.12] max-w-[16em]`}>{c.h}</h3>
                   <p className="mt-4 text-[14.5px] leading-[1.7] text-muted-foreground max-w-[26rem]">{c.p}</p>
@@ -368,18 +378,14 @@ function HowWeDoIt() {
   ];
   return (
     <section id="how" className="relative overflow-hidden bg-[hsl(var(--ink))] text-white py-20 lg:py-32">
-      <KMark className="pointer-events-none absolute -right-24 top-10 h-[640px] w-auto text-white opacity-[0.035] hidden lg:block" />
       <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10">
         <SectionHead label="How We Do It" dark>
           <div className="grid md:grid-cols-3 gap-y-10 md:gap-x-10">
             {steps.map((s, i) => (
               <Reveal key={s.t} delay={i * 80}>
                 <div className={`md:pr-6 ${i > 0 ? "md:border-l md:border-white/15 md:pl-10" : ""}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="font-display font-semibold text-[44px] lg:text-[56px] leading-none tabular-nums text-[hsl(var(--brand-accent-soft))]">
-                      0{i + 1}
-                    </div>
-                    {i < 2 && <Chevron className="hidden md:block h-9 w-5 rotate-180 text-white/20 ml-2" />}
+                  <div className="font-display font-semibold text-[44px] lg:text-[56px] leading-none tabular-nums text-[hsl(var(--brand-accent-soft))]">
+                    0{i + 1}
                   </div>
                   <h3 className={`${H3} mt-5 text-[22px] lg:text-[25px]`}>{s.t}</h3>
                   <p className="mt-3 text-[14px] leading-[1.7] text-white/60 max-w-[20rem]">{s.d}</p>
@@ -398,7 +404,7 @@ function HowWeDoIt() {
         <div className="grid md:grid-cols-3 gap-4">
           {/* Quote online */}
           <Reveal>
-            <div className="rounded-[10px] bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col">
+            <div className="rounded-[10px] bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.09]">
               <div className="grid place-items-center w-12 h-12 rounded-[10px] bg-white/10 mb-6">
                 <FileSpreadsheet size={22} strokeWidth={1.8} className="text-[hsl(var(--brand-accent-soft))]" />
               </div>
@@ -412,7 +418,7 @@ function HowWeDoIt() {
 
           {/* Enroll online */}
           <Reveal delay={70}>
-            <div className="rounded-[10px] bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col">
+            <div className="rounded-[10px] bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.09]">
               <div className="grid place-items-center w-12 h-12 rounded-[10px] bg-white/10 mb-6">
                 <MousePointerClick size={22} strokeWidth={1.8} className="text-[hsl(var(--brand-accent-soft))]" />
               </div>
@@ -426,7 +432,7 @@ function HowWeDoIt() {
 
           {/* Analysis */}
           <Reveal delay={140}>
-            <div className="rounded-[10px] bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col">
+            <div className="rounded-[10px] bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.09]">
               <div className="grid place-items-center w-12 h-12 rounded-[10px] bg-white/10 mb-6">
                 <LineChart size={22} strokeWidth={1.8} className="text-[hsl(var(--brand-accent-soft))]" />
               </div>
@@ -447,16 +453,20 @@ function HowWeDoIt() {
 /* ── options ───────────────────────────────────────────────────────── */
 
 function Options() {
-  const chips = [
-    "Medical", "Dental", "Vision", "Life", "Disability", "Supplemental",
-    "Level Funded", "Self-Funded", "Reference-Based Pricing", "Rx Programs",
-    "HSA Plans", "Online Enrollment",
+  const items: [React.ComponentType<any>, string, string][] = [
+    [Stethoscope, "Medical", "Fully insured and self-funded plans"],
+    [Smile, "Dental", "PPO and DHMO options"],
+    [Eye, "Vision", "Exams, frames and contacts"],
+    [ShieldCheck, "Life", "Group and voluntary term life"],
+    [Accessibility, "Disability", "Short- and long-term income protection"],
+    [HeartHandshake, "Supplemental", "Accident, critical illness, hospital"],
+    [Scale, "Level Funded", "Self-funded savings, fixed monthly cost"],
+    [Wallet, "Self-Funded", "Full control for larger groups"],
+    [Receipt, "Reference-Based Pricing", "Fair prices tied to Medicare rates"],
+    [Pill, "Rx Programs", "Pharmacy cost management"],
+    [PiggyBank, "HSA Plans", "Tax-advantaged savings for employees"],
+    [MonitorSmartphone, "Online Enrollment", "Employees enroll from any device"],
   ];
-  const row = chips.map((c, i) => (
-    <span key={i} className="inline-block rounded-full border border-border px-4 py-2 text-[13.5px] font-semibold text-foreground/80 whitespace-nowrap bg-white">
-      {c}
-    </span>
-  ));
   return (
     <section id="what" className="py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
@@ -475,14 +485,36 @@ function Options() {
           </div>
         </SectionHead>
       </div>
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 mt-10 lg:mt-12">
-        <div className="flex flex-wrap gap-2.5">{row}</div>
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 mt-10 lg:mt-14">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+          {items.map(([Icon, t, d], i) => (
+            <Reveal key={t} delay={(i % 4) * 60}>
+              <div className="group h-full rounded-[12px] border border-border bg-white p-5 lg:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-[hsl(var(--brand-accent))]/40">
+                <div className="grid place-items-center w-11 h-11 rounded-[10px] bg-[hsl(var(--brand-accent))]/10 text-[hsl(var(--brand-accent))] transition-colors group-hover:bg-[hsl(var(--brand-accent))] group-hover:text-white">
+                  <Icon size={20} strokeWidth={1.9} />
+                </div>
+                <div className={`${H3} mt-4 text-[16px] lg:text-[17px]`}>{t}</div>
+                <div className="mt-1.5 text-[13px] leading-[1.5] text-muted-foreground">{d}</div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
       </div>
     </section>
   );
 }
 
 /* ── why kennion ───────────────────────────────────────────────────── */
+
+function Retention() {
+  const [ref, seen] = useInView(0.4);
+  const v = useCountUp(95, seen, 1300);
+  return (
+    <div ref={ref} className="font-display font-semibold text-[84px] lg:text-[120px] leading-[0.9] tracking-[-0.01em] tabular-nums">
+      {v}%
+    </div>
+  );
+}
 
 function WhyKennion() {
   const rows = [
@@ -496,9 +528,7 @@ function WhyKennion() {
         <SectionHead label="Why Kennion">
           <div className="grid lg:grid-cols-12 gap-y-12 lg:gap-x-10 items-start">
             <div className="lg:col-span-4">
-              <div className="font-display font-semibold text-[84px] lg:text-[120px] leading-[0.9] tracking-[-0.01em] tabular-nums">
-                95%
-              </div>
+              <Retention />
               <div className="mt-4 text-[13.5px] text-muted-foreground max-w-[15rem] leading-[1.5]">
                 Of our clients stay with us, year over year
               </div>
@@ -650,8 +680,6 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
 function FinalCTA({ onContact }: { onContact: () => void }) {
   return (
     <section id="contact" className="relative overflow-hidden bg-[hsl(var(--navy2))] text-white py-20 lg:py-28">
-      <Chevron className="pointer-events-none absolute right-0 top-0 h-full w-[34%] text-[hsl(var(--brand-accent))] hidden lg:block" />
-      <KMark className="pointer-events-none absolute right-[9%] top-1/2 -translate-y-1/2 h-[46%] w-auto text-white hidden lg:block" />
       <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10 grid lg:grid-cols-12 gap-y-12 lg:gap-x-16 items-center">
         <div className="lg:col-span-7">
         <div className="kn-caps text-white/50">Get Started</div>
@@ -668,6 +696,11 @@ function FinalCTA({ onContact }: { onContact: () => void }) {
           <SolidButton href={QUOTE_URL} tone="paper">Get a Quote</SolidButton>
         </div>
 
+        </div>
+        <div className="hidden lg:block lg:col-span-5">
+          <div className="kn-photo">
+            <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&q=70&auto=format&fit=crop" alt="Advisors working with a client" className="w-full aspect-[4/3] object-cover" loading="lazy" />
+          </div>
         </div>
 
       </div>
