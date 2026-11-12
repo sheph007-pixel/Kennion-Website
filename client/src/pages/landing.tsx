@@ -133,7 +133,7 @@ function Nav({ onContact }: { onContact: () => void }) {
             Contact
           </button>
           <a href={QUOTE_URL} className="inline-flex items-center gap-2.5 rounded-md bg-primary text-primary-foreground px-5 py-2.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--primary-hover))]">
-            Request a Quote
+            Get a Quote
           </a>
         </div>
 
@@ -150,7 +150,7 @@ function Nav({ onContact }: { onContact: () => void }) {
             </a>
           ))}
           <a href={QUOTE_URL} className="mt-6 flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-5 py-3.5 text-[13.5px] font-semibold ">
-            Request a Quote
+            Get a Quote
           </a>
           <button onClick={() => { setOpen(false); onContact(); }} className="mt-6 block text-[13px] font-semibold text-muted-foreground kn-link w-max">
             Contact
@@ -230,7 +230,7 @@ function Hero() {
               employer needs.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
-              <SolidButton href={QUOTE_URL}>Request a Quote</SolidButton>
+              <SolidButton href={QUOTE_URL}>Get a Quote</SolidButton>
               <a href="#how" className="kn-link text-[13px] font-semibold text-foreground">
                 See how it works
               </a>
@@ -281,7 +281,7 @@ function Problem() {
       label: "Growing Company",
       h: "Setting up benefits for the first time?",
       p: "You are hiring and it is time for a real program. Our advisors design it around your budget, set up online enrollment, and make benefits a reason people join.",
-      cta: "Request a Quote",
+      cta: "Get a Quote",
     },
     {
       img: "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&q=70&auto=format&fit=crop",
@@ -289,7 +289,7 @@ function Problem() {
       label: "Time for Something Better",
       h: "High rates, rough renewals, no new ideas?",
       p: "If every renewal is a higher number and nothing else changes, get a second opinion. Send us your census and see what you have been missing.",
-      cta: "Request a Quote",
+      cta: "Get a Quote",
     },
   ];
   return (
@@ -631,7 +631,7 @@ function FinalCTA({ onContact }: { onContact: () => void }) {
           the right person will get back to you.
         </p>
         <div className="mt-10">
-          <SolidButton href={QUOTE_URL} tone="paper">Request a Quote</SolidButton>
+          <SolidButton href={QUOTE_URL} tone="paper">Get a Quote</SolidButton>
         </div>
 
         </div>
@@ -743,7 +743,7 @@ function Footer({ onContact }: { onContact: () => void }) {
             <div className="kn-caps text-white/40 mt-3">The Modern Benefits Agency</div>
             <a href={QUOTE_URL}
                className="mt-8 inline-flex items-center gap-2.5 text-[13px] font-semibold rounded-md bg-primary text-primary-foreground px-5 py-3 hover:bg-[hsl(var(--primary-hover))] transition-colors">
-              Request a Quote
+              Get a Quote
               <ArrowRight size={13} strokeWidth={2} />
             </a>
           </div>
@@ -761,7 +761,7 @@ function Footer({ onContact }: { onContact: () => void }) {
           <div>
             <div className="kn-caps text-white/40 mb-5">Contact</div>
             <ul className="space-y-3 text-[13.5px] text-white/70">
-              <li><a href={QUOTE_URL} className="kn-link-rev hover:text-white transition-colors">Request a Quote</a></li>
+              <li><a href={QUOTE_URL} className="kn-link-rev hover:text-white transition-colors">Get a Quote</a></li>
               <li><button onClick={onContact} className="kn-link-rev hover:text-white transition-colors">Contact Us</button></li>
             </ul>
           </div>
