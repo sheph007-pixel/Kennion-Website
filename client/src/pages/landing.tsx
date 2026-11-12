@@ -7,6 +7,7 @@
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link } from "wouter";
 import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, FileSpreadsheet, MousePointerClick, LineChart } from "lucide-react";
+import { KMark, KPattern, Chevron } from "@/components/brand-shapes";
 
 const QUOTE_URL = "https://app.kennion.com/quote";
 const KENNION_LOGO_URL = "/kennion-logo.svg";
@@ -216,6 +217,9 @@ function Hero() {
     <section className="relative overflow-hidden">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10 pt-12 lg:pt-24 pb-16 lg:pb-24 grid lg:grid-cols-12 gap-y-12 lg:gap-x-16 items-center">
         <div className="lg:col-span-7">
+          <Reveal delay={40}>
+            <div className="mb-8 h-1 w-10 rounded-full bg-[hsl(var(--brand-accent))]" aria-hidden="true" />
+          </Reveal>
           <Reveal delay={90}>
             <h1 className="font-display font-semibold tracking-[-0.01em] leading-[1.05] text-[clamp(2.5rem,8vw,4.6rem)]">
               A new kind of
@@ -238,8 +242,11 @@ function Hero() {
           </Reveal>
         </div>
 
-        <Reveal delay={220} className="lg:col-span-5">
-          <ProductVisual />
+        <Reveal delay={220} className="lg:col-span-5 relative">
+          <KMark className="pointer-events-none absolute -right-10 -top-16 h-[130%] w-auto text-[hsl(var(--ink))] opacity-[0.06] hidden lg:block" />
+          <div className="relative">
+            <ProductVisual />
+          </div>
         </Reveal>
       </div>
 
@@ -256,13 +263,14 @@ function ProofBand() {
     ["One team", "advice through administration"],
   ];
   return (
-    <div>
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <div className="border-y border-border grid grid-cols-2 lg:grid-cols-4">
+    <div className="relative overflow-hidden bg-[hsl(var(--ink))] text-white">
+      <KPattern fill="rgba(255,255,255,0.045)" size={40} />
+      <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4">
         {items.map(([big, small], i) => (
-          <div key={big} className={`py-7 lg:py-9 pr-6 ${i > 0 ? "lg:border-l lg:border-border lg:pl-8" : ""} ${i % 2 === 1 ? "border-l border-border pl-6 lg:pl-8" : ""} ${i > 1 ? "border-t border-border lg:border-t-0" : ""}`}>
+          <div key={big} className={`py-8 lg:py-11 pr-6 ${i > 0 ? "lg:border-l lg:border-white/10 lg:pl-8" : ""} ${i % 2 === 1 ? "border-l border-white/10 pl-6 lg:pl-8" : ""} ${i > 1 ? "border-t border-white/10 lg:border-t-0" : ""}`}>
             <div className="font-display font-semibold text-[24px] lg:text-[30px] leading-none tracking-[-0.01em]">{big}</div>
-            <div className="mt-2 text-[13.5px] text-muted-foreground">{small}</div>
+            <div className="mt-2 text-[13.5px] text-white/60">{small}</div>
           </div>
         ))}
         </div>
@@ -273,21 +281,43 @@ function ProofBand() {
 
 /* ── the problem ───────────────────────────────────────────────────── */
 
+function ProblemArt({ kind }: { kind: string }) {
+  if (kind === "k") {
+    return (
+      <div className="relative w-full mb-7 aspect-[16/9] overflow-hidden rounded-[12px] bg-[hsl(var(--ink))]" aria-hidden="true">
+        <KMark className="absolute -right-[6%] -top-[18%] h-[136%] w-auto text-[hsl(var(--navy2))]" />
+        <div className="absolute left-7 top-7 h-1 w-9 rounded-full bg-[hsl(var(--brand-accent-soft))]" />
+        <div className="absolute left-7 bottom-7 text-white">
+          <div className="kn-caps text-white/50">New program</div>
+          <div className="font-display font-semibold text-[26px] lg:text-[32px] leading-[1.05] tracking-[-0.01em] mt-2">Built from day one.</div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="relative w-full mb-7 aspect-[16/9] overflow-hidden rounded-[12px] bg-[hsl(var(--ink))]" aria-hidden="true">
+      <Chevron className="absolute right-0 top-0 h-full w-[46%] text-[hsl(var(--brand-accent))]" />
+      <div className="absolute left-7 top-1/2 -translate-y-1/2 text-white">
+        <div className="kn-caps text-white/50">Second opinion</div>
+        <div className="font-display font-semibold text-[26px] lg:text-[32px] leading-[1.05] tracking-[-0.01em] mt-2">See what you<br />are missing.</div>
+      </div>
+    </div>
+  );
+}
+
 function Problem() {
   const cases = [
     {
-      img: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=70&auto=format&fit=crop",
-      alt: "A growing team collaborating in an office",
+      art: "k",
       label: "Growing Company",
-      h: "Setting up benefits for the first time?",
+      h: "Setting up benefits for the first\u00a0time?",
       p: "You are hiring and it is time for a real program. Our advisors design it around your budget, set up online enrollment, and make benefits a reason people join.",
       cta: "Get a Quote",
     },
     {
-      img: "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&q=70&auto=format&fit=crop",
-      alt: "An advisor meeting with a client",
+      art: "chevron",
       label: "Time for Something Better",
-      h: "High rates, rough renewals, no new ideas?",
+      h: "High rates, rough renewals, no new\u00a0ideas?",
       p: "If every renewal is a higher number and nothing else changes, get a second opinion. Send us your census and see what you have been missing.",
       cta: "Get a Quote",
     },
@@ -298,7 +328,7 @@ function Problem() {
         <SectionHead label="The Problem">
           <div className="grid lg:grid-cols-12 gap-y-6 lg:gap-x-10 items-end mb-12 lg:mb-16">
             <h2 className={`${H2} lg:col-span-7`}>
-              Benefits keep costing more
+              Benefits keep costing&nbsp;more
               <br />
               <span style={{ color: "hsl(var(--brand-accent))" }}>and delivering less.</span>
             </h2>
@@ -311,9 +341,7 @@ function Problem() {
             {cases.map((c, i) => (
               <Reveal key={c.label} delay={i * 80}>
                 <div className={`h-full flex flex-col items-start ${i === 0 ? "md:pr-12" : "md:pl-12 md:border-l md:border-border"}`}>
-                  <div className="kn-photo w-full mb-7">
-                    <img src={c.img} alt={c.alt} className="w-full aspect-[16/9] object-cover" loading="lazy" />
-                  </div>
+                  <ProblemArt kind={c.art} />
                   <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>{c.label}</div>
                   <h3 className={`${H3} mt-4 text-[24px] lg:text-[30px] leading-[1.12] max-w-[16em]`}>{c.h}</h3>
                   <p className="mt-4 text-[14.5px] leading-[1.7] text-muted-foreground max-w-[26rem]">{c.p}</p>
@@ -339,15 +367,19 @@ function HowWeDoIt() {
     { t: "We run the rest", d: "Enrollment, renewals, and the day-to-day. Handled." },
   ];
   return (
-    <section id="how" className="bg-[hsl(var(--ink))] text-white py-20 lg:py-32">
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+    <section id="how" className="relative overflow-hidden bg-[hsl(var(--ink))] text-white py-20 lg:py-32">
+      <KMark className="pointer-events-none absolute -right-24 top-10 h-[640px] w-auto text-white opacity-[0.035] hidden lg:block" />
+      <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10">
         <SectionHead label="How We Do It" dark>
           <div className="grid md:grid-cols-3 gap-y-10 md:gap-x-10">
             {steps.map((s, i) => (
               <Reveal key={s.t} delay={i * 80}>
                 <div className={`md:pr-6 ${i > 0 ? "md:border-l md:border-white/15 md:pl-10" : ""}`}>
-                  <div className="grid place-items-center w-10 h-10 rounded-full bg-white/10 text-[15px] font-semibold tabular-nums">
-                    {i + 1}
+                  <div className="flex items-center gap-3">
+                    <div className="font-display font-semibold text-[44px] lg:text-[56px] leading-none tabular-nums text-[hsl(var(--brand-accent-soft))]">
+                      0{i + 1}
+                    </div>
+                    {i < 2 && <Chevron className="hidden md:block h-9 w-5 rotate-180 text-white/20 ml-2" />}
                   </div>
                   <h3 className={`${H3} mt-5 text-[22px] lg:text-[25px]`}>{s.t}</h3>
                   <p className="mt-3 text-[14px] leading-[1.7] text-white/60 max-w-[20rem]">{s.d}</p>
@@ -617,8 +649,10 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
 
 function FinalCTA({ onContact }: { onContact: () => void }) {
   return (
-    <section id="contact" className="bg-[hsl(var(--navy2))] text-white py-20 lg:py-28">
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 grid lg:grid-cols-12 gap-y-12 lg:gap-x-16 items-center">
+    <section id="contact" className="relative overflow-hidden bg-[hsl(var(--navy2))] text-white py-20 lg:py-28">
+      <Chevron className="pointer-events-none absolute right-0 top-0 h-full w-[34%] text-[hsl(var(--brand-accent))] hidden lg:block" />
+      <KMark className="pointer-events-none absolute right-[9%] top-1/2 -translate-y-1/2 h-[46%] w-auto text-white hidden lg:block" />
+      <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10 grid lg:grid-cols-12 gap-y-12 lg:gap-x-16 items-center">
         <div className="lg:col-span-7">
         <div className="kn-caps text-white/50">Get Started</div>
         <h2 className="mt-6 font-display font-bold tracking-[-0.01em] leading-[0.98] text-[clamp(2.4rem,6.5vw,4.75rem)] max-w-[15em]">
@@ -635,11 +669,7 @@ function FinalCTA({ onContact }: { onContact: () => void }) {
         </div>
 
         </div>
-        <div className="hidden lg:block lg:col-span-5">
-          <div className="kn-photo">
-            <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&q=70&auto=format&fit=crop" alt="Advisors working with a client" className="w-full aspect-[4/3] object-cover" loading="lazy" />
-          </div>
-        </div>
+
       </div>
     </section>
   );
@@ -766,6 +796,8 @@ function Footer({ onContact }: { onContact: () => void }) {
             </ul>
           </div>
         </div>
+
+        <img src="/kennion-logo-white.svg" alt="" aria-hidden="true" className="block w-full h-auto opacity-[0.07] mb-10 lg:mb-14 select-none pointer-events-none" />
 
         <div className="border-t border-white/10 py-6 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 text-[13px] text-white/40">
           <span>© {year} Kennion Benefit Advisors. All rights reserved.</span>
