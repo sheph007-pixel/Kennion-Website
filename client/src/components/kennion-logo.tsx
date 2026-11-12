@@ -5,12 +5,15 @@ interface KennionLogoProps {
   linkTo?: string;
 }
 
+// The PNG is high-res (2x), so size it by height rather than its natural size.
+const HEIGHTS = { sm: "h-7", md: "h-9", lg: "h-11" } as const;
+
 export function KennionLogo({ size = "md", linkTo = "/" }: KennionLogoProps) {
   const content = (
     <img
-      src="https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/attachments/production/5004437337/logo/qGPs3ykt503dCIwP_qHVHmcxV3JVHXZucQ.png"
+      src="/kennion-logo.png"
       alt="Kennion Benefit Advisors"
-      className="cursor-pointer h-auto"
+      className={`cursor-pointer w-auto ${HEIGHTS[size]}`}
       data-testid="logo-kennion"
     />
   );

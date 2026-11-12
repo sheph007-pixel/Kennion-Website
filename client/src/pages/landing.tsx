@@ -9,7 +9,7 @@ import { Link } from "wouter";
 import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, FileSpreadsheet, MousePointerClick, LineChart } from "lucide-react";
 
 const QUOTE_URL = "https://app.kennion.com/quote";
-const KENNION_LOGO_URL = "https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/attachments/production/5004437337/logo/qGPs3ykt503dCIwP_qHVHmcxV3JVHXZucQ.png";
+const KENNION_LOGO_URL = "/kennion-logo.png";
 
 /* ── type scale ────────────────────────────────────────────────────── */
 
@@ -116,7 +116,7 @@ function Nav({ onContact }: { onContact: () => void }) {
     <header className="sticky top-0 z-40 border-b border-border bg-[hsl(var(--background))]">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10 flex items-center justify-between h-[64px] lg:h-[68px]">
         <Link href="/" className="flex items-center">
-          <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-7 lg:h-8 w-auto" style={{ mixBlendMode: "multiply" }} />
+          <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-8 lg:h-10 w-auto" />
         </Link>
 
         <nav className="hidden lg:flex items-center gap-8">
