@@ -84,8 +84,8 @@ function SolidButton({ href, onClick, children, external = false, tone = "ink" }
   tone?: "ink" | "paper";
 }) {
   const cls = tone === "ink"
-    ? "group inline-flex items-center justify-center gap-3 rounded-lg bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold  transition-colors hover:bg-[hsl(var(--ink))]"
-    : "group inline-flex items-center justify-center gap-3 rounded-lg bg-[hsl(var(--background))] text-primary px-6 py-3.5 text-[13px] font-semibold  transition-opacity hover:opacity-90";
+    ? "group inline-flex items-center justify-center gap-3 rounded-md bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold  transition-colors hover:bg-[hsl(var(--primary-hover))]"
+    : "group inline-flex items-center justify-center gap-3 rounded-md bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--primary-hover))]";
   const inner = (
     <>
       {children}
@@ -132,7 +132,7 @@ function Nav({ onContact }: { onContact: () => void }) {
           <button onClick={onContact} className="kn-link-rev text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
             Contact
           </button>
-          <a href={QUOTE_URL} className="inline-flex items-center gap-2.5 rounded-lg bg-primary text-primary-foreground px-5 py-2.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--ink))]">
+          <a href={QUOTE_URL} className="inline-flex items-center gap-2.5 rounded-md bg-primary text-primary-foreground px-5 py-2.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--primary-hover))]">
             Request a Quote
           </a>
         </div>
@@ -149,7 +149,7 @@ function Nav({ onContact }: { onContact: () => void }) {
               {label}
             </a>
           ))}
-          <a href={QUOTE_URL} className="mt-6 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground px-5 py-3.5 text-[13.5px] font-semibold ">
+          <a href={QUOTE_URL} className="mt-6 flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-5 py-3.5 text-[13.5px] font-semibold ">
             Request a Quote
           </a>
           <button onClick={() => { setOpen(false); onContact(); }} className="mt-6 block text-[13px] font-semibold text-muted-foreground kn-link w-max">
@@ -172,7 +172,7 @@ function ProductVisual() {
   return (
     <div className="relative select-none" aria-hidden="true">
       {/* proposal card */}
-      <div className="relative bg-white border border-border rounded-xl shadow-md overflow-hidden">
+      <div className="relative bg-white border border-border rounded-[10px] shadow-md overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
             <div className="kn-caps text-muted-foreground">Proposal</div>
@@ -300,7 +300,7 @@ function Problem() {
             <h2 className={`${H2} lg:col-span-7`}>
               Benefits keep costing more
               <br />
-              <span style={{ color: "hsl(var(--primary))" }}>and delivering less.</span>
+              <span style={{ color: "hsl(var(--brand-accent))" }}>and delivering less.</span>
             </h2>
             <p className="lg:col-span-5 text-[15px] leading-[1.65] text-muted-foreground lg:pb-2 max-w-[26rem]">
               Premiums climb every year, employees are not sure what they actually have, and
@@ -366,8 +366,8 @@ function HowWeDoIt() {
         <div className="grid md:grid-cols-3 gap-4">
           {/* Quote online */}
           <Reveal>
-            <div className="rounded-xl bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col">
-              <div className="grid place-items-center w-12 h-12 rounded-xl bg-white/10 mb-6">
+            <div className="rounded-[10px] bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col">
+              <div className="grid place-items-center w-12 h-12 rounded-[10px] bg-white/10 mb-6">
                 <FileSpreadsheet size={22} strokeWidth={1.8} className="text-[hsl(var(--brand-accent-soft))]" />
               </div>
               <h3 className={`${H3} text-[21px]`}>Quote online</h3>
@@ -380,8 +380,8 @@ function HowWeDoIt() {
 
           {/* Enroll online */}
           <Reveal delay={70}>
-            <div className="rounded-xl bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col">
-              <div className="grid place-items-center w-12 h-12 rounded-xl bg-white/10 mb-6">
+            <div className="rounded-[10px] bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col">
+              <div className="grid place-items-center w-12 h-12 rounded-[10px] bg-white/10 mb-6">
                 <MousePointerClick size={22} strokeWidth={1.8} className="text-[hsl(var(--brand-accent-soft))]" />
               </div>
               <h3 className={`${H3} text-[21px]`}>Enroll online</h3>
@@ -394,8 +394,8 @@ function HowWeDoIt() {
 
           {/* Analysis */}
           <Reveal delay={140}>
-            <div className="rounded-xl bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col">
-              <div className="grid place-items-center w-12 h-12 rounded-xl bg-white/10 mb-6">
+            <div className="rounded-[10px] bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col">
+              <div className="grid place-items-center w-12 h-12 rounded-[10px] bg-white/10 mb-6">
                 <LineChart size={22} strokeWidth={1.8} className="text-[hsl(var(--brand-accent-soft))]" />
               </div>
               <h3 className={`${H3} text-[21px]`}>Deeper analysis</h3>
@@ -433,7 +433,7 @@ function Options() {
             <h2 className={`${H2} lg:col-span-7`}>
               Your benefits program,
               <br />
-              <span style={{ color: "hsl(var(--primary))" }}>built and run for you.</span>
+              <span style={{ color: "hsl(var(--brand-accent))" }}>built and run for you.</span>
             </h2>
             <p className="lg:col-span-5 text-[15px] leading-[1.65] text-muted-foreground lg:pb-2 max-w-[26rem]">
               Group health, dental, vision, life, disability, and supplemental. We shop the
@@ -544,7 +544,7 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
       <p className="mt-3 text-[14px] leading-[1.7] text-muted-foreground">
         The right person on our team will get back to you shortly.
       </p>
-      <button onClick={onClose} className="mt-7 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-6 py-3 text-[13.5px] font-semibold hover:bg-[hsl(var(--ink))] transition-colors">
+      <button onClick={onClose} className="mt-7 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-6 py-3 text-[13.5px] font-semibold hover:bg-[hsl(var(--primary-hover))] transition-colors">
         Done
       </button>
     </div>
@@ -582,7 +582,7 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
       <button
         type="submit"
         disabled={state === "sending"}
-        className="mt-7 w-full inline-flex items-center justify-center gap-3 rounded-lg bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--ink))] disabled:opacity-60"
+        className="mt-7 w-full inline-flex items-center justify-center gap-3 rounded-md bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--primary-hover))] disabled:opacity-60"
       >
         {state === "sending" ? "Sending..." : "Send Message"}
       </button>
@@ -617,7 +617,7 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
 
 function FinalCTA({ onContact }: { onContact: () => void }) {
   return (
-    <section id="contact" className="bg-primary text-primary-foreground py-20 lg:py-28">
+    <section id="contact" className="bg-[hsl(var(--navy2))] text-white py-20 lg:py-28">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10 grid lg:grid-cols-12 gap-y-12 lg:gap-x-16 items-center">
         <div className="lg:col-span-7">
         <div className="kn-caps text-white/50">Get Started</div>
@@ -720,7 +720,7 @@ function LegalModal({ kind, onClose }: { kind: string | null; onClose: () => voi
         </div>
 
         <div className="px-6 lg:px-8 py-4 border-t border-border flex justify-end">
-          <button onClick={onClose} className="text-[13px] font-semibold rounded-lg bg-primary text-primary-foreground px-5 py-2.5 hover:bg-[hsl(var(--ink))] transition-colors">
+          <button onClick={onClose} className="text-[13px] font-semibold rounded-md bg-primary text-primary-foreground px-5 py-2.5 hover:bg-[hsl(var(--primary-hover))] transition-colors">
             Close
           </button>
         </div>
@@ -742,7 +742,7 @@ function Footer({ onContact }: { onContact: () => void }) {
             <div className="font-display font-semibold text-[26px] tracking-[-0.01em] leading-none">Kennion</div>
             <div className="kn-caps text-white/40 mt-3">The Modern Benefits Agency</div>
             <a href={QUOTE_URL}
-               className="mt-8 inline-flex items-center gap-2.5 text-[13px] font-semibold rounded-lg bg-[hsl(var(--background))] text-[hsl(var(--ink))] px-5 py-3 hover:opacity-90 transition-opacity">
+               className="mt-8 inline-flex items-center gap-2.5 text-[13px] font-semibold rounded-md bg-primary text-primary-foreground px-5 py-3 hover:bg-[hsl(var(--primary-hover))] transition-colors">
               Request a Quote
               <ArrowRight size={13} strokeWidth={2} />
             </a>

@@ -9,39 +9,39 @@
   --opaque-button-border-intensity: -8;
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
-  --background: 210 20% 99%;
-  --foreground: 215 25% 12%;
-  --border: 210 15% 90%;
-  --card: 210 15% 97%;
-  --card-foreground: 215 25% 12%;
-  --card-border: 210 12% 92%;
-  --sidebar: 210 18% 95%;
-  --sidebar-foreground: 215 25% 12%;
-  --sidebar-border: 210 12% 90%;
-  --sidebar-primary: 213 62% 24%;
-  --sidebar-primary-foreground: 210 85% 98%;
-  --sidebar-accent: 210 12% 88%;
-  --sidebar-accent-foreground: 210 12% 15%;
-  --sidebar-ring: 213 62% 24%;
+  --background: 210 20% 97%;
+  --foreground: 0 0% 20%;
+  --border: 200 11% 89%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 20%;
+  --card-border: 210 17% 91%;
+  --sidebar: 211 67% 13%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-border: 211 40% 20%;
+  --sidebar-primary: 154 63% 33%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 211 45% 20%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-ring: 154 63% 33%;
   --popover: 210 15% 95%;
   --popover-foreground: 215 25% 12%;
   --popover-border: 210 12% 88%;
-  --primary: 213 62% 24%;
+  --primary: 154 63% 33%;
   --primary-foreground: 0 0% 100%;
   --brand-accent: 36 64% 47%;
   --brand-accent-foreground: 0 0% 100%;
   --secondary: 210 12% 91%;
   --secondary-foreground: 210 12% 15%;
-  --muted: 210 12% 92%;
-  --muted-foreground: 210 10% 42%;
+  --muted: 200 11% 95%;
+  --muted-foreground: 200 4% 44%;
   --accent: 210 14% 93%;
   --accent-foreground: 210 14% 15%;
   --destructive: 0 72% 42%;
   --destructive-foreground: 0 72% 98%;
-  --input: 210 12% 78%;
-  --ring: 213 62% 24%;
-  --chart-1: 213 62% 30%;
-  --chart-2: 195 75% 38%;
+  --input: 205 16% 82%;
+  --ring: 154 63% 33%;
+  --chart-1: 154 63% 33%;
+  --chart-2: 211 65% 17%;
   --chart-3: 225 70% 42%;
   --chart-4: 240 60% 45%;
   --chart-5: 255 55% 48%;
@@ -376,25 +376,27 @@ html {
 }
 
 .kn-landing {
-  /* Same family as app.kennion.com: cool gray page, navy, Kennion blue. */
-  --background: 210 20% 97%;
-  --foreground: 211 40% 14%;
-  --border: 204 12% 88%;
+  /* BenSync (app.kennion.com) palette, value for value. */
+  --background: 210 20% 97%;          /* #f5f7f9 page */
+  --foreground: 211 67% 13%;          /* #0b2138 navy headings */
+  --border: 200 11% 89%;              /* #e0e4e6 */
   --card: 0 0% 100%;
-  --card-foreground: 211 40% 14%;
-  --muted: 210 18% 93%;
-  --muted-foreground: 205 6% 40%;
-  --primary: 211 65% 17%;
+  --card-foreground: 211 67% 13%;
+  --muted: 200 11% 95%;               /* #f2f4f5 */
+  --muted-foreground: 200 4% 44%;     /* #6b7276 */
+  --primary: 154 63% 33%;             /* #1f8a5b BenSync green */
+  --primary-hover: 154 67% 27%;       /* #16714a */
   --primary-foreground: 0 0% 100%;
-  --brand-accent: 207 70% 38%;
-  --brand-accent-soft: 205 75% 70%;
+  --brand-accent: 154 63% 33%;        /* #1f8a5b */
+  --brand-accent-soft: 148 51% 67%;   /* #7fd6a8 accent on navy */
   --brand-accent-foreground: 0 0% 100%;
-  --ink: 211 60% 12%;
+  --ink: 211 67% 13%;                 /* #0b2138 navy */
+  --navy2: 211 65% 17%;               /* #0f2a47 */
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
 }
 .kn-landing ::selection {
-  background: hsl(207 70% 38%);
+  background: hsl(154 63% 33%);
   color: #fff;
 }
 
