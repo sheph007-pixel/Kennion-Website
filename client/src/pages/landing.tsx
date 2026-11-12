@@ -114,9 +114,9 @@ function Nav({ onContact }: { onContact: () => void }) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-[hsl(var(--background))]">
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 flex items-center justify-between h-[64px] lg:h-[68px]">
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 flex items-center justify-between h-[72px] lg:h-[84px]">
         <Link href="/" className="flex items-center">
-          <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-8 lg:h-10 w-auto" />
+          <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-11 lg:h-14 w-auto" />
         </Link>
 
         <nav className="hidden lg:flex items-center gap-8">

@@ -6,7 +6,7 @@ interface KennionLogoProps {
 }
 
 // The PNG is high-res (2x), so size it by height rather than its natural size.
-const HEIGHTS = { sm: "h-7", md: "h-9", lg: "h-11" } as const;
+const HEIGHTS = { sm: "h-8", md: "h-11", lg: "h-14" } as const;
 
 export function KennionLogo({ size = "md", linkTo = "/" }: KennionLogoProps) {
   const content = (
