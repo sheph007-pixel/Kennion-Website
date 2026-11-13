@@ -1003,8 +1003,18 @@ function WhyKennion() {
     { t: "Less work for your team", d: "Online enrollment and digital tools take the paperwork off HR's desk." },
   ];
   return (
-    <section id="why" className="py-20 lg:py-32">
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+    <section id="why" className="relative overflow-hidden py-20 lg:py-32">
+      {/* faded hedcut portraits of Hal and Hunter Shepherd behind the story */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute right-[-60px] top-[150px] lg:right-auto lg:top-auto lg:left-[max(0px,calc(50%-720px))] lg:bottom-0 flex items-end opacity-[.14] lg:opacity-[.22] [mask-image:linear-gradient(to_top,transparent,#000_20%)]"
+      >
+        <div className="flex items-end [mask-image:linear-gradient(to_right,#000_55%,transparent_96%)]">
+          <img src="/team/hal-shepherd.webp" alt="" className="h-[330px] lg:h-[560px] w-auto" loading="lazy" />
+          <img src="/team/hunter-shepherd.webp" alt="" className="-ml-14 lg:-ml-28 h-[330px] lg:h-[560px] w-auto" loading="lazy" />
+        </div>
+      </div>
+      <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10">
         <SectionIntro
           label="Why Kennion"
           className="mb-14 lg:mb-20"
@@ -1018,9 +1028,12 @@ function WhyKennion() {
                 Years in business, since {FOUNDED}
               </div>
               <p className="mt-3 text-[13.5px] text-muted-foreground max-w-[19rem] leading-[1.6]">
-                Hal Shepherd founded W. H. Shepherd in {FOUNDED}. Today Hunter Shepherd,
-                the second generation of the family, leads the team.
+                Hal Shepherd founded W. H. Shepherd Companies in {FOUNDED}, which later became
+                Kennion. Today Hunter Shepherd, the second generation of the family, leads the team.
               </p>
+              <div className="mt-6 inline-flex items-center gap-2 text-[12.5px] font-semibold text-foreground/70">
+                <span className="h-px w-6 bg-foreground/30" /> Hal &amp; Hunter Shepherd
+              </div>
             </div>
             <div className="lg:col-span-8">
               {rows.map((r) => (
