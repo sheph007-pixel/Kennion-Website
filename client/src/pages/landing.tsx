@@ -276,10 +276,10 @@ function AppMockup() {
             </div>
 
             {/* AI picks banner */}
-            <div className="mt-3 flex items-center justify-between gap-3 rounded-[8px] border border-[hsl(var(--brand-accent))]/25 bg-[hsl(var(--brand-accent))]/[0.07] px-3 py-2.5">
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-[8px] border border-[hsl(var(--brand-accent))]/25 bg-[hsl(var(--brand-accent))]/[0.07] px-3 h-[44px]">
               <div className="flex items-center gap-2 text-[11px] font-semibold text-[hsl(var(--brand-accent))]">
                 <Sparkles size={13} strokeWidth={2.2} className={picked ? "" : "animate-pulse"} />
-                {picked ? "Picks Ready For Your Team" : "Finding Picks For Your Team…"}
+                <span className="truncate">{picked ? "Picks Ready For Your Team" : "Finding Picks For Your Team…"}</span>
               </div>
               <span className="rounded-md bg-[hsl(var(--brand-accent))] px-2.5 py-1 text-[10px] font-bold text-white">Run AI Picks</span>
             </div>
@@ -295,13 +295,13 @@ function AppMockup() {
               {MOCK_ROWS.map((r, i) => (
                 <div
                   key={i}
-                  className="kn-row-in grid grid-cols-[18px_1.6fr_1fr_1fr] gap-3 items-center border-t border-border px-3 py-2.5"
+                  className="kn-row-in grid grid-cols-[18px_1.6fr_1fr_1fr] gap-3 items-center border-t border-border px-3 h-[38px]"
                   style={{ animationDelay: `${300 + i * 140}ms` }}
                 >
                   <span className={`grid place-items-center w-3.5 h-3.5 rounded-[3px] border transition-colors duration-300 ${picked && r.tag ? "bg-[hsl(var(--brand-accent))] border-[hsl(var(--brand-accent))] text-white" : "border-border"}`}>
                     {picked && r.tag && <Check size={9} strokeWidth={3.5} />}
                   </span>
-                  <span className="flex items-center gap-2 min-w-0">
+                  <span className="flex items-center gap-2 min-w-0 h-[18px]">
                     <Skel w={r.w[0]} h={6} />
                     {picked && r.tag && (
                       <span className="kn-pop hidden md:inline-flex shrink-0 items-center gap-1 rounded-full bg-[hsl(var(--brand-accent))]/10 px-1.5 py-0.5 text-[8.5px] font-bold text-[hsl(var(--brand-accent))]" style={{ animationDelay: `${i * 120}ms` }}>
