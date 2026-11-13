@@ -87,13 +87,26 @@ function useCountUp(to: number, go: boolean, ms = 1100) {
 
 /* ── shared bits ───────────────────────────────────────────────────── */
 
-function SectionHead({ label, children, dark = false }: {
-  label: string; children: React.ReactNode; dark?: boolean;
+/** Centered section intro: pill eyebrow, headline, one short line. */
+function SectionIntro({ label, title, sub, dark = false, className = "" }: {
+  label: string; title: React.ReactNode; sub?: React.ReactNode; dark?: boolean; className?: string;
 }) {
   return (
-    <Reveal>
-      <div className={`kn-caps ${dark ? "text-[hsl(var(--brand-accent-soft))]" : "text-[hsl(var(--brand-accent))]"}`}>{label}</div>
-      <div className="pt-4 lg:pt-5">{children}</div>
+    <Reveal className={`mx-auto max-w-[60rem] text-center ${className}`}>
+      <span
+        className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12.5px] font-semibold ${
+          dark
+            ? "border-white/15 bg-white/[0.06] text-[hsl(var(--brand-accent-soft))]"
+            : "border-[hsl(var(--brand-accent))]/20 bg-[hsl(var(--brand-accent))]/[0.07] text-[hsl(var(--brand-accent))]"
+        }`}
+      >
+        <span className={`h-1.5 w-1.5 rounded-full ${dark ? "bg-[hsl(var(--brand-accent-soft))]" : "bg-[hsl(var(--brand-accent))]"}`} />
+        {label}
+      </span>
+      <h2 className={`${H2} mt-6`}>{title}</h2>
+      {sub && (
+        <p className={`mx-auto mt-6 max-w-[36rem] text-[16px] leading-[1.65] ${dark ? "text-white/65" : "text-muted-foreground"}`}>{sub}</p>
+      )}
     </Reveal>
   );
 }
@@ -412,12 +425,12 @@ function PartnersBand() {
     </li>
   ));
   return (
-    <div className="relative bg-white border-y border-border">
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 py-8 lg:py-10 flex flex-col lg:flex-row lg:items-center gap-5 lg:gap-10">
-        <div className="shrink-0 lg:w-36">
-          <div className="kn-caps text-[hsl(var(--brand-accent))]">Our Partners</div>
-        </div>
-        <div className="kn-marquee-wrap relative flex-1 overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_8%,#000_92%,transparent)]">
+    <div className="relative bg-white py-12 lg:py-14">
+      <p className="text-center text-[13px] font-semibold tracking-[0.02em] text-muted-foreground">
+        Our Partners
+      </p>
+      <div className="mt-7">
+        <div className="kn-marquee-wrap relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_10%,#000_90%,transparent)]">
           <ul className="kn-marquee flex w-max items-center" style={{ animationDuration: `${logos.length * 4.5}s` }}>
             {track(0)}
             {track(1)}
@@ -452,18 +465,13 @@ function Problem() {
   return (
     <section className="py-20 lg:py-28">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead label="The Problem">
-          <div className="grid lg:grid-cols-12 gap-y-6 lg:gap-x-10 items-end mb-12 lg:mb-16">
-            <h2 className={`${H2} lg:col-span-7`}>
-              Benefits keep costing&nbsp;more
-              <br />
-              <span style={{ color: "hsl(var(--brand-accent))" }}>and delivering less.</span>
-            </h2>
-            <p className="lg:col-span-5 text-[15px] leading-[1.65] text-muted-foreground lg:pb-2 max-w-[26rem]">
-              Premiums climb every year, employees are not sure what they actually have, and
-              HR is stuck in the middle. Sound familiar? You are who we built this for.
-            </p>
-          </div>
+        <SectionIntro
+          label="The Problem"
+          className="mb-14 lg:mb-20"
+          title={<>Benefits keep costing&nbsp;more<br className="hidden md:block" />{" "}<span style={{ color: "hsl(var(--brand-accent))" }}>and delivering less.</span></>}
+          sub="Premiums climb every year, employees are not sure what they have, and HR is stuck in the middle. You are who we built this for."
+        />
+        <div>
           <div className="grid md:grid-cols-2 gap-y-12 md:gap-x-0">
             {cases.map((c, i) => (
               <Reveal key={c.label} delay={i * 80}>
@@ -481,7 +489,7 @@ function Problem() {
               </Reveal>
             ))}
           </div>
-        </SectionHead>
+        </div>
       </div>
     </section>
   );
@@ -510,7 +518,7 @@ function YearRoundLoop() {
   return (
     <div ref={ref} onMouseLeave={() => setPaused(false)}>
       <Reveal>
-        <div className="mt-20 lg:mt-28 mb-10 lg:mb-14 max-w-[40rem]">
+        <div className="mt-24 lg:mt-32 mb-12 lg:mb-16 pt-16 lg:pt-20 border-t border-white/10 mx-auto max-w-[40rem] text-center">
           <h3 className={`${H3} text-[26px] lg:text-[36px] leading-[1.1]`}>
             Enrollment Done The Right Way.
             <br />
@@ -579,11 +587,17 @@ function HowWeDoIt() {
   return (
     <section id="how" className="relative overflow-hidden bg-[hsl(var(--ink))] text-white py-20 lg:py-32">
       <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead label="How We Do It" dark>
-          <div className="grid md:grid-cols-3 gap-y-10 md:gap-x-10">
+        <SectionIntro
+          dark
+          label="How We Do It"
+          className="mb-14 lg:mb-20"
+          title={<>Easy to start. <span className="text-[hsl(var(--brand-accent-soft))]">Handled from there.</span></>}
+        />
+        <div>
+          <div className="grid md:grid-cols-3 gap-y-10 md:gap-x-10 text-center">
             {steps.map((s, i) => (
               <Reveal key={s.t} delay={i * 80}>
-                <div className={`md:pr-6 ${i > 0 ? "md:border-l md:border-white/15 md:pl-10" : ""}`}>
+                <div className={`flex flex-col items-center px-4 ${i > 0 ? "md:border-l md:border-white/15" : ""}`}>
                   <div className="font-display font-semibold text-[44px] lg:text-[56px] leading-none tabular-nums text-[hsl(var(--brand-accent-soft))]">
                     0{i + 1}
                   </div>
@@ -593,7 +607,7 @@ function HowWeDoIt() {
               </Reveal>
             ))}
           </div>
-        </SectionHead>
+        </div>
 
         <YearRoundLoop />
       </div>
@@ -629,23 +643,15 @@ function Options() {
   ] as [React.ComponentType<any>, string][]).sort((a, b) => a[1].localeCompare(b[1], "en", { sensitivity: "base" }));
 
   return (
-    <section id="what" className="py-20 lg:py-32">
+    <section id="what" className="bg-white py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead label="What We Do">
-          <div className="grid lg:grid-cols-12 gap-y-6 lg:gap-x-10 items-end">
-            <h2 className={`${H2} lg:col-span-7`}>
-              Your benefits program,
-              <br />
-              <span style={{ color: "hsl(var(--brand-accent))" }}>built and run for you.</span>
-            </h2>
-            <p className="lg:col-span-5 text-[15px] leading-[1.65] text-muted-foreground lg:pb-2 max-w-[26rem]">
-              Every line of coverage your employees expect, plus programs we have built with top
-              carriers, TPAs and providers that most brokers simply can't offer.
-            </p>
-          </div>
-        </SectionHead>
+        <SectionIntro
+          label="What We Do"
+          title={<>Your benefits program,<br className="hidden md:block" />{" "}<span style={{ color: "hsl(var(--brand-accent))" }}>built and run for you.</span></>}
+          sub="Every line of coverage your employees expect, plus programs we have built with top carriers, TPAs and providers that most brokers simply can't offer."
+        />
       </div>
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 mt-10 lg:mt-14">
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 mt-12 lg:mt-16">
         {/* the big three */}
         <div className="grid grid-cols-3 gap-3 lg:gap-4">
           {top.map(([Icon, t], i) => (
@@ -700,7 +706,12 @@ function WhyKennion() {
   return (
     <section id="why" className="py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
-        <SectionHead label="Why Kennion">
+        <SectionIntro
+          label="Why Kennion"
+          className="mb-14 lg:mb-20"
+          title={<>Family-led. <span style={{ color: "hsl(var(--brand-accent))" }}>Built to last.</span></>}
+        />
+        <div>
           <div className="grid lg:grid-cols-12 gap-y-12 lg:gap-x-10 items-start">
             <div className="lg:col-span-4">
               <YearsInBusiness />
@@ -722,7 +733,7 @@ function WhyKennion() {
               <div className="border-t border-border" />
             </div>
           </div>
-        </SectionHead>
+        </div>
       </div>
     </section>
   );
@@ -861,7 +872,10 @@ function FinalCTA({ onContact }: { onContact: () => void }) {
     <section id="contact" className="relative overflow-hidden bg-[hsl(var(--navy2))] text-white py-20 lg:py-28">
       <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10 grid lg:grid-cols-12 gap-y-12 lg:gap-x-16 items-center">
         <div className="lg:col-span-7">
-        <div className="kn-caps text-white/50">Get Started</div>
+        <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-1.5 text-[12.5px] font-semibold text-[hsl(var(--brand-accent-soft))]">
+          <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--brand-accent-soft))]" />
+          Get Started
+        </span>
         <h2 className="mt-6 font-display font-bold tracking-[-0.01em] leading-[0.98] text-[clamp(2.4rem,6.5vw,4.75rem)] max-w-[15em]">
           See what your group is missing.
         </h2>
