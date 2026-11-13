@@ -163,12 +163,12 @@ function ScheduleModal() {
 }
 
 /** Centered section intro: pill eyebrow, headline, one short line. */
-function SectionIntro({ label, title, sub, dark = false, className = "" }: {
-  label: string; title: React.ReactNode; sub?: React.ReactNode; dark?: boolean; className?: string;
+function SectionIntro({ label, badge, title, sub, dark = false, className = "" }: {
+  label: string; badge?: React.ReactNode; title: React.ReactNode; sub?: React.ReactNode; dark?: boolean; className?: string;
 }) {
   return (
     <Reveal className={`mx-auto max-w-[60rem] text-center ${className}`}>
-      <span
+      {badge ?? <span
         className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12.5px] font-semibold ${
           dark
             ? "border-white/15 bg-white/[0.06] text-[hsl(var(--brand-accent-soft))]"
@@ -177,7 +177,7 @@ function SectionIntro({ label, title, sub, dark = false, className = "" }: {
       >
         <span className={`h-1.5 w-1.5 rounded-full ${dark ? "bg-[hsl(var(--brand-accent-soft))]" : "bg-[hsl(var(--brand-accent))]"}`} />
         {label}
-      </span>
+      </span>}
       <h2 className={`${H2} mt-6`}>{title}</h2>
       {sub && (
         <p className={`mx-auto mt-6 max-w-[38rem] [text-wrap:balance] text-[16px] leading-[1.65] ${dark ? "text-white/65" : "text-muted-foreground"}`}>{sub}</p>
@@ -1111,8 +1111,9 @@ function BenSync() {
       <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10">
         <SectionIntro
           label="BenSync"
+          badge={<img src="/bensync-wordmark-color.png" alt="BenSync" width={240} height={56} className="mx-auto h-[44px] lg:h-[60px] w-auto" />}
           className="mb-12 lg:mb-16"
-          title={<>Meet BenSync.<br className="hidden md:block" />{" "}<span style={{ color: ACC }}>The platform behind it all.</span></>}
+          title={<>The platform <span style={{ color: ACC }}>behind it all.</span></>}
           sub="The system we built to quote faster, present better and support your team all year."
         />
 
