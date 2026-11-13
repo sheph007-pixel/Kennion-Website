@@ -944,7 +944,6 @@ function BenSync() {
               <div key={active} className="kn-row-in">
                 <h3 className={`${H3} text-[26px] lg:text-[34px] leading-[1.1]`}>{F.t}</h3>
                 <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground max-w-[22rem]">{F.d}</p>
-                <a href={QUOTE_URL} className="kn-link mt-7 inline-block text-[14px] font-semibold text-foreground">See It With Your Group</a>
               </div>
             </div>
             <div className="lg:col-span-8 order-1 lg:order-2">
