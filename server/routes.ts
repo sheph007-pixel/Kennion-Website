@@ -61,11 +61,14 @@ const bulkCensusUpload = multer({
 declare module "express-session" {
   interface SessionData {
     userId?: string;
+    role?: string;
     pendingCensus?: {
       headers: string[];
       rows: any[];
       fileName: string;
       aiCleaned?: any;
+      detectedMapping?: any;
+      confirmedMapping?: any;
     };
     // Set by POST /api/groups/pending-details when a user chooses
     // "New Group" for a second or later group. Consumed by the
@@ -611,6 +614,7 @@ function analyzeGroupRisk(entries: { dateOfBirth: string; gender: string; relati
   maleCount: number;
   femaleCount: number;
   characteristics: any;
+  ageBandDistribution: Record<string, { female: number; male: number }>;
 } {
   const now = new Date();
   const ages: number[] = [];
@@ -1278,7 +1282,7 @@ export async function registerRoutes(
   // actual decision. Bots only fetch the GET, so they can't trigger the
   // state change.
   app.get("/api/auth/approve/:token", async (req: Request, res: Response) => {
-    const { token } = req.params;
+    const token = req.params.token as string;
     const lookup = await lookupPendingByToken(token);
     res
       .status(lookup.ok ? 200 : 400)
@@ -1287,7 +1291,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/auth/reject/:token", async (req: Request, res: Response) => {
-    const { token } = req.params;
+    const token = req.params.token as string;
     const lookup = await lookupPendingByToken(token);
     res
       .status(lookup.ok ? 200 : 400)
@@ -1296,13 +1300,13 @@ export async function registerRoutes(
   });
 
   app.post("/api/auth/approve/:token", async (req: Request, res: Response) => {
-    const { token } = req.params;
+    const token = req.params.token as string;
     const result = await processApprovalDecision(token, "approved", req);
     res.status(result.ok ? 200 : 400).type("html").send(renderApprovalResultPage(result));
   });
 
   app.post("/api/auth/reject/:token", async (req: Request, res: Response) => {
-    const { token } = req.params;
+    const token = req.params.token as string;
     const result = await processApprovalDecision(token, "rejected", req);
     res.status(result.ok ? 200 : 400).type("html").send(renderApprovalResultPage(result));
   });
@@ -1517,7 +1521,7 @@ export async function registerRoutes(
 
   app.patch("/api/admin/users/:id", requireAdmin, async (req: Request, res: Response) => {
     try {
-      const id = req.params.id;
+      const id = req.params.id as string;
       const data = req.body;
 
       // Build update object with only provided fields
@@ -1541,7 +1545,7 @@ export async function registerRoutes(
 
   app.delete("/api/admin/users/:id", requireAdmin, async (req: Request, res: Response) => {
     try {
-      const id = req.params.id;
+      const id = req.params.id as string;
       const user = await storage.getUser(id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -1569,7 +1573,7 @@ export async function registerRoutes(
 
   app.post("/api/admin/users/:id/reset-password", requireAdmin, async (req: Request, res: Response) => {
     try {
-      const id = req.params.id;
+      const id = req.params.id as string;
       const user = await storage.getUser(id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -2847,7 +2851,7 @@ export async function registerRoutes(
   // GET — download proposal PDF (admin)
   app.get("/api/admin/proposal/:proposalId/pdf", requireAdmin, async (req: Request, res: Response) => {
     try {
-      const proposal = await storage.getProposal(req.params.proposalId);
+      const proposal = await storage.getProposal(req.params.proposalId as string);
       if (!proposal) {
         return res.status(404).json({ message: "Proposal not found" });
       }
@@ -2873,7 +2877,7 @@ export async function registerRoutes(
   // GET — list proposals for a group (admin)
   app.get("/api/admin/proposal/group/:groupId", requireAdmin, async (req: Request, res: Response) => {
     try {
-      const proposals = await storage.getProposalsByGroupId(req.params.groupId);
+      const proposals = await storage.getProposalsByGroupId(req.params.groupId as string);
       res.json(proposals);
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Failed to fetch proposals" });
@@ -2883,7 +2887,7 @@ export async function registerRoutes(
   // GET — view proposal PDF (client — for their own group)
   app.get("/api/proposals/:proposalId/pdf", requireAuth, async (req: Request, res: Response) => {
     try {
-      const proposal = await storage.getProposal(req.params.proposalId);
+      const proposal = await storage.getProposal(req.params.proposalId as string);
       if (!proposal) {
         return res.status(404).json({ message: "Proposal not found" });
       }
@@ -2918,7 +2922,7 @@ export async function registerRoutes(
   // GET — list proposals for a group (client — for their own groups)
   app.get("/api/groups/:groupId/proposals", requireAuth, async (req: Request, res: Response) => {
     try {
-      const group = await storage.getGroup(req.params.groupId);
+      const group = await storage.getGroup(req.params.groupId as string);
       if (!group) {
         return res.status(404).json({ message: "Group not found" });
       }
@@ -2927,7 +2931,7 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Access denied" });
       }
 
-      const proposals = await storage.getProposalsByGroupId(req.params.groupId);
+      const proposals = await storage.getProposalsByGroupId(req.params.groupId as string);
       res.json(proposals);
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Failed to fetch proposals" });
@@ -3191,7 +3195,7 @@ export async function registerRoutes(
   // Run the screen against a stored group's census
   app.post("/api/screen/run/:groupId", requireAuth, async (req: Request, res: Response) => {
     try {
-      const groupId = req.params.groupId;
+      const groupId = req.params.groupId as string;
       const group = await storage.getGroup(groupId);
       if (!group) return res.status(404).json({ message: "Group not found" });
 
@@ -3267,21 +3271,21 @@ export async function registerRoutes(
 
   // Latest screen for a group (compact — no PDF)
   app.get("/api/screen/latest/:groupId", requireAuth, async (req: Request, res: Response) => {
-    const r = await storage.getLatestRiskScreenForGroup(req.params.groupId);
+    const r = await storage.getLatestRiskScreenForGroup(req.params.groupId as string);
     if (!r) return res.status(404).json({ message: "No screen yet" });
     res.json({ id: r.id, ...((r as any).resultJson || {}) });
   });
 
   // Fetch a specific screen result (compact)
   app.get("/api/screen/result/:id", requireAuth, async (req: Request, res: Response) => {
-    const r = await storage.getRiskScreen(req.params.id);
+    const r = await storage.getRiskScreen(req.params.id as string);
     if (!r) return res.status(404).json({ message: "Not found" });
     res.json({ id: r.id, ...((r as any).resultJson || {}) });
   });
 
   // Download the screen PDF
   app.get("/api/screen/pdf/:id", requireAuth, async (req: Request, res: Response) => {
-    const r = await storage.getRiskScreen(req.params.id);
+    const r = await storage.getRiskScreen(req.params.id as string);
     if (!r || !r.pdfBase64) return res.status(404).json({ message: "Not found" });
     const buf = Buffer.from(r.pdfBase64, "base64");
 

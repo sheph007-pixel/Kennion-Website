@@ -22,7 +22,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByMagicToken(token: string): Promise<User | undefined>;
   getUserByApprovalToken(token: string): Promise<User | undefined>;
-  createUser(user: Partial<InsertUser> & { fullName: string; email: string; magicToken?: string; magicTokenExpiry?: Date }): Promise<User>;
+  createUser(user: Partial<typeof users.$inferInsert> & { fullName: string; email: string }): Promise<User>;
   updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   deleteUser(id: string): Promise<void>;
@@ -98,7 +98,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createUser(user: Partial<InsertUser> & { fullName: string; email: string; magicToken?: string; magicTokenExpiry?: Date }): Promise<User> {
+  async createUser(user: Partial<typeof users.$inferInsert> & { fullName: string; email: string }): Promise<User> {
     const [created] = await db.insert(users).values(user).returning();
     return created;
   }

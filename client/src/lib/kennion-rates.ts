@@ -16,7 +16,7 @@ export type {
   AgeBand,
   SupplementalSection,
 } from "@shared/benefits-rates";
-import type { TieredRates } from "@shared/benefits-rates";
+import type { TierKey, TieredRates } from "@shared/benefits-rates";
 
 export type TierMix = Record<"EE" | "EE_CH" | "EE_SP" | "EE_FAM", number>;
 
