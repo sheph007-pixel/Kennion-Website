@@ -264,9 +264,8 @@ function AppMockup() {
         <div className="flex">
           {/* sidebar */}
           <div className="hidden sm:flex w-[30%] max-w-[170px] shrink-0 flex-col gap-1 bg-[hsl(var(--ink))] px-3 py-4">
-            <div className="flex items-center gap-2 px-1.5 mb-3">
-              <span className="grid place-items-center w-6 h-6 rounded-md bg-[hsl(var(--brand-accent))] text-white text-[10px] font-bold">K</span>
-              <Skel w="60%" h={6} className="!bg-white/20 !bg-none" />
+            <div className="flex items-center px-1.5 mb-3 h-6">
+              <img src="/bensync-wordmark-reversed.png" alt="" className="h-[15px] w-auto" />
             </div>
             {nav.map((n, i) => (
               <div key={n} className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-[10.5px] font-semibold ${i === 1 ? "bg-white/10 text-white" : "text-white/55"}`}>
