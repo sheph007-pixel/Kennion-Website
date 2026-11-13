@@ -548,3 +548,10 @@ html {
 
 /* Partners band: pause the logo loop while hovered. */
 .kn-marquee-wrap:hover .kn-marquee { animation-play-state: paused; }
+
+/* BenSync tabs: progress bar under the active tab; upload fill. */
+@keyframes kn-progress { from { width: 0; } to { width: 100%; } }
+.kn-progress { width: 0; animation: kn-progress linear forwards; }
+@keyframes kn-fill { from { width: 8%; } to { width: 100%; } }
+.kn-fill { animation: kn-fill 1.6s cubic-bezier(.3,.7,.2,1) .9s both; }
+@media (prefers-reduced-motion: reduce) { .kn-fill { animation: none; width: 100%; } }

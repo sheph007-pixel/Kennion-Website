@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link } from "wouter";
-import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, Stethoscope, Smile, Eye, ShieldCheck, Accessibility, Wallet, Receipt, PiggyBank, MonitorSmartphone, Upload, Bandage, Ribbon, RefreshCw, HeartPulse, ConciergeBell, Hospital, Briefcase, BadgePlus, Video, Leaf, Headphones, LifeBuoy, Sparkles, Share2 } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, Stethoscope, Smile, Eye, ShieldCheck, Accessibility, Wallet, Receipt, PiggyBank, MonitorSmartphone, Upload, Bandage, Ribbon, RefreshCw, HeartPulse, ConciergeBell, Hospital, Briefcase, BadgePlus, Video, Leaf, Headphones, LifeBuoy, Sparkles, Share2, Calculator, Bot, Globe, Presentation, Zap, FolderOpen, Send, Download, Timer, FileText, Search } from "lucide-react";
 import { PARTNER_LOGOS, FEATURED_PARTNERS, type PartnerLogo } from "@/lib/partner-logos";
 
 const QUOTE_URL = "https://app.kennion.com/quote";
@@ -105,7 +105,7 @@ function SectionIntro({ label, title, sub, dark = false, className = "" }: {
       </span>
       <h2 className={`${H2} mt-6`}>{title}</h2>
       {sub && (
-        <p className={`mx-auto mt-6 max-w-[36rem] text-[16px] leading-[1.65] ${dark ? "text-white/65" : "text-muted-foreground"}`}>{sub}</p>
+        <p className={`mx-auto mt-6 max-w-[38rem] [text-wrap:balance] text-[16px] leading-[1.65] ${dark ? "text-white/65" : "text-muted-foreground"}`}>{sub}</p>
       )}
     </Reveal>
   );
@@ -140,6 +140,7 @@ function Nav({ onContact }: { onContact: () => void }) {
 
   const links = [
     ["#what", "What We Do"],
+    ["#bensync", "BenSync"],
     ["#how", "How We Do It"],
     ["#why", "Why Kennion"],
   ];
@@ -683,6 +684,304 @@ function Options() {
   );
 }
 
+/* ── BenSync: the platform, shown as tabbed animated mockups ────────
+   Skeleton data only. Tabs auto-advance; hover or click to hold. */
+
+const ACC = "hsl(var(--brand-accent))";
+const ACC_SOFT = "hsl(var(--brand-accent-soft))";
+
+function Line({ w, h = 6, d = 0, className = "" }: { w: string; h?: number; d?: number; className?: string }) {
+  return (
+    <span className={`kn-row-in block ${className}`} style={{ width: w, animationDelay: `${d}ms` }}>
+      <span className="kn-skel block rounded-full" style={{ height: h }} />
+    </span>
+  );
+}
+
+function MockQuote() {
+  const cols = [
+    { name: "Lower Cost", bar: 46, tone: "bg-muted" },
+    { name: "Balanced", bar: 64, tone: "bg-[hsl(var(--brand-accent))]/15", star: true },
+    { name: "Richer Benefits", bar: 82, tone: "bg-muted" },
+  ];
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="font-display font-semibold text-[15px]">Proposal</div>
+          <Line w="110px" className="mt-2" />
+        </div>
+        <span className="kn-pop inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--brand-accent))] px-3 py-1 text-[10.5px] font-bold text-white" style={{ animationDelay: "1200ms" }}>
+          <Check size={11} strokeWidth={3} /> Proposal Ready
+        </span>
+      </div>
+      <div className="mt-5 grid grid-cols-3 gap-3 flex-1">
+        {cols.map((c, i) => (
+          <div key={c.name} className={`kn-row-in relative flex flex-col rounded-[10px] border bg-white p-3.5 ${c.star ? "border-[hsl(var(--brand-accent))] shadow-md" : "border-border"}`} style={{ animationDelay: `${150 + i * 140}ms` }}>
+            {c.star && <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-[hsl(var(--brand-accent))] px-2 py-0.5 text-[8.5px] font-bold text-white whitespace-nowrap">Recommended</span>}
+            <div className="text-[11px] font-bold">{c.name}</div>
+            <div className="mt-4 space-y-3">
+              {[0, 1, 2, 3].map((k) => (
+                <div key={k} className="flex items-center justify-between gap-2">
+                  <Line w="42%" h={5} d={300 + i * 140 + k * 60} />
+                  <Line w="26%" h={5} d={340 + i * 140 + k * 60} />
+                </div>
+              ))}
+            </div>
+            <div className="kn-row-in mt-4 font-display font-semibold text-[18px] tabular-nums" style={{ animationDelay: `${700 + i * 140}ms` }}>
+              <span className="text-muted-foreground/60">$</span><span className="inline-block align-middle ml-1 w-14"><span className="kn-skel block h-3 rounded-full" /></span>
+            </div>
+            <div className={`mt-auto rounded-md ${c.tone} h-12 flex items-end p-1.5`}>
+              <div className="w-full rounded-[4px] transition-[height] duration-1000 ease-out" style={{ height: `${c.bar}%`, background: c.star ? ACC : "hsl(210 20% 80%)" }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MockAI() {
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex items-center gap-2.5">
+        <span className="grid place-items-center w-8 h-8 rounded-full bg-[hsl(var(--brand-accent))] text-white"><Sparkles size={15} /></span>
+        <div className="font-display font-semibold text-[15px]">AI Assistant</div>
+      </div>
+      <div className="mt-5 flex-1 space-y-3">
+        <div className="kn-row-in ml-auto max-w-[70%] rounded-[12px] rounded-br-[4px] bg-[hsl(var(--ink))] px-3.5 py-2.5 text-[11.5px] text-white" style={{ animationDelay: "150ms" }}>
+          Which plan fits a team with young families?
+        </div>
+        <div className="kn-row-in max-w-[78%] rounded-[12px] rounded-bl-[4px] border border-border bg-white px-3.5 py-3 space-y-2" style={{ animationDelay: "700ms" }}>
+          <Line w="92%" d={900} /><Line w="84%" d={1050} /><Line w="66%" d={1200} />
+          <div className="kn-pop mt-2 inline-flex items-center gap-1 rounded-full bg-[hsl(var(--brand-accent))]/10 px-2 py-0.5 text-[9.5px] font-bold text-[hsl(var(--brand-accent))]" style={{ animationDelay: "1500ms" }}>
+            <Sparkles size={9} /> Balanced Plan
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {["Compare Deductibles", "Draft Employee Email", "Explain HSA"].map((t, i) => (
+          <span key={t} className="kn-row-in rounded-full border border-border bg-white px-3 py-1 text-[10px] font-semibold text-muted-foreground" style={{ animationDelay: `${1700 + i * 120}ms` }}>{t}</span>
+        ))}
+      </div>
+      <div className="mt-3 flex items-center gap-2 rounded-full border border-border bg-white pl-4 pr-1.5 py-1.5">
+        <span className="flex-1 text-[11px] text-muted-foreground">Ask anything about your plans…</span>
+        <span className="grid place-items-center w-7 h-7 rounded-full bg-[hsl(var(--brand-accent))] text-white"><Send size={12} /></span>
+      </div>
+    </div>
+  );
+}
+
+function MockSite() {
+  return (
+    <div className="h-full flex flex-col rounded-[10px] border border-border bg-white overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
+        <div className="flex items-center gap-2"><span className="w-5 h-5 rounded bg-[hsl(var(--ink))]" /><Line w="70px" h={5} /></div>
+        <span className="rounded-md bg-[hsl(var(--brand-accent))] px-2.5 py-1 text-[9.5px] font-bold text-white">Enroll Now</span>
+      </div>
+      <div className="kn-row-in px-5 py-6 text-white" style={{ background: "linear-gradient(120deg, hsl(var(--ink)), hsl(var(--brand-accent)))", animationDelay: "100ms" }}>
+        <div className="font-display font-semibold text-[18px]">Your 2027 Benefits</div>
+        <div className="mt-2 h-1.5 w-40 rounded-full bg-white/30" />
+      </div>
+      <div className="p-4 grid grid-cols-3 gap-2.5 flex-1">
+        {[[Stethoscope, "Medical"], [Smile, "Dental"], [Eye, "Vision"], [PiggyBank, "HSA"], [ShieldCheck, "Life"], [Video, "Telehealth"]].map(([I, t]: any, i) => (
+          <div key={t} className="kn-row-in rounded-[8px] border border-border p-2.5 flex flex-col items-start gap-1.5" style={{ animationDelay: `${300 + i * 90}ms` }}>
+            <span className="grid place-items-center w-6 h-6 rounded-md bg-[hsl(var(--brand-accent))]/10 text-[hsl(var(--brand-accent))]"><I size={12} /></span>
+            <span className="text-[10.5px] font-bold">{t}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MockFlyers() {
+  const cards = [
+    { r: -9, x: -120, y: 14, label: "Open Enrollment" },
+    { r: 0, x: 0, y: 0, label: "Benefits Guide" },
+    { r: 9, x: 120, y: 14, label: "HSA 101" },
+  ];
+  return (
+    <div className="relative h-full grid place-items-center">
+      {cards.map((c, i) => (
+        <div key={c.label} className="absolute w-[34%] max-w-[190px] aspect-[3/4]" style={{ transform: `translateX(${c.x}%) translateY(${c.y}px) rotate(${c.r}deg)`, zIndex: i === 1 ? 2 : 1 }}>
+        <div className="kn-row-in h-full rounded-[10px] border border-border bg-white shadow-lg overflow-hidden" style={{ animationDelay: `${150 + i * 160}ms` }}>
+          <div className="h-[38%] p-3 flex items-end text-white" style={{ background: i === 1 ? `linear-gradient(140deg, hsl(var(--ink)), ${ACC})` : "hsl(var(--ink))" }}>
+            <span className="font-display font-semibold text-[12px] leading-tight">{c.label}</span>
+          </div>
+          <div className="p-3 space-y-1.5">
+            <Line w="90%" h={4} /><Line w="76%" h={4} /><Line w="84%" h={4} /><Line w="60%" h={4} />
+            <div className="pt-2 grid grid-cols-2 gap-1.5"><span className="h-6 rounded bg-muted" /><span className="h-6 rounded bg-muted" /></div>
+          </div>
+        </div>
+        </div>
+      ))}
+      <span className="kn-pop absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--ink))] px-3 py-1.5 text-[10.5px] font-bold text-white" style={{ animationDelay: "900ms", zIndex: 3 }}>
+        <Download size={11} /> Export PDF
+      </span>
+    </div>
+  );
+}
+
+function MockRenewal() {
+  const bars = [
+    { t: "Current", v: 62, c: "hsl(210 20% 78%)" },
+    { t: "Renewal Offer", v: 90, c: "hsl(4 70% 62%)" },
+    { t: "Kennion Option", v: 55, c: ACC },
+  ];
+  const [go, setGo] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setGo(true), 250); return () => clearTimeout(t); }, []);
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between">
+        <div className="font-display font-semibold text-[15px]">Renewal Review</div>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-[10.5px] font-bold text-muted-foreground"><Timer size={11} /> Ready In Days</span>
+      </div>
+      <div className="mt-6 flex-1 grid grid-cols-3 gap-5 items-end px-2">
+        {bars.map((b, i) => (
+          <div key={b.t} className="h-full flex flex-col justify-end items-center gap-2">
+            <div className="w-full max-w-[90px] rounded-t-[8px] transition-[height] duration-[1100ms] ease-out" style={{ height: go ? `${b.v}%` : "4%", background: b.c, transitionDelay: `${i * 180}ms` }} />
+            <span className="text-[10.5px] font-bold text-center">{b.t}</span>
+          </div>
+        ))}
+      </div>
+      <div className="kn-pop mt-4 self-center inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--brand-accent))]/10 px-3 py-1.5 text-[11px] font-bold text-[hsl(var(--brand-accent))]" style={{ animationDelay: "1300ms" }}>
+        <Check size={12} strokeWidth={3} /> Better Option Found
+      </div>
+    </div>
+  );
+}
+
+function MockDocs() {
+  const files = ["Summary Of Benefits", "Plan Documents", "Employee Guide", "Carrier Contracts", "Compliance Notices"];
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex items-center gap-2 rounded-full border border-border bg-white px-3.5 py-2">
+        <Search size={13} className="text-muted-foreground" />
+        <span className="text-[11px] text-muted-foreground">Search documents</span>
+      </div>
+      <div className="mt-4 flex-1 rounded-[10px] border border-border bg-white overflow-hidden">
+        {files.map((f, i) => (
+          <div key={f} className="kn-row-in flex items-center gap-3 border-b border-border last:border-b-0 px-3.5 py-2.5" style={{ animationDelay: `${150 + i * 110}ms` }}>
+            <span className="grid place-items-center w-7 h-7 rounded-md bg-[hsl(var(--brand-accent))]/10 text-[hsl(var(--brand-accent))]"><FileText size={13} /></span>
+            <span className="flex-1 text-[11.5px] font-semibold">{f}</span>
+            <Line w="44px" h={5} d={300 + i * 110} />
+          </div>
+        ))}
+      </div>
+      <div className="kn-row-in mt-3 rounded-[10px] border border-dashed border-[hsl(var(--brand-accent))]/40 bg-[hsl(var(--brand-accent))]/[0.04] px-3.5 py-2.5" style={{ animationDelay: "800ms" }}>
+        <div className="flex items-center justify-between text-[10.5px] font-semibold"><span>Uploading 2027 Rate Sheet</span><span className="text-[hsl(var(--brand-accent))]">Synced</span></div>
+        <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-[hsl(var(--brand-accent))] kn-fill" /></div>
+      </div>
+    </div>
+  );
+}
+
+const BENSYNC_FEATURES = [
+  { Icon: Calculator, t: "Quote & Propose", d: "Real options and polished proposals, back fast.", Mock: MockQuote },
+  { Icon: Bot, t: "AI Assistant", d: "A personal assistant that knows your plans.", Mock: MockAI },
+  { Icon: Globe, t: "Employee Websites", d: "A custom benefits site for every client.", Mock: MockSite },
+  { Icon: Presentation, t: "Flyers & Presentations", d: "Branded materials, built in a click.", Mock: MockFlyers },
+  { Icon: Zap, t: "Fast Renewals", d: "Renewals reviewed and compared in days.", Mock: MockRenewal },
+  { Icon: FolderOpen, t: "Document Hub", d: "Every document, one place, always current.", Mock: MockDocs },
+];
+const BENSYNC_MS = 5200;
+
+function BenSync() {
+  const [ref, seen] = useInView(0.25);
+  const [active, setActive] = useState(0);
+  const [held, setHeld] = useState(false);
+  const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  useEffect(() => {
+    if (!seen || held || reduced) return;
+    const t = setTimeout(() => setActive((a) => (a + 1) % BENSYNC_FEATURES.length), BENSYNC_MS);
+    return () => clearTimeout(t);
+  }, [seen, held, active, reduced]);
+  const F = BENSYNC_FEATURES[active];
+
+  return (
+    <section id="bensync" className="relative overflow-hidden py-20 lg:py-32">
+      <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[38%] -translate-x-1/2 w-[900px] h-[600px] rounded-full opacity-60 blur-3xl" style={{ background: `radial-gradient(closest-side, hsl(var(--brand-accent) / .16), transparent)` }} />
+      <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10">
+        <SectionIntro
+          label="BenSync"
+          className="mb-12 lg:mb-16"
+          title={<>Meet BenSync.<br className="hidden md:block" />{" "}<span style={{ color: ACC }}>The platform behind it all.</span></>}
+          sub="The system we built to quote faster, present better and support your team all year."
+        />
+
+        <div ref={ref} onMouseEnter={() => setHeld(true)} onMouseLeave={() => setHeld(false)}>
+          {/* tabs */}
+          <div className="-mx-6 px-6 lg:mx-0 lg:px-0 overflow-x-auto [scrollbar-width:none]">
+            <div className="grid grid-flow-col auto-cols-[minmax(150px,1fr)] lg:grid-cols-6 gap-2 min-w-max lg:min-w-0" role="tablist">
+              {BENSYNC_FEATURES.map(({ Icon, t }, i) => {
+                const on = i === active;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    role="tab"
+                    aria-selected={on}
+                    onClick={() => setActive(i)}
+                    className={`relative overflow-hidden flex items-center gap-2.5 rounded-[10px] border px-3.5 py-3 text-left transition-all duration-300 ${on ? "bg-white border-[hsl(var(--brand-accent))]/40 shadow-md" : "bg-white/60 border-border hover:bg-white"}`}
+                  >
+                    <span className={`grid shrink-0 place-items-center w-8 h-8 rounded-[8px] transition-colors ${on ? "bg-[hsl(var(--brand-accent))] text-white" : "bg-[hsl(var(--brand-accent))]/10 text-[hsl(var(--brand-accent))]"}`}>
+                      <Icon size={16} strokeWidth={1.9} />
+                    </span>
+                    <span className={`text-[13px] font-semibold leading-tight ${on ? "text-foreground" : "text-muted-foreground"}`}>{t}</span>
+                    {on && !reduced && (
+                      <span key={`${active}-${held}`} className="absolute left-0 bottom-0 h-[3px] bg-[hsl(var(--brand-accent))] kn-progress" style={{ animationDuration: `${BENSYNC_MS}ms`, animationPlayState: held || !seen ? "paused" : "running" }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* stage */}
+          <div className="mt-5 grid lg:grid-cols-12 gap-6 lg:gap-10 items-center">
+            <div className="lg:col-span-4 order-2 lg:order-1">
+              <div key={active} className="kn-row-in">
+                <h3 className={`${H3} text-[26px] lg:text-[34px] leading-[1.1]`}>{F.t}</h3>
+                <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground max-w-[22rem]">{F.d}</p>
+                <a href={QUOTE_URL} className="kn-link mt-7 inline-block text-[14px] font-semibold text-foreground">See It With Your Group</a>
+              </div>
+            </div>
+            <div className="lg:col-span-8 order-1 lg:order-2">
+              <div className="rounded-[14px] border border-border bg-white shadow-xl overflow-hidden">
+                <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-muted/60">
+                  <div className="flex gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
+                  </div>
+                  <div className="mx-auto flex items-center gap-1.5 rounded-md bg-white border border-border px-3 py-1 text-[10.5px] font-semibold text-muted-foreground">
+                    <span className="w-2 h-2 rounded-sm" style={{ background: ACC }} /> BenSync
+                  </div>
+                  <span className="w-10" />
+                </div>
+                <div className="flex h-[360px] sm:h-[400px] lg:h-[430px]">
+                  <div className="hidden sm:flex w-[52px] shrink-0 flex-col items-center gap-2 bg-[hsl(var(--ink))] py-4">
+                    <span className="grid place-items-center w-7 h-7 rounded-md text-white text-[10px] font-bold mb-2" style={{ background: ACC }}>B</span>
+                    {BENSYNC_FEATURES.map(({ Icon }, i) => (
+                      <span key={i} className={`grid place-items-center w-8 h-8 rounded-md transition-colors ${i === active ? "bg-white/12 text-white" : "text-white/40"}`} style={i === active ? { color: ACC_SOFT, background: "rgba(255,255,255,.08)" } : undefined}>
+                        <Icon size={15} />
+                      </span>
+                    ))}
+                  </div>
+                  <div key={active} className="flex-1 min-w-0 p-4 sm:p-6 bg-[hsl(210_30%_98%)]">
+                    <F.Mock />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ── why kennion ───────────────────────────────────────────────────── */
 
 const FOUNDED = 1985;
@@ -1009,6 +1308,7 @@ function Footer({ onContact }: { onContact: () => void }) {
             <ul className="space-y-3 text-[13.5px] text-white/70">
               <li><a href="#what" className="kn-link-rev hover:text-white transition-colors">What We Do</a></li>
               <li><a href="#how" className="kn-link-rev hover:text-white transition-colors">How We Do It</a></li>
+              <li><a href="#bensync" className="kn-link-rev hover:text-white transition-colors">BenSync</a></li>
               <li><a href="#why" className="kn-link-rev hover:text-white transition-colors">Why Kennion</a></li>
             </ul>
           </div>
@@ -1051,6 +1351,7 @@ export default function LandingPage() {
         <Hero />
         <Problem />
         <Options />
+        <BenSync />
         <HowWeDoIt />
         <WhyKennion />
         <FinalCTA onContact={openContact} />
