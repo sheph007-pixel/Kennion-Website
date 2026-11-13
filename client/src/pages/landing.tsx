@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link } from "wouter";
-import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, Stethoscope, Smile, Eye, ShieldCheck, Accessibility, Wallet, Receipt, PiggyBank, MonitorSmartphone, Upload, Bandage, Ribbon, RefreshCw, HeartPulse, ConciergeBell, Hospital, Briefcase, BadgePlus, Video, Leaf, Headphones, LifeBuoy, Sparkles, Share2, Calculator, Bot, Globe, Presentation, Zap, FolderOpen, Send, Download, Timer, FileText, Search, SlidersHorizontal, UserCheck } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, Stethoscope, Smile, Eye, ShieldCheck, Accessibility, Wallet, Receipt, PiggyBank, MonitorSmartphone, Upload, Bandage, Ribbon, RefreshCw, HeartPulse, ConciergeBell, Hospital, Briefcase, BadgePlus, Video, Leaf, Headphones, LifeBuoy, Sparkles, Share2, Calculator, Bot, Globe, Presentation, Zap, FolderOpen, Send, Download, Timer, FileText, Search, SlidersHorizontal, UserCheck, LineChart } from "lucide-react";
 import { PARTNER_LOGOS, FEATURED_PARTNERS, type PartnerLogo } from "@/lib/partner-logos";
 
 const QUOTE_URL = "https://app.kennion.com/quote";
@@ -1112,9 +1112,9 @@ function YearsInBusiness() {
 
 function WhyKennion() {
   const rows = [
-    { t: "Advisors who push back", d: "You get a recommendation, not a menu. If an option is not worth your money, we say so." },
-    { t: "More of the market", d: "Carriers and structures most employers are never shown, priced and compared for you." },
-    { t: "Less work for your team", d: "Online enrollment and digital tools take the paperwork off HR's desk." },
+    { Icon: ShieldCheck, t: "Advisors who push back", d: "You get a recommendation, not a menu. If an option is not worth your money, we say so." },
+    { Icon: LineChart, t: "More of the market", d: "Carriers and structures most employers are never shown, priced and compared for you." },
+    { Icon: MonitorSmartphone, t: "Less work for your team", d: "Online enrollment and digital tools take the paperwork off HR's desk." },
   ];
   const people = [
     { name: "Hal Shepherd", title: "Founder", img: "/team/hal-shepherd.webp" },
@@ -1128,49 +1128,52 @@ function WhyKennion() {
           className="mb-14 lg:mb-20"
           title={<>Family-led. <span style={{ color: "hsl(var(--brand-accent))" }}>Built to last.</span></>}
         />
-        <div className="grid lg:grid-cols-12 gap-y-14 lg:gap-x-14 items-start">
-          {/* portraits */}
-          <div className="lg:col-span-5 grid grid-cols-2 gap-4 lg:gap-5">
+
+        {/* story + leadership */}
+        <div className="grid lg:grid-cols-12 gap-y-12 lg:gap-x-16 items-center">
+          <Reveal className="lg:col-span-5">
+            <YearsInBusiness />
+            <div className="mt-3 text-[16px] font-semibold text-foreground">Years in business, since {FOUNDED}</div>
+            <p className="mt-5 text-[16px] leading-[1.7] text-muted-foreground max-w-[30rem]">
+              Hal Shepherd founded W. H. Shepherd Companies in {FOUNDED}, which later became
+              Kennion. Today Hunter Shepherd, the second generation of the family, leads the team.
+            </p>
+          </Reveal>
+          <div className="lg:col-span-7 grid grid-cols-2 gap-4 lg:gap-6">
             {people.map((p, i) => (
               <Reveal key={p.name} delay={i * 90}>
                 <figure className="group">
-                  <div className="overflow-hidden rounded-[14px] border border-border bg-white">
+                  <div className="overflow-hidden rounded-[16px] shadow-md">
                     <img
                       src={p.img}
                       alt={`${p.name}, ${p.title}`}
                       loading="lazy"
-                      className="block w-full aspect-[4/5] object-cover object-top transition-transform duration-700 group-hover:scale-[1.03]"
+                      className="block w-full aspect-[4/5] object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                     />
                   </div>
                   <figcaption className="mt-4">
-                    <div className={`${H3} text-[18px] lg:text-[21px]`}>{p.name}</div>
-                    <div className="mt-1 text-[13.5px] font-semibold text-[hsl(var(--brand-accent))]">{p.title}</div>
+                    <div className={`${H3} text-[18px] lg:text-[22px]`}>{p.name}</div>
+                    <div className="mt-1 text-[14px] font-semibold text-[hsl(var(--brand-accent))]">{p.title}</div>
                   </figcaption>
                 </figure>
               </Reveal>
             ))}
           </div>
+        </div>
 
-          {/* story + reasons */}
-          <div className="lg:col-span-7">
-            <div className="flex flex-col sm:flex-row sm:items-end gap-x-8 gap-y-4 pb-8 lg:pb-10">
-              <div className="shrink-0">
-                <YearsInBusiness />
-                <div className="mt-3 text-[15px] font-medium text-foreground">Years in business, since {FOUNDED}</div>
+        {/* reasons */}
+        <div className="mt-16 lg:mt-24 grid md:grid-cols-3 gap-4 lg:gap-6">
+          {rows.map(({ Icon, t, d }, i) => (
+            <Reveal key={t} delay={i * 80}>
+              <div className="kn-tile group h-full rounded-[14px] border border-border bg-white p-6 lg:p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                <div className="kn-tile-icon grid place-items-center w-11 h-11 rounded-[10px] bg-[hsl(var(--brand-accent))]/10 text-[hsl(var(--brand-accent))] group-hover:bg-[hsl(var(--brand-accent))] group-hover:text-white">
+                  <Icon size={20} strokeWidth={1.9} />
+                </div>
+                <h3 className={`${H3} mt-5 text-[20px] lg:text-[22px]`}>{t}</h3>
+                <p className="mt-2.5 text-[14.5px] leading-[1.7] text-muted-foreground">{d}</p>
               </div>
-              <p className="text-[14.5px] text-muted-foreground leading-[1.65] max-w-[24rem] sm:pb-1">
-                Hal Shepherd founded W. H. Shepherd Companies in {FOUNDED}, which later became
-                Kennion. Today his son, Hunter Shepherd, leads the team.
-              </p>
-            </div>
-            {rows.map((r) => (
-              <div key={r.t} className="grid grid-cols-1 lg:grid-cols-[17.5rem_1fr] gap-x-8 items-baseline border-t border-border py-6 lg:py-7">
-                <h3 className={`${H3} text-[20px] lg:text-[22px]`}>{r.t}</h3>
-                <p className="mt-2 lg:mt-0 text-[14px] leading-[1.7] text-muted-foreground">{r.d}</p>
-              </div>
-            ))}
-            <div className="border-t border-border" />
-          </div>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>
