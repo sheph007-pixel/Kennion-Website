@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link } from "wouter";
-import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, Stethoscope, Smile, Eye, ShieldCheck, Accessibility, Wallet, Receipt, PiggyBank, MonitorSmartphone, Upload, Bandage, Ribbon, RefreshCw, HeartPulse, ConciergeBell, Hospital, Briefcase, BadgePlus, Video, Leaf, Headphones, LifeBuoy, Sparkles, Share2, Calculator, Bot, Globe, Presentation, Zap, FolderOpen, Send, Download, Timer, FileText, Search, SlidersHorizontal, UserCheck, LineChart } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, Stethoscope, Smile, Eye, ShieldCheck, Accessibility, Wallet, Receipt, PiggyBank, MonitorSmartphone, Upload, Bandage, Ribbon, RefreshCw, HeartPulse, ConciergeBell, Hospital, Briefcase, BadgePlus, Video, Leaf, Headphones, LifeBuoy, Sparkles, Share2, Calculator, Bot, Globe, Presentation, Zap, FolderOpen, Send, Download, Timer, FileText, Search, SlidersHorizontal, UserCheck, LineChart, HeartHandshake } from "lucide-react";
 import { PARTNER_LOGOS, FEATURED_PARTNERS, type PartnerLogo } from "@/lib/partner-logos";
 
 const QUOTE_URL = "https://app.kennion.com/quote";
@@ -1112,9 +1112,9 @@ function YearsInBusiness() {
 
 function WhyKennion() {
   const rows = [
-    { Icon: ShieldCheck, t: "Advisors who push back", d: "You get a recommendation, not a menu. If an option is not worth your money, we say so." },
-    { Icon: LineChart, t: "More of the market", d: "Carriers and structures most employers are never shown, priced and compared for you." },
-    { Icon: MonitorSmartphone, t: "Less work for your team", d: "Online enrollment and digital tools take the paperwork off HR's desk." },
+    { Icon: PiggyBank, t: "Lower Costs, Better Coverage", d: "We shop the whole market plus programs built with top carriers, TPAs and providers, so every dollar does more. Switching or starting fresh." },
+    { Icon: HeartHandshake, t: "Benefits Your People Value", d: "Custom benefit websites, 1:1 enrollment counselors and an AI assistant, so employees understand and use what you offer." },
+    { Icon: LifeBuoy, t: "One Team, All Year", d: "Quotes, enrollment, questions and renewals handled by one team on one platform. HR gets its time back." },
   ];
   const people = [
     { name: "Hal Shepherd", title: "Founder", img: "/team/hal-shepherd.webp" },
