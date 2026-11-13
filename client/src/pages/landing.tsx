@@ -379,7 +379,10 @@ function Hero() {
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10 pt-12 lg:pt-24 pb-16 lg:pb-24 grid lg:grid-cols-12 gap-y-12 lg:gap-x-12 items-center">
         <div className="lg:col-span-6">
           <Reveal delay={40}>
-            <div className="mb-8 h-1 w-10 rounded-full bg-[hsl(var(--brand-accent))]" aria-hidden="true" />
+            <div className="mb-7 inline-flex items-center gap-3 text-[13px] font-semibold tracking-[0.01em] text-muted-foreground">
+              <span className="h-1 w-8 rounded-full bg-[hsl(var(--brand-accent))]" aria-hidden="true" />
+              Employee Benefits Nationwide · Since {FOUNDED}
+            </div>
           </Reveal>
           <Reveal delay={90}>
             <h1 className="font-display font-semibold tracking-[-0.01em] leading-[1.05] text-[clamp(2.5rem,8vw,4.6rem)]">
