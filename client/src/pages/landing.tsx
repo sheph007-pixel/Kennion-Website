@@ -6,8 +6,8 @@
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link } from "wouter";
-import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, Stethoscope, Smile, Eye, ShieldCheck, Accessibility, Wallet, Receipt, PiggyBank, MonitorSmartphone, Upload, Bandage, Ribbon, RefreshCw, HeartPulse, ConciergeBell, Hospital, Briefcase, BadgePlus, Video, Leaf, Headphones, LifeBuoy, Sparkles, Share2, Calculator, Bot, Globe, Presentation, Zap, FolderOpen, Send, Download, Timer, FileText, Search, SlidersHorizontal, UserCheck, LineChart, HeartHandshake, CalendarCheck } from "lucide-react";
-import { PARTNER_LOGOS, FEATURED_PARTNERS, type PartnerLogo } from "@/lib/partner-logos";
+import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, Stethoscope, Smile, Eye, ShieldCheck, Accessibility, Wallet, Receipt, PiggyBank, MonitorSmartphone, Upload, Bandage, Ribbon, RefreshCw, HeartPulse, ConciergeBell, Hospital, Briefcase, BadgePlus, Video, Leaf, Headphones, LifeBuoy, Sparkles, Share2, Calculator, Bot, Globe, Presentation, Zap, FolderOpen, Send, Download, Timer, FileText, Search, SlidersHorizontal, UserCheck, LineChart, HeartHandshake, CalendarCheck, Clock, Phone } from "lucide-react";
+import { PARTNER_LOGOS, MEDICAL_CARRIERS, OTHER_CARRIERS, type PartnerLogo } from "@/lib/partner-logos";
 
 const QUOTE_URL = "https://app.kennion.com/quote";
 const KENNION_LOGO_URL = "/kennion-logo.svg";
@@ -89,25 +89,77 @@ function useCountUp(to: number, go: boolean, ms = 1100) {
 
 const CALENDLY_URL = "https://calendly.com/kennion/call";
 
-/** Opens the Calendly popup, loading its script/styles on first use. */
+/** Opens the on-brand scheduling window (see ScheduleModal). */
 function openCalendly(e?: React.MouseEvent) {
-  const w = window as any;
-  const open = () => w.Calendly?.initPopupWidget({ url: CALENDLY_URL });
-  if (w.Calendly) { e?.preventDefault(); open(); return; }
-  if (!document.getElementById("calendly-css")) {
-    const l = document.createElement("link");
-    l.id = "calendly-css"; l.rel = "stylesheet";
-    l.href = "https://assets.calendly.com/assets/external/widget.css";
-    document.head.appendChild(l);
-  }
   e?.preventDefault();
-  const sc = document.createElement("script");
-  sc.src = "https://assets.calendly.com/assets/external/widget.js";
-  sc.async = true;
-  sc.onload = open;
-  // if the script can't load, fall back to opening Calendly in a new tab
-  sc.onerror = () => window.open(CALENDLY_URL, "_blank", "noopener");
-  document.body.appendChild(sc);
+  window.dispatchEvent(new Event("kn-schedule-open"));
+}
+
+/** Booking window styled like the site: who you'll talk to on the left,
+ *  Calendly's calendar (its own header hidden) on the right. */
+function ScheduleModal() {
+  const [open, setOpen] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    const on = () => { setLoaded(false); setOpen(true); };
+    window.addEventListener("kn-schedule-open", on);
+    return () => window.removeEventListener("kn-schedule-open", on);
+  }, []);
+  useEffect(() => {
+    if (!open) return;
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", key);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", key); document.body.style.overflow = prev; };
+  }, [open]);
+  if (!open) return null;
+  const src = `${CALENDLY_URL}?hide_event_type_details=1&hide_gdpr_banner=1&hide_landing_page_details=1&background_color=ffffff&text_color=0b2138&primary_color=1f8a5b&embed_type=Inline&embed_domain=${encodeURIComponent(window.location.host)}`;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="Schedule a call">
+      <div className="absolute inset-0 bg-[hsl(var(--ink))]/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
+      <div className="kn-row-in relative w-full max-w-[980px] h-[min(720px,92vh)] rounded-[18px] bg-white shadow-2xl overflow-hidden grid grid-rows-[auto_1fr] md:grid-rows-1 md:grid-cols-[320px_1fr]" style={{ animationDuration: "300ms" }}>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          aria-label="Close"
+          className="absolute right-3 top-3 z-10 grid place-items-center w-9 h-9 rounded-full bg-white/90 text-foreground shadow-sm border border-border hover:bg-muted transition-colors"
+        >
+          <X size={16} />
+        </button>
+
+        {/* who you'll talk to */}
+        <div className="bg-[hsl(var(--ink))] text-white px-6 py-5 pr-14 md:px-8 md:py-10 flex md:flex-col items-center md:items-start gap-4 md:gap-0">
+          <img src="/team/hunter-shepherd.webp" alt="Hunter Shepherd" className="w-14 h-14 md:w-24 md:h-24 rounded-full object-cover ring-2 ring-white/15 shrink-0" />
+          <div className="md:mt-6">
+            <div className="text-[12.5px] font-semibold text-[hsl(var(--brand-accent-soft))]">Schedule A Call</div>
+            <div className={`${H3} mt-1 text-[19px] md:text-[24px] leading-tight`}>Talk with Hunter Shepherd</div>
+            <div className="mt-1 text-[13px] text-white/60">President, Kennion Benefit Advisors</div>
+          </div>
+          <ul className="hidden md:block mt-8 space-y-3.5 text-[14px] text-white/80">
+            <li className="flex gap-3"><Clock size={17} className="mt-0.5 shrink-0 text-[hsl(var(--brand-accent-soft))]" /> 10-minute phone call</li>
+            <li className="flex gap-3"><Phone size={17} className="mt-0.5 shrink-0 text-[hsl(var(--brand-accent-soft))]" /> Hunter calls you at the number you provide</li>
+            <li className="flex gap-3"><Check size={17} className="mt-0.5 shrink-0 text-[hsl(var(--brand-accent-soft))]" /> Straight answers about your employee benefits</li>
+          </ul>
+        </div>
+
+        {/* calendar */}
+        <div className="relative min-h-0 bg-white">
+          {!loaded && (
+            <div className="absolute inset-0 grid place-items-center text-[13px] text-muted-foreground">
+              <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full border-2 border-[hsl(var(--brand-accent))] border-t-transparent animate-spin" /> Loading calendar…</span>
+            </div>
+          )}
+          <iframe
+            title="Schedule a call with Kennion"
+            src={src}
+            onLoad={() => setLoaded(true)}
+            className="w-full h-full border-0"
+          />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /** Centered section intro: pill eyebrow, headline, one short line. */
@@ -413,19 +465,25 @@ function Hero() {
 
 const PARTNERS_SHOWN = 40;
 
+function shuffled<T>(a: T[]): T[] {
+  const r = [...a];
+  for (let i = r.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [r[i], r[j]] = [r[j], r[i]];
+  }
+  return r;
+}
+
+/** Medical carriers lead (all of them, random order), then a random mix
+ *  weighted toward other carriers, then everyone else. */
 function shufflePartners(): PartnerLogo[] {
-  const featured = PARTNER_LOGOS.filter((l) => FEATURED_PARTNERS.includes(l.n));
-  const pool = PARTNER_LOGOS.filter((l) => !FEATURED_PARTNERS.includes(l.n));
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  const set = [...featured, ...pool.slice(0, PARTNERS_SHOWN - featured.length)];
-  for (let i = set.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [set[i], set[j]] = [set[j], set[i]];
-  }
-  return set;
+  const medical = shuffled(PARTNER_LOGOS.filter((l) => MEDICAL_CARRIERS.includes(l.n)));
+  const carriers = shuffled(PARTNER_LOGOS.filter((l) => OTHER_CARRIERS.includes(l.n)));
+  const rest = shuffled(PARTNER_LOGOS.filter((l) => !MEDICAL_CARRIERS.includes(l.n) && !OTHER_CARRIERS.includes(l.n)));
+  const left = PARTNERS_SHOWN - medical.length;
+  const nCarriers = Math.min(carriers.length, Math.ceil(left * 0.7));
+  const tail = shuffled([...carriers.slice(0, nCarriers), ...rest.slice(0, left - nCarriers)]);
+  return [...medical, ...tail];
 }
 
 function PartnersBand() {
@@ -1582,6 +1640,7 @@ export default function LandingPage() {
       </main>
       <Footer onContact={openContact} />
       <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} />
+      <ScheduleModal />
     </div>
   );
 }

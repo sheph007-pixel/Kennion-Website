@@ -6,6 +6,27 @@ export type PartnerLogo = { n: string; f: string; w: number; h: number };
 /** Always shown in every shuffle. */
 export const FEATURED_PARTNERS = ["UnitedHealthcare", "Angle Health", "Gravie"];
 
+/** Medical carriers: every shuffle leads with all of these (random order). */
+export const MEDICAL_CARRIERS = [
+  "UnitedHealthcare", "Angle Health", "Gravie", "Aetna", "Anthem BCBS", "Humana",
+  "Kaiser Permanente", "BlueCross BlueShield of SC", "BlueChoice HealthPlan of South Carolina",
+  "Medical Mutual", "Health Plan of Nevada", "PacificSource Health Plans", "Select Health",
+  "Sentara Health", "Sidecar Health", "Prominence Health Plan", "EMI Health",
+  "Curative Administrators LLC",
+];
+
+/** Dental, vision, life, disability and supplemental carriers: next in line. */
+export const OTHER_CARRIERS = [
+  "Guardian", "MetLife", "AFLAC", "Principal", "Sun Life", "UNUM", "Lincoln Financial Group",
+  "The Hartford", "Mutual of Omaha", "Colonial Life", "Ameritas", "Beam Benefits",
+  "Delta Dental of Arizona", "Delta Dental of Colorado", "Delta Dental of Missouri & South Carolina",
+  "Delta Dental of Virginia", "EyeMed", "VSP", "Davis Vision", "Superior Vision", "MassMutual",
+  "New York Life Insurance Company", "Transamerica", "Equitable", "Reliance Matrix", "CHUBB",
+  "Boston Mutual", "United Concordia Dental", "ManhattanLife", "American Public Life",
+  "Companion Life", "Dearborn Life Insurance Company", "Kansas City Life", "Pacific Life",
+  "USAble Life", "Wellfleet Insurance", "Genomic Life, Inc.", "HRI Dental & Vision",
+];
+
 export const PARTNER_LOGOS: PartnerLogo[] = [
   {"n": "5Star Life Insurance Company", "f": "5star-life-insurance-company.webp", "w": 169, "h": 39},
   {"n": "ABS Payroll & HR", "f": "abs-payroll---hr.webp", "w": 72, "h": 64},
