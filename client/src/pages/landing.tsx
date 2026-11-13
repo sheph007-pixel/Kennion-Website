@@ -1112,9 +1112,10 @@ function YearsInBusiness() {
 
 function WhyKennion() {
   const rows = [
-    { Icon: PiggyBank, t: "Lower Costs, Better Coverage", d: "We shop the whole market plus programs built with top carriers, TPAs and providers, so every dollar does more. Switching or starting fresh." },
-    { Icon: HeartHandshake, t: "Benefits Your People Value", d: "Custom benefit websites, 1:1 enrollment counselors and an AI assistant, so employees understand and use what you offer." },
-    { Icon: Headphones, t: "A Dedicated Senior Client Advisor", d: "A real person your HR team can call, who knows your group and your plans. The technology is a great tool. People make the difference." },
+    { Icon: PiggyBank, t: "Save Money", d: "We shop the whole market, plus programs most brokers can't get you. Your budget goes further." },
+    { Icon: ShieldCheck, t: "Better Coverage", d: "Plans picked for your people and your budget, not whatever happened to renew last year." },
+    { Icon: MonitorSmartphone, t: "Better Technology", d: "Quotes, enrollment and documents in one place. Less paperwork for HR and fewer emails for everyone." },
+    { Icon: Headphones, t: "Real People", d: "Every client gets a dedicated Senior Client Advisor. They know your group, and they pick up the phone." },
   ];
   const people = [
     { name: "Hal Shepherd", title: "Founder", img: "/team/hal-shepherd.webp" },
@@ -1169,15 +1170,15 @@ function WhyKennion() {
         </div>
 
         {/* reasons */}
-        <div className="mt-6 lg:mt-8 grid md:grid-cols-3 gap-4 lg:gap-6">
+        <div className="mt-6 lg:mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
           {rows.map(({ Icon, t, d }, i) => (
             <Reveal key={t} delay={i * 80}>
-              <div className="kn-tile group h-full rounded-[14px] border border-border bg-white p-6 lg:p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+              <div className="kn-tile group h-full rounded-[14px] border border-border bg-white p-6 lg:p-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
                 <div className="kn-tile-icon grid place-items-center w-11 h-11 rounded-[10px] bg-[hsl(var(--brand-accent))]/10 text-[hsl(var(--brand-accent))] group-hover:bg-[hsl(var(--brand-accent))] group-hover:text-white">
                   <Icon size={20} strokeWidth={1.9} />
                 </div>
-                <h3 className={`${H3} mt-5 text-[20px] lg:text-[22px]`}>{t}</h3>
-                <p className="mt-2.5 text-[14.5px] leading-[1.7] text-muted-foreground">{d}</p>
+                <h3 className={`${H3} mt-5 text-[20px] lg:text-[21px]`}>{t}</h3>
+                <p className="mt-2.5 text-[14.5px] leading-[1.65] text-muted-foreground">{d}</p>
               </div>
             </Reveal>
           ))}
