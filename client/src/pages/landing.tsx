@@ -679,12 +679,14 @@ function Options() {
 
 /* ── why kennion ───────────────────────────────────────────────────── */
 
-function Retention() {
+const FOUNDED = 1985;
+
+function YearsInBusiness() {
   const [ref, seen] = useInView(0.4);
-  const v = useCountUp(95, seen, 1300);
+  const v = useCountUp(new Date().getFullYear() - FOUNDED, seen, 1300);
   return (
     <div ref={ref} className="font-display font-semibold text-[84px] lg:text-[120px] leading-[0.9] tracking-[-0.01em] tabular-nums">
-      {v}%
+      {v}
     </div>
   );
 }
@@ -701,10 +703,14 @@ function WhyKennion() {
         <SectionHead label="Why Kennion">
           <div className="grid lg:grid-cols-12 gap-y-12 lg:gap-x-10 items-start">
             <div className="lg:col-span-4">
-              <Retention />
-              <div className="mt-4 text-[13.5px] text-muted-foreground max-w-[15rem] leading-[1.5]">
-                Of our clients stay with us, year over year
+              <YearsInBusiness />
+              <div className="mt-4 text-[15px] font-medium text-foreground">
+                Years in business, since {FOUNDED}
               </div>
+              <p className="mt-3 text-[13.5px] text-muted-foreground max-w-[19rem] leading-[1.6]">
+                Hal Shepherd founded W. H. Shepherd in {FOUNDED}. Today Hunter Shepherd,
+                the second generation of the family, leads the team.
+              </p>
             </div>
             <div className="lg:col-span-8">
               {rows.map((r) => (
