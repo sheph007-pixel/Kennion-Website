@@ -466,7 +466,7 @@ function YearRoundLoop() {
     { Icon: MonitorSmartphone, t: "Online Enrollment", d: "Employees enroll from a link on any device." },
     { Icon: Headphones, t: "1:1 Enrollment Counselors", d: "A real person walks every employee through their options." },
     { Icon: LifeBuoy, t: "Year-Round Support", d: "Claims, changes, questions. We pick up the phone." },
-    { Icon: RefreshCw, t: "Renewal", d: "We review your renewal early, negotiate hard, and bring options only when they help." },
+    { Icon: RefreshCw, t: "Renewal", d: "We negotiate early, with programs we have built alongside top carriers, TPAs and providers." },
   ];
   const [ref, seen] = useInView(0.3);
   const [active, setActive] = useState(0);
@@ -611,8 +611,8 @@ function Options() {
               <span style={{ color: "hsl(var(--brand-accent))" }}>built and run for you.</span>
             </h2>
             <p className="lg:col-span-5 text-[15px] leading-[1.65] text-muted-foreground lg:pb-2 max-w-[26rem]">
-              Every line of coverage your employees expect, shopped across the whole market and
-              managed all year.
+              Every line of coverage your employees expect, plus programs we have built with top
+              carriers, TPAs and providers that most brokers simply can't offer.
             </p>
           </div>
         </SectionHead>
