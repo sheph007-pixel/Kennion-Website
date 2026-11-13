@@ -102,7 +102,7 @@ export function ProposalNav() {
                           data-testid="menu-your-groups"
                         >
                           <Users className="mr-2 h-4 w-4" />
-                          <span>Your groups</span>
+                          <span>Your Groups</span>
                           <span className="ml-auto text-xs text-muted-foreground">
                             {groups.length}
                           </span>
@@ -113,7 +113,7 @@ export function ProposalNav() {
                         data-testid="menu-new-group"
                       >
                         <Plus className="mr-2 h-4 w-4 text-primary" />
-                        <span className="font-semibold text-primary">New group</span>
+                        <span className="font-semibold text-primary">New Group</span>
                       </DropdownMenuItem>
                     </>
                   )}
@@ -121,12 +121,12 @@ export function ProposalNav() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onSelect={() => setProfileOpen(true)} data-testid="menu-edit-profile">
                     <UserCog className="mr-2 h-4 w-4" />
-                    Edit profile
+                    Edit Profile
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onSelect={handleLogout} data-testid="menu-logout">
                     <LogOut className="mr-2 h-4 w-4" />
-                    Log out
+                    Log Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

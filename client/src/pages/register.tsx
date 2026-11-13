@@ -156,7 +156,7 @@ export default function RegisterPage() {
 
             <div className="mt-5 border-t pt-4 text-center text-xs text-muted-foreground">
               <Link href="/" className="font-semibold text-primary hover:underline" data-testid="link-back-home">
-                Back to homepage
+                Back To Homepage
               </Link>
             </div>
           </Card>
@@ -351,7 +351,7 @@ export default function RegisterPage() {
             className="font-medium text-primary hover:underline"
             data-testid="link-support"
           >
-            Open a support ticket
+            Open A Support Ticket
           </a>
         </div>
         <div className="mt-2 text-[10px] text-muted-foreground">

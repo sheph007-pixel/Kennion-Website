@@ -389,7 +389,7 @@ export function CensusModal({
                 onReplace?.();
               }}
             >
-              Upload new CSV
+              Upload New CSV
             </Button>
           </div>
         </DialogContent>

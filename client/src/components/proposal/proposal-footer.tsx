@@ -19,7 +19,7 @@ export function ProposalFooter() {
             className="inline-flex items-center gap-1 font-medium hover:text-foreground"
             data-testid="link-program-details"
           >
-            Program details
+            Program Details
             <ExternalLink className="h-3 w-3" />
           </a>
           <a

@@ -219,14 +219,14 @@ export default function AdminQuotesPage() {
           data-testid="button-back-to-admin"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back to admin
+          Back To Admin
         </button>
 
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
               <Briefcase className="h-3.5 w-3.5" />
-              Sales quotes
+              Sales Quotes
             </div>
             <h1 className="mt-1 text-3xl font-bold tracking-tight">Internal Sales Quotes</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -242,7 +242,7 @@ export default function AdminQuotesPage() {
               data-testid="button-bulk-upload"
             >
               <Upload className="h-4 w-4" />
-              Bulk upload
+              Bulk Upload
             </Button>
             <Button
               onClick={() => navigate("/admin/quotes/new")}
@@ -250,7 +250,7 @@ export default function AdminQuotesPage() {
               data-testid="button-new-quote"
             >
               <Plus className="h-4 w-4" />
-              New quote
+              New Quote
             </Button>
           </div>
         </div>
@@ -286,7 +286,7 @@ export default function AdminQuotesPage() {
                   className="font-semibold text-primary hover:underline"
                   onClick={() => navigate("/admin/quotes/new")}
                 >
-                  Create the first one →
+                  Create The First One →
                 </button>
               </>
             )}
@@ -368,7 +368,7 @@ export default function AdminQuotesPage() {
                 ) : (
                   <Download className="h-4 w-4" />
                 )}
-                Download {selected.size} PDF{selected.size === 1 ? "" : "s"} as zip
+                Download {selected.size} PDF{selected.size === 1 ? "" : "s"} As Zip
               </Button>
             </div>
           </div>
@@ -595,7 +595,7 @@ function QuoteRow({
                 data-testid={`button-copy-link-${group.id}`}
               >
                 <Copy className="h-3.5 w-3.5" />
-                Copy link
+                Copy Link
               </Button>
             )}
             <DropdownMenu>
@@ -612,12 +612,12 @@ function QuoteRow({
               <DropdownMenuContent align="end" className="w-52">
                 <DropdownMenuItem onSelect={openCockpit}>
                   <Eye className="mr-2 h-4 w-4" />
-                  Open in cockpit
+                  Open In Cockpit
                 </DropdownMenuItem>
                 {publicUrl && (
                   <DropdownMenuItem onSelect={() => window.open(publicUrl, "_blank")}>
                     <ExternalLink className="mr-2 h-4 w-4" />
-                    Preview public page
+                    Preview Public Page
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
@@ -631,12 +631,12 @@ function QuoteRow({
                   disabled={!group.riskTier}
                 >
                   <RotateCcw className="mr-2 h-4 w-4" />
-                  Rotate link
+                  Rotate Link
                 </DropdownMenuItem>
                 {group.publicToken && (
                   <DropdownMenuItem onSelect={() => setConfirmRevoke(true)}>
                     <Slash className="mr-2 h-4 w-4" />
-                    Revoke link
+                    Revoke Link
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
@@ -645,7 +645,7 @@ function QuoteRow({
                   className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete quote
+                  Delete Quote
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

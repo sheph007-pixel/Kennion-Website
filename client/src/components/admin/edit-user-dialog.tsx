@@ -167,7 +167,7 @@ export function EditUserDialog({ user, open, onOpenChange }: Props) {
               ) : (
                 <>
                   <KeyRound className="mr-2 h-3 w-3" />
-                  Send reset email
+                  Send Reset Email
                 </>
               )}
             </Button>

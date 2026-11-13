@@ -93,7 +93,7 @@ export default function PlanDetailsPage() {
               className="mt-6"
               onClick={() => navigate(isAdminRoute ? "/admin" : "/dashboard/groups")}
             >
-              {isAdminRoute ? "Back to users" : "Back to your groups"}
+              {isAdminRoute ? "Back To Users" : "Back To Your Groups"}
             </Button>
           </Card>
         </div>
@@ -115,7 +115,7 @@ export default function PlanDetailsPage() {
             data-testid="button-back-to-rates"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to rates
+            Back To Rates
           </button>
           <div className="text-sm">
             <span className="text-muted-foreground">Plan details for </span>

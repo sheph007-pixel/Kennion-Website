@@ -129,7 +129,7 @@ export function NewGroupDetails({ onContinue }: Props) {
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  Continue to census upload
+                  Continue To Census Upload
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}

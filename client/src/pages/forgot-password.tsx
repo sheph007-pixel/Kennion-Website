@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
                 <Link href="/login">
                   <Button variant="outline" className="w-full">
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Sign In
+                    Back To Sign In
                   </Button>
                 </Link>
               </div>
@@ -136,7 +136,7 @@ export default function ForgotPasswordPage() {
               <div className="text-center mt-6">
                 <Link href="/login" className="text-sm text-muted-foreground hover:text-primary">
                   <ArrowLeft className="inline h-3 w-3 mr-1" />
-                  Back to Sign In
+                  Back To Sign In
                 </Link>
               </div>
             </>

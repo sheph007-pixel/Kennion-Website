@@ -103,7 +103,7 @@ export default function LoginPage() {
                   className="text-xs font-medium text-primary hover:underline"
                   data-testid="link-forgot-password"
                 >
-                  Forgot password?
+                  Forgot Password?
                 </Link>
               </div>
               <div className="relative">

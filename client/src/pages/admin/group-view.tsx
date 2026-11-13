@@ -41,7 +41,7 @@ export default function AdminGroupViewPage() {
               The link may be out of date, or the group may have been deleted.
             </p>
             <Button className="mt-6" onClick={() => navigate("/admin")}>
-              Back to users
+              Back To Users
             </Button>
           </Card>
         </div>

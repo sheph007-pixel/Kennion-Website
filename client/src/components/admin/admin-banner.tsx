@@ -108,7 +108,7 @@ export function AdminBanner({ group, effectiveDate }: Props) {
             data-testid="button-admin-back"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            {isInternalSales ? "All quotes" : "All users"}
+            {isInternalSales ? "All Quotes" : "All Users"}
           </button>
           <span aria-hidden className="text-muted-foreground">·</span>
           <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
@@ -168,7 +168,7 @@ export function AdminBanner({ group, effectiveDate }: Props) {
               {!isInternalSales && (
                 <DropdownMenuItem onSelect={() => setEditUserOpen(true)} disabled={!owner}>
                   <UserCog className="mr-2 h-4 w-4" />
-                  Edit user
+                  Edit User
                 </DropdownMenuItem>
               )}
               {!isInternalSales && <DropdownMenuSeparator />}
@@ -177,7 +177,7 @@ export function AdminBanner({ group, effectiveDate }: Props) {
                 className="text-destructive focus:text-destructive"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                {isInternalSales ? "Delete quote" : "Delete group"}
+                {isInternalSales ? "Delete Quote" : "Delete Group"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

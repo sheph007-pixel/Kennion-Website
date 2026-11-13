@@ -303,7 +303,7 @@ export function ProposalUpload({
                   className="font-semibold text-primary underline underline-offset-2"
                   data-testid="link-download-template"
                 >
-                  Download example CSV
+                  Download Example CSV
                 </a>
               </div>
             </div>
@@ -363,7 +363,7 @@ export function ProposalUpload({
             </p>
           </div>
           <div className="flex justify-end pt-2">
-            <Button onClick={() => setFailure(null)}>OK, I'll try again</Button>
+            <Button onClick={() => setFailure(null)}>OK, I'll Try Again</Button>
           </div>
         </DialogContent>
       </Dialog>

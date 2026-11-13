@@ -119,7 +119,7 @@ export default function AdminHome() {
               onClick={() => navigate("/admin/quotes")}
               data-testid="admin-quotes-link"
             >
-              Sales quotes
+              Sales Quotes
             </Button>
             <Badge variant="secondary" className="px-3 py-1">
               {users.length} {users.length === 1 ? "user" : "users"} · {totalGroups}{" "}
@@ -292,11 +292,11 @@ function UserCard({
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem onSelect={onEdit}>
               <Pencil className="mr-2 h-4 w-4" />
-              Edit user
+              Edit User
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => window.open(`mailto:${user.email}`)}>
               <UserCog className="mr-2 h-4 w-4" />
-              Email user
+              Email User
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -304,7 +304,7 @@ function UserCard({
               className="text-destructive focus:text-destructive"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Delete user
+              Delete User
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -453,7 +453,7 @@ function GroupRow({ group }: { group: Group }) {
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Delete group</TooltipContent>
+            <TooltipContent>Delete Group</TooltipContent>
           </Tooltip>
           <ChevronDown className="ml-1 h-4 w-4 -rotate-90 text-muted-foreground" aria-hidden />
         </div>

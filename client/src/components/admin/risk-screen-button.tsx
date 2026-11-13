@@ -161,7 +161,7 @@ export function RiskScreenButton({ groupId, effectiveDate }: { groupId: string; 
             disabled={run.isPending}
             data-testid="button-risk-screen-rerun"
           >
-            Re-run
+            Re-Run
           </Button>
         )}
       </div>
@@ -276,7 +276,7 @@ export function RiskScreenButton({ groupId, effectiveDate }: { groupId: string; 
               data-testid="button-risk-screen-rescore"
             >
               {run.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
-              Re-score now
+              Re-Score Now
             </Button>
           </DialogFooter>
         </DialogContent>

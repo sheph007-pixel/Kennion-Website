@@ -62,7 +62,7 @@ export default function ReplaceCensusPage() {
               The link may be out of date, or the quote may have been removed.
             </p>
             <Button className="mt-6" onClick={() => navigate("/dashboard/groups")}>
-              Back to your groups
+              Back To Your Groups
             </Button>
           </Card>
         </div>

@@ -209,7 +209,7 @@ export default function AdminQuotesBulkPage() {
           data-testid="button-back-to-quotes"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back to quotes
+          Back To Quotes
         </button>
 
         <div className="mb-6">
@@ -249,7 +249,7 @@ export default function AdminQuotesBulkPage() {
                 data-testid="button-add-files"
               >
                 <Plus className="mr-1.5 h-4 w-4" />
-                Add files
+                Add Files
               </Button>
               {staged.length > 0 && (
                 <Button
@@ -259,7 +259,7 @@ export default function AdminQuotesBulkPage() {
                   disabled={running}
                   data-testid="button-clear-files"
                 >
-                  Clear all
+                  Clear All
                 </Button>
               )}
             </div>
@@ -421,7 +421,7 @@ export default function AdminQuotesBulkPage() {
             ) : (
               <>
                 <Upload className="h-4 w-4" />
-                Generate {staged.length || ""} proposal{staged.length === 1 ? "" : "s"}
+                Generate {staged.length || ""} Proposal{staged.length === 1 ? "" : "s"}
               </>
             )}
           </Button>

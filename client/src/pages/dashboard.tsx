@@ -159,7 +159,7 @@ function NotFoundState({ onBack }: { onBack: () => void }) {
             Head back to your groups to continue.
           </p>
           <Button className="mt-6" onClick={onBack}>
-            Back to your groups
+            Back To Your Groups
           </Button>
         </Card>
       </div>

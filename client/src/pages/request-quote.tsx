@@ -142,7 +142,7 @@ export default function RequestQuotePage() {
             <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-[26px] w-auto" />
           </Link>
           <Link href="/" className="inline-flex items-center gap-2 text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft size={13} strokeWidth={2} /> Back to home
+            <ArrowLeft size={13} strokeWidth={2} /> Back To Home
           </Link>
         </div>
       </header>
@@ -152,7 +152,7 @@ export default function RequestQuotePage() {
         <div className="lg:col-span-5">
           <div className="flex items-baseline gap-4 kn-caps text-muted-foreground">
             <span className="inline-block w-10 h-px translate-y-[-3px]" style={{ background: "hsl(var(--brand-accent))" }} />
-            Get a Quote
+            Get A Quote
           </div>
           <h1 className="font-display font-bold mt-7 text-[clamp(2.4rem,6vw,3.5rem)] leading-[1.0] tracking-[-0.035em]">
             Better benefits <span style={{ color: "hsl(var(--primary))" }}>start here.</span>
@@ -191,7 +191,7 @@ export default function RequestQuotePage() {
               </p>
               <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
                 <Link href="/" className="group inline-flex items-center gap-3 bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--ink))]">
-                  Back to homepage
+                  Back To Homepage
                   <ArrowRight size={14} strokeWidth={2} className="transition-transform group-hover:translate-x-1" />
                 </Link>              </div>
             </div>

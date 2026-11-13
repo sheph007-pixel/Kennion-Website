@@ -90,7 +90,7 @@ export default function AdminTemplatesPage() {
           className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back to admin
+          Back To Admin
         </button>
         <h1 className="mt-3 text-2xl font-bold tracking-tight">Proposal Template</h1>
         <p className="mt-1 text-sm text-muted-foreground">

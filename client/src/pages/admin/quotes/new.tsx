@@ -119,7 +119,7 @@ function DetailsStep({ onContinue }: { onContinue: () => void }) {
           className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover-elevate rounded-md px-1.5 py-0.5"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back to quotes
+          Back To Quotes
         </button>
 
         <div className="mb-6">
@@ -244,7 +244,7 @@ function DetailsStep({ onContinue }: { onContinue: () => void }) {
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  Continue to census upload
+                  Continue To Census Upload
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}
