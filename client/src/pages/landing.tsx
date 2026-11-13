@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link } from "wouter";
-import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, FileSpreadsheet, MousePointerClick, LineChart, Stethoscope, Smile, Eye, ShieldCheck, Accessibility, HeartHandshake, Scale, Wallet, Receipt, Pill, PiggyBank, MonitorSmartphone, Upload } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, Stethoscope, Smile, Eye, ShieldCheck, Accessibility, Wallet, Receipt, PiggyBank, MonitorSmartphone, Upload, Bandage, Ribbon, RefreshCw, HeartPulse, ConciergeBell, Hospital, Briefcase, BadgePlus, Video, Leaf, Headphones, LifeBuoy, Sparkles, Share2 } from "lucide-react";
 import { KPattern } from "@/components/brand-shapes";
 
 const QUOTE_URL = "https://app.kennion.com/quote";
@@ -180,64 +180,155 @@ function Nav({ onContact }: { onContact: () => void }) {
   );
 }
 
-/* ── hero product visual (pure CSS, depicts the real quoting flow) ─── */
+/* ── hero app mockup (pure CSS, a preview of the client platform) ───
+   Skeleton data only: shows the shape of the product without real
+   rates, carriers or plan details. Replays on a loop. */
 
-function PlanRow({ name, rate, bar, go, delay }: { name: string; rate: number; bar: number; go: boolean; delay: number }) {
-  const [on, setOn] = useState(false);
-  useEffect(() => { if (go) { const t = setTimeout(() => setOn(true), delay); return () => clearTimeout(t); } }, [go, delay]);
-  const v = useCountUp(rate, on, 900);
-  return (
-    <div className="grid grid-cols-[1fr_auto] gap-x-4 items-center border-b border-border/70 last:border-b-0 py-3.5">
-      <div>
-        <div className="text-[13px] font-semibold tracking-[-0.01em]">{name}</div>
-        <div className="mt-2 h-[4px] w-full rounded-full bg-muted overflow-hidden">
-          <div className="h-full rounded-full bg-[hsl(var(--brand-accent))] transition-[width] duration-[1100ms] ease-out" style={{ width: on ? `${bar}%` : "0%" }} />
-        </div>
-      </div>
-      <div className="text-right">
-        <div className="font-display font-semibold text-[17px] tracking-[-0.01em] tabular-nums">${v}</div>
-        <div className="text-[12px] text-muted-foreground">per employee</div>
-      </div>
-    </div>
-  );
+function Skel({ w, h = 7, className = "" }: { w: string; h?: number; className?: string }) {
+  return <span className={`kn-skel block rounded-full ${className}`} style={{ width: w, height: h }} />;
 }
 
-function ProductVisual() {
-  const plans = [
-    { name: "Healthy 500", rate: 412, bar: 82 },
-    { name: "Healthy 1000", rate: 376, bar: 70 },
-    { name: "Healthy 2500 HSA", rate: 341, bar: 58 },
-  ];
-  const [go, setGo] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setGo(true), 450); return () => clearTimeout(t); }, []);
+const MOCK_ROWS = [
+  { tag: "Lower Cost", w: ["62%", "48%", "54%"] },
+  { tag: null, w: ["70%", "44%", "50%"] },
+  { tag: "Balanced", w: ["58%", "52%", "46%"] },
+  { tag: null, w: ["66%", "40%", "56%"] },
+  { tag: "Richer Benefits", w: ["54%", "50%", "60%"] },
+];
+
+function AppMockup() {
+  // `cycle` remounts the animated bits so the whole flow replays.
+  const [cycle, setCycle] = useState(0);
+  const [picked, setPicked] = useState(false);
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) { setPicked(true); return; }
+    const a = setTimeout(() => setPicked(true), 2600);
+    const b = setTimeout(() => { setPicked(false); setCycle((c) => c + 1); }, 9000);
+    return () => { clearTimeout(a); clearTimeout(b); };
+  }, [cycle]);
+
+  const nav = ["Welcome", "Medical Plans", "Supplemental", "Sign Up", "AI Assistant"];
   return (
     <div className="relative select-none" aria-hidden="true">
-      {/* floating census chip */}
-      <div className="kn-float absolute -left-8 -top-11 z-10 hidden lg:flex items-center gap-2.5 rounded-full bg-white border border-border shadow-md pl-2 pr-4 py-2">
-        <span className="grid place-items-center w-7 h-7 rounded-full bg-[hsl(var(--brand-accent))] text-white"><Upload size={14} strokeWidth={2.2} /></span>
-        <span className="text-[12.5px] font-semibold">Census uploaded · 42 employees</span>
-      </div>
-      {/* proposal card */}
-      <div className="relative bg-white border border-border rounded-[10px] shadow-md overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <div>
-            <div className="kn-caps text-muted-foreground">Proposal</div>
-            <div className={`${H3} text-[17px] mt-1`}>Group of 42</div>
+      <div className="relative rounded-[12px] border border-border bg-white shadow-xl overflow-hidden">
+        {/* window chrome */}
+        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-muted/60">
+          <div className="flex gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
           </div>
-          <span className="text-[12px] font-semibold rounded-full bg-muted px-3 py-1 text-muted-foreground">
-            23 plans quoted
-          </span>
+          <div className="mx-auto w-[46%] rounded-md bg-white border border-border px-3 py-1 text-[10.5px] text-muted-foreground text-center truncate">
+            app.kennion.com
+          </div>
+          <span className="w-10" />
         </div>
-        <div className="px-5 py-2">
-          {plans.map((p, i) => <PlanRow key={p.name} {...p} go={go} delay={i * 160} />)}
+
+        <div className="flex">
+          {/* sidebar */}
+          <div className="hidden sm:flex w-[30%] max-w-[170px] shrink-0 flex-col gap-1 bg-[hsl(var(--ink))] px-3 py-4">
+            <div className="flex items-center gap-2 px-1.5 mb-3">
+              <span className="grid place-items-center w-6 h-6 rounded-md bg-[hsl(var(--brand-accent))] text-white text-[10px] font-bold">K</span>
+              <Skel w="60%" h={6} className="!bg-white/20 !bg-none" />
+            </div>
+            {nav.map((n, i) => (
+              <div key={n} className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-[10.5px] font-semibold ${i === 1 ? "bg-white/10 text-white" : "text-white/55"}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${i === 1 ? "bg-[hsl(var(--brand-accent-soft))]" : "bg-white/25"}`} />
+                {n}
+              </div>
+            ))}
+            <div className="mt-auto rounded-md bg-[hsl(var(--brand-accent-soft))] px-2 py-2 text-[10px] font-bold text-[hsl(var(--ink))] flex items-center gap-1.5">
+              <Share2 size={11} strokeWidth={2.4} /> Share With Employees
+            </div>
+          </div>
+
+          {/* main */}
+          <div className="flex-1 min-w-0 p-4 lg:p-5 bg-[hsl(210_30%_98%)]">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="font-display font-semibold text-[15px] lg:text-[17px] tracking-[-0.01em]">Medical Plans</div>
+                <Skel w="96px" h={6} className="mt-2" />
+              </div>
+              <div className="flex gap-1.5">
+                <span className="rounded-md border border-[hsl(var(--brand-accent))]/25 bg-[hsl(var(--brand-accent))]/10 px-2 py-1"><Skel w="34px" h={5} /></span>
+                <span className="hidden md:block rounded-md border border-[hsl(var(--brand-accent))]/25 bg-[hsl(var(--brand-accent))]/10 px-2 py-1"><Skel w="40px" h={5} /></span>
+              </div>
+            </div>
+
+            {/* carrier cards */}
+            <div className="mt-4 grid grid-cols-2 gap-2.5">
+              {["#6d4aff", "hsl(var(--ink))"].map((c, i) => (
+                <div key={i} className="rounded-[8px] border border-border bg-white p-3">
+                  <div className="flex items-center gap-2">
+                    <span className="grid place-items-center w-5 h-5 rounded text-white text-[9px] font-bold" style={{ background: c }} />
+                    <Skel w="55%" h={6} />
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {[0, 1, 2].map((r) => (
+                      <div key={r} className="flex items-center justify-between gap-3">
+                        <Skel w="38%" h={5} />
+                        <Skel w="24%" h={5} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* AI picks banner */}
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-[8px] border border-[hsl(var(--brand-accent))]/25 bg-[hsl(var(--brand-accent))]/[0.07] px-3 py-2.5">
+              <div className="flex items-center gap-2 text-[11px] font-semibold text-[hsl(var(--brand-accent))]">
+                <Sparkles size={13} strokeWidth={2.2} className={picked ? "" : "animate-pulse"} />
+                {picked ? "Picks Ready For Your Team" : "Finding Picks For Your Team…"}
+              </div>
+              <span className="rounded-md bg-[hsl(var(--brand-accent))] px-2.5 py-1 text-[10px] font-bold text-white">Run AI Picks</span>
+            </div>
+
+            {/* plan table */}
+            <div key={cycle} className="mt-3 rounded-[8px] border border-border bg-white overflow-hidden">
+              <div className="grid grid-cols-[18px_1.6fr_1fr_1fr] gap-3 items-center bg-[hsl(var(--ink))] px-3 py-2 text-[9.5px] font-bold text-white">
+                <span />
+                <span>Plan</span>
+                <span>Deductible</span>
+                <span className="text-right whitespace-nowrap">Employee Rate</span>
+              </div>
+              {MOCK_ROWS.map((r, i) => (
+                <div
+                  key={i}
+                  className="kn-row-in grid grid-cols-[18px_1.6fr_1fr_1fr] gap-3 items-center border-t border-border px-3 py-2.5"
+                  style={{ animationDelay: `${300 + i * 140}ms` }}
+                >
+                  <span className={`grid place-items-center w-3.5 h-3.5 rounded-[3px] border transition-colors duration-300 ${picked && r.tag ? "bg-[hsl(var(--brand-accent))] border-[hsl(var(--brand-accent))] text-white" : "border-border"}`}>
+                    {picked && r.tag && <Check size={9} strokeWidth={3.5} />}
+                  </span>
+                  <span className="flex items-center gap-2 min-w-0">
+                    <Skel w={r.w[0]} h={6} />
+                    {picked && r.tag && (
+                      <span className="kn-pop hidden md:inline-flex shrink-0 items-center gap-1 rounded-full bg-[hsl(var(--brand-accent))]/10 px-1.5 py-0.5 text-[8.5px] font-bold text-[hsl(var(--brand-accent))]" style={{ animationDelay: `${i * 120}ms` }}>
+                        <Sparkles size={8} strokeWidth={2.6} /> {r.tag}
+                      </span>
+                    )}
+                  </span>
+                  <Skel w={r.w[1]} h={6} />
+                  <span className="flex justify-end"><Skel w={r.w[2]} h={6} /></span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2.5 px-5 py-3.5 border-t border-border bg-muted/50">
-          <span className="relative flex h-2 w-2">
-            <span className="kn-ping absolute inline-flex h-full w-full rounded-full" style={{ background: "hsl(var(--brand-accent))" }} />
-            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "hsl(var(--brand-accent))" }} />
-          </span>
-          <span className="text-[12.5px] font-semibold text-muted-foreground">Underwriting review complete</span>
-        </div>
+      </div>
+
+      {/* floating chips */}
+      <div className="kn-float absolute -left-6 -bottom-6 z-10 hidden lg:flex items-center gap-2.5 rounded-full bg-white border border-border shadow-md pl-2 pr-4 py-2">
+        <span className="grid place-items-center w-7 h-7 rounded-full bg-[hsl(var(--brand-accent))] text-white"><Upload size={14} strokeWidth={2.2} /></span>
+        <span className="text-[12.5px] font-semibold">Census Uploaded</span>
+      </div>
+      <div className="kn-float absolute -right-4 -top-5 z-10 hidden lg:flex items-center gap-2 rounded-full bg-[hsl(var(--ink))] text-white shadow-md px-3.5 py-2" style={{ animationDelay: "1.4s" }}>
+        <span className="relative flex h-2 w-2">
+          <span className="kn-ping absolute inline-flex h-full w-full rounded-full" style={{ background: "hsl(var(--brand-accent-soft))" }} />
+          <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "hsl(var(--brand-accent-soft))" }} />
+        </span>
+        <span className="text-[12px] font-semibold">Live Rates</span>
       </div>
     </div>
   );
@@ -248,8 +339,8 @@ function ProductVisual() {
 function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 pt-12 lg:pt-24 pb-16 lg:pb-24 grid lg:grid-cols-12 gap-y-12 lg:gap-x-16 items-center">
-        <div className="lg:col-span-7">
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 pt-12 lg:pt-24 pb-16 lg:pb-24 grid lg:grid-cols-12 gap-y-12 lg:gap-x-12 items-center">
+        <div className="lg:col-span-6">
           <Reveal delay={40}>
             <div className="mb-8 h-1 w-10 rounded-full bg-[hsl(var(--brand-accent))]" aria-hidden="true" />
           </Reveal>
@@ -275,8 +366,8 @@ function Hero() {
           </Reveal>
         </div>
 
-        <Reveal delay={220} className="lg:col-span-5">
-          <ProductVisual />
+        <Reveal delay={220} className="lg:col-span-6">
+          <AppMockup />
         </Reveal>
       </div>
 
@@ -368,13 +459,94 @@ function Problem() {
   );
 }
 
-/* ── how we do it (dark): 3 steps + the tools behind them ──────────── */
+/* ── how we do it (dark): 3 steps + the year-round loop ────────────── */
+
+function YearRoundLoop() {
+  const stages = [
+    { Icon: MonitorSmartphone, t: "Online Enrollment", d: "Employees enroll from a link on any device." },
+    { Icon: Headphones, t: "1:1 Enrollment Counselors", d: "A real person walks every employee through their options." },
+    { Icon: LifeBuoy, t: "Year-Round Support", d: "Claims, changes, questions. We pick up the phone." },
+    { Icon: RefreshCw, t: "Renewal", d: "We shop the market again before your renewal hits." },
+  ];
+  const [ref, seen] = useInView(0.3);
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+  useEffect(() => {
+    if (!seen || paused) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setInterval(() => setActive((a) => (a + 1) % stages.length), 2600);
+    return () => clearInterval(t);
+  }, [seen, paused, stages.length]);
+  const pct = (active / (stages.length - 1)) * 100;
+
+  return (
+    <div ref={ref} onMouseLeave={() => setPaused(false)}>
+      <Reveal>
+        <div className="mt-20 lg:mt-28 mb-10 lg:mb-14 max-w-[40rem]">
+          <h3 className={`${H3} text-[26px] lg:text-[36px] leading-[1.1]`}>
+            Enrollment Done The Right Way.
+            <br />
+            <span className="text-[hsl(var(--brand-accent-soft))]">Then We're With You All Year.</span>
+          </h3>
+        </div>
+      </Reveal>
+
+      <div className="relative">
+        {/* track (desktop) */}
+        <div className="hidden md:block absolute left-[12.5%] right-[12.5%] top-8 h-[2px] bg-white/10 rounded-full">
+          <div className="h-full rounded-full bg-[hsl(var(--brand-accent-soft))] transition-[width] duration-700 ease-out" style={{ width: `${pct}%` }} />
+          <div
+            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-[hsl(var(--brand-accent-soft))] kn-glow transition-[left] duration-700 ease-out"
+            style={{ left: `${pct}%` }}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-4">
+          {stages.map(({ Icon, t }, i) => {
+            const on = i === active;
+            const done = i < active;
+            return (
+              <button
+                key={t}
+                type="button"
+                onMouseEnter={() => { setPaused(true); setActive(i); }}
+                onFocus={() => { setPaused(true); setActive(i); }}
+                onClick={() => setActive(i)}
+                className="relative flex flex-col items-center text-center focus:outline-none"
+              >
+                <span
+                  className={`relative z-10 grid place-items-center w-16 h-16 rounded-full border transition-all duration-500 ${
+                    on
+                      ? "bg-[hsl(var(--brand-accent))] border-[hsl(var(--brand-accent-soft))] text-white scale-110 kn-glow"
+                      : done
+                        ? "bg-[hsl(var(--ink))] border-[hsl(var(--brand-accent-soft))]/60 text-[hsl(var(--brand-accent-soft))]"
+                        : "bg-[hsl(var(--ink))] border-white/15 text-white/50"
+                  }`}
+                >
+                  <Icon size={24} strokeWidth={1.8} />
+                </span>
+                <span className={`mt-5 font-display font-semibold text-[16px] lg:text-[19px] leading-tight transition-colors duration-500 ${on ? "text-white" : "text-white/50"}`}>
+                  {t}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* active caption */}
+        <div className="mt-10 h-8 text-center">
+          <p key={active} className="kn-row-in text-[15px] lg:text-[16px] text-white/70">{stages[active].d}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function HowWeDoIt() {
   const steps = [
-    { t: "Send your census", d: "A spreadsheet is all we need to get started." },
-    { t: "See something new", d: "Fresh ideas priced with real rates, back fast." },
-    { t: "We run the rest", d: "Enrollment, renewals, and the day-to-day. Handled." },
+    { t: "Send Your Census", d: "A spreadsheet is all we need to get started." },
+    { t: "See Something New", d: "Fresh ideas priced with real rates, back fast." },
+    { t: "We Run The Rest", d: "Enrollment, renewals, and the day-to-day. Handled." },
   ];
   return (
     <section id="how" className="relative overflow-hidden bg-[hsl(var(--ink))] text-white py-20 lg:py-32">
@@ -395,56 +567,7 @@ function HowWeDoIt() {
           </div>
         </SectionHead>
 
-        <Reveal>
-          <div className="mt-16 lg:mt-24 mb-8">
-            <h3 className={`${H3} text-[24px] lg:text-[30px]`}>Benefits, run like software.</h3>
-          </div>
-        </Reveal>
-
-        <div className="grid md:grid-cols-3 gap-4">
-          {/* Quote online */}
-          <Reveal>
-            <div className="rounded-[10px] bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.09]">
-              <div className="grid place-items-center w-12 h-12 rounded-[10px] bg-white/10 mb-6">
-                <FileSpreadsheet size={22} strokeWidth={1.8} className="text-[hsl(var(--brand-accent-soft))]" />
-              </div>
-              <h3 className={`${H3} text-[21px]`}>Quote online</h3>
-              <p className="mt-3 text-[13.5px] leading-[1.7] text-white/60">
-                Send a census, get real options back fast. No week of phone tag to find out
-                what your group is worth.
-              </p>
-            </div>
-          </Reveal>
-
-          {/* Enroll online */}
-          <Reveal delay={70}>
-            <div className="rounded-[10px] bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.09]">
-              <div className="grid place-items-center w-12 h-12 rounded-[10px] bg-white/10 mb-6">
-                <MousePointerClick size={22} strokeWidth={1.8} className="text-[hsl(var(--brand-accent-soft))]" />
-              </div>
-              <h3 className={`${H3} text-[21px]`}>Enroll online</h3>
-              <p className="mt-3 text-[13.5px] leading-[1.7] text-white/60">
-                Employees enroll from a link on any device. Elections flow straight through,
-                and HR watches it happen in real time.
-              </p>
-            </div>
-          </Reveal>
-
-          {/* Analysis */}
-          <Reveal delay={140}>
-            <div className="rounded-[10px] bg-white/[0.06] p-6 lg:p-8 h-full flex flex-col transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.09]">
-              <div className="grid place-items-center w-12 h-12 rounded-[10px] bg-white/10 mb-6">
-                <LineChart size={22} strokeWidth={1.8} className="text-[hsl(var(--brand-accent-soft))]" />
-              </div>
-              <h3 className={`${H3} text-[21px]`}>Deeper analysis</h3>
-              <p className="mt-3 text-[13.5px] leading-[1.7] text-white/60">
-                The latest analytical tools layered on experienced underwriting eyes. Your
-                group gets a sharper read than a spreadsheet ever gave it.
-              </p>
-            </div>
-          </Reveal>
-        </div>
-
+        <YearRoundLoop />
       </div>
     </section>
   );
@@ -453,20 +576,30 @@ function HowWeDoIt() {
 /* ── options ───────────────────────────────────────────────────────── */
 
 function Options() {
-  const items: [React.ComponentType<any>, string, string][] = [
-    [Stethoscope, "Medical", "Fully insured and self-funded plans"],
-    [Smile, "Dental", "PPO and DHMO options"],
-    [Eye, "Vision", "Exams, frames and contacts"],
-    [ShieldCheck, "Life", "Group and voluntary term life"],
-    [Accessibility, "Disability", "Short- and long-term income protection"],
-    [HeartHandshake, "Supplemental", "Accident, critical illness, hospital"],
-    [Scale, "Level Funded", "Self-funded savings, fixed monthly cost"],
-    [Wallet, "Self-Funded", "Full control for larger groups"],
-    [Receipt, "Reference-Based Pricing", "Fair prices tied to Medicare rates"],
-    [Pill, "Rx Programs", "Pharmacy cost management"],
-    [PiggyBank, "HSA Plans", "Tax-advantaged savings for employees"],
-    [MonitorSmartphone, "Online Enrollment", "Employees enroll from any device"],
+  const top: [React.ComponentType<any>, string][] = [
+    [Stethoscope, "Medical"],
+    [Smile, "Dental"],
+    [Eye, "Vision"],
   ];
+  // Everything else, A–Z.
+  const rest: [React.ComponentType<any>, string][] = ([
+    [Bandage, "Accident"],
+    [Ribbon, "Cancer"],
+    [RefreshCw, "COBRA"],
+    [HeartPulse, "Critical Illness"],
+    [Accessibility, "Disability"],
+    [Wallet, "FSA"],
+    [ConciergeBell, "Health Concierge"],
+    [Hospital, "Hospital Indemnity"],
+    [Briefcase, "HR Services"],
+    [Receipt, "HRA"],
+    [PiggyBank, "HSA"],
+    [ShieldCheck, "Life"],
+    [BadgePlus, "Supplemental Health"],
+    [Video, "Telehealth"],
+    [Leaf, "Wellness"],
+  ] as [React.ComponentType<any>, string][]).sort((a, b) => a[1].localeCompare(b[1], "en", { sensitivity: "base" }));
+
   return (
     <section id="what" className="py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
@@ -478,23 +611,35 @@ function Options() {
               <span style={{ color: "hsl(var(--brand-accent))" }}>built and run for you.</span>
             </h2>
             <p className="lg:col-span-5 text-[15px] leading-[1.65] text-muted-foreground lg:pb-2 max-w-[26rem]">
-              Group health, dental, vision, life, disability, and supplemental. We shop the
-              whole market, including structures many employers have never been offered, then
-              manage the program all year.
+              Every line of coverage your employees expect, shopped across the whole market and
+              managed all year.
             </p>
           </div>
         </SectionHead>
       </div>
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10 mt-10 lg:mt-14">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-          {items.map(([Icon, t, d], i) => (
-            <Reveal key={t} delay={(i % 4) * 60}>
-              <div className="group h-full rounded-[12px] border border-border bg-white p-5 lg:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-[hsl(var(--brand-accent))]/40">
-                <div className="grid place-items-center w-11 h-11 rounded-[10px] bg-[hsl(var(--brand-accent))]/10 text-[hsl(var(--brand-accent))] transition-colors group-hover:bg-[hsl(var(--brand-accent))] group-hover:text-white">
-                  <Icon size={20} strokeWidth={1.9} />
+        {/* the big three */}
+        <div className="grid grid-cols-3 gap-3 lg:gap-4">
+          {top.map(([Icon, t], i) => (
+            <Reveal key={t} delay={i * 80}>
+              <div className="kn-tile group h-full flex flex-col items-center justify-center gap-4 rounded-[14px] bg-[hsl(var(--ink))] text-white px-4 py-8 lg:py-12 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <div className="kn-tile-icon grid place-items-center w-14 h-14 lg:w-16 lg:h-16 rounded-[14px] bg-white/10 text-[hsl(var(--brand-accent-soft))] group-hover:bg-[hsl(var(--brand-accent))] group-hover:text-white">
+                  <Icon size={28} strokeWidth={1.8} />
                 </div>
-                <div className={`${H3} mt-4 text-[16px] lg:text-[17px]`}>{t}</div>
-                <div className="mt-1.5 text-[13px] leading-[1.5] text-muted-foreground">{d}</div>
+                <div className={`${H3} text-[18px] lg:text-[24px]`}>{t}</div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+        {/* everything else */}
+        <div className="mt-3 lg:mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4">
+          {rest.map(([Icon, t], i) => (
+            <Reveal key={t} delay={(i % 5) * 50}>
+              <div className="kn-tile group h-full flex items-center gap-3.5 rounded-[12px] border border-border bg-white px-4 py-4 lg:py-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-[hsl(var(--brand-accent))]/40">
+                <div className="kn-tile-icon grid shrink-0 place-items-center w-10 h-10 rounded-[10px] bg-[hsl(var(--brand-accent))]/10 text-[hsl(var(--brand-accent))] group-hover:bg-[hsl(var(--brand-accent))] group-hover:text-white">
+                  <Icon size={19} strokeWidth={1.9} />
+                </div>
+                <div className={`${H3} text-[14.5px] lg:text-[15.5px] leading-tight`}>{t}</div>
               </div>
             </Reveal>
           ))}
