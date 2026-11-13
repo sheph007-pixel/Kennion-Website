@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link } from "wouter";
-import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, Stethoscope, Smile, Eye, ShieldCheck, Accessibility, Wallet, Receipt, PiggyBank, MonitorSmartphone, Upload, Bandage, Ribbon, RefreshCw, HeartPulse, ConciergeBell, Hospital, Briefcase, BadgePlus, Video, Leaf, Headphones, LifeBuoy, Sparkles, Share2, Calculator, Bot, Globe, Presentation, Zap, FolderOpen, Send, Download, Timer, FileText, Search, SlidersHorizontal, UserCheck, LineChart, HeartHandshake } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, Stethoscope, Smile, Eye, ShieldCheck, Accessibility, Wallet, Receipt, PiggyBank, MonitorSmartphone, Upload, Bandage, Ribbon, RefreshCw, HeartPulse, ConciergeBell, Hospital, Briefcase, BadgePlus, Video, Leaf, Headphones, LifeBuoy, Sparkles, Share2, Calculator, Bot, Globe, Presentation, Zap, FolderOpen, Send, Download, Timer, FileText, Search, SlidersHorizontal, UserCheck, LineChart, HeartHandshake, CalendarCheck } from "lucide-react";
 import { PARTNER_LOGOS, FEATURED_PARTNERS, type PartnerLogo } from "@/lib/partner-logos";
 
 const QUOTE_URL = "https://app.kennion.com/quote";
@@ -86,6 +86,29 @@ function useCountUp(to: number, go: boolean, ms = 1100) {
 }
 
 /* ── shared bits ───────────────────────────────────────────────────── */
+
+const CALENDLY_URL = "https://calendly.com/kennion/call";
+
+/** Opens the Calendly popup, loading its script/styles on first use. */
+function openCalendly(e?: React.MouseEvent) {
+  const w = window as any;
+  const open = () => w.Calendly?.initPopupWidget({ url: CALENDLY_URL });
+  if (w.Calendly) { e?.preventDefault(); open(); return; }
+  if (!document.getElementById("calendly-css")) {
+    const l = document.createElement("link");
+    l.id = "calendly-css"; l.rel = "stylesheet";
+    l.href = "https://assets.calendly.com/assets/external/widget.css";
+    document.head.appendChild(l);
+  }
+  e?.preventDefault();
+  const sc = document.createElement("script");
+  sc.src = "https://assets.calendly.com/assets/external/widget.js";
+  sc.async = true;
+  sc.onload = open;
+  // if the script can't load, fall back to opening Calendly in a new tab
+  sc.onerror = () => window.open(CALENDLY_URL, "_blank", "noopener");
+  document.body.appendChild(sc);
+}
 
 /** Centered section intro: pill eyebrow, headline, one short line. */
 function SectionIntro({ label, title, sub, dark = false, className = "" }: {
@@ -1112,10 +1135,10 @@ function YearsInBusiness() {
 
 function WhyKennion() {
   const rows = [
-    { Icon: PiggyBank, t: "Save Money", d: "We shop the whole market, plus programs most brokers can't get you, so your budget goes further." },
-    { Icon: ShieldCheck, t: "Better Coverage", d: "Plans built around your people and your budget, whether it's your first plan or a better one." },
-    { Icon: MonitorSmartphone, t: "Better Technology", d: "Quotes, enrollment and documents in one place. Less paperwork for HR and fewer emails for everyone." },
-    { Icon: Headphones, t: "Better Support", d: "Every client gets a dedicated Senior Client Advisor who knows your group and picks up the phone." },
+    { Icon: PiggyBank, t: "Save Money", d: "We look at every carrier and every funding option, plus programs we've built that most brokers can't offer. If there's money to save, we'll find it." },
+    { Icon: ShieldCheck, t: "Better Coverage", d: "We build the plan around your people, not the other way around. Your employees get coverage they understand and actually use." },
+    { Icon: MonitorSmartphone, t: "Better Technology", d: "We built our own platform to run quotes, enrollment and documents. Your HR team spends less time on paperwork and more time on people." },
+    { Icon: Headphones, t: "Better Support", d: "You get a Senior Client Advisor with a direct line. When something comes up, you call them, and they handle it." },
   ];
   const people = [
     { name: "Hal Shepherd", title: "Founder", img: "/team/hal-shepherd.webp" },
@@ -1183,6 +1206,39 @@ function WhyKennion() {
             </Reveal>
           ))}
         </div>
+
+        {/* talk to us */}
+        <Reveal>
+          <div className="mt-6 lg:mt-8 relative overflow-hidden rounded-[16px] bg-[hsl(var(--ink))] text-white px-7 py-9 lg:px-12 lg:py-12 grid lg:grid-cols-12 gap-8 items-center">
+            <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 w-[420px] h-[420px] rounded-full blur-3xl opacity-40" style={{ background: "radial-gradient(closest-side, hsl(var(--brand-accent) / .55), transparent)" }} />
+            <div className="relative lg:col-span-7">
+              <h3 className={`${H3} text-[26px] lg:text-[34px] leading-[1.15]`}>
+                Let's talk about your group.
+              </h3>
+              <p className="mt-3 text-[15.5px] leading-[1.65] text-white/70 max-w-[34rem]">
+                Grab a quick call with our team. Bring your questions, your renewal or a blank page.
+                No pressure, just straight answers.
+              </p>
+            </div>
+            <div className="relative lg:col-span-5 flex flex-wrap lg:justify-end gap-3">
+              <a
+                href={CALENDLY_URL}
+                onClick={openCalendly}
+                className="group inline-flex items-center justify-center gap-2.5 rounded-md bg-primary text-primary-foreground px-6 py-3.5 text-[14px] font-semibold transition-colors hover:bg-[hsl(var(--primary-hover))]"
+              >
+                <CalendarCheck size={16} strokeWidth={2} />
+                Schedule A Call
+              </a>
+              <a
+                href={QUOTE_URL}
+                className="group inline-flex items-center justify-center gap-2.5 rounded-md border border-white/25 px-6 py-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-white/10"
+              >
+                Get A Quote
+                <ArrowRight size={14} strokeWidth={2} className="transition-transform group-hover:translate-x-1" />
+              </a>
+            </div>
+          </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -1334,8 +1390,16 @@ function FinalCTA({ onContact }: { onContact: () => void }) {
           <button onClick={onContact} className="kn-link text-white font-medium">Contact Us</button> and
           the right person will get back to you.
         </p>
-        <div className="mt-10">
+        <div className="mt-10 flex flex-wrap gap-3">
           <SolidButton href={QUOTE_URL} tone="paper">Get A Quote</SolidButton>
+          <a
+            href={CALENDLY_URL}
+            onClick={openCalendly}
+            className="inline-flex items-center justify-center gap-2.5 rounded-md border border-white/25 px-6 py-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-white/10"
+          >
+            <CalendarCheck size={15} strokeWidth={2} />
+            Schedule A Call
+          </a>
         </div>
 
         </div>
