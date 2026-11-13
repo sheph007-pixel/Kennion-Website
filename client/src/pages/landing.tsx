@@ -1002,48 +1002,60 @@ function WhyKennion() {
     { t: "More of the market", d: "Carriers and structures most employers are never shown, priced and compared for you." },
     { t: "Less work for your team", d: "Online enrollment and digital tools take the paperwork off HR's desk." },
   ];
+  const people = [
+    { name: "Hal Shepherd", title: "Founder", img: "/team/hal-shepherd.webp" },
+    { name: "Hunter Shepherd", title: "President", img: "/team/hunter-shepherd.webp" },
+  ];
   return (
-    <section id="why" className="relative overflow-hidden py-20 lg:py-32">
-      {/* faded hedcut portraits of Hal and Hunter Shepherd behind the story */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute right-[-60px] top-[150px] lg:right-auto lg:top-auto lg:left-[max(0px,calc(50%-720px))] lg:bottom-0 flex items-end opacity-[.14] lg:opacity-[.22] [mask-image:linear-gradient(to_top,transparent,#000_20%)]"
-      >
-        <div className="flex items-end [mask-image:linear-gradient(to_right,#000_55%,transparent_96%)]">
-          <img src="/team/hal-shepherd.webp" alt="" className="h-[330px] lg:h-[560px] w-auto" loading="lazy" />
-          <img src="/team/hunter-shepherd.webp" alt="" className="-ml-14 lg:-ml-28 h-[330px] lg:h-[560px] w-auto" loading="lazy" />
-        </div>
-      </div>
-      <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10">
+    <section id="why" className="py-20 lg:py-32">
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
         <SectionIntro
           label="Why Kennion"
           className="mb-14 lg:mb-20"
           title={<>Family-led. <span style={{ color: "hsl(var(--brand-accent))" }}>Built to last.</span></>}
         />
-        <div>
-          <div className="grid lg:grid-cols-12 gap-y-12 lg:gap-x-10 items-start">
-            <div className="lg:col-span-4">
-              <YearsInBusiness />
-              <div className="mt-4 text-[15px] font-medium text-foreground">
-                Years in business, since {FOUNDED}
+        <div className="grid lg:grid-cols-12 gap-y-14 lg:gap-x-14 items-start">
+          {/* portraits */}
+          <div className="lg:col-span-5 grid grid-cols-2 gap-4 lg:gap-5">
+            {people.map((p, i) => (
+              <Reveal key={p.name} delay={i * 90}>
+                <figure className="group">
+                  <div className="overflow-hidden rounded-[14px] border border-border bg-white">
+                    <img
+                      src={p.img}
+                      alt={`${p.name}, ${p.title}`}
+                      loading="lazy"
+                      className="block w-full aspect-[4/5] object-cover object-top transition-transform duration-700 group-hover:scale-[1.03]"
+                    />
+                  </div>
+                  <figcaption className="mt-4">
+                    <div className={`${H3} text-[18px] lg:text-[21px]`}>{p.name}</div>
+                    <div className="mt-1 text-[13.5px] font-semibold text-[hsl(var(--brand-accent))]">{p.title}</div>
+                  </figcaption>
+                </figure>
+              </Reveal>
+            ))}
+          </div>
+
+          {/* story + reasons */}
+          <div className="lg:col-span-7">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-x-8 gap-y-4 pb-8 lg:pb-10">
+              <div className="shrink-0">
+                <YearsInBusiness />
+                <div className="mt-3 text-[15px] font-medium text-foreground">Years in business, since {FOUNDED}</div>
               </div>
-              <p className="mt-3 text-[13.5px] text-muted-foreground max-w-[19rem] leading-[1.6]">
+              <p className="text-[14.5px] text-muted-foreground leading-[1.65] max-w-[24rem] sm:pb-1">
                 Hal Shepherd founded W. H. Shepherd Companies in {FOUNDED}, which later became
                 Kennion. Today Hunter Shepherd, the second generation of the family, leads the team.
               </p>
-              <div className="mt-6 inline-flex items-center gap-2 text-[12.5px] font-semibold text-foreground/70">
-                <span className="h-px w-6 bg-foreground/30" /> Hal &amp; Hunter Shepherd
+            </div>
+            {rows.map((r) => (
+              <div key={r.t} className="grid grid-cols-1 lg:grid-cols-[17.5rem_1fr] gap-x-8 items-baseline border-t border-border py-6 lg:py-7">
+                <h3 className={`${H3} text-[20px] lg:text-[22px]`}>{r.t}</h3>
+                <p className="mt-2 lg:mt-0 text-[14px] leading-[1.7] text-muted-foreground">{r.d}</p>
               </div>
-            </div>
-            <div className="lg:col-span-8">
-              {rows.map((r) => (
-                <div key={r.t} className="grid grid-cols-1 lg:grid-cols-[18rem_1fr] gap-x-8 items-baseline border-t border-border py-6 lg:py-7">
-                  <h3 className={`${H3} text-[20px] lg:text-[23px]`}>{r.t}</h3>
-                  <p className="mt-2 lg:mt-0 text-[14px] leading-[1.7] text-muted-foreground">{r.d}</p>
-                </div>
-              ))}
-              <div className="border-t border-border" />
-            </div>
+            ))}
+            <div className="border-t border-border" />
           </div>
         </div>
       </div>
