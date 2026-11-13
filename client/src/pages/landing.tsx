@@ -1138,9 +1138,9 @@ function YearsInBusiness() {
 
 function WhyKennion() {
   const rows = [
-    { Icon: PiggyBank, t: "Better Rates", d: "Our size, buying power and in-house underwriting get groups rates most brokers can't. That holds whether you're buying your first plan or shopping your renewal." },
+    { Icon: PiggyBank, t: "Better Rates", d: "Our size, buying power and underwriting expertise get groups rates most brokers can't. That holds whether you're buying your first plan or shopping your renewal." },
     { Icon: ShieldCheck, t: "Better Coverage", d: "We build the plan around your people, not the other way around. Your employees get coverage they understand and actually use." },
-    { Icon: MonitorSmartphone, t: "Better Technology", d: "We built our own platform to run quotes, enrollment and documents. Your HR team spends less time on paperwork and more time on people." },
+    { Icon: MonitorSmartphone, t: "Better Technology", d: "Our own platform handles quotes, proposals and documents, paired with leading enrollment technology. Your HR team spends less time on paperwork and more time on people." },
     { Icon: Headphones, t: "Better Support", d: "You get a Senior Client Advisor with a direct line. When something comes up, you call them, and they handle it." },
   ];
   const people = [
