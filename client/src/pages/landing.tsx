@@ -138,9 +138,9 @@ function Nav({ onContact }: { onContact: () => void }) {
           <img src={KENNION_LOGO_URL} alt="Kennion Benefit Advisors" className="h-6 lg:h-7 w-auto" />
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-8">
+        <nav className="hidden lg:flex items-center gap-10">
           {links.map(([href, label]) => (
-            <a key={href} href={href} className="kn-link-rev text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
+            <a key={href} href={href} className="kn-link-rev text-[15px] font-semibold text-foreground/75 hover:text-foreground transition-colors">
               {label}
             </a>
           ))}
@@ -148,10 +148,10 @@ function Nav({ onContact }: { onContact: () => void }) {
 
         <div className="hidden lg:flex items-center gap-6">
           <span className="w-px h-4 bg-border" aria-hidden="true" />
-          <button onClick={onContact} className="kn-link-rev text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={onContact} className="kn-link-rev text-[15px] font-semibold text-foreground/75 hover:text-foreground transition-colors">
             Contact
           </button>
-          <a href={QUOTE_URL} className="inline-flex items-center gap-2.5 rounded-md bg-primary text-primary-foreground px-5 py-2.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--primary-hover))]">
+          <a href={QUOTE_URL} className="inline-flex items-center gap-2.5 rounded-md bg-primary text-primary-foreground px-5 py-3 text-[14.5px] font-semibold transition-colors hover:bg-[hsl(var(--primary-hover))]">
             Get A Quote
           </a>
         </div>
