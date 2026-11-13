@@ -426,11 +426,11 @@ function PartnersBand() {
     </li>
   ));
   return (
-    <div className="relative bg-white py-12 lg:py-14">
-      <p className="text-center text-[13px] font-semibold tracking-[0.02em] text-muted-foreground">
+    <div className="relative bg-white py-14 lg:py-16">
+      <h2 className="text-center font-display font-semibold tracking-[-0.01em] text-[26px] lg:text-[34px] text-foreground">
         Our Partners
-      </p>
-      <div className="mt-7">
+      </h2>
+      <div className="mt-8 lg:mt-10">
         <div className="kn-marquee-wrap relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_10%,#000_90%,transparent)]">
           <ul className="kn-marquee flex w-max items-center" style={{ animationDuration: `${logos.length * 4.5}s` }}>
             {track(0)}
