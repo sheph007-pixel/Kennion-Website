@@ -1045,7 +1045,7 @@ function WhyKennion() {
               </div>
               <p className="text-[14.5px] text-muted-foreground leading-[1.65] max-w-[24rem] sm:pb-1">
                 Hal Shepherd founded W. H. Shepherd Companies in {FOUNDED}, which later became
-                Kennion. Today Hunter Shepherd, the second generation of the family, leads the team.
+                Kennion. Today his son, Hunter Shepherd, leads the team.
               </p>
             </div>
             {rows.map((r) => (
