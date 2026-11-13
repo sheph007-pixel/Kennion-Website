@@ -1144,12 +1144,12 @@ function WhyKennion() {
                       src={p.img}
                       alt={`${p.name}, ${p.title}`}
                       loading="lazy"
-                      width={72}
-                      height={72}
-                      className="w-[72px] h-[72px] rounded-full object-cover ring-1 ring-border"
+                      width={104}
+                      height={104}
+                      className="w-[88px] h-[88px] lg:w-[104px] lg:h-[104px] rounded-full object-cover ring-1 ring-border"
                     />
                     <div>
-                      <div className={`${H3} text-[17px]`}>{p.name}</div>
+                      <div className={`${H3} text-[18px] lg:text-[19px]`}>{p.name}</div>
                       <div className="mt-0.5 text-[13.5px] font-semibold text-[hsl(var(--brand-accent))]">{p.title}</div>
                     </div>
                   </div>
