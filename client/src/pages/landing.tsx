@@ -962,7 +962,6 @@ function Footer({ onContact }: { onContact: () => void }) {
               <li><a href="#what" className="kn-link-rev hover:text-white transition-colors">What We Do</a></li>
               <li><a href="#how" className="kn-link-rev hover:text-white transition-colors">How We Do It</a></li>
               <li><a href="#why" className="kn-link-rev hover:text-white transition-colors">Why Kennion</a></li>
-              <li><a href="#contact" className="kn-link-rev hover:text-white transition-colors">Contact</a></li>
             </ul>
           </div>
 
