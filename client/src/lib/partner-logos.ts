@@ -1,10 +1,10 @@
 // Partner logos for the homepage band. Generated from the Employee Navigator
 // marketplace (normalized: white removed, trimmed, grayscale, equal optical
-// size) plus Angle Health. Files live in client/public/partners/.
+// size) plus Angle Health and Gravie. Files live in client/public/partners/.
 export type PartnerLogo = { n: string; f: string; w: number; h: number };
 
 /** Always shown in every shuffle. */
-export const FEATURED_PARTNERS = ["UnitedHealthcare", "Angle Health"];
+export const FEATURED_PARTNERS = ["UnitedHealthcare", "Angle Health", "Gravie"];
 
 export const PARTNER_LOGOS: PartnerLogo[] = [
   {"n": "5Star Life Insurance Company", "f": "5star-life-insurance-company.webp", "w": 169, "h": 39},
@@ -190,6 +190,7 @@ export const PARTNER_LOGOS: PartnerLogo[] = [
   {"n": "gente", "f": "gente.webp", "w": 71, "h": 64},
   {"n": "GLN Tax and Payroll", "f": "gln-tax-and-payroll.webp", "w": 64, "h": 64},
   {"n": "GRA Benefits Group", "f": "gra-benefits-group.webp", "w": 118, "h": 56},
+  {"n": "Gravie", "f": "gravie.webp", "w": 128, "h": 52},
   {"n": "Great American Employer Health Solutions", "f": "great-american-employer-health-solutions.webp", "w": 118, "h": 56},
   {"n": "Green Leaf Payroll & Business Solutions", "f": "green-leaf-payroll---business-solutions.webp", "w": 149, "h": 44},
   {"n": "Greenlink HCM", "f": "greenlink-hcm.webp", "w": 120, "h": 55},
