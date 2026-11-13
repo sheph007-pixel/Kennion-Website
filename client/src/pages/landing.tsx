@@ -682,7 +682,7 @@ function Options() {
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
         <SectionIntro
           label="What We Do"
-          title={<>Your benefits program,<br className="hidden md:block" />{" "}<span style={{ color: "hsl(var(--brand-accent))" }}>built and run for you.</span></>}
+          title={<>Your employee benefits program,<br className="hidden md:block" />{" "}<span style={{ color: "hsl(var(--brand-accent))" }}>built and run for you.</span></>}
           sub="Every line of coverage your employees expect, plus programs we have built with top carriers, TPAs and providers that most brokers simply can't offer."
         />
       </div>
