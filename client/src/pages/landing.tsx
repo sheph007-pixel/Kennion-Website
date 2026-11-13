@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link } from "wouter";
-import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, Stethoscope, Smile, Eye, ShieldCheck, Accessibility, Wallet, Receipt, PiggyBank, MonitorSmartphone, Upload, Bandage, Ribbon, RefreshCw, HeartPulse, ConciergeBell, Hospital, Briefcase, BadgePlus, Video, Leaf, Headphones, LifeBuoy, Sparkles, Share2, Calculator, Bot, Globe, Presentation, Zap, FolderOpen, Send, Download, Timer, FileText, Search } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, Stethoscope, Smile, Eye, ShieldCheck, Accessibility, Wallet, Receipt, PiggyBank, MonitorSmartphone, Upload, Bandage, Ribbon, RefreshCw, HeartPulse, ConciergeBell, Hospital, Briefcase, BadgePlus, Video, Leaf, Headphones, LifeBuoy, Sparkles, Share2, Calculator, Bot, Globe, Presentation, Zap, FolderOpen, Send, Download, Timer, FileText, Search, SlidersHorizontal, UserCheck } from "lucide-react";
 import { PARTNER_LOGOS, FEATURED_PARTNERS, type PartnerLogo } from "@/lib/partner-logos";
 
 const QUOTE_URL = "https://app.kennion.com/quote";
@@ -877,13 +877,128 @@ function MockDocs() {
   );
 }
 
+function MockContribution() {
+  // employer share animates 50% -> 75%; the split bar and tier rows follow
+  const [pct, setPct] = useState(50);
+  useEffect(() => {
+    const a = setTimeout(() => setPct(75), 700);
+    return () => clearTimeout(a);
+  }, []);
+  const shown = 50 + useCountUp(pct - 50, pct > 50, 1100);
+  const tiers = ["Employee Only", "Employee + Spouse", "Employee + Children", "Family"];
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between">
+        <div className="font-display font-semibold text-[15px]">Employer Contribution</div>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-[10.5px] font-bold text-muted-foreground">
+          <SlidersHorizontal size={11} /> Live Model
+        </span>
+      </div>
+
+      {/* slider */}
+      <div className="mt-4 rounded-[10px] border border-border bg-white p-4">
+        <div className="flex items-baseline justify-between">
+          <span className="text-[11px] font-semibold text-muted-foreground">Company Pays</span>
+          <span className="font-display font-semibold text-[22px] tabular-nums" style={{ color: ACC }}>{shown}%</span>
+        </div>
+        <div className="relative mt-3 h-2 rounded-full bg-muted">
+          <div className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-[1100ms] ease-out" style={{ width: `${pct}%`, background: ACC }} />
+          <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-2 shadow-md transition-[left] duration-[1100ms] ease-out" style={{ left: `${pct}%`, borderColor: ACC }} />
+        </div>
+        <div className="mt-2 flex justify-between text-[9.5px] font-semibold text-muted-foreground"><span>0%</span><span>50%</span><span>100%</span></div>
+      </div>
+
+      {/* tier split */}
+      <div className="mt-3 flex-1 rounded-[10px] border border-border bg-white overflow-hidden">
+        <div className="grid grid-cols-[1.3fr_2fr] gap-3 bg-[hsl(var(--ink))] px-3.5 py-2 text-[9.5px] font-bold text-white">
+          <span>Coverage</span><span className="flex justify-between"><span>Company</span><span>Employee</span></span>
+        </div>
+        {tiers.map((t, i) => (
+          <div key={t} className="kn-row-in grid grid-cols-[1.3fr_2fr] gap-3 items-center border-t border-border px-3.5 h-[33px]" style={{ animationDelay: `${150 + i * 100}ms` }}>
+            <span className="text-[10.5px] font-semibold">{t}</span>
+            <span className="flex h-2.5 rounded-full overflow-hidden bg-[hsl(210_20%_86%)]">
+              <span className="h-full transition-[width] duration-[1100ms] ease-out" style={{ width: `${Math.max(20, pct - i * 8)}%`, background: ACC }} />
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="kn-pop mt-3 self-start inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--brand-accent))]/10 px-3 py-1.5 text-[11px] font-bold text-[hsl(var(--brand-accent))]" style={{ animationDelay: "1700ms" }}>
+        <Check size={12} strokeWidth={3} /> Budget Updated
+      </div>
+    </div>
+  );
+}
+
+function MockEnroll() {
+  const total = 42, done = 38;
+  const [go, setGo] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setGo(true), 200); return () => clearTimeout(t); }, []);
+  const n = useCountUp(done, go, 1400);
+  const R = 34, C = 2 * Math.PI * R;
+  const people = [
+    { s: "Enrolled", w: "52%" }, { s: "Enrolled", w: "44%" }, { s: "In Progress", w: "58%" },
+    { s: "Enrolled", w: "40%" }, { s: "Waived", w: "48%" },
+  ];
+  const chip = (s: string) =>
+    s === "Enrolled" ? "bg-[hsl(var(--brand-accent))]/10 text-[hsl(var(--brand-accent))]"
+      : s === "In Progress" ? "bg-[hsl(38_90%_55%)]/15 text-[hsl(32_80%_38%)]"
+        : "bg-muted text-muted-foreground";
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between">
+        <div className="font-display font-semibold text-[15px]">Open Enrollment</div>
+        <span className="relative inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--ink))] px-3 py-1 text-[10.5px] font-bold text-white">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="kn-ping absolute inline-flex h-full w-full rounded-full" style={{ background: ACC_SOFT }} />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: ACC_SOFT }} />
+          </span>
+          Live
+        </span>
+      </div>
+      <div className="mt-4 grid grid-cols-[auto_1fr] gap-4 items-center rounded-[10px] border border-border bg-white p-4">
+        <div className="relative w-[84px] h-[84px]">
+          <svg viewBox="0 0 84 84" className="w-full h-full -rotate-90">
+            <circle cx="42" cy="42" r={R} fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
+            <circle cx="42" cy="42" r={R} fill="none" stroke={ACC} strokeWidth="8" strokeLinecap="round"
+              strokeDasharray={C} strokeDashoffset={go ? C * (1 - done / total) : C}
+              style={{ transition: "stroke-dashoffset 1400ms cubic-bezier(.2,.7,.2,1)" }} />
+          </svg>
+          <div className="absolute inset-0 grid place-items-center font-display font-semibold text-[17px] tabular-nums">{Math.round((n / total) * 100)}%</div>
+        </div>
+        <div>
+          <div className="font-display font-semibold text-[20px] tabular-nums">{n} of {total}</div>
+          <div className="text-[11px] font-semibold text-muted-foreground">Employees Enrolled</div>
+          <div className="mt-2 flex gap-1.5">
+            <span className="rounded-full bg-[hsl(var(--brand-accent))]/10 px-2 py-0.5 text-[9.5px] font-bold text-[hsl(var(--brand-accent))]">Online</span>
+            <span className="rounded-full bg-[hsl(var(--brand-accent))]/10 px-2 py-0.5 text-[9.5px] font-bold text-[hsl(var(--brand-accent))]">1:1 Counselor</span>
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 flex-1 rounded-[10px] border border-border bg-white overflow-hidden">
+        {people.map((p, i) => (
+          <div key={i} className="kn-row-in flex items-center gap-3 border-b border-border last:border-b-0 px-3.5 h-[34px]" style={{ animationDelay: `${250 + i * 110}ms` }}>
+            <span className="w-5 h-5 rounded-full bg-muted shrink-0" />
+            <span className="flex-1"><span className="kn-skel block h-[6px] rounded-full" style={{ width: p.w }} /></span>
+            <span className={`kn-pop rounded-full px-2 py-0.5 text-[9.5px] font-bold ${chip(p.s)}`} style={{ animationDelay: `${700 + i * 140}ms` }}>{p.s}</span>
+          </div>
+        ))}
+      </div>
+      <div className="kn-pop mt-3 self-start inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--ink))] px-3 py-1.5 text-[11px] font-bold text-white" style={{ animationDelay: "1800ms" }}>
+        <Send size={11} /> Elections Sent To Carriers
+      </div>
+    </div>
+  );
+}
+
 const BENSYNC_FEATURES = [
   { Icon: Calculator, t: "Quote & Propose", d: "Real options and polished proposals, back fast.", Mock: MockQuote },
-  { Icon: Bot, t: "AI Assistant", d: "A personal assistant that knows your plans.", Mock: MockAI },
+  { Icon: SlidersHorizontal, t: "Contribution Modeling", d: "Slide the company share and see the budget update live.", Mock: MockContribution },
   { Icon: Globe, t: "Employee Websites", d: "A custom benefits site for every client.", Mock: MockSite },
   { Icon: Presentation, t: "Flyers & Presentations", d: "Branded materials, built in a click.", Mock: MockFlyers },
-  { Icon: Zap, t: "Fast Renewals", d: "Renewals reviewed and compared in days.", Mock: MockRenewal },
+  { Icon: UserCheck, t: "Employee Enrollment", d: "Online or with a 1:1 counselor, tracked live and sent to carriers.", Mock: MockEnroll },
+  { Icon: Bot, t: "AI Assistant", d: "A personal assistant that knows your plans.", Mock: MockAI },
   { Icon: FolderOpen, t: "Document Hub", d: "Every document, one place, always current.", Mock: MockDocs },
+  { Icon: Zap, t: "Fast Renewals", d: "Renewals reviewed and compared in days.", Mock: MockRenewal },
 ];
 const BENSYNC_MS = 5200;
 
@@ -913,7 +1028,7 @@ function BenSync() {
         <div ref={ref} onMouseEnter={() => setHeld(true)} onMouseLeave={() => setHeld(false)}>
           {/* tabs */}
           <div className="-mx-6 px-6 lg:mx-0 lg:px-0 overflow-x-auto [scrollbar-width:none]">
-            <div className="grid grid-flow-col auto-cols-[minmax(150px,1fr)] lg:grid-cols-6 gap-2 min-w-max lg:min-w-0" role="tablist">
+            <div className="grid grid-flow-col auto-cols-[minmax(150px,1fr)] lg:grid-flow-row lg:grid-cols-4 gap-2 min-w-max lg:min-w-0" role="tablist">
               {BENSYNC_FEATURES.map(({ Icon, t }, i) => {
                 const on = i === active;
                 return (
