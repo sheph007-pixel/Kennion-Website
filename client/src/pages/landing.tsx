@@ -436,7 +436,21 @@ function shufflePartners(): PartnerLogo[] {
 }
 
 function PartnersBand() {
-  const [logos] = useState(shufflePartners);
+  // fresh random set on every visit, and again each time the band
+  // scrolls out of view (so the swap is never seen)
+  const [logos, setLogos] = useState(shufflePartners);
+  const bandRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = bandRef.current;
+    if (!el) return;
+    let seen = false;
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) seen = true;
+      else if (seen) { seen = false; setLogos(shufflePartners()); }
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const track = (copy: number) => logos.map((l) => (
     <li key={`${copy}-${l.f}`} aria-hidden={copy === 1 || undefined} className="shrink-0 grid place-items-center h-16 px-7 lg:px-9">
       <img
@@ -452,7 +466,7 @@ function PartnersBand() {
     </li>
   ));
   return (
-    <div className="relative bg-white py-14 lg:py-16">
+    <div ref={bandRef} className="relative bg-white py-14 lg:py-16">
       <h2 className="text-center font-display font-semibold tracking-[-0.01em] text-[26px] lg:text-[34px] text-foreground">
         Our Partners
       </h2>
