@@ -1022,7 +1022,7 @@ const BENSYNC_FEATURES = [
   { Icon: SlidersHorizontal, t: "Contribution Modeling", d: "Slide the company share and see the budget update live.", Mock: MockContribution },
   { Icon: Globe, t: "Employee Websites", d: "A custom benefits site for every client.", Mock: MockSite },
   { Icon: Presentation, t: "Flyers & Presentations", d: "Branded materials, built in a click.", Mock: MockFlyers },
-  { Icon: UserCheck, t: "Employee Enrollment", d: "Online or with a 1:1 counselor, tracked live and sent to carriers.", Mock: MockEnroll },
+  { Icon: UserCheck, t: "Enrollment Support & Technology", d: "Online enrollment and 1:1 counselors, with live progress HR can see.", Mock: MockEnroll },
   { Icon: FolderOpen, t: "Document Hub", d: "Every document, one place, always current.", Mock: MockDocs },
   { Icon: Zap, t: "Fast Renewals", d: "Renewals reviewed and compared in days.", Mock: MockRenewal },
 ];
