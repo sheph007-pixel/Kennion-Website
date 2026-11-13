@@ -1130,39 +1130,46 @@ function WhyKennion() {
         />
 
         {/* story + leadership */}
-        <div className="grid lg:grid-cols-12 gap-y-12 lg:gap-x-16 items-center">
-          <Reveal className="lg:col-span-5">
-            <YearsInBusiness />
-            <div className="mt-3 text-[16px] font-semibold text-foreground">Years in business, since {FOUNDED}</div>
-            <p className="mt-5 text-[16px] leading-[1.7] text-muted-foreground max-w-[30rem]">
-              Hal Shepherd founded W. H. Shepherd Companies in {FOUNDED}, which later became
-              Kennion. Today his son, Hunter Shepherd, leads the team.
-            </p>
-          </Reveal>
-          <div className="lg:col-span-7 grid grid-cols-2 gap-4 lg:gap-6">
-            {people.map((p, i) => (
-              <Reveal key={p.name} delay={i * 90}>
-                <figure className="group">
-                  <div className="overflow-hidden rounded-[16px] shadow-md">
+        <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
+          <Reveal className="lg:col-span-8">
+            <div className="h-full rounded-[16px] border border-border bg-white p-7 lg:p-10 flex flex-col justify-between">
+              <p className="font-display text-[21px] lg:text-[27px] leading-[1.35] tracking-[-0.01em] text-foreground max-w-[38rem]">
+                Hal Shepherd founded W. H. Shepherd Companies in {FOUNDED}, which later became
+                Kennion. Today Hunter Shepherd, the second generation of the family, leads the team.
+              </p>
+              <div className="mt-8 lg:mt-10 pt-7 border-t border-border flex flex-wrap gap-x-10 gap-y-5">
+                {people.map((p) => (
+                  <div key={p.name} className="flex items-center gap-4">
                     <img
                       src={p.img}
                       alt={`${p.name}, ${p.title}`}
                       loading="lazy"
-                      className="block w-full aspect-[4/5] object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                      width={72}
+                      height={72}
+                      className="w-[72px] h-[72px] rounded-full object-cover ring-1 ring-border"
                     />
+                    <div>
+                      <div className={`${H3} text-[17px]`}>{p.name}</div>
+                      <div className="mt-0.5 text-[13.5px] font-semibold text-[hsl(var(--brand-accent))]">{p.title}</div>
+                    </div>
                   </div>
-                  <figcaption className="mt-4">
-                    <div className={`${H3} text-[18px] lg:text-[22px]`}>{p.name}</div>
-                    <div className="mt-1 text-[14px] font-semibold text-[hsl(var(--brand-accent))]">{p.title}</div>
-                  </figcaption>
-                </figure>
-              </Reveal>
-            ))}
-          </div>
+                ))}
+              </div>
+            </div>
+          </Reveal>
+          <Reveal className="lg:col-span-4" delay={90}>
+            <div className="h-full rounded-[16px] bg-[hsl(var(--ink))] text-white p-7 lg:p-10 flex flex-col justify-between">
+              <div className="text-[13px] font-semibold text-[hsl(var(--brand-accent-soft))]">Since {FOUNDED}</div>
+              <div className="mt-6">
+                <YearsInBusiness />
+                <div className="mt-3 text-[16px] font-semibold text-white/80">Years in business</div>
+              </div>
+            </div>
+          </Reveal>
         </div>
 
         {/* reasons */}
-        <div className="mt-16 lg:mt-24 grid md:grid-cols-3 gap-4 lg:gap-6">
+        <div className="mt-6 lg:mt-8 grid md:grid-cols-3 gap-4 lg:gap-6">
           {rows.map(({ Icon, t, d }, i) => (
             <Reveal key={t} delay={i * 80}>
               <div className="kn-tile group h-full rounded-[14px] border border-border bg-white p-6 lg:p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
