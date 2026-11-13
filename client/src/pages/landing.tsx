@@ -7,7 +7,7 @@
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link } from "wouter";
 import { ArrowRight, ArrowUpRight, ChevronDown, X, Menu, MapPin, Mail, Check, Stethoscope, Smile, Eye, ShieldCheck, Accessibility, Wallet, Receipt, PiggyBank, MonitorSmartphone, Upload, Bandage, Ribbon, RefreshCw, HeartPulse, ConciergeBell, Hospital, Briefcase, BadgePlus, Video, Leaf, Headphones, LifeBuoy, Sparkles, Share2 } from "lucide-react";
-import { KPattern } from "@/components/brand-shapes";
+import { PARTNER_LOGOS, FEATURED_PARTNERS, type PartnerLogo } from "@/lib/partner-logos";
 
 const QUOTE_URL = "https://app.kennion.com/quote";
 const KENNION_LOGO_URL = "/kennion-logo.svg";
@@ -371,29 +371,57 @@ function Hero() {
         </Reveal>
       </div>
 
-      <ProofBand />
+      <PartnersBand />
     </section>
   );
 }
 
-function ProofBand() {
-  const items = [
-    ["Decades deep", "in this market"],
-    ["Every size", "groups from 2 lives to enterprise"],
-    ["Every structure", "fully insured to self-funded"],
-    ["One team", "advice through administration"],
-  ];
+/* ── partners band: shuffled, muted, same-size logos on a slow loop ── */
+
+const PARTNERS_SHOWN = 40;
+
+function shufflePartners(): PartnerLogo[] {
+  const featured = PARTNER_LOGOS.filter((l) => FEATURED_PARTNERS.includes(l.n));
+  const pool = PARTNER_LOGOS.filter((l) => !FEATURED_PARTNERS.includes(l.n));
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const set = [...featured, ...pool.slice(0, PARTNERS_SHOWN - featured.length)];
+  for (let i = set.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [set[i], set[j]] = [set[j], set[i]];
+  }
+  return set;
+}
+
+function PartnersBand() {
+  const [logos] = useState(shufflePartners);
+  const track = (copy: number) => logos.map((l) => (
+    <li key={`${copy}-${l.f}`} aria-hidden={copy === 1 || undefined} className="shrink-0 grid place-items-center h-16 px-7 lg:px-9">
+      <img
+        src={`/partners/${l.f}`}
+        alt={copy === 0 ? l.n : ""}
+        width={l.w}
+        height={l.h}
+        loading="lazy"
+        decoding="async"
+        className="opacity-[.55] transition-opacity duration-300 hover:opacity-100"
+        style={{ width: l.w, height: l.h }}
+      />
+    </li>
+  ));
   return (
-    <div className="relative overflow-hidden bg-[hsl(var(--ink))] text-white">
-      <KPattern fill="rgba(255,255,255,0.045)" size={40} />
-      <div className="relative mx-auto max-w-[1320px] px-6 lg:px-10">
-        <div className="grid grid-cols-2 lg:grid-cols-4">
-        {items.map(([big, small], i) => (
-          <div key={big} className={`py-8 lg:py-11 pr-6 ${i > 0 ? "lg:border-l lg:border-white/10 lg:pl-8" : ""} ${i % 2 === 1 ? "border-l border-white/10 pl-6 lg:pl-8" : ""} ${i > 1 ? "border-t border-white/10 lg:border-t-0" : ""}`}>
-            <div className="font-display font-semibold text-[24px] lg:text-[30px] leading-none tracking-[-0.01em]">{big}</div>
-            <div className="mt-2 text-[13.5px] text-white/60">{small}</div>
-          </div>
-        ))}
+    <div className="relative bg-white border-y border-border">
+      <div className="mx-auto max-w-[1320px] px-6 lg:px-10 py-8 lg:py-10 flex flex-col lg:flex-row lg:items-center gap-5 lg:gap-10">
+        <div className="shrink-0 lg:w-36">
+          <div className="kn-caps text-[hsl(var(--brand-accent))]">Our Partners</div>
+        </div>
+        <div className="kn-marquee-wrap relative flex-1 overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_8%,#000_92%,transparent)]">
+          <ul className="kn-marquee flex w-max items-center" style={{ animationDuration: `${logos.length * 4.5}s` }}>
+            {track(0)}
+            {track(1)}
+          </ul>
         </div>
       </div>
     </div>

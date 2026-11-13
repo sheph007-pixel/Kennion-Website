@@ -545,3 +545,6 @@ html {
   box-shadow: 0 2px 8px rgba(0,0,0,.18);
   cursor: grab;
 }
+
+/* Partners band: pause the logo loop while hovered. */
+.kn-marquee-wrap:hover .kn-marquee { animation-play-state: paused; }
