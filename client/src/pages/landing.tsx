@@ -466,7 +466,7 @@ function YearRoundLoop() {
     { Icon: MonitorSmartphone, t: "Online Enrollment", d: "Employees enroll from a link on any device." },
     { Icon: Headphones, t: "1:1 Enrollment Counselors", d: "A real person walks every employee through their options." },
     { Icon: LifeBuoy, t: "Year-Round Support", d: "Claims, changes, questions. We pick up the phone." },
-    { Icon: RefreshCw, t: "Renewal", d: "We shop the market again before your renewal hits." },
+    { Icon: RefreshCw, t: "Renewal", d: "We review your renewal early, negotiate hard, and bring options only when they help." },
   ];
   const [ref, seen] = useInView(0.3);
   const [active, setActive] = useState(0);
