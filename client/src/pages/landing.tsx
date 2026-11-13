@@ -1112,10 +1112,10 @@ function YearsInBusiness() {
 
 function WhyKennion() {
   const rows = [
-    { Icon: PiggyBank, t: "Save Money", d: "We shop the whole market, plus programs most brokers can't get you. Your budget goes further." },
-    { Icon: ShieldCheck, t: "Better Coverage", d: "Plans picked for your people and your budget, not whatever happened to renew last year." },
+    { Icon: PiggyBank, t: "Save Money", d: "We shop the whole market, plus programs most brokers can't get you, so your budget goes further." },
+    { Icon: ShieldCheck, t: "Better Coverage", d: "Plans built around your people and your budget, whether it's your first plan or a better one." },
     { Icon: MonitorSmartphone, t: "Better Technology", d: "Quotes, enrollment and documents in one place. Less paperwork for HR and fewer emails for everyone." },
-    { Icon: Headphones, t: "Real People", d: "Every client gets a dedicated Senior Client Advisor. They know your group, and they pick up the phone." },
+    { Icon: Headphones, t: "Better Support", d: "Every client gets a dedicated Senior Client Advisor who knows your group and picks up the phone." },
   ];
   const people = [
     { name: "Hal Shepherd", title: "Founder", img: "/team/hal-shepherd.webp" },
