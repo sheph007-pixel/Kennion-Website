@@ -367,9 +367,9 @@ function Hero() {
           </Reveal>
           <Reveal delay={180}>
             <p className="mt-8 text-[16px] lg:text-[17px] leading-[1.65] text-muted-foreground max-w-[30rem]">
-              A team of advisors ready to help, and technology that handles the busywork.
-              Group health, dental, vision, supplemental, and everything else the modern
-              employer needs.
+              Every client gets a dedicated Senior Client Advisor, backed by technology that
+              handles the busywork. Group health, dental, vision, supplemental, and everything
+              else the modern employer needs.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
               <SolidButton href={QUOTE_URL}>Get A Quote</SolidButton>
@@ -502,7 +502,7 @@ function YearRoundLoop() {
   const stages = [
     { Icon: MonitorSmartphone, t: "Online Enrollment", d: "Employees enroll from a link on any device." },
     { Icon: Headphones, t: "1:1 Enrollment Counselors", d: "A real person walks every employee through their options." },
-    { Icon: LifeBuoy, t: "Year-Round Support", d: "Claims, changes, questions. We pick up the phone." },
+    { Icon: LifeBuoy, t: "Year-Round Support", d: "Your Senior Client Advisor picks up the phone for claims, changes and questions." },
     { Icon: RefreshCw, t: "Renewal", d: "We negotiate early, with programs we have built alongside top carriers, TPAs and providers." },
   ];
   const [ref, seen] = useInView(0.3);
@@ -1114,7 +1114,7 @@ function WhyKennion() {
   const rows = [
     { Icon: PiggyBank, t: "Lower Costs, Better Coverage", d: "We shop the whole market plus programs built with top carriers, TPAs and providers, so every dollar does more. Switching or starting fresh." },
     { Icon: HeartHandshake, t: "Benefits Your People Value", d: "Custom benefit websites, 1:1 enrollment counselors and an AI assistant, so employees understand and use what you offer." },
-    { Icon: LifeBuoy, t: "One Team, All Year", d: "Quotes, enrollment, questions and renewals handled by one team on one platform. HR gets its time back." },
+    { Icon: Headphones, t: "A Dedicated Senior Client Advisor", d: "A real person your HR team can call, who knows your group and your plans. The technology is a great tool. People make the difference." },
   ];
   const people = [
     { name: "Hal Shepherd", title: "Founder", img: "/team/hal-shepherd.webp" },
