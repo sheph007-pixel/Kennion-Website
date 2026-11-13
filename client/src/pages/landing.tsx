@@ -378,12 +378,6 @@ function Hero() {
     <section className="relative overflow-hidden">
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10 pt-12 lg:pt-24 pb-16 lg:pb-24 grid lg:grid-cols-12 gap-y-12 lg:gap-x-12 items-center">
         <div className="lg:col-span-6">
-          <Reveal delay={40}>
-            <div className="mb-7 inline-flex items-center gap-3 text-[13px] font-semibold tracking-[0.01em] text-muted-foreground">
-              <span className="h-1 w-8 rounded-full bg-[hsl(var(--brand-accent))]" aria-hidden="true" />
-              Employee Benefits Nationwide · Since {FOUNDED}
-            </div>
-          </Reveal>
           <Reveal delay={90}>
             <h1 className="font-display font-semibold tracking-[-0.01em] leading-[1.05] text-[clamp(2.5rem,8vw,4.6rem)]">
               A new kind of
@@ -393,9 +387,9 @@ function Hero() {
           </Reveal>
           <Reveal delay={180}>
             <p className="mt-8 text-[16px] lg:text-[17px] leading-[1.65] text-muted-foreground max-w-[30rem]">
-              Every client gets a dedicated Senior Client Advisor, backed by technology that
-              handles the busywork. Group health, dental, vision, supplemental, and everything
-              else the modern employer needs.
+              At Kennion Benefit Advisors, every client gets a dedicated Senior Client Advisor,
+              backed by technology that handles the busywork. Medical, dental, vision,
+              supplemental, and everything else the modern employer needs.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
               <SolidButton href={QUOTE_URL}>Get A Quote</SolidButton>
