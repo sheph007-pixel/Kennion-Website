@@ -474,8 +474,8 @@ function shuffled<T>(a: T[]): T[] {
   return r;
 }
 
-/** Medical carriers lead (all of them, random order), then a random mix
- *  weighted toward other carriers, then everyone else. */
+/** A random set: every medical carrier, then a mix weighted toward other
+ *  carriers, all in random order. */
 function shufflePartners(): PartnerLogo[] {
   const medical = shuffled(PARTNER_LOGOS.filter((l) => MEDICAL_CARRIERS.includes(l.n)));
   const carriers = shuffled(PARTNER_LOGOS.filter((l) => OTHER_CARRIERS.includes(l.n)));
@@ -483,24 +483,37 @@ function shufflePartners(): PartnerLogo[] {
   const left = PARTNERS_SHOWN - medical.length;
   const nCarriers = Math.min(carriers.length, Math.ceil(left * 0.7));
   const tail = shuffled([...carriers.slice(0, nCarriers), ...rest.slice(0, left - nCarriers)]);
-  return [...medical, ...tail];
+  // fully random order: medical carriers are always in the set, never parked up front
+  return shuffled([...medical, ...tail]);
 }
 
 function PartnersBand() {
-  // fresh random set on every visit, and again each time the band
-  // scrolls out of view (so the swap is never seen)
+  // Always random: a fresh set on every visit, every time the band comes
+  // back into view, and every 30s while it is on screen (a quick fade hides
+  // the swap; paused while hovered).
   const [logos, setLogos] = useState(shufflePartners);
+  const [round, setRound] = useState(0);
+  const [fading, setFading] = useState(false);
   const bandRef = useRef<HTMLDivElement>(null);
+  const hovered = useRef(false);
   useEffect(() => {
     const el = bandRef.current;
     if (!el) return;
-    let seen = false;
+    let visible = false;
+    let fadeT: ReturnType<typeof setTimeout> | undefined;
+    const swap = (fade: boolean) => {
+      if (!fade) { setLogos(shufflePartners()); setRound((r) => r + 1); return; }
+      setFading(true);
+      fadeT = setTimeout(() => { setLogos(shufflePartners()); setRound((r) => r + 1); setFading(false); }, 450);
+    };
     const io = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) seen = true;
-      else if (seen) { seen = false; setLogos(shufflePartners()); }
+      if (e.isIntersecting) visible = true;
+      else if (visible) { visible = false; swap(false); }
     });
     io.observe(el);
-    return () => io.disconnect();
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const tick = reduced ? undefined : setInterval(() => { if (visible && !hovered.current && !document.hidden) swap(true); }, 30000);
+    return () => { io.disconnect(); if (tick) clearInterval(tick); if (fadeT) clearTimeout(fadeT); };
   }, []);
   const track = (copy: number) => logos.map((l) => (
     <li key={`${copy}-${l.f}`} aria-hidden={copy === 1 || undefined} className="shrink-0 grid place-items-center h-16 px-7 lg:px-9">
@@ -522,8 +535,13 @@ function PartnersBand() {
         Employee Benefit Partners
       </h2>
       <div className="mt-8 lg:mt-10">
-        <div className="kn-marquee-wrap relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_10%,#000_90%,transparent)]">
-          <ul className="kn-marquee flex w-max items-center" style={{ animationDuration: `${logos.length * 4.5}s` }}>
+        <div
+          className="kn-marquee-wrap relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_10%,#000_90%,transparent)] transition-opacity duration-[450ms]"
+          style={{ opacity: fading ? 0 : 1 }}
+          onMouseEnter={() => { hovered.current = true; }}
+          onMouseLeave={() => { hovered.current = false; }}
+        >
+          <ul key={round} className="kn-marquee flex w-max items-center" style={{ animationDuration: `${logos.length * 4.5}s` }}>
             {track(0)}
             {track(1)}
           </ul>
