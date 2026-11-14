@@ -1424,6 +1424,7 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
             ))}
           </div>
         </div>
+        <div className="grid gap-5 sm:grid-cols-2 sm:gap-x-4">
         <div>
           <label htmlFor="kn-name" className={labelCls}>Name</label>
           <input id="kn-name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Jordan Smith" className={fieldCls} />
@@ -1440,12 +1441,13 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
           <label htmlFor="kn-company" className={labelCls}>Company</label>
           <input id="kn-company" autoComplete="organization" value={company} onChange={(e) => setCompany(e.target.value)} required placeholder="Company name" className={fieldCls} />
         </div>
+        </div>
         <div>
           <label htmlFor="kn-msg" className={labelCls}>Details</label>
           <textarea id="kn-msg" rows={4} value={message} onChange={(e) => setMessage(e.target.value)} required placeholder="Tell us how we can help." className={`${fieldCls} h-auto py-3 resize-none`} />
         </div>
       </div>
-      <div className="shrink-0 border-t border-border bg-[hsl(var(--background))] px-6 sm:px-8 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="shrink-0 border-t border-border bg-[hsl(var(--background))] px-6 sm:px-8 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-5 sm:flex sm:flex-col sm:items-end">
         {(error || state === "error") && (
           <p className="mb-3 text-[13px] font-medium text-destructive">
             {error || "Something went wrong. Please try again in a moment."}
@@ -1454,7 +1456,7 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
         <button
           type="submit"
           disabled={state === "sending"}
-          className="w-full inline-flex items-center justify-center gap-3 rounded-md bg-primary text-primary-foreground px-6 py-3.5 text-[15px] font-semibold transition-colors hover:bg-[hsl(var(--primary-hover))] disabled:opacity-60"
+          className="w-full sm:w-auto sm:min-w-[200px] inline-flex items-center justify-center gap-3 rounded-md bg-primary text-primary-foreground px-6 py-3.5 text-[15px] font-semibold transition-colors hover:bg-[hsl(var(--primary-hover))] disabled:opacity-60"
         >
           {state === "sending" ? "Sending..." : "Send Message"}
         </button>
@@ -1465,13 +1467,13 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
   return (
     <div className="fixed inset-0 z-[100] flex items-stretch sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4" onClick={onClose}>
       <div
-        className="kn-landing relative flex flex-col w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-md sm:rounded-[16px] sm:border border-border bg-[hsl(var(--background))] text-foreground shadow-2xl overflow-hidden"
+        className="kn-landing relative flex flex-col w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-[680px] sm:rounded-[16px] sm:border border-border bg-[hsl(var(--background))] text-foreground shadow-2xl overflow-hidden"
         role="dialog"
         aria-modal="true"
         aria-label="Contact Kennion"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="shrink-0 flex items-center justify-between px-6 sm:px-8 pt-[max(1rem,env(safe-area-inset-top))] pb-4 border-b border-border">
+        <div className="shrink-0 flex items-center justify-between px-6 sm:px-8 pt-[max(1rem,env(safe-area-inset-top))] sm:pt-5 pb-4 border-b border-border">
           <span className={`${H3} text-[19px]`}>Contact Us</span>
           <button onClick={onClose} aria-label="Close" className="w-10 h-10 -mr-2 grid place-items-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted">
             <X size={20} />
