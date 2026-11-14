@@ -1321,8 +1321,11 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
   const [role, setRole] = useState("Employer");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [company, setCompany] = useState("");
   const [message, setMessage] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -1337,7 +1340,15 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !message.trim()) return;
+    setError("");
+    if (!name.trim() || !email.trim() || !phone.trim() || !company.trim() || !message.trim()) {
+      setError("Please fill in every field.");
+      return;
+    }
+    if (phone.replace(/\D/g, "").length < 10) {
+      setError("Please enter a full phone number, area code included.");
+      return;
+    }
     setState("sending");
     try {
       const res = await fetch("/api/contact", {
@@ -1345,8 +1356,9 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
-          company: role,
+          company,
           email,
+          phone,
           employees: "",
           message: `[${role} inquiry] ${message}`,
           website: "",
@@ -1359,33 +1371,35 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
     }
   }
 
-  const fieldCls = "w-full h-11 border-0 border-b border-border bg-transparent px-0 text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary transition-colors";
+  const fieldCls = "w-full h-12 rounded-md border border-border bg-white px-3.5 text-[16px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-colors";
+  const labelCls = "block mb-1.5 text-[13px] font-semibold text-foreground";
 
   if (!open) return null;
 
   const body = state === "sent" ? (
-    <div className="p-7 sm:p-9">
-      <div className="kn-caps" style={{ color: "hsl(var(--brand-accent))" }}>Message sent</div>
-      <h3 className={`${H3} mt-3 text-[24px]`}>Thank you.</h3>
-      <p className="mt-3 text-[14px] leading-[1.7] text-muted-foreground">
+    <div className="p-6 sm:p-8">
+      <div className="text-[13px] font-semibold" style={{ color: "hsl(var(--brand-accent))" }}>Message Sent</div>
+      <h3 className={`${H3} mt-2 text-[24px]`}>Thank you.</h3>
+      <p className="mt-3 text-[15px] leading-[1.7] text-muted-foreground">
         The right person on our team will get back to you shortly.
       </p>
-      <button onClick={onClose} className="mt-7 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-6 py-3 text-[13.5px] font-semibold hover:bg-[hsl(var(--primary-hover))] transition-colors">
+      <button onClick={onClose} className="mt-7 w-full sm:w-auto inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-6 py-3.5 text-[14px] font-semibold hover:bg-[hsl(var(--primary-hover))] transition-colors">
         Done
       </button>
     </div>
   ) : (
-    <form onSubmit={submit} className="p-7 sm:p-9">
-      <div className="space-y-6">
+    <form onSubmit={submit} noValidate className="flex flex-col min-h-0 flex-1">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-6 sm:px-8 py-6 space-y-5">
         <div>
-          <label htmlFor="kn-role" className="kn-caps text-muted-foreground block">I am a...</label>
-          <div className="mt-1 flex gap-2">
+          <span className={labelCls}>I am a...</span>
+          <div className="grid grid-cols-3 gap-2">
             {CONTACT_ROLES.map((r) => (
               <button
                 key={r}
                 type="button"
                 onClick={() => setRole(r)}
-                className={`px-4 py-2 text-[13.5px] font-semibold border transition-colors ${role === r ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+                aria-pressed={role === r}
+                className={`h-11 rounded-md text-[14px] font-semibold border transition-colors ${role === r ? "bg-primary text-primary-foreground border-primary" : "bg-white border-border text-muted-foreground hover:text-foreground"}`}
               >
                 {r}
               </button>
@@ -1393,46 +1407,56 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
           </div>
         </div>
         <div>
-          <label htmlFor="kn-name" className="kn-caps text-muted-foreground block">Name</label>
-          <input id="kn-name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Jordan Smith" className={fieldCls} />
+          <label htmlFor="kn-name" className={labelCls}>Name</label>
+          <input id="kn-name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Jordan Smith" className={fieldCls} />
         </div>
         <div>
-          <label htmlFor="kn-email" className="kn-caps text-muted-foreground block">Email</label>
-          <input id="kn-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@company.com" className={fieldCls} />
+          <label htmlFor="kn-email" className={labelCls}>Email</label>
+          <input id="kn-email" type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@company.com" className={fieldCls} />
         </div>
         <div>
-          <label htmlFor="kn-msg" className="kn-caps text-muted-foreground block">How can we help?</label>
-          <textarea id="kn-msg" rows={3} value={message} onChange={(e) => setMessage(e.target.value)} required placeholder="Tell us what you need." className={`${fieldCls} h-auto py-2 resize-none`} />
+          <label htmlFor="kn-phone" className={labelCls}>Phone</label>
+          <input id="kn-phone" type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="(205) 555-0123" className={fieldCls} />
+        </div>
+        <div>
+          <label htmlFor="kn-company" className={labelCls}>Company</label>
+          <input id="kn-company" autoComplete="organization" value={company} onChange={(e) => setCompany(e.target.value)} required placeholder="Company name" className={fieldCls} />
+        </div>
+        <div>
+          <label htmlFor="kn-msg" className={labelCls}>Details</label>
+          <textarea id="kn-msg" rows={4} value={message} onChange={(e) => setMessage(e.target.value)} required placeholder="Tell us how we can help." className={`${fieldCls} h-auto py-3 resize-none`} />
         </div>
       </div>
-      <button
-        type="submit"
-        disabled={state === "sending"}
-        className="mt-7 w-full inline-flex items-center justify-center gap-3 rounded-md bg-primary text-primary-foreground px-6 py-3.5 text-[13px] font-semibold transition-colors hover:bg-[hsl(var(--primary-hover))] disabled:opacity-60"
-      >
-        {state === "sending" ? "Sending..." : "Send Message"}
-      </button>
-      {state === "error" && (
-        <p className="mt-3 text-[12.5px] text-destructive">
-          Something went wrong. Please try again in a moment.
-        </p>
-      )}
+      <div className="shrink-0 border-t border-border bg-[hsl(var(--background))] px-6 sm:px-8 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        {(error || state === "error") && (
+          <p className="mb-3 text-[13px] font-medium text-destructive">
+            {error || "Something went wrong. Please try again in a moment."}
+          </p>
+        )}
+        <button
+          type="submit"
+          disabled={state === "sending"}
+          className="w-full inline-flex items-center justify-center gap-3 rounded-md bg-primary text-primary-foreground px-6 py-3.5 text-[15px] font-semibold transition-colors hover:bg-[hsl(var(--primary-hover))] disabled:opacity-60"
+        >
+          {state === "sending" ? "Sending..." : "Send Message"}
+        </button>
+      </div>
     </form>
   );
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-stretch sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4" onClick={onClose}>
       <div
-        className="kn-landing relative w-full sm:max-w-md max-h-[92vh] overflow-y-auto border-t sm:border border-border bg-[hsl(var(--background))] text-foreground shadow-2xl"
+        className="kn-landing relative flex flex-col w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-md sm:rounded-[16px] sm:border border-border bg-[hsl(var(--background))] text-foreground shadow-2xl overflow-hidden"
         role="dialog"
         aria-modal="true"
         aria-label="Contact Kennion"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-7 sm:px-9 pt-6 pb-4 border-b border-border">
-          <span className="kn-caps text-muted-foreground">Contact Us</span>
-          <button onClick={onClose} aria-label="Close" className="w-9 h-9 -mr-2 grid place-items-center text-muted-foreground hover:text-foreground">
-            <X size={18} />
+        <div className="shrink-0 flex items-center justify-between px-6 sm:px-8 pt-[max(1rem,env(safe-area-inset-top))] pb-4 border-b border-border">
+          <span className={`${H3} text-[19px]`}>Contact Us</span>
+          <button onClick={onClose} aria-label="Close" className="w-10 h-10 -mr-2 grid place-items-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted">
+            <X size={20} />
           </button>
         </div>
         {body}

@@ -103,9 +103,9 @@ export default function RequestQuotePage() {
         name: data.name,
         company: data.companyName,
         email: data.email,
+        phone: data.phone,
         employees: data.employerSize,
         message: [
-          `Phone: ${data.phone}`,
           `Funding interest: ${data.fundingInterest}`,
           data.currentCoverage ? `Current coverage / renewal: ${data.currentCoverage}` : "",
           data.message ? `Message: ${data.message}` : "",

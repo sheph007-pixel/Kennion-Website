@@ -326,8 +326,9 @@ export const contactInquirySchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
   company: z.string().trim().min(1, "Company is required").max(160),
   email: z.string().trim().email("Valid email required").max(160),
+  phone: z.string().trim().max(40).refine((v) => v.replace(/\D/g, "").length >= 10, "Valid phone number required"),
   employees: z.string().trim().max(40).optional().default(""),
-  message: z.string().trim().max(4000).optional().default(""),
+  message: z.string().trim().min(1, "Please tell us how we can help").max(4000),
   website: z.string().max(200).optional().default(""), // honeypot — real users leave this empty
 });
 export type ContactInquiry = z.infer<typeof contactInquirySchema>;
