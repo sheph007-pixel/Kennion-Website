@@ -1391,7 +1391,7 @@ function ContactModal({ open, onClose }: { open: boolean; onClose: () => void })
     <form onSubmit={submit} noValidate className="flex flex-col min-h-0 flex-1">
       <div className="flex-1 overflow-y-auto overscroll-contain px-6 sm:px-8 py-6 space-y-5">
         <div>
-          <span className={labelCls}>I am a...</span>
+          <span className={labelCls}>Which describes you?</span>
           <div className="grid grid-cols-3 gap-2">
             {CONTACT_ROLES.map((r) => (
               <button
