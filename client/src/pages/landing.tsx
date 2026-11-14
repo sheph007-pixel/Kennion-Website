@@ -439,8 +439,7 @@ function Hero() {
           <Reveal delay={180}>
             <p className="mt-8 text-[16px] lg:text-[17px] leading-[1.65] text-muted-foreground max-w-[30rem]">
               Kennion Benefit Advisors gives your company the buying power of a large employer:
-              health plans that reward healthy groups, plus dental, vision and supplemental in
-              one bundled package.
+              health plans that reward healthy groups, plus dental, vision and supplemental coverage in one bundled package.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
               <SolidButton href={QUOTE_URL}>Get A Quote</SolidButton>
@@ -560,7 +559,7 @@ function Problem() {
       alt: "A growing team collaborating in an office",
       label: "Growing Company",
       h: "Setting up benefits for the first\u00a0time?",
-      p: "You are hiring and it is time for a real program. Our advisors design it around your budget, set up online enrollment, and make benefits a reason people join.",
+      p: "You're hiring, and it's time for a real benefits program. We'll design it around your budget, set up online enrollment and make benefits a reason people want to work for you.",
       cta: "Get A Quote",
     },
     {
@@ -568,7 +567,7 @@ function Problem() {
       alt: "An advisor meeting with a client",
       label: "Time for Something Better",
       h: "High rates, rough renewals, no new\u00a0ideas?",
-      p: "If every renewal is a higher number and nothing else changes, get a second opinion. Send us your census and see what you have been missing.",
+      p: "If every renewal is a higher number and nothing else changes, get a second opinion. Send us your employee list and see what you've been missing.",
       cta: "Get A Quote",
     },
   ];
@@ -579,7 +578,7 @@ function Problem() {
           label="The Problem"
           className="mb-14 lg:mb-20"
           title={<>Benefits keep costing&nbsp;more<br className="hidden md:block" />{" "}<span style={{ color: "hsl(var(--brand-accent))" }}>and delivering less.</span></>}
-          sub="Premiums climb every year, employees are not sure what they have, and HR is stuck in the middle. You are who we built this for."
+          sub="Premiums climb every year, employees are not sure what they have, and HR is stuck in the middle. If that sounds familiar, you're in the right place."
         />
         <div>
           <div className="grid md:grid-cols-2 gap-y-12 md:gap-x-0">
@@ -612,7 +611,7 @@ function YearRoundLoop() {
     { Icon: MonitorSmartphone, t: "Online Enrollment", d: "Employees enroll from a link on any device." },
     { Icon: Headphones, t: "1:1 Enrollment Counselors", d: "A real person walks every employee through their options." },
     { Icon: LifeBuoy, t: "Year-Round Support", d: "Your Senior Client Advisor picks up the phone for claims, changes and questions." },
-    { Icon: RefreshCw, t: "Renewal", d: "We negotiate early, with programs we have built alongside top carriers, TPAs and providers." },
+    { Icon: RefreshCw, t: "Renewal", d: "We start early and negotiate hard, so renewal is never a surprise." },
   ];
   const [ref, seen] = useInView(0.3);
   const [active, setActive] = useState(0);
@@ -690,9 +689,9 @@ function YearRoundLoop() {
 
 function HowWeDoIt() {
   const steps = [
-    { t: "Send Your Census", d: "A spreadsheet is all we need to get started." },
-    { t: "See Something New", d: "Fresh ideas priced with real rates, back fast." },
-    { t: "We Run The Rest", d: "Enrollment, renewals, and the day-to-day. Handled." },
+    { t: "Send Your Census", d: "A simple employee list is all we need to get started." },
+    { t: "See Your Options", d: "Real plans with real rates, side by side." },
+    { t: "We Run The Rest", d: "We handle enrollment, renewals and everything in between." },
   ];
   return (
     <section id="how" className="relative overflow-hidden bg-[hsl(var(--ink))] text-white py-20 lg:py-32">
@@ -759,7 +758,7 @@ function Options() {
         <SectionIntro
           label="What We Do"
           title={<>Your employee benefits program,<br className="hidden md:block" />{" "}<span style={{ color: "hsl(var(--brand-accent))" }}>built and run for you.</span></>}
-          sub="Every line of coverage your employees expect, plus programs we have built with top carriers, TPAs and providers that most brokers simply can't offer."
+          sub="Every type of coverage your employees expect, plus programs we've built with top carriers that most brokers can't offer."
         />
       </div>
       <div className="mx-auto max-w-[1320px] px-6 lg:px-10 mt-12 lg:mt-16">
@@ -1105,7 +1104,7 @@ const BENSYNC_FEATURES = [
   { Icon: Bot, t: "AI Assistant", d: "A personal assistant that knows your plans.", Mock: MockAI },
   { Icon: SlidersHorizontal, t: "Contribution Modeling", d: "Slide the company share and see the budget update live.", Mock: MockContribution },
   { Icon: Globe, t: "Employee Websites", d: "A custom benefits site for every client.", Mock: MockSite },
-  { Icon: Presentation, t: "Flyers & Presentations", d: "Branded materials, built in a click.", Mock: MockFlyers },
+  { Icon: Presentation, t: "Flyers & Presentations", d: "Branded flyers and presentations for your employees.", Mock: MockFlyers },
   { Icon: UserCheck, t: "Enrollment Support & Technology", d: "Online enrollment and 1:1 counselors, with live progress HR can see.", Mock: MockEnroll },
   { Icon: FolderOpen, t: "Document Hub", d: "Every document, one place, always current.", Mock: MockDocs },
   { Icon: Zap, t: "Fast Renewals", d: "Renewals reviewed and compared in days.", Mock: MockRenewal },
@@ -1223,9 +1222,9 @@ function YearsInBusiness() {
 
 function WhyKennion() {
   const rows = [
-    { Icon: PiggyBank, t: "Better Rates", d: "The buying power of a large employer, for companies of any size. That holds whether you're buying your first plan or shopping your renewal." },
+    { Icon: PiggyBank, t: "Better Rates", d: "The buying power of a large employer, for companies of any size, whether you're buying your first plan or shopping your renewal." },
     { Icon: ShieldCheck, t: "Better Coverage", d: "We build the plan around your people, not the other way around. Your employees get coverage they understand and actually use." },
-    { Icon: MonitorSmartphone, t: "Better Technology", d: "Our own platform handles quotes, proposals and documents, paired with leading enrollment technology. Your HR team spends less time on paperwork and more time on people." },
+    { Icon: MonitorSmartphone, t: "Better Technology", d: "Our own platform handles quotes, proposals and documents, paired with easy online enrollment. Your HR team spends less time on paperwork and more time on people." },
     { Icon: Headphones, t: "Better Support", d: "You get a Senior Client Advisor with a direct line. When something comes up, you call them, and they handle it." },
   ];
   const people = [
@@ -1304,7 +1303,7 @@ function WhyKennion() {
                 Let's talk about your group.
               </h3>
               <p className="mt-3 text-[15.5px] leading-[1.65] text-white/70 max-w-[34rem]">
-                Grab a quick call with our team. Bring your questions, your renewal or a blank page.
+                Grab a quick call with our team. Bring your questions or your renewal.
                 No pressure, just straight answers.
               </p>
             </div>
@@ -1497,7 +1496,7 @@ function FinalCTA({ onContact }: { onContact: () => void }) {
           See what your group is missing.
         </h2>
         <p className="mt-7 text-[16px] leading-[1.65] text-white/70 max-w-[34rem]">
-          Send us your census and we will come back with something new. It costs
+          Send us your employee list and we'll come back with real options. It costs
           nothing to look. Just have a question?{" "}
           <button onClick={onContact} className="kn-link text-white font-medium">Contact Us</button> and
           the right person will get back to you.
