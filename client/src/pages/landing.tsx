@@ -519,7 +519,7 @@ function PartnersBand() {
   return (
     <div ref={bandRef} className="relative bg-white py-14 lg:py-16">
       <h2 className="text-center font-display font-semibold tracking-[-0.01em] text-[26px] lg:text-[34px] text-foreground">
-        Our Partners
+        Employee Benefit Partners
       </h2>
       <div className="mt-8 lg:mt-10">
         <div className="kn-marquee-wrap relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_10%,#000_90%,transparent)]">
