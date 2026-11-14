@@ -438,8 +438,9 @@ function Hero() {
           </Reveal>
           <Reveal delay={180}>
             <p className="mt-8 text-[16px] lg:text-[17px] leading-[1.65] text-muted-foreground max-w-[30rem]">
-              Kennion Benefit Advisors prices your health plan on your own group, not the
-              whole market, and bundles dental, vision and supplemental into one simple package.
+              Kennion Benefit Advisors specializes in health plans that reward healthy groups
+              with lower costs, with dental, vision and supplemental bundled into one
+              better-priced package.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
               <SolidButton href={QUOTE_URL}>Get A Quote</SolidButton>
