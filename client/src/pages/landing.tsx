@@ -715,24 +715,25 @@ function Options() {
     [Smile, "Dental"],
     [Eye, "Vision"],
   ];
-  // Everything else, A–Z.
-  const rest: [React.ComponentType<any>, string][] = ([
-    [Bandage, "Accident"],
-    [Ribbon, "Cancer"],
-    [RefreshCw, "COBRA"],
-    [HeartPulse, "Critical Illness"],
-    [Accessibility, "Disability"],
-    [Wallet, "FSA"],
-    [ConciergeBell, "Health Concierge"],
-    [Hospital, "Hospital Indemnity"],
-    [Briefcase, "HR Services"],
-    [Receipt, "HRA"],
-    [PiggyBank, "HSA"],
+  // Everything else, in the order employers buy it (most commonly offered
+  // first), grouped by type: core + accounts, supplemental, services.
+  const rest: [React.ComponentType<any>, string][] = [
     [ShieldCheck, "Life"],
+    [Accessibility, "Disability"],
+    [PiggyBank, "HSA"],
+    [Wallet, "FSA"],
+    [Receipt, "HRA"],
+    [Bandage, "Accident"],
+    [HeartPulse, "Critical Illness"],
+    [Hospital, "Hospital Indemnity"],
+    [Ribbon, "Cancer"],
     [BadgePlus, "Supplemental Health"],
     [Video, "Telehealth"],
     [Leaf, "Wellness"],
-  ] as [React.ComponentType<any>, string][]).sort((a, b) => a[1].localeCompare(b[1], "en", { sensitivity: "base" }));
+    [ConciergeBell, "Health Concierge"],
+    [RefreshCw, "COBRA"],
+    [Briefcase, "HR Services"],
+  ];
 
   return (
     <section id="what" className="bg-white py-20 lg:py-32">
