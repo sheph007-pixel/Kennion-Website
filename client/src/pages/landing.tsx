@@ -431,16 +431,15 @@ function Hero() {
         <div className="lg:col-span-6">
           <Reveal delay={90}>
             <h1 className="font-display font-semibold tracking-[-0.01em] leading-[1.05] text-[clamp(2.5rem,8vw,4.6rem)]">
-              A new kind of
+              Better benefits.
               <br />
-              benefits agency.
+              <span style={{ color: "hsl(var(--brand-accent))" }}>Lower costs.</span>
             </h1>
           </Reveal>
           <Reveal delay={180}>
             <p className="mt-8 text-[16px] lg:text-[17px] leading-[1.65] text-muted-foreground max-w-[30rem]">
-              At Kennion Benefit Advisors, every client gets a dedicated Senior Client Advisor,
-              backed by technology that handles the busywork. Medical, dental, vision,
-              supplemental, and everything else the modern employer needs.
+              Kennion Benefit Advisors gives every client a dedicated Senior Client Advisor,
+              backed by technology that handles the busywork.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
               <SolidButton href={QUOTE_URL}>Get A Quote</SolidButton>
