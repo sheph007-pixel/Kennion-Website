@@ -732,19 +732,19 @@ function Options() {
     [Smile, "Dental"],
     [Eye, "Vision"],
   ];
-  // Everything else, in the order employers buy it (most commonly offered
-  // first), grouped by type: core + accounts, supplemental, services.
+  // Everything else, grouped by type: insurance coverage first (core, then
+  // supplemental), then spending accounts, then services.
   const rest: [React.ComponentType<any>, string][] = [
     [ShieldCheck, "Life"],
     [Accessibility, "Disability"],
-    [PiggyBank, "HSA"],
-    [Wallet, "FSA"],
-    [Receipt, "HRA"],
     [Bandage, "Accident"],
     [HeartPulse, "Critical Illness"],
     [Hospital, "Hospital Indemnity"],
     [Ribbon, "Cancer"],
     [BadgePlus, "Supplemental Health"],
+    [PiggyBank, "HSA"],
+    [Wallet, "FSA"],
+    [Receipt, "HRA"],
     [Video, "Telehealth"],
     [Leaf, "Wellness"],
     [ConciergeBell, "Health Concierge"],
@@ -779,11 +779,11 @@ function Options() {
         <div className="mt-3 lg:mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4">
           {rest.map(([Icon, t], i) => (
             <Reveal key={t} delay={(i % 5) * 50}>
-              <div className="kn-tile group h-full flex items-center gap-3.5 rounded-[12px] border border-border bg-white px-4 py-4 lg:py-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-[hsl(var(--brand-accent))]/40">
+              <div className="kn-tile group h-full flex flex-col items-start md:flex-row md:items-center gap-3 md:gap-3.5 rounded-[12px] border border-border bg-white px-4 py-4 lg:py-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-[hsl(var(--brand-accent))]/40">
                 <div className="kn-tile-icon grid shrink-0 place-items-center w-10 h-10 rounded-[10px] bg-[hsl(var(--brand-accent))]/10 text-[hsl(var(--brand-accent))] group-hover:bg-[hsl(var(--brand-accent))] group-hover:text-white">
                   <Icon size={19} strokeWidth={1.9} />
                 </div>
-                <div className={`${H3} text-[14.5px] lg:text-[15.5px] leading-tight`}>{t}</div>
+                <div className={`${H3} min-w-0 text-[15px] lg:text-[15.5px] leading-snug`}>{t}</div>
               </div>
             </Reveal>
           ))}
