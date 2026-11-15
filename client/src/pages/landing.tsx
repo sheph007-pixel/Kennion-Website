@@ -438,8 +438,7 @@ function Hero() {
           </Reveal>
           <Reveal delay={180}>
             <p className="mt-8 text-[16px] lg:text-[17px] leading-[1.65] text-muted-foreground max-w-[30rem]">
-              Kennion Benefit Advisors gives your company the buying power of a large employer:
-              health plans that reward healthy groups, plus dental, vision and supplemental coverage in one bundled package.
+              Kennion designs and manages employee benefits for employers nationwide.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
               <SolidButton href={QUOTE_URL}>Get A Quote</SolidButton>
